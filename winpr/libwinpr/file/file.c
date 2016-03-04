@@ -352,7 +352,7 @@ static BOOL FileSetFileTime(HANDLE hFile, const FILETIME *lpCreationTime,
 		const FILETIME *lpLastAccessTime, const FILETIME *lpLastWriteTime)
 {
 	int rc;
-#if defined(__APPLE__) || defined(ANDROID)
+#if defined(__APPLE__) || defined(ANDROID) || defined(__FreeBSD__)
 	struct stat buf;
 #endif
 /* OpenBSD, NetBSD and DragonflyBSD support POSIX futimens */
@@ -618,7 +618,7 @@ BOOL IsFileDevice(LPCTSTR lpDeviceName)
 	return TRUE;
 }
 
-HANDLE_CREATOR _FileHandleCreator = 
+HANDLE_CREATOR _FileHandleCreator =
 {
 	IsFileDevice,
 	FileCreateFileA
