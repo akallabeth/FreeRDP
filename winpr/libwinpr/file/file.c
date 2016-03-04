@@ -381,7 +381,10 @@ static BOOL FileSetFileTime(HANDLE hFile, const FILETIME *lpCreationTime,
 		times[0].tv_sec = buf.st_atime;
 		times[0].tv_nsec = buf.st_atimensec;
 #endif
-#elif defined(ANDROID) || defined(__FreeBSD__)
+#elif defined(__FreeBSD__)
+		timevals[0].tv_sec = buf.st_mtime;
+		TIMESPEC_TO_TIMEVAL(&timevals[0], &buf.st_mtimespec);
+#elif defined(ANDROID)
 		timevals[0].tv_sec = buf.st_mtime;
 		timevals[0].tv_usec = buf.st_mtimensec / 1000UL;
 #else
@@ -415,7 +418,10 @@ static BOOL FileSetFileTime(HANDLE hFile, const FILETIME *lpCreationTime,
 		times[1].tv_sec = buf.st_mtime;
 		times[1].tv_nsec = buf.st_mtimensec;
 #endif
-#elif defined(ANDROID) || defined(__FreeBSD__)
+#elif defined(__FreeBSD__)
+		timevals[1].tv_sec = buf.st_mtime;
+		TIMESPEC_TO_TIMEVAL(&timevals[1], &buf.st_mtimespec);
+#elif defined(ANDROID)
 		timevals[1].tv_sec = buf.st_mtime;
 		timevals[1].tv_usec = buf.st_mtimensec / 1000UL;
 #else
