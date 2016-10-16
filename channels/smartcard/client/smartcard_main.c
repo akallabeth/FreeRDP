@@ -34,7 +34,7 @@
 
 #include "smartcard_main.h"
 
-void* smartcard_context_thread(SMARTCARD_CONTEXT* pContext)
+static void* smartcard_context_thread(SMARTCARD_CONTEXT* pContext)
 {
 	DWORD nCount;
 	LONG status = 0;
@@ -325,7 +325,7 @@ static UINT smartcard_init(DEVICE* device)
  *
  * @return 0 on success, otherwise a Win32 error code
  */
-UINT smartcard_complete_irp(SMARTCARD_DEVICE* smartcard, IRP* irp)
+static UINT smartcard_complete_irp(SMARTCARD_DEVICE* smartcard, IRP* irp)
 {
 	void* key;
 	key = (void*)(size_t) irp->CompletionId;
@@ -343,7 +343,7 @@ UINT smartcard_complete_irp(SMARTCARD_DEVICE* smartcard, IRP* irp)
  *
  * @return 0 on success, otherwise a Win32 error code
  */
-UINT smartcard_process_irp(SMARTCARD_DEVICE* smartcard, IRP* irp)
+static UINT smartcard_process_irp(SMARTCARD_DEVICE* smartcard, IRP* irp)
 {
 	void* key;
 	LONG status;
