@@ -122,14 +122,14 @@ struct _SMARTCARD_DEVICE
 	rdpContext* rdpcontext;
 };
 
-SMARTCARD_CONTEXT* smartcard_context_new(SMARTCARD_DEVICE* smartcard, SCARDCONTEXT hContext);
+SMARTCARD_CONTEXT* smartcard_context_new(SMARTCARD_DEVICE* smartcard,
+        SCARDCONTEXT hContext);
 void smartcard_context_free(SMARTCARD_CONTEXT* pContext);
 
-UINT smartcard_complete_irp(SMARTCARD_DEVICE* smartcard, IRP* irp);
-UINT smartcard_process_irp(SMARTCARD_DEVICE* smartcard, IRP* irp);
-
-LONG smartcard_irp_device_control_decode(SMARTCARD_DEVICE* smartcard, SMARTCARD_OPERATION* operation);
-LONG smartcard_irp_device_control_call(SMARTCARD_DEVICE* smartcard, SMARTCARD_OPERATION* operation);
+LONG smartcard_irp_device_control_decode(SMARTCARD_DEVICE* smartcard,
+        SMARTCARD_OPERATION* operation);
+LONG smartcard_irp_device_control_call(SMARTCARD_DEVICE* smartcard,
+                                       SMARTCARD_OPERATION* operation);
 
 #include "smartcard_pack.h"
 
