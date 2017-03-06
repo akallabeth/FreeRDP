@@ -72,7 +72,7 @@ struct _UDEVICE
 	/* Used in isochronous transfer */
 	void * isoch_queue;
 
-	pthread_mutex_t mutex_isoch;
+	HANDLE mutex_isoch;
 	sem_t   sem_id;
 };
 typedef UDEVICE * PUDEVICE;
@@ -80,6 +80,4 @@ typedef UDEVICE * PUDEVICE;
 int udev_new_by_id(UINT16 idVendor, UINT16 idProduct, IUDEVICE ***devArray);
 IUDEVICE* udev_new_by_addr(int bus_number, int dev_number);
 
-extern int libusb_debug;
-
-#endif /* __LIBUSB_UDEVICE_H */
+#endif /* URB_LIBUSB_UDEVICE_H */

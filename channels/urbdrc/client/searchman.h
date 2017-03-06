@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef __SEACH_MAN_H
-#define __SEACH_MAN_H
+#ifndef URB_SEACH_MAN_H
+#define URB_SEACH_MAN_H
 
 #include "urbdrc_types.h"
 
@@ -44,10 +44,9 @@ struct _USB_SEARCHMAN
 	USB_SEARCHDEV*	head; /* head device in linked list */
 	USB_SEARCHDEV*	tail; /* tail device in linked list */
 
-	pthread_mutex_t mutex;
 	HANDLE term_event;
 	sem_t sem_term;
-	int started;
+	BOOL started;
 
 	/* for urbdrc channel call back */
 	void* urbdrc;
@@ -57,7 +56,7 @@ struct _USB_SEARCHMAN
 	/* show all device in the list */
 	void (*show) (USB_SEARCHMAN* self);
 	/* start searchman */
-	BOOL (*start) (USB_SEARCHMAN* self, void * func);
+	BOOL (*start) (USB_SEARCHMAN* self, void * (*func)(void*));
 	/* close searchman */
 	void (*close) (USB_SEARCHMAN* self);
 	/* add a new usb device for search */

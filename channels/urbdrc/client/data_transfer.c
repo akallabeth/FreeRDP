@@ -27,6 +27,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <winpr/sysinfo.h>
+
 #include "urbdrc_types.h"
 #include "data_transfer.h"
 
@@ -74,11 +76,11 @@ static int func_check_isochronous_fds(IUDEVICE* pdev)
 		if (isoch_queue == NULL || !pdev)
 			return -1;
 
-		pthread_mutex_lock(&isoch_queue->isoch_loading);
+		WaitForSingleObject(isoch_queue->isoch_loading, INFINITE);
 
 		if (isoch_queue->head == NULL)
 		{
-			pthread_mutex_unlock(&isoch_queue->isoch_loading);
+			ReleaseMutex(isoch_queue->isoch_loading);
 			continue;
 		}
 		else
@@ -88,7 +90,7 @@ static int func_check_isochronous_fds(IUDEVICE* pdev)
 
 		if (!isoch || !isoch->out_data)
 		{
-			pthread_mutex_unlock(&isoch_queue->isoch_loading);
+			ReleaseMutex(isoch_queue->isoch_loading);
 			continue;
 		}
 		else
@@ -102,12 +104,12 @@ static int func_check_isochronous_fds(IUDEVICE* pdev)
 			if (!ret)
 				WLog_DBG(TAG, "isoch_queue_unregister_data: Not found isoch data!!");
 
-			pthread_mutex_unlock(&isoch_queue->isoch_loading);
+			ReleaseMutex(isoch_queue->isoch_loading);
 
 			if (pdev && !pdev->isSigToEnd(pdev))
 			{
 				callback->channel->Write(callback->channel, size_temp, data_temp, NULL);
-				zfree(data_temp);
+				free(data_temp);
 			}
 		}
 	}
@@ -289,7 +291,7 @@ static int urbdrc_process_io_control(URBDRC_CHANNEL_CALLBACK* callback, BYTE* da
 	out_data = (BYTE *) calloc(1, out_size);
 	if (!out_data)
 	{
-		zfree(OutputBuffer);
+		free(OutputBuffer);
 		return ERROR_OUTOFMEMORY;
 	}
 	data_write_UINT32(out_data + 0, InterfaceId); /** interface */
@@ -309,8 +311,8 @@ static int urbdrc_process_io_control(URBDRC_CHANNEL_CALLBACK* callback, BYTE* da
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
 
-	zfree(out_data);
-	zfree(OutputBuffer);
+	free(out_data);
+	free(OutputBuffer);
 
 	return CHANNEL_RC_OK;
 }
@@ -339,7 +341,7 @@ static int urbdrc_process_internal_io_control(URBDRC_CHANNEL_CALLBACK* callback,
 	InterfaceId = ((STREAM_ID_PROXY<<30) | pdev->get_ReqCompletion(pdev));
 
 	/** Fixme: Currently this is a FALSE bustime... */
-	urbdrc_get_mstime(frames);
+	frames = GetTickCount();
 
 	out_size = 32;
 	out_data = (BYTE *) malloc(out_size);
@@ -356,7 +358,7 @@ static int urbdrc_process_internal_io_control(URBDRC_CHANNEL_CALLBACK* callback,
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
 
-	zfree(out_data);
+	free(out_data);
 
 	return 0;
 }
@@ -420,7 +422,7 @@ static int urbdrc_process_query_device_text(URBDRC_CHANNEL_CALLBACK* callback, B
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
 
-	zfree(out_data);
+	free(out_data);
 
 	return 0;
 }
@@ -526,7 +528,7 @@ static int urb_select_configuration(URBDRC_CHANNEL_CALLBACK* callback, BYTE* dat
 
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
-	zfree(out_data);
+	free(out_data);
 	return 0;
 }
 
@@ -600,13 +602,13 @@ static int urb_select_interface(URBDRC_CHANNEL_CALLBACK* callback, BYTE* data, U
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
 
-	zfree(out_data);
+	free(out_data);
 
 	return 0;
 }
 
 static int urb_control_transfer(URBDRC_CHANNEL_CALLBACK* callback, BYTE* data,
-	UINT32 data_sizem, UINT32 MessageId, IUDEVMAN* udevman, UINT32 UsbDevice, int transferDir, int External)
+    UINT32 data_sizem, UINT32 MessageId, IUDEVMAN* udevman, UINT32 UsbDevice, int transferDir, int External)
 {
 	IUDEVICE* pdev;
 	UINT32 out_size, RequestId, InterfaceId, EndpointAddress, PipeHandle;
@@ -712,7 +714,7 @@ static int urb_control_transfer(URBDRC_CHANNEL_CALLBACK* callback, BYTE* data,
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
 
-	zfree(out_data);
+	free(out_data);
 
 	return 0;
 }
@@ -797,7 +799,7 @@ static int urb_bulk_or_interrupt_transfer(URBDRC_CHANNEL_CALLBACK* callback, BYT
 	if (pdev && !pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
 
-	zfree(out_data);
+	free(out_data);
 
 	return 0;
 }
@@ -904,7 +906,7 @@ static int urb_isoch_transfer(URBDRC_CHANNEL_CALLBACK * callback, BYTE * data,
 
 	if(noAck)
 	{
-		zfree(out_data);
+		free(out_data);
 		return 0;
 	}
 
@@ -952,15 +954,15 @@ static int urb_isoch_transfer(URBDRC_CHANNEL_CALLBACK * callback, BYTE * data,
 
 #if ISOCH_FIFO
 	if(!noAck){
-		pthread_mutex_lock(&isoch_queue->isoch_loading);
+		WaitForSingleObject(isoch_queue->isoch_loading, INFINITE);
 		isoch->out_data = out_data;
 		isoch->out_size = out_size;
-		pthread_mutex_unlock(&isoch_queue->isoch_loading);
+		ReleaseMutex(isoch_queue->isoch_loading);
 	}
 #else
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
-	zfree(out_data);
+	free(out_data);
 #endif
 
 	if (nullBuffer)
@@ -1058,7 +1060,7 @@ static int urb_control_descriptor_request(URBDRC_CHANNEL_CALLBACK* callback,
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
 
-	zfree(out_data);
+	free(out_data);
 	return 0;
 }
 
@@ -1148,7 +1150,7 @@ static int urb_control_get_status_request(URBDRC_CHANNEL_CALLBACK * callback, BY
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
 
-	zfree(out_data);
+	free(out_data);
 
 	return 0;
 }
@@ -1256,7 +1258,7 @@ static int urb_control_vendor_or_class_request(URBDRC_CHANNEL_CALLBACK * callbac
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
 
-	zfree(out_data);
+	free(out_data);
 	return 0;
 }
 
@@ -1354,7 +1356,7 @@ static int urb_os_feature_descriptor_request(URBDRC_CHANNEL_CALLBACK * callback,
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
 
-	zfree(out_data);
+	free(out_data);
 
 	return 0;
 }
@@ -1447,7 +1449,7 @@ static int urb_pipe_request(URBDRC_CHANNEL_CALLBACK * callback, BYTE * data,
 
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
-	zfree(out_data);
+	free(out_data);
 
 	return 0;
 }
@@ -1480,7 +1482,7 @@ static int urb_get_current_frame_number(URBDRC_CHANNEL_CALLBACK* callback,
 	data_read_UINT32(data + 4, OutputBufferSize);
 
 	 /** Fixme: Need to fill actual frame number!!*/
-	urbdrc_get_mstime(dummy_frames);
+	dummy_frames = GetTickCount();
 
 	out_size = 40;
 	out_data = (BYTE *) malloc(out_size);
@@ -1504,7 +1506,7 @@ static int urb_get_current_frame_number(URBDRC_CHANNEL_CALLBACK* callback,
 
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
-	zfree(out_data);
+	free(out_data);
 	return 0;
 }
 
@@ -1586,7 +1588,7 @@ static int urb_control_get_configuration_request(URBDRC_CHANNEL_CALLBACK* callba
 
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
-	zfree(out_data);
+	free(out_data);
 	return 0;
 }
 
@@ -1663,7 +1665,7 @@ static int urb_control_get_interface_request(URBDRC_CHANNEL_CALLBACK* callback,
 
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
-	zfree(out_data);
+	free(out_data);
 	return 0;
 }
 
@@ -1768,7 +1770,7 @@ static int urb_control_feature_request(URBDRC_CHANNEL_CALLBACK * callback, BYTE 
 
 	if (!pdev->isSigToEnd(pdev))
 		callback->channel->Write(callback->channel, out_size, out_data, NULL);
-	zfree(out_data);
+	free(out_data);
 	return 0;
 }
 
@@ -2320,8 +2322,8 @@ void* urbdrc_process_udev_data_transfer(void* arg)
 	if (pdev == NULL || pdev->isSigToEnd(pdev))
 	{
 		if (transfer_data->pBuffer)
-			zfree(transfer_data->pBuffer);
-		zfree(transfer_data);
+			free(transfer_data->pBuffer);
+		free(transfer_data);
 		return 0;
 	}
 
@@ -2427,8 +2429,8 @@ void* urbdrc_process_udev_data_transfer(void* arg)
 	if (transfer_data)
 	{
 		if (transfer_data->pBuffer)
-			zfree(transfer_data->pBuffer);
-		zfree(transfer_data);
+			free(transfer_data->pBuffer);
+		free(transfer_data);
 	}
 
 	if (pdev)

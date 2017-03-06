@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef __URBDRC_TYPES_H
-#define __URBDRC_TYPES_H
+#ifndef URB_URBDRC_TYPES_H
+#define URB_URBDRC_TYPES_H
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -31,17 +31,11 @@
 #include <freerdp/utils/msusb.h>
 
 #include <uuid.h>
-#include <pthread.h>
 #include <semaphore.h>
 
 #include <winpr/stream.h>
 
 #define TAG CHANNELS_TAG("urbdrc.client")
-#ifdef WITH_DEBUG_DVC
-#define DEBUG_DVC(...) WLog_DBG(TAG, __VA_ARGS__)
-#else
-#define DEBUG_DVC(...) do { } while (0)
-#endif
 
 #define CAPABILITIES_NEGOTIATOR				0x00000000
 #define CLIENT_DEVICE_SINK				0x00000001
@@ -323,11 +317,5 @@ enum device_descriptor_table
 
 #define ISOCH_FIFO						1
 #define WAIT_COMPLETE_SLEEP					10000  /* for cpu high loading */
-
-#define urbdrc_get_mstime(_t) do { \
-		struct timeval _tp; \
-		gettimeofday(&_tp, 0); \
-		_t = (_tp.tv_sec * 1000) + (_tp.tv_usec / 1000); \
-	} while (0)
 
 #endif /* __URBDRC_TYPES_H */

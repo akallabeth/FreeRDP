@@ -20,11 +20,13 @@
 
 
 
-#ifndef __URBDRC_MAIN_H
-#define __URBDRC_MAIN_H
+#ifndef URB_URBDRC_MAIN_H
+#define URB_URBDRC_MAIN_H
 
 #include "searchman.h"
 #include "isoch_queue.h"
+
+#include <winpr/wlog.h>
 
 #define DEVICE_HARDWARE_ID_SIZE				32
 #define DEVICE_COMPATIBILITY_ID_SIZE			36
@@ -76,6 +78,7 @@ struct _URBDRC_PLUGIN
 	UINT32 first_channel_id;
 	UINT32 vchannel_status;
 	char* subsystem;
+	wLog* log;
 };
 
 typedef void (*PREGISTERURBDRCSERVICE)(IWTSPlugin* plugin, IUDEVMAN* udevman);
@@ -199,11 +202,11 @@ struct _IUDEVMAN
 	void (*free) (IUDEVMAN* idevman);
 
 	/* Manage devices */
-	void (*rewind) (IUDEVMAN* idevman);
-	int (*has_next) (IUDEVMAN* idevman);
-	int (*unregister_udevice) (IUDEVMAN* idevman, int bus_number, int dev_number);
-	int (*register_udevice) (IUDEVMAN* idevman, int bus_number,
-		int dev_number, int UsbDevice, UINT16 idVendor, UINT16 idProduct, int flag);
+	BOOL (*rewind) (IUDEVMAN* idevman);
+	BOOL (*has_next) (IUDEVMAN* idevman);
+	BOOL (*unregister_udevice) (IUDEVMAN* idevman, int bus_number, int dev_number);
+	BOOL (*register_udevice) (IUDEVMAN* idevman, int bus_number,
+	    int dev_number, int UsbDevice, UINT16 idVendor, UINT16 idProduct, int flag);
 	IUDEVICE *(*get_next) (IUDEVMAN* idevman);
 	IUDEVICE *(*get_udevice_by_UsbDevice) (IUDEVMAN* idevman, UINT32 UsbDevice);
 	IUDEVICE *(*get_udevice_by_UsbDevice_try_again) (IUDEVMAN* idevman, UINT32 UsbDevice);
@@ -218,10 +221,10 @@ struct _IUDEVMAN
 	BASIC_DEVMAN_STATE_DEFINED(sem_timeout, int);
 
 	/* control semaphore or mutex lock */
-	void (*loading_lock) (IUDEVMAN* idevman);
-	void (*loading_unlock) (IUDEVMAN* idevman);
-	void (*push_urb) (IUDEVMAN* idevman);
-	void (*wait_urb) (IUDEVMAN* idevman);
+	BOOL (*loading_lock) (IUDEVMAN* idevman);
+	BOOL (*loading_unlock) (IUDEVMAN* idevman);
+	BOOL (*push_urb) (IUDEVMAN* idevman);
+	BOOL (*wait_urb) (IUDEVMAN* idevman);
 };
 
 #endif /* __URBDRC_MAIN_H */

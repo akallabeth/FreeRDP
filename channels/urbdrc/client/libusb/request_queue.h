@@ -46,16 +46,18 @@ struct _REQUEST_QUEUE
 	TRANSFER_REQUEST* head; /* head request in linked queue */
 	TRANSFER_REQUEST* tail; /* tail request in linked queue */
 
-	pthread_mutex_t request_loading;
+	HANDLE request_loading;
 
 	/* request queue manager service */
-	void (*rewind) (REQUEST_QUEUE *queue);
-	int (*has_next) (REQUEST_QUEUE* queue);
-	int (*unregister_request) (REQUEST_QUEUE *queue, UINT32 RequestId);
+	BOOL (*rewind) (REQUEST_QUEUE *queue);
+	BOOL (*has_next) (REQUEST_QUEUE* queue);
+	BOOL (*unregister_request) (REQUEST_QUEUE *queue, UINT32 RequestId);
 	TRANSFER_REQUEST *(*get_next) (REQUEST_QUEUE* queue);
 	TRANSFER_REQUEST *(*get_request_by_ep) (REQUEST_QUEUE *queue, BYTE ep);
 	TRANSFER_REQUEST *(*register_request) (REQUEST_QUEUE* queue, 
 		UINT32 RequestId, struct libusb_transfer * transfer, BYTE endpoint);
+
+	void (*free)(REQUEST_QUEUE* queue);
 };
 
 
