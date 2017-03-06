@@ -31,7 +31,6 @@
 #include <freerdp/utils/msusb.h>
 
 #include <uuid.h>
-#include <semaphore.h>
 
 #include <winpr/stream.h>
 

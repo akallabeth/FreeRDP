@@ -45,8 +45,7 @@ struct _USB_SEARCHMAN
 	USB_SEARCHDEV*	tail; /* tail device in linked list */
 
 	HANDLE term_event;
-	sem_t sem_term;
-	BOOL started;
+	HANDLE sem_term;
 
 	/* for urbdrc channel call back */
 	void* urbdrc;

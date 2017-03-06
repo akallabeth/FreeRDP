@@ -264,6 +264,7 @@ static int udevman_unregister_udevice(IUDEVMAN* idevman, int bus_number, int dev
 	}
 	idevman->loading_unlock(idevman);
 
+	// TODO: Unify device cleanup in single function
 	if (dev)
 	{
 		/* reset device */
@@ -279,14 +280,16 @@ static int udevman_unregister_udevice(IUDEVMAN* idevman, int bus_number, int dev
 		/* release all interface and  attach kernel driver */
 		dev->iface.attach_kernel_driver((IUDEVICE*)dev);
 
-		if(dev->request_queue) free(dev->request_queue);
+		if(dev->request_queue)
+			dev->request_queue->free(dev->request_queue);
+
 		/* free the config descriptor that send from windows */
 		msusb_msconfig_free(dev->MsConfig);
 
 		libusb_close (dev->libusb_handle);
 		libusb_close (dev->hub_handle);
 
-		sem_destroy(&dev->sem_id);
+		CloseHandle(dev->sem_id);
 		/* free device info */
 		if (dev->devDescriptor)
 			free(dev->devDescriptor);

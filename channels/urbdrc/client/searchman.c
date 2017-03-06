@@ -143,7 +143,6 @@ static BOOL searchman_start(USB_SEARCHMAN* self, void* (*func)(void*))
 
 	CloseHandle(thread);
 
-	self->started = TRUE;
 	return TRUE;
 }
 
@@ -181,7 +180,7 @@ void searchman_free(USB_SEARCHMAN* self)
 	}
 
 	/* free searchman */
-	sem_destroy(&self->sem_term);
+	CloseHandle(self->sem_term);
 	CloseHandle(self->term_event);
 	free(self);
 }
@@ -208,12 +207,12 @@ USB_SEARCHMAN* searchman_new(void * urbdrc, UINT32 UsbDevice)
 	searchman->close = searchman_close;
 	searchman->free = searchman_free;
 
-	searchman->started = FALSE;
 	searchman->term_event = CreateEvent(NULL, TRUE, FALSE, NULL);
 	if (!searchman->term_event)
 		goto out_error_event;
 
-	if (sem_init(&searchman->sem_term, 0, 0) < 0)
+	searchman->sem_term = CreateSemaphoreA(NULL, 0, INT32_MAX, "searchman->sem_term");
+	if (!searchman->sem_term)
 		goto out_error_sem;
 
 	return searchman;
