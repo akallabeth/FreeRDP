@@ -335,7 +335,7 @@ cleanup:
 	return ret;
 }
 
-static int init_creds(LPCWSTR username, size_t username_len, LPCWSTR password, size_t password_len)
+static int init_creds(const SEC_WINNT_AUTH_IDENTITY* identity)
 {
 	krb5_error_code ret = 0;
 	krb5_context ctx = NULL;
@@ -346,12 +346,15 @@ static int init_creds(LPCWSTR username, size_t username_len, LPCWSTR password, s
 	char* lpassword = NULL;
 	int flags = 0;
 	char* pstr = NULL;
-	size_t krb_name_len = 0;
 	size_t lrealm_len = 0;
-	size_t lusername_len = 0;
+	size_t krb_name_len;
 	int status = 0;
-	status = ConvertFromUnicode(CP_UTF8, 0, username,
-	                            username_len, &lusername, 0, NULL, NULL);
+
+	if (!identity)
+		return -1;
+
+	status = ConvertFromUnicode(CP_UTF8, 0, identity->User,
+	                            identity->UserLength, &lusername, 0, NULL, NULL);
 
 	if (status <= 0)
 	{
@@ -359,8 +362,17 @@ static int init_creds(LPCWSTR username, size_t username_len, LPCWSTR password, s
 		goto cleanup;
 	}
 
-	status = ConvertFromUnicode(CP_UTF8, 0, password,
-	                            password_len, &lpassword, 0, NULL, NULL);
+	status = ConvertFromUnicode(CP_UTF8, 0, identity->Domain,
+	                            identity->DomainLength, &lrealm, 0, NULL, NULL);
+
+	if (status <= 0)
+	{
+		WLog_ERR(TAG, "Failed to convert domain");
+		goto cleanup;
+	}
+
+	status = ConvertFromUnicode(CP_UTF8, 0, identity->Password,
+	                            identity->PasswordLength, &lpassword, 0, NULL, NULL);
 
 	if (status <= 0)
 	{
@@ -377,18 +389,32 @@ static int init_creds(LPCWSTR username, size_t username_len, LPCWSTR password, s
 		goto cleanup;
 	}
 
-	ret = krb5_get_default_realm(ctx, &lrealm);
-
-	if (ret)
+	if (realm)
 	{
-		WLog_WARN(TAG, "could not get Kerberos default realm");
-		goto cleanup;
+		ret = krb5_set_default_realm(ctx, lrealm);
+		free(lrealm);
+
+		if (ret)
+		{
+			WLog_WARN(TAG, "could not set Kerberos default realm");
+			goto cleanup;
+		}
 	}
 
-	lrealm_len = strlen(lrealm);
-	lusername_len = strlen(lusername);
-	krb_name_len = lusername_len + lrealm_len + 1; // +1 for '@'
-	krb_name = calloc(krb_name_len + 1, sizeof(char));
+	{
+		ret = krb5_get_default_realm(ctx, &lrealm);
+
+		if (ret)
+		{
+			WLog_WARN(TAG, "could not get Kerberos default realm");
+			goto cleanup;
+		}
+
+		lrealm_len = strlen(lrealm);
+	}
+
+	krb_name_len = identity->UserLength + lrealm_len + 1 + 1;
+	krb_name = calloc(krb_name_len, sizeof(char));
 
 	if (!krb_name)
 	{
@@ -398,7 +424,7 @@ static int init_creds(LPCWSTR username, size_t username_len, LPCWSTR password, s
 	}
 
 	/* Set buffer */
-	_snprintf(krb_name, krb_name_len + 1, "%s@%s", lusername, lrealm);
+	_snprintf(krb_name, krb_name_len, "%s@%s", lusername, lrealm);
 #ifdef WITH_DEBUG_NLA
 	WLog_DBG(TAG, "copied string is %s\n", krb_name);
 #endif
@@ -426,11 +452,6 @@ static int init_creds(LPCWSTR username, size_t username_len, LPCWSTR password, s
 	}
 
 cleanup:
-	free(lusername);
-	free(lpassword);
-
-	if (krb_name)
-		free(krb_name);
 
 	if (lrealm)
 		krb5_free_default_realm(ctx, lrealm);
@@ -441,6 +462,9 @@ cleanup:
 	if (ctx)
 		krb5_free_context(ctx);
 
+	free(lusername);
+	free(lpassword);
+	free(krb_name);
 	return ret;
 }
 #endif
@@ -505,10 +529,7 @@ static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextA(PCredHandle
 				 * If we use smartcard-logon, the credentials have already
 				 * been acquired by pkinit process. If not, returned error previously.
 				 */
-				if (init_creds(context->credentials->identity.User,
-				               context->credentials->identity.UserLength,
-				               context->credentials->identity.Password,
-				               context->credentials->identity.PasswordLength))
+				if (init_creds(&context->credentials->identity))
 					return SEC_E_NO_CREDENTIALS;
 
 				WLog_INFO(TAG, "Authenticated to Kerberos v5 via login/password");
@@ -641,7 +662,7 @@ static SECURITY_STATUS SEC_ENTRY kerberos_QueryContextAttributesA(PCtxtHandle ph
 static SECURITY_STATUS SEC_ENTRY kerberos_EncryptMessage(PCtxtHandle phContext, ULONG fQOP,
         PSecBufferDesc pMessage, ULONG MessageSeqNo)
 {
-	int index;
+	ULONG index;
 	int conf_state;
 	UINT32 major_status;
 	UINT32 minor_status;
@@ -654,7 +675,7 @@ static SECURITY_STATUS SEC_ENTRY kerberos_EncryptMessage(PCtxtHandle phContext, 
 	if (!context)
 		return SEC_E_INVALID_HANDLE;
 
-	for (index = 0; index < (int) pMessage->cBuffers; index++)
+	for (index = 0; index < pMessage->cBuffers; index++)
 	{
 		if (pMessage->pBuffers[index].BufferType == SECBUFFER_DATA)
 			data_buffer = &pMessage->pBuffers[index];
@@ -686,7 +707,7 @@ static SECURITY_STATUS SEC_ENTRY kerberos_EncryptMessage(PCtxtHandle phContext, 
 static SECURITY_STATUS SEC_ENTRY kerberos_DecryptMessage(PCtxtHandle phContext,
         PSecBufferDesc pMessage, ULONG MessageSeqNo, ULONG* pfQOP)
 {
-	int index;
+	ULONG index;
 	int conf_state;
 	UINT32 major_status;
 	UINT32 minor_status;
@@ -699,7 +720,7 @@ static SECURITY_STATUS SEC_ENTRY kerberos_DecryptMessage(PCtxtHandle phContext,
 	if (!context)
 		return SEC_E_INVALID_HANDLE;
 
-	for (index = 0; index < (int) pMessage->cBuffers; index++)
+	for (index = 0; index < pMessage->cBuffers; index++)
 	{
 		if (pMessage->pBuffers[index].BufferType == SECBUFFER_DATA)
 			data_buffer_to_unwrap = &pMessage->pBuffers[index];
