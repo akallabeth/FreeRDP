@@ -1200,7 +1200,7 @@ static void VCAPITYPE drdynvc_virtual_channel_open_event_ex(LPVOID lpUserParam, 
 
 	if (!drdynvc || (drdynvc->OpenHandle != openHandle))
 	{
-		WLog_Print(drdynvc->log, WLOG_ERROR, "drdynvc_virtual_channel_open_event: error no match");
+		WLog_ERR(TAG, "drdynvc_virtual_channel_open_event: error no match");
 		Stream_Free((wStream*) pData, TRUE);
 		return;
 	}
@@ -1527,7 +1527,7 @@ static VOID VCAPITYPE drdynvc_virtual_channel_init_event_ex(LPVOID lpUserParam, 
 
 	if (!drdynvc || (drdynvc->InitHandle != pInitHandle))
 	{
-		WLog_Print(drdynvc->log, WLOG_ERROR, "drdynvc_virtual_channel_init_event: error no match");
+		WLog_ERR(TAG, "drdynvc_virtual_channel_init_event: error no match");
 		return;
 	}
 
@@ -1599,10 +1599,7 @@ BOOL VCAPITYPE VirtualChannelEntryEx(PCHANNEL_ENTRY_POINTS_EX pEntryPoints, PVOI
 	drdynvc = (drdynvcPlugin*) calloc(1, sizeof(drdynvcPlugin));
 
 	if (!drdynvc)
-	{
-		WLog_Print(drdynvc->log, WLOG_ERROR, "calloc failed!");
 		return FALSE;
-	}
 
 	drdynvc->channelDef.options =
 	    CHANNEL_OPTION_INITIALIZED |
