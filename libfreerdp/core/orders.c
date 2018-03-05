@@ -1706,25 +1706,17 @@ static BOOL update_read_cache_bitmap_order(wStream* s,
 			Stream_Read(s, bitmapComprHdr, 8); /* bitmapComprHdr (8 bytes) */
 			cache_bitmap->bitmapLength -= 8;
 		}
-
-		if (Stream_GetRemainingLength(s) < cache_bitmap->bitmapLength)
-			return FALSE;
-
-		Stream_GetPointer(s, cache_bitmap->bitmapDataStream);
-		Stream_Seek(s, cache_bitmap->bitmapLength);
-	}
-	else
-	{
-		if (Stream_GetRemainingLength(s) < cache_bitmap->bitmapLength)
-			return FALSE;
-
-		Stream_GetPointer(s, cache_bitmap->bitmapDataStream);
-		Stream_Seek(s, cache_bitmap->bitmapLength); /* bitmapDataStream */
 	}
 
+	if (Stream_GetRemainingLength(s) < cache_bitmap->bitmapLength)
+		return FALSE;
+
+	Stream_GetPointer(s, cache_bitmap->bitmapDataStream);
+	Stream_Seek(s, cache_bitmap->bitmapLength);
 	cache_bitmap->compressed = compressed;
 	return TRUE;
 }
+
 int update_approximate_cache_bitmap_order(const CACHE_BITMAP_ORDER*
         cache_bitmap,
         BOOL compressed, UINT16* flags)
@@ -1833,22 +1825,13 @@ static BOOL update_read_cache_bitmap_v2_order(wStream* s,
 			                   cache_bitmap_v2->cbUncompressedSize); /* cbUncompressedSize (2 bytes) */
 			cache_bitmap_v2->bitmapLength = cache_bitmap_v2->cbCompMainBodySize;
 		}
-
-		if (Stream_GetRemainingLength(s) < cache_bitmap_v2->bitmapLength)
-			return FALSE;
-
-		Stream_GetPointer(s, cache_bitmap_v2->bitmapDataStream);
-		Stream_Seek(s, cache_bitmap_v2->bitmapLength);
-	}
-	else
-	{
-		if (Stream_GetRemainingLength(s) < cache_bitmap_v2->bitmapLength)
-			return FALSE;
-
-		Stream_GetPointer(s, cache_bitmap_v2->bitmapDataStream);
-		Stream_Seek(s, cache_bitmap_v2->bitmapLength);
 	}
 
+	if (Stream_GetRemainingLength(s) < cache_bitmap_v2->bitmapLength)
+		return FALSE;
+
+	Stream_GetPointer(s, cache_bitmap_v2->bitmapDataStream);
+	Stream_Seek(s, cache_bitmap_v2->bitmapLength);
 	cache_bitmap_v2->compressed = compressed;
 	return TRUE;
 }
@@ -2018,7 +2001,7 @@ static BOOL update_read_cache_color_table_order(wStream* s,
         CACHE_COLOR_TABLE_ORDER* cache_color_table,
         UINT16 flags)
 {
-	int i;
+	UINT32 i;
 	UINT32* colorTable;
 
 	if (Stream_GetRemainingLength(s) < 3)
@@ -2037,9 +2020,9 @@ static BOOL update_read_cache_color_table_order(wStream* s,
 	if (Stream_GetRemainingLength(s) < cache_color_table->numberColors * 4)
 		return FALSE;
 
-	colorTable = (UINT32*) &cache_color_table->colorTable;
+	colorTable = &cache_color_table->colorTable;
 
-	for (i = 0; i < (int) cache_color_table->numberColors; i++)
+	for (i = 0; i < cache_color_table->numberColors; i++)
 		update_read_color_quad(s, &colorTable[i]);
 
 	return TRUE;
@@ -3252,7 +3235,6 @@ static BOOL update_recv_primary_order(rdpUpdate* update, wStream* s, BYTE flags)
 static BOOL update_recv_secondary_order(rdpUpdate* update, wStream* s,
                                         BYTE flags)
 {
-	BYTE* next;
 	BYTE orderType;
 	UINT16 extraFlags;
 	UINT16 orderLength;
@@ -3268,7 +3250,6 @@ static BOOL update_recv_secondary_order(rdpUpdate* update, wStream* s,
 	Stream_Read_UINT16(s, orderLength); /* orderLength (2 bytes) */
 	Stream_Read_UINT16(s, extraFlags); /* extraFlags (2 bytes) */
 	Stream_Read_UINT8(s, orderType); /* orderType (1 byte) */
-	next = Stream_Pointer(s) + ((INT16) orderLength) + 7;
 
 	if (orderType < SECONDARY_DRAWING_ORDER_COUNT)
 		WLog_Print(update->log, WLOG_DEBUG,  "%s Secondary Drawing Order (0x%02"PRIX8")",
@@ -3393,10 +3374,10 @@ static BOOL update_recv_secondary_order(rdpUpdate* update, wStream* s,
 			break;
 
 		default:
-			break;
+			WLog_ERR(TAG, "Unknown order %08X", orderType);
+			return FALSE;
 	}
 
-	Stream_SetPointer(s, next);
 	return TRUE;
 }
 static BOOL update_recv_altsec_order(rdpUpdate* update, wStream* s,
