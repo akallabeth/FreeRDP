@@ -3235,9 +3235,10 @@ static BOOL update_recv_primary_order(rdpUpdate* update, wStream* s, BYTE flags)
 static BOOL update_recv_secondary_order(rdpUpdate* update, wStream* s,
                                         BYTE flags)
 {
+	size_t start, end;
 	BYTE orderType;
 	UINT16 extraFlags;
-	UINT16 orderLength;
+	INT16 orderLength;
 	rdpContext* context = update->context;
 	rdpSecondaryUpdate* secondary = update->secondary;
 
@@ -3250,6 +3251,7 @@ static BOOL update_recv_secondary_order(rdpUpdate* update, wStream* s,
 	Stream_Read_UINT16(s, orderLength); /* orderLength (2 bytes) */
 	Stream_Read_UINT16(s, extraFlags); /* extraFlags (2 bytes) */
 	Stream_Read_UINT8(s, orderType); /* orderType (1 byte) */
+	start = Stream_GetPosition(s);
 
 	if (orderType < SECONDARY_DRAWING_ORDER_COUNT)
 		WLog_Print(update->log, WLOG_DEBUG,  "%s Secondary Drawing Order (0x%02"PRIX8")",
@@ -3376,6 +3378,16 @@ static BOOL update_recv_secondary_order(rdpUpdate* update, wStream* s,
 		default:
 			WLog_ERR(TAG, "Unknown order %08X", orderType);
 			return FALSE;
+	}
+
+	end = Stream_GetPosition(s);
+
+	if (end - start != orderLength + 7)
+	{
+		size_t size = end - start;
+		size_t expect = orderLength + 7;
+		WLog_ERR(TAG, "order length mismatch expected=%"PRIdz", got=%"PRIdz, size, expect);
+		return FALSE;
 	}
 
 	return TRUE;
