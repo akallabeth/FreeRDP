@@ -142,7 +142,7 @@ static BOOL shadow_client_context_new(freerdp_peer* peer,
 	settings->BitmapCacheV3Enabled = TRUE;
 	settings->FrameMarkerCommandEnabled = TRUE;
 	settings->SurfaceFrameMarkerEnabled = TRUE;
-	settings->SupportGraphicsPipeline = TRUE;
+	settings->SupportGraphicsPipeline = FALSE;
 	settings->GfxH264 = FALSE;
 	settings->DrawAllowSkipAlpha = TRUE;
 	settings->DrawAllowColorSubsampling = TRUE;

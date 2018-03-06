@@ -59,7 +59,7 @@
 
 static void* transport_client_thread(void* arg);
 
-#ifdef WITH_GSSAPI
+#ifdef WITH_KRB5
 
 #include <krb5.h>
 #include <winpr/library.h>
@@ -150,7 +150,7 @@ out:
 	krb5_free_context(context);
 	return ret;
 }
-#endif /* WITH_GSSAPI */
+#endif /* WITH_KRB5 */
 
 static void transport_ssl_cb(SSL* ssl, int where, int ret)
 {
@@ -174,7 +174,7 @@ static void transport_ssl_cb(SSL* ssl, int where, int ret)
 					if (transport->NlaMode)
 					{
 						UINT32 kret = 0;
-#ifdef WITH_GSSAPI
+#ifdef WITH_KRB5
 
 						if ((strlen(transport->settings->Domain) != 0) &&
 						    (strncmp(transport->settings->Domain, ".", 1) != 0))
@@ -184,7 +184,7 @@ static void transport_ssl_cb(SSL* ssl, int where, int ret)
 							                                    transport->settings->Password);
 						}
 						else
-#endif /* WITH_GSSAPI */
+#endif /* WITH_KRB5 */
 							kret = FREERDP_ERROR_CONNECT_PASSWORD_CERTAINLY_EXPIRED;
 
 						if (!freerdp_get_last_error(transport->context))
@@ -642,7 +642,7 @@ static int transport_read_layer_bytes(rdpTransport* transport, wStream* s,
 int transport_read_pdu(rdpTransport* transport, wStream* s)
 {
 	int status;
-	size_t position;
+	int position;
 	int pduLength;
 	BYTE* header;
 	pduLength = 0;
@@ -767,7 +767,8 @@ int transport_read_pdu(rdpTransport* transport, wStream* s)
 	if (!Stream_EnsureCapacity(s, Stream_GetPosition(s) + pduLength))
 		return -1;
 
-	status = transport_read_layer_bytes(transport, s, pduLength - Stream_GetPosition(s));
+	status = transport_read_layer_bytes(transport, s,
+	                                    pduLength - Stream_GetPosition(s));
 
 	if (status != 1)
 		return status;
@@ -783,7 +784,7 @@ int transport_read_pdu(rdpTransport* transport, wStream* s)
 
 int transport_write(rdpTransport* transport, wStream* s)
 {
-	size_t length;
+	int length;
 	int status = -1;
 	int writtenlength = 0;
 
@@ -954,7 +955,7 @@ void transport_get_fds(rdpTransport* transport, void** rfds, int* rcount)
 		rfds[index] = GetEventWaitObject(events[index]);
 	}
 
-	rfds[nCount + 1] = GetEventWaitObject(transport->rereadEvent);
+	rfds[nCount] = GetEventWaitObject(transport->rereadEvent);
 }
 
 BOOL transport_is_write_blocked(rdpTransport* transport)
@@ -996,13 +997,8 @@ int transport_check_fds(rdpTransport* transport)
 		ResetEvent(transport->rereadEvent);
 	}
 
-	while (now < dueDate)
+	while (!freerdp_shall_disconnect(transport->context->instance) && (now < dueDate))
 	{
-		if (freerdp_shall_disconnect(transport->context->instance))
-		{
-			return -1;
-		}
-
 		/**
 		 * Note: transport_read_pdu tries to read one PDU from
 		 * the transport layer.
@@ -1031,7 +1027,8 @@ int transport_check_fds(rdpTransport* transport)
 		 * 	 0: success
 		 * 	 1: redirection
 		 */
-		recv_status = transport->ReceiveCallback(transport, received, transport->ReceiveExtra);
+		recv_status = transport->ReceiveCallback(transport, received,
+		              transport->ReceiveExtra);
 		Stream_Release(received);
 
 		/* session redirection or activation */
@@ -1195,9 +1192,7 @@ static void* transport_client_thread(void* arg)
 		{
 			if (!freerdp_check_event_handles(context))
 			{
-				if (freerdp_get_last_error(context) == FREERDP_ERROR_SUCCESS)
-					WLog_Print(transport->log, WLOG_ERROR, "freerdp_check_event_handles()");
-
+				WLog_Print(transport->log, WLOG_ERROR, "freerdp_check_event_handles()");
 				rdp_set_error_info(rdp, ERRINFO_PEER_DISCONNECTED);
 				break;
 			}

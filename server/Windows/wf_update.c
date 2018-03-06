@@ -37,7 +37,7 @@
 
 #define TAG SERVER_TAG("windows")
 
-DWORD WINAPI wf_update_thread(LPVOID lpParam)
+static DWORD WINAPI wf_update_thread(LPVOID lpParam)
 {
 	int index;
 	int peerindex;
@@ -105,7 +105,7 @@ DWORD WINAPI wf_update_thread(LPVOID lpParam)
 	return 0;
 }
 
-void wf_update_encode(wfInfo* wfi)
+static void wf_update_encode(wfInfo* wfi)
 {
 	RFX_RECT rect;
 	long height, width;
@@ -142,7 +142,7 @@ void wf_update_encode(wfInfo* wfi)
 	cmd->bitmapData = Stream_Buffer(wfi->s);
 }
 
-void wf_update_peer_send(wfInfo* wfi, wfPeerContext* context)
+static void wf_update_peer_send(wfInfo* wfi, wfPeerContext* context)
 {
 	freerdp_peer* client = ((rdpContext*) context)->peer;
 
@@ -173,7 +173,7 @@ void wf_update_peer_send(wfInfo* wfi, wfPeerContext* context)
 	context->frame_idx++;
 }
 
-void wf_update_encoder_reset(wfInfo* wfi)
+static void wf_update_encoder_reset(wfInfo* wfi)
 {
 	if (wf_info_lock(wfi) > 0)
 	{
@@ -198,7 +198,7 @@ void wf_update_encoder_reset(wfInfo* wfi)
 	}
 }
 
-void wf_update_peer_activate(wfInfo* wfi, wfPeerContext* context)
+static void wf_update_peer_activate(wfInfo* wfi, wfPeerContext* context)
 {
 	if (wf_info_lock(wfi) > 0)
 	{
@@ -217,7 +217,7 @@ void wf_update_peer_activate(wfInfo* wfi, wfPeerContext* context)
 	}
 }
 
-void wf_update_peer_deactivate(wfInfo* wfi, wfPeerContext* context)
+static void wf_update_peer_deactivate(wfInfo* wfi, wfPeerContext* context)
 {
 	if (wf_info_lock(wfi) > 0)
 	{

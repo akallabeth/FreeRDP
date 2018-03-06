@@ -184,46 +184,43 @@ struct _RDP_SHADOW_ENTRY_POINTS
 	pfnShadowEnumMonitors EnumMonitors;
 };
 
-#define RDP_SHADOW_SUBSYSTEM_COMMON() \
-	RDP_SHADOW_ENTRY_POINTS ep; \
-	HANDLE event; \
-	int numMonitors; \
-	int captureFrameRate; \
-	int selectedMonitor; \
-	MONITOR_DEF monitors[16]; \
-	MONITOR_DEF virtualScreen; \
-	\
-	/* This event indicates that we have graphic change */ \
-	/* such as screen update and resize. It should not be */ \
-	/* used by subsystem implementation directly */ \
-	rdpShadowMultiClientEvent* updateEvent; \
-	\
-	wMessagePipe* MsgPipe; \
-	UINT32 pointerX; \
-	UINT32 pointerY; \
-	\
-	const AUDIO_FORMAT* rdpsndFormats; \
-	int nRdpsndFormats; \
-	const AUDIO_FORMAT* audinFormats; \
-	int nAudinFormats; \
-	\
-	pfnShadowSynchronizeEvent SynchronizeEvent; \
-	pfnShadowKeyboardEvent KeyboardEvent; \
-	pfnShadowUnicodeKeyboardEvent UnicodeKeyboardEvent; \
-	pfnShadowMouseEvent MouseEvent; \
-	pfnShadowExtendedMouseEvent ExtendedMouseEvent; \
-	pfnShadowChannelAudinServerReceiveSamples AudinServerReceiveSamples; \
-	\
-	pfnShadowAuthenticate Authenticate; \
-	pfnShadowClientConnect ClientConnect; \
-	pfnShadowClientDisconnect ClientDisconnect; \
-	pfnShadowClientCapabilities ClientCapabilities; \
-	\
-	rdpShadowServer* server
-
 struct rdp_shadow_subsystem
 {
-	RDP_SHADOW_SUBSYSTEM_COMMON();
+	RDP_SHADOW_ENTRY_POINTS ep;
+	HANDLE event;
+	int numMonitors;
+	int captureFrameRate;
+	int selectedMonitor;
+	MONITOR_DEF monitors[16];
+	MONITOR_DEF virtualScreen;
+
+	/* This event indicates that we have graphic change */
+	/* such as screen update and resize. It should not be */
+	/* used by subsystem implementation directly */
+	rdpShadowMultiClientEvent* updateEvent;
+
+	wMessagePipe* MsgPipe;
+	UINT32 pointerX;
+	UINT32 pointerY;
+
+	const AUDIO_FORMAT* rdpsndFormats;
+	int nRdpsndFormats;
+	const AUDIO_FORMAT* audinFormats;
+	int nAudinFormats;
+
+	pfnShadowSynchronizeEvent SynchronizeEvent;
+	pfnShadowKeyboardEvent KeyboardEvent;
+	pfnShadowUnicodeKeyboardEvent UnicodeKeyboardEvent;
+	pfnShadowMouseEvent MouseEvent;
+	pfnShadowExtendedMouseEvent ExtendedMouseEvent;
+	pfnShadowChannelAudinServerReceiveSamples AudinServerReceiveSamples;
+
+	pfnShadowAuthenticate Authenticate;
+	pfnShadowClientConnect ClientConnect;
+	pfnShadowClientDisconnect ClientDisconnect;
+	pfnShadowClientCapabilities ClientCapabilities;
+
+	rdpShadowServer* server;
 };
 
 /* Definition of message between subsystem and clients */
