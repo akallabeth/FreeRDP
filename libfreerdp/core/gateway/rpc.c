@@ -377,41 +377,40 @@ int rpc_out_channel_write(RpcOutChannel* outChannel, const BYTE* data, int lengt
 	return status;
 }
 
-int rpc_in_channel_transition_to_state(RpcInChannel* inChannel, CLIENT_IN_CHANNEL_STATE state)
+const char* rpc_state_to_string(CLIENT_IN_CHANNEL_STATE state)
 {
-	int status = 1;
-	const char* str = "CLIENT_IN_CHANNEL_STATE_UNKNOWN";
-
 	switch (state)
 	{
 		case CLIENT_IN_CHANNEL_STATE_INITIAL:
-			str = "CLIENT_IN_CHANNEL_STATE_INITIAL";
-			break;
+			return "CLIENT_IN_CHANNEL_STATE_INITIAL";
 
 		case CLIENT_IN_CHANNEL_STATE_CONNECTED:
-			str = "CLIENT_IN_CHANNEL_STATE_CONNECTED";
-			break;
+			return  "CLIENT_IN_CHANNEL_STATE_CONNECTED";
 
 		case CLIENT_IN_CHANNEL_STATE_SECURITY:
-			str = "CLIENT_IN_CHANNEL_STATE_SECURITY";
-			break;
+			return  "CLIENT_IN_CHANNEL_STATE_SECURITY";
 
 		case CLIENT_IN_CHANNEL_STATE_NEGOTIATED:
-			str = "CLIENT_IN_CHANNEL_STATE_NEGOTIATED";
-			break;
+			return  "CLIENT_IN_CHANNEL_STATE_NEGOTIATED";
 
 		case CLIENT_IN_CHANNEL_STATE_OPENED:
-			str = "CLIENT_IN_CHANNEL_STATE_OPENED";
-			break;
+			return "CLIENT_IN_CHANNEL_STATE_OPENED";
 
 		case CLIENT_IN_CHANNEL_STATE_OPENED_A4W:
-			str = "CLIENT_IN_CHANNEL_STATE_OPENED_A4W";
-			break;
+			return "CLIENT_IN_CHANNEL_STATE_OPENED_A4W";
 
 		case CLIENT_IN_CHANNEL_STATE_FINAL:
-			str = "CLIENT_IN_CHANNEL_STATE_FINAL";
-			break;
+			return "CLIENT_IN_CHANNEL_STATE_FINAL";
+
+		default:
+			return "CLIENT_IN_CHANNEL_STATE_UNKNOWN";
 	}
+}
+
+int rpc_in_channel_transition_to_state(RpcInChannel* inChannel, CLIENT_IN_CHANNEL_STATE state)
+{
+	int status = 1;
+	const char* str = rpc_state_to_string(state);
 
 	inChannel->State = state;
 	WLog_DBG(TAG, "%s", str);

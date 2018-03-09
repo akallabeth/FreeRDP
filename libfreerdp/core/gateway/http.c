@@ -629,6 +629,7 @@ HttpResponse* http_response_recv(rdpTls* tls)
 		{
 			if (!BIO_should_retry(tls->bio))
 			{
+				BIO_get_e
 				WLog_ERR(TAG, "BIO_should_retry failed 1 %d", status);
 				goto out_error;
 			}

@@ -800,4 +800,6 @@ FREERDP_LOCAL BOOL rpc_connect(rdpRpc* rpc, int timeout);
 FREERDP_LOCAL rdpRpc* rpc_new(rdpTransport* transport);
 FREERDP_LOCAL void rpc_free(rdpRpc* rpc);
 
+FREERDP_LOCAL const char* rpc_state_to_string(CLIENT_IN_CHANNEL_STATE state);
+
 #endif /* FREERDP_LIB_CORE_GATEWAY_RPC_H */

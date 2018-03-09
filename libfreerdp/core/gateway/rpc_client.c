@@ -726,6 +726,7 @@ int rpc_client_in_channel_recv(rdpRpc* rpc)
 	if (WaitForSingleObject(InChannelEvent, 0) != WAIT_OBJECT_0)
 		return 1;
 
+	WLog_DBG(TAG, "rpc state %s", rpc_state_to_string(inChannel->State));
 	if (inChannel->State < CLIENT_IN_CHANNEL_STATE_OPENED)
 	{
 		response = http_response_recv(inChannel->tls);
@@ -733,6 +734,7 @@ int rpc_client_in_channel_recv(rdpRpc* rpc)
 		if (!response)
 			return -1;
 
+		WLog_DBG(TAG, "rpc state %s", rpc_state_to_string(inChannel->State));
 		if (inChannel->State == CLIENT_IN_CHANNEL_STATE_SECURITY)
 		{
 			if (rpc_ncacn_http_recv_in_channel_response(rpc, inChannel, response) < 0)
