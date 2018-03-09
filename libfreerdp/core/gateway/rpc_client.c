@@ -814,6 +814,8 @@ RpcClientCall* rpc_client_call_find_by_id(rdpRpc* rpc, UINT32 CallId)
 	}
 
 	ArrayList_Unlock(rpc->client->ClientCallList);
+	if (!clientCall)
+		WLog_ERR(TAG, "rpc_client_call_find_by_id NULL");
 	return clientCall;
 }
 

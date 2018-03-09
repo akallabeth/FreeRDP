@@ -359,6 +359,7 @@ int rpc_out_channel_read(RpcOutChannel* outChannel, BYTE* data, int length)
 	if (BIO_should_retry(outChannel->tls->bio))
 		return 0;
 
+	WLog_ERR(TAG, "rpc_out_channel_read failed");
 	return -1;
 }
 

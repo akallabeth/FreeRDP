@@ -598,12 +598,10 @@ static BOOL http_response_parse_header(HttpResponse* response)
 
 void http_response_print(HttpResponse* response)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < response->count; i++)
-	{
 		WLog_ERR(TAG, "%s", response->lines[i]);
-	}
 }
 
 HttpResponse* http_response_recv(rdpTls* tls)
@@ -630,7 +628,10 @@ HttpResponse* http_response_recv(rdpTls* tls)
 		if (status <= 0)
 		{
 			if (!BIO_should_retry(tls->bio))
+			{
+				WLog_ERR(TAG, "BIO_should_retry failed");
 				goto out_error;
+			}
 
 			USleep(100);
 			continue;
@@ -704,7 +705,10 @@ HttpResponse* http_response_recv(rdpTls* tls)
 		}
 
 		if (!http_response_parse_header(response))
+		{
+			WLog_ERR(TAG, "http_response_parse_header failed");
 			goto out_error;
+		}
 
 		response->BodyLength = Stream_GetPosition(response->data) - payloadOffset;
 		bodyLength = 0; /* expected body length */
@@ -740,7 +744,10 @@ HttpResponse* http_response_recv(rdpTls* tls)
 			if (status <= 0)
 			{
 				if (!BIO_should_retry(tls->bio))
+				{
+					WLog_ERR(TAG, "BIO_should_retry failed");
 					goto out_error;
+				}
 
 				USleep(100);
 				continue;
@@ -771,6 +778,8 @@ HttpResponse* http_response_recv(rdpTls* tls)
 
 	return response;
 out_error:
+	WLog_ERR(TAG, "http_response_recv failed");
+	http_response_print(response);
 	http_response_free(response);
 	return NULL;
 }

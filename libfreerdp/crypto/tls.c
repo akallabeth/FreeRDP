@@ -1084,7 +1084,10 @@ int tls_write_all(rdpTls* tls, const BYTE* data, int length)
 		else
 		{
 			if (!BIO_should_retry(bio))
+			{
+				WLog_ERR(TAG, "BIO_should_retry failed");
 				return -1;
+			}
 
 			if (BIO_write_blocked(bio))
 				status = BIO_wait_write(bio, 100);
@@ -1094,7 +1097,10 @@ int tls_write_all(rdpTls* tls, const BYTE* data, int length)
 				USleep(100);
 
 			if (status < 0)
+			{
+				WLog_ERR(TAG, "BIO_wait_write failed");
 				return -1;
+			}
 		}
 	}
 

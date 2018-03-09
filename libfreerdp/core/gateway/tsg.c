@@ -1571,12 +1571,18 @@ int tsg_check_event_handles(rdpTsg* tsg)
 	status = rpc_client_in_channel_recv(tsg->rpc);
 
 	if (status < 0)
+	{
+		WLog_ERR(TAG, "rpc_client_in_channel_recv failed");
 		return -1;
+	}
 
 	status = rpc_client_out_channel_recv(tsg->rpc);
 
 	if (status < 0)
+	{
+		WLog_ERR(TAG, "rpc_client_out_channel_recv failed");
 		return -1;
+	}
 
 	return status;
 }
