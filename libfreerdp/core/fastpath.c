@@ -448,7 +448,7 @@ static int fastpath_recv_update(rdpFastPath* fastpath, BYTE updateCode, UINT32 s
 
 static int fastpath_recv_update_data(rdpFastPath* fastpath, wStream* s)
 {
-	int status;
+	int status = 0;
 	UINT16 size;
 	rdpRdp* rdp;
 	size_t next_pos;
@@ -466,7 +466,6 @@ static int fastpath_recv_update_data(rdpFastPath* fastpath, wStream* s)
 	if (!fastpath || !s)
 		return -1;
 
-	status = 0;
 	rdp = fastpath->rdp;
 
 	if (!rdp)
@@ -501,30 +500,33 @@ static int fastpath_recv_update_data(rdpFastPath* fastpath, wStream* s)
 		return -1;
 	}
 
-	cs = s;
-	next_pos = Stream_GetPosition(s) + size;
+	if (!(cs = StreamPool_Take(transport->ReceivePool, size)))
+		return -1;
+
 	bulkStatus = bulk_decompress(rdp->bulk, Stream_Pointer(s), size, &pDstData, &DstSize,
 	                             compressionFlags);
 
 	if (bulkStatus < 0)
 	{
 		WLog_ERR(TAG, "bulk_decompress() failed");
-		return -1;
+		goto out_fail;
 	}
-
-	if (bulkStatus > 0)
+	else if (bulkStatus > 0)
 	{
 		/* data was compressed, copy from decompression buffer */
-		size = DstSize;
+		if (!Stream_EnsureRemainingCapacity(cs, DstSize))
+			goto out_fail;
 
-		if (!(cs = StreamPool_Take(transport->ReceivePool, DstSize)))
-			return -1;
-
-		Stream_SetPosition(cs, 0);
 		Stream_Write(cs, pDstData, DstSize);
-		Stream_SealLength(cs);
-		Stream_SetPosition(cs, 0);
+
+		Stream_Seek(s, size);
+		size = DstSize;
 	}
+	else
+		Stream_Copy(s, cs, size);
+
+	Stream_SealLength(cs);
+	Stream_SetPosition(cs, 0);
 
 	if (fragmentation == FASTPATH_FRAGMENT_SINGLE)
 	{
@@ -635,18 +637,12 @@ static int fastpath_recv_update_data(rdpFastPath* fastpath, wStream* s)
 		}
 	}
 
-	Stream_SetPosition(s, next_pos);
-
-	if (cs != s)
-		Stream_Release(cs);
+	Stream_Release(cs);
 
 	return status;
 out_fail:
 
-	if (cs != s)
-	{
-		Stream_Release(cs);
-	}
+	Stream_Release(cs);
 
 	return -1;
 }
