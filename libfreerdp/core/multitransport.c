@@ -21,7 +21,10 @@
 #include "config.h"
 #endif
 
+#include <freerdp/log.h>
 #include "multitransport.h"
+
+#define TAG FREERDP_TAG("multitransport")
 
 int rdp_recv_multitransport_packet(rdpRdp* rdp, wStream* s)
 {
@@ -31,7 +34,10 @@ int rdp_recv_multitransport_packet(rdpRdp* rdp, wStream* s)
 	BYTE securityCookie[16];
 
 	if (Stream_GetRemainingLength(s) < 24)
+	{
+		WLog_ERR(TAG, "multitransport packet short");
 		return -1;
+	}
 
 	Stream_Read_UINT32(s, requestId); /* requestId (4 bytes) */
 	Stream_Read_UINT16(s, requestedProtocol); /* requestedProtocol (2 bytes) */

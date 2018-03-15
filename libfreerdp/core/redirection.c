@@ -248,7 +248,10 @@ static BOOL rdp_recv_server_redirection_pdu(rdpRdp* rdp, wStream* s)
 	rdpRedirection* redirection = rdp->redirection;
 
 	if (Stream_GetRemainingLength(s) < 12)
+	{
+		WLog_ERR(TAG, "redirection pdu is short");
 		return -1;
+	}
 
 	Stream_Read_UINT16(s, flags); /* flags (2 bytes) */
 	Stream_Read_UINT16(s, length); /* length (2 bytes) */
@@ -275,7 +278,10 @@ static BOOL rdp_recv_server_redirection_pdu(rdpRdp* rdp, wStream* s)
 	if (redirection->flags & LB_TARGET_NET_ADDRESS)
 	{
 		if (!rdp_redirection_read_unicode_string(s, &(redirection->TargetNetAddress), 80))
+		{
+			WLog_ERR(TAG, "redirection read target net address failed");
 			return -1;
+		}
 	}
 
 	if (redirection->flags & LB_LOAD_BALANCE_INFO)
@@ -406,12 +412,15 @@ static BOOL rdp_recv_server_redirection_pdu(rdpRdp* rdp, wStream* s)
 
 	if (redirection->flags & LB_TARGET_NET_ADDRESSES)
 	{
-		int i;
+		UINT32 i;
 		UINT32 count;
 		UINT32 targetNetAddressesLength;
 
 		if (Stream_GetRemainingLength(s) < 8)
+		{
+			WLog_ERR(TAG, "Stream is short");
 			return -1;
+		}
 
 		Stream_Read_UINT32(s, targetNetAddressesLength);
 		Stream_Read_UINT32(s, redirection->TargetNetAddressesCount);
@@ -424,7 +433,7 @@ static BOOL rdp_recv_server_redirection_pdu(rdpRdp* rdp, wStream* s)
 
 		WLog_DBG(TAG, "TargetNetAddressesCount: %"PRIu32"", redirection->TargetNetAddressesCount);
 
-		for (i = 0; i < (int) count; i++)
+		for (i = 0; i < count; i++)
 		{
 			if (!rdp_redirection_read_unicode_string(s, &(redirection->TargetNetAddresses[i]), 80))
 				return FALSE;
@@ -450,7 +459,10 @@ int rdp_recv_enhanced_security_redirection_packet(rdpRdp* rdp, wStream* s)
 	int status = 0;
 
 	if (!Stream_SafeSeek(s, 2)) /* pad2Octets (2 bytes) */
+	{
+		WLog_ERR(TAG, "enhanced security redirection short");
 		return -1;
+	}
 
 	status = rdp_recv_server_redirection_pdu(rdp, s);
 

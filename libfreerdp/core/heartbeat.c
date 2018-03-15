@@ -33,7 +33,10 @@ int rdp_recv_heartbeat_packet(rdpRdp* rdp, wStream* s)
 	BYTE count2;
 
 	if (Stream_GetRemainingLength(s) < 4)
+	{
+		WLog_ERR(HEARTBEAT_TAG, "heartbeat packet short");
 		return -1;
+	}
 
 	Stream_Read_UINT8(s, reserved); /* reserved (1 byte) */
 	Stream_Read_UINT8(s, period); /* period (1 byte) */

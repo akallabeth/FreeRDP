@@ -652,10 +652,17 @@ int fastpath_recv_updates(rdpFastPath* fastpath, wStream* s)
 	rdpUpdate* update;
 
 	if (!fastpath || !fastpath->rdp || !fastpath->rdp->update || !s)
+	{
+		WLog_ERR(TAG, "NULL parameters");
 		return -1;
+	}
 
 	update = fastpath->rdp->update;
-	IFCALL(update->BeginPaint, update->context);
+	if (IFCALLRESULT(FALSE, update->BeginPaint, update->context))
+	{
+		WLog_ERR(TAG, "update->BeginPaint failed");
+		return -1;
+	}
 
 	while (Stream_GetRemainingLength(s) >= 3)
 	{
@@ -666,7 +673,12 @@ int fastpath_recv_updates(rdpFastPath* fastpath, wStream* s)
 		}
 	}
 
-	IFCALL(update->EndPaint, update->context);
+	if (!IFCALLRESULT(FALSE, update->EndPaint, update->context))
+	{
+		WLog_ERR(TAG, "update->EndPaint failed");
+		return -1;
+	}
+
 	return 0;
 }
 

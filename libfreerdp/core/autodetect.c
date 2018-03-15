@@ -346,7 +346,10 @@ BOOL autodetect_send_netchar_sync(rdpRdp* rdp, UINT16 sequenceNumber)
 static BOOL autodetect_recv_rtt_measure_request(rdpRdp* rdp, wStream* s, AUTODETECT_REQ_PDU* autodetectReqPdu)
 {
 	if (autodetectReqPdu->headerLength != 0x06)
+	{
+		WLog_ERR(AUTODETECT_TAG, "autodetect request header length invalid");
 		return FALSE;
+	}
 
 	WLog_VRB(AUTODETECT_TAG, "received RTT Measure Request PDU");
 
@@ -356,10 +359,11 @@ static BOOL autodetect_recv_rtt_measure_request(rdpRdp* rdp, wStream* s, AUTODET
 
 static BOOL autodetect_recv_rtt_measure_response(rdpRdp* rdp, wStream* s, AUTODETECT_RSP_PDU* autodetectRspPdu)
 {
-	BOOL success = TRUE;
-
 	if (autodetectRspPdu->headerLength != 0x06)
+	{
+		WLog_ERR(AUTODETECT_TAG, "autodetect measure header length invalid");
 		return FALSE;
+	}
 
 	WLog_VRB(AUTODETECT_TAG, "received RTT Measure Response PDU");
 
@@ -367,9 +371,13 @@ static BOOL autodetect_recv_rtt_measure_response(rdpRdp* rdp, wStream* s, AUTODE
 	if (rdp->autodetect->netCharBaseRTT == 0 || rdp->autodetect->netCharBaseRTT > rdp->autodetect->netCharAverageRTT)
 		rdp->autodetect->netCharBaseRTT = rdp->autodetect->netCharAverageRTT;
 
-	IFCALLRET(rdp->autodetect->RTTMeasureResponse, success, rdp->context, autodetectRspPdu->sequenceNumber);
+	if (!IFCALLRESULT(FALSE, rdp->autodetect->RTTMeasureResponse, rdp->context, autodetectRspPdu->sequenceNumber))
+	{
+		WLog_ERR(AUTODETECT_TAG, "RTTMeasureResponse failed");
+		return FALSE;
+	}
 
-	return success;
+	return TRUE;
 }
 
 static BOOL autodetect_recv_bandwidth_measure_start(rdpRdp* rdp, wStream* s, AUTODETECT_REQ_PDU* autodetectReqPdu)
@@ -455,10 +463,11 @@ static BOOL autodetect_recv_bandwidth_measure_stop(rdpRdp* rdp, wStream* s, AUTO
 
 static BOOL autodetect_recv_bandwidth_measure_results(rdpRdp* rdp, wStream* s, AUTODETECT_RSP_PDU* autodetectRspPdu)
 {
-	BOOL success = TRUE;
-
 	if (autodetectRspPdu->headerLength != 0x0E)
+	{
+		WLog_ERR(AUTODETECT_TAG, "bandwidth measure result length invalid");
 		return FALSE;
+	}
 
 	WLog_VRB(AUTODETECT_TAG, "received Bandwidth Measure Results PDU");
 
@@ -470,9 +479,13 @@ static BOOL autodetect_recv_bandwidth_measure_results(rdpRdp* rdp, wStream* s, A
 	else
 		rdp->autodetect->netCharBandwidth = 0;
 
-	IFCALLRET(rdp->autodetect->BandwidthMeasureResults, success, rdp->context, autodetectRspPdu->sequenceNumber);
+	if (!IFCALLRESULT(FALSE, rdp->autodetect->BandwidthMeasureResults, rdp->context, autodetectRspPdu->sequenceNumber))
+	{
+		WLog_ERR(AUTODETECT_TAG, "BandwidthMeasureResults failed");
+		return FALSE;
+	}
 
-	return success;
+	return TRUE;
 }
 
 static BOOL autodetect_recv_netchar_result(rdpRdp* rdp, wStream* s, AUTODETECT_REQ_PDU* autodetectReqPdu)
@@ -520,7 +533,10 @@ int rdp_recv_autodetect_request_packet(rdpRdp* rdp, wStream* s)
 	BOOL success = FALSE;
 	
 	if (Stream_GetRemainingLength(s) < 6)
+	{
+		WLog_ERR(AUTODETECT_TAG, "autodetect request short");
 		return -1;
+	}
 
 	Stream_Read_UINT8(s, autodetectReqPdu.headerLength); /* headerLength (1 byte) */
 	Stream_Read_UINT8(s, autodetectReqPdu.headerTypeId); /* headerTypeId (1 byte) */
@@ -533,7 +549,10 @@ int rdp_recv_autodetect_request_packet(rdpRdp* rdp, wStream* s)
 		autodetectReqPdu.sequenceNumber, autodetectReqPdu.requestType);
 
 	if (autodetectReqPdu.headerTypeId != TYPE_ID_AUTODETECT_REQUEST)
+	{
+		WLog_ERR(AUTODETECT_TAG, "invalid autodetect request header id");
 		return -1;
+	}
 
 	switch (autodetectReqPdu.requestType)
 	{
@@ -582,7 +601,10 @@ int rdp_recv_autodetect_response_packet(rdpRdp* rdp, wStream* s)
 	BOOL success = FALSE;
 
 	if (Stream_GetRemainingLength(s) < 6)
+	{
+		WLog_ERR(AUTODETECT_TAG, "autodetect response packet short");
 		return -1;
+	}
 
 	Stream_Read_UINT8(s, autodetectRspPdu.headerLength); /* headerLength (1 byte) */
 	Stream_Read_UINT8(s, autodetectRspPdu.headerTypeId); /* headerTypeId (1 byte) */
@@ -595,7 +617,10 @@ int rdp_recv_autodetect_response_packet(rdpRdp* rdp, wStream* s)
 		autodetectRspPdu.sequenceNumber, autodetectRspPdu.responseType);
 
 	if (autodetectRspPdu.headerTypeId != TYPE_ID_AUTODETECT_RESPONSE)
+	{
+		WLog_ERR(AUTODETECT_TAG, "autodetect response header id invalid");
 		return -1;
+	}
 
 	switch (autodetectRspPdu.responseType)
 	{

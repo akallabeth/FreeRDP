@@ -83,7 +83,10 @@ BOOL rdp_read_security_header(wStream* s, UINT16* flags, UINT16* length)
 {
 	/* Basic Security Header */
 	if ((Stream_GetRemainingLength(s) < 4) || (length && (*length < 4)))
+	{
+		WLog_ERR(TAG, "security header is short");
 		return FALSE;
+	}
 	Stream_Read_UINT16(s, *flags); /* flags */
 	Stream_Seek(s, 2); /* flagsHi (unused) */
 
@@ -1215,7 +1218,6 @@ static int rdp_recv_tpkt_pdu(rdpRdp* rdp, wStream* s)
 
 				case PDU_TYPE_SERVER_REDIRECTION:
 					return rdp_recv_enhanced_security_redirection_packet(rdp, s);
-					break;
 					
 				case PDU_TYPE_FLOW_RESPONSE:
 				case PDU_TYPE_FLOW_STOP:
