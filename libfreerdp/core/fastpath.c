@@ -658,7 +658,7 @@ int fastpath_recv_updates(rdpFastPath* fastpath, wStream* s)
 	}
 
 	update = fastpath->rdp->update;
-	if (IFCALLRESULT(FALSE, update->BeginPaint, update->context))
+	if (!IFCALLRESULT(FALSE, update->BeginPaint, update->context))
 	{
 		WLog_ERR(TAG, "update->BeginPaint failed");
 		return -1;
