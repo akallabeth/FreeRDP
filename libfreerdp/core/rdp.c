@@ -984,7 +984,7 @@ int rdp_recv_message_channel_pdu(rdpRdp* rdp, wStream* s, UINT16 securityFlags)
 		return rdp_recv_multitransport_packet(rdp, s);
 	}
 
-	return -1;
+    return 0;
 }
 
 int rdp_recv_out_of_sequence_pdu(rdpRdp* rdp, wStream* s)
