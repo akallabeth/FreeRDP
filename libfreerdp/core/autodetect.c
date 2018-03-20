@@ -266,7 +266,10 @@ static BOOL autodetect_send_bandwidth_measure_results(rdpRdp* rdp, UINT16 respon
 	s = rdp_message_channel_pdu_init(rdp);
 
 	if (!s)
+    {
+        WLog_ERR(AUTODETECT_TAG, "message pdu init failed");
 		return FALSE;
+    }
 
 	WLog_VRB(AUTODETECT_TAG, "sending Bandwidth Measure Results PDU -> timeDelta=%"PRIu32", byteCount=%"PRIu32"", timeDelta, rdp->autodetect->bandwidthMeasureByteCount);
 
@@ -281,7 +284,10 @@ static BOOL autodetect_send_bandwidth_measure_results(rdpRdp* rdp, UINT16 respon
 						rdp->context, rdp->autodetect);
 
 	if (!success)
+    {
+        WLog_ERR(AUTODETECT_TAG, "ClientBandwidthMeasureResult failed");
 		return FALSE;
+    }
 
 	return rdp_send_message_channel_pdu(rdp, s, SEC_AUTODETECT_RSP);
 }
@@ -293,7 +299,10 @@ static BOOL autodetect_send_netchar_result(rdpContext* context, UINT16 sequenceN
 	s = rdp_message_channel_pdu_init(context->rdp);
 
 	if (!s)
+    {
+        WLog_ERR(AUTODETECT_TAG, "message init failed");
 		return FALSE;
+    }
 
 	WLog_VRB(AUTODETECT_TAG, "sending Bandwidth Network Characteristics Result PDU");
 
@@ -383,7 +392,10 @@ static BOOL autodetect_recv_rtt_measure_response(rdpRdp* rdp, wStream* s, AUTODE
 static BOOL autodetect_recv_bandwidth_measure_start(rdpRdp* rdp, wStream* s, AUTODETECT_REQ_PDU* autodetectReqPdu)
 {
 	if (autodetectReqPdu->headerLength != 0x06)
+    {
+        WLog_ERR(AUTODETECT_TAG, "autodetect header != 0x06");
 		return FALSE;
+    }
 
 	WLog_VRB(AUTODETECT_TAG, "received Bandwidth Measure Start PDU - time=%"PRIu32"", GetTickCountPrecise());
 
@@ -405,10 +417,16 @@ static BOOL autodetect_recv_bandwidth_measure_payload(rdpRdp* rdp, wStream* s, A
 	UINT16 payloadLength;
 
 	if (autodetectReqPdu->headerLength != 0x08)
+    {
+        WLog_ERR(AUTODETECT_TAG, "header != 0x08 short");
 		return FALSE;
+    }
 
 	if (Stream_GetRemainingLength(s) < 2)
+    {
+        WLog_ERR(AUTODETECT_TAG, "stream short");
 		return FALSE;
+    }
 
 	Stream_Read_UINT16(s, payloadLength); /* payloadLength (2 bytes) */
 
@@ -428,17 +446,26 @@ static BOOL autodetect_recv_bandwidth_measure_stop(rdpRdp* rdp, wStream* s, AUTO
 	if (autodetectReqPdu->requestType == RDP_BW_STOP_REQUEST_TYPE_CONNECTTIME)
 	{
 		if (autodetectReqPdu->headerLength != 0x08)
+        {
+            WLog_ERR(AUTODETECT_TAG, "header != 0x08");
 			return FALSE;
+        }
 
 		if (Stream_GetRemainingLength(s) < 2)
+        {
+            WLog_ERR(AUTODETECT_TAG, "stream short");
 			return FALSE;
+        }
 
 		Stream_Read_UINT16(s, payloadLength); /* payloadLength (2 bytes) */
 	}
 	else
 	{
 		if (autodetectReqPdu->headerLength != 0x06)
+        {
+            WLog_ERR(AUTODETECT_TAG, "header != 0x06");
 			return FALSE;
+        }
 
 		payloadLength = 0;
 	}
@@ -497,7 +524,10 @@ static BOOL autodetect_recv_netchar_result(rdpRdp* rdp, wStream* s, AUTODETECT_R
 	case 0x0840:
 		/* baseRTT and averageRTT fields are present (bandwidth field is not) */
 		if ((autodetectReqPdu->headerLength != 0x0E) || (Stream_GetRemainingLength(s) < 8))
+        {
+            WLog_ERR(AUTODETECT_TAG, "%02X==0x0E==%"PRIdz"? or stream short", autodetectReqPdu->headerLength, Stream_GetRemainingLength(s));
 			return FALSE;
+        }
 		Stream_Read_UINT32(s, rdp->autodetect->netCharBaseRTT); /* baseRTT (4 bytes) */
 		Stream_Read_UINT32(s, rdp->autodetect->netCharAverageRTT); /* averageRTT (4 bytes) */
 		break;
@@ -505,7 +535,10 @@ static BOOL autodetect_recv_netchar_result(rdpRdp* rdp, wStream* s, AUTODETECT_R
 	case 0x0880:
 		/* bandwidth and averageRTT fields are present (baseRTT field is not) */
 		if ((autodetectReqPdu->headerLength != 0x0E) || (Stream_GetRemainingLength(s) < 8))
-			return FALSE;
+        {
+            WLog_ERR(AUTODETECT_TAG, "%02X==0x0E==%"PRIdz"? or stream short", autodetectReqPdu->headerLength, Stream_GetRemainingLength(s));
+            return FALSE;
+        }
 		Stream_Read_UINT32(s, rdp->autodetect->netCharBandwidth); /* bandwidth (4 bytes) */
 		Stream_Read_UINT32(s, rdp->autodetect->netCharAverageRTT); /* averageRTT (4 bytes) */
 		break;
@@ -513,7 +546,10 @@ static BOOL autodetect_recv_netchar_result(rdpRdp* rdp, wStream* s, AUTODETECT_R
 	case 0x08C0:
 		/* baseRTT, bandwidth, and averageRTT fields are present */
 		if ((autodetectReqPdu->headerLength != 0x12) || (Stream_GetRemainingLength(s) < 12))
-			return FALSE;
+        {
+            WLog_ERR(AUTODETECT_TAG, "%02X==0x12==%"PRIdz"? or stream short", autodetectReqPdu->headerLength, Stream_GetRemainingLength(s));
+            return FALSE;
+        }
 		Stream_Read_UINT32(s, rdp->autodetect->netCharBaseRTT); /* baseRTT (4 bytes) */
 		Stream_Read_UINT32(s, rdp->autodetect->netCharBandwidth); /* bandwidth (4 bytes) */
 		Stream_Read_UINT32(s, rdp->autodetect->netCharAverageRTT); /* averageRTT (4 bytes) */
@@ -592,6 +628,10 @@ int rdp_recv_autodetect_request_packet(rdpRdp* rdp, wStream* s)
 		break;
 	}
 
+    if (!success)
+    {
+        WLog_ERR(AUTODETECT_TAG, "autodetect request failed");
+    }
 	return success ? 0 : -1;
 }
 

@@ -476,7 +476,7 @@ static BOOL rdp_security_stream_out(rdpRdp* rdp, wStream* s, int length, UINT32 
 
 				Stream_Write_UINT8(s, *pad);
 				if (!security_hmac_signature(data, length, Stream_Pointer(s), rdp))
-					return FALSE;
+                    goto fail;
 				Stream_Seek(s, 8);
 				security_fips_encrypt(data, length + *pad, rdp);
 			}
@@ -491,12 +491,12 @@ static BOOL rdp_security_stream_out(rdpRdp* rdp, wStream* s, int length, UINT32 
 					status = security_mac_signature(rdp, data, length, Stream_Pointer(s));
 
 				if (!status)
-					return FALSE;
+                    goto fail;
 
 				Stream_Seek(s, 8);
 
 				if (!security_encrypt(Stream_Pointer(s), length, rdp))
-					return FALSE;
+                    goto fail;
 			}
 		}
 
@@ -504,6 +504,9 @@ static BOOL rdp_security_stream_out(rdpRdp* rdp, wStream* s, int length, UINT32 
 	}
 
 	return TRUE;
+    fail:
+    WLog_ERR(TAG, "security stream out failed");
+    return FALSE;
 }
 
 static UINT32 rdp_get_sec_bytes(rdpRdp* rdp, UINT16 sec_flags)
@@ -632,7 +635,10 @@ BOOL rdp_send_message_channel_pdu(rdpRdp* rdp, wStream* s, UINT16 sec_flags)
 	Stream_SealLength(s);
 
 	if (transport_write(rdp->transport, s) < 0)
+    {
+        WLog_ERR(TAG, "transport write failed");
 		return FALSE;
+    }
 
 	return TRUE;
 }

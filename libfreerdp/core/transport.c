@@ -205,15 +205,19 @@ static void transport_ssl_cb(SSL* ssl, int where, int ret)
 	}
 }
 
-wStream* transport_send_stream_init(rdpTransport* transport, int size)
+wStream* transport_send_stream_init(rdpTransport* transport, size_t size)
 {
 	wStream* s;
 
 	if (!(s = StreamPool_Take(transport->ReceivePool, size)))
+    {
+        WLog_ERR(TAG, "stream pool take failed");
 		return NULL;
+    }
 
 	if (!Stream_EnsureCapacity(s, size))
 	{
+        WLog_ERR(TAG, "could not ensure capacity %"PRIdz, size);
 		Stream_Release(s);
 		return NULL;
 	}

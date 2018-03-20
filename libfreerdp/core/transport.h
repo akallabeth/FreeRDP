@@ -85,7 +85,7 @@ struct rdp_transport
 };
 
 FREERDP_LOCAL wStream* transport_send_stream_init(rdpTransport* transport,
-        int size);
+        size_t size);
 FREERDP_LOCAL BOOL transport_connect(rdpTransport* transport,
                                      const char* hostname, UINT16 port, int timeout);
 FREERDP_LOCAL BOOL transport_attach(rdpTransport* transport, int sockfd);
