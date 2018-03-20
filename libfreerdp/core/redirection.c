@@ -290,20 +290,29 @@ static BOOL rdp_recv_server_redirection_pdu(rdpRdp* rdp, wStream* s)
 		 * load balance info example data:
 		 * 0000  43 6f 6f 6b 69 65 3a 20 6d 73 74 73 3d 32 31 33  Cookie: msts=213
 		 * 0010  34 30 32 36 34 33 32 2e 31 35 36 32 39 2e 30 30  4026432.15629.00
-                 * 0020  30 30 0d 0a                                      00..
+		 * 0020  30 30 0d 0a                                      00..
 		 */
 
 		if (Stream_GetRemainingLength(s) < 4)
+		{
+			WLog_ERR(TAG, "Short load balance info");
 			return -1;
+		}
 
 		Stream_Read_UINT32(s, redirection->LoadBalanceInfoLength);
 
 		if (Stream_GetRemainingLength(s) < redirection->LoadBalanceInfoLength)
+		{
+			WLog_ERR(TAG, "Short load balance info length");
 			return -1;
+		}
 
 		redirection->LoadBalanceInfo = (BYTE*) malloc(redirection->LoadBalanceInfoLength);
 		if (!redirection->LoadBalanceInfo)
+		{
+			WLog_ERR(TAG, "malloc error load balance info");
 			return -1;
+		}
 		Stream_Read(s, redirection->LoadBalanceInfo, redirection->LoadBalanceInfoLength);
 
 		WLog_DBG(TAG, "loadBalanceInfo:");
@@ -313,7 +322,10 @@ static BOOL rdp_recv_server_redirection_pdu(rdpRdp* rdp, wStream* s)
 	if (redirection->flags & LB_USERNAME)
 	{
 		if (!rdp_redirection_read_unicode_string(s, &(redirection->Username), 512))
+		{
+			WLog_ERR(TAG, "Short load balance info username");
 			return -1;
+		}
 
 		WLog_DBG(TAG, "Username: %s", redirection->Username);
 	}
@@ -321,7 +333,10 @@ static BOOL rdp_recv_server_redirection_pdu(rdpRdp* rdp, wStream* s)
 	if (redirection->flags & LB_DOMAIN)
 	{
 		if (!rdp_redirection_read_unicode_string(s, &(redirection->Domain), 52))
-			return FALSE;
+		{
+			WLog_ERR(TAG, "LB_DOMAIN unicode failed");
+			return -1;
+		}
 
 		WLog_DBG(TAG, "Domain: %s", redirection->Domain);
 	}
@@ -351,7 +366,10 @@ static BOOL rdp_recv_server_redirection_pdu(rdpRdp* rdp, wStream* s)
 		 */
 
 		if (Stream_GetRemainingLength(s) < 4)
+		{
+			WLog_ERR(TAG, "LB_PASSWORD stream is short");
 			return -1;
+		}
 
 		Stream_Read_UINT32(s, redirection->PasswordLength);
 
@@ -361,14 +379,23 @@ static BOOL rdp_recv_server_redirection_pdu(rdpRdp* rdp, wStream* s)
 		 */
 
 		if (Stream_GetRemainingLength(s) < redirection->PasswordLength)
+		{
+			WLog_ERR(TAG, "LB_PASSWORD stream is short [length]");
 			return -1;
+		}
 
 		if (redirection->PasswordLength > 512)
+		{
+			WLog_ERR(TAG, "LB_PASSWORD password too long");
 			return -1;
+		}
 
 		redirection->Password = (BYTE*) calloc(1, redirection->PasswordLength + sizeof(WCHAR));
 		if (!redirection->Password)
+		{
+			WLog_ERR(TAG, "LB_PASSWORD malloc");
 			return -1;
+		}
 		Stream_Read(s, redirection->Password, redirection->PasswordLength);
 
 		WLog_DBG(TAG, "PasswordCookie:");
@@ -394,16 +421,25 @@ static BOOL rdp_recv_server_redirection_pdu(rdpRdp* rdp, wStream* s)
 	if (redirection->flags & LB_CLIENT_TSV_URL)
 	{
 		if (Stream_GetRemainingLength(s) < 4)
+		{
+			WLog_ERR(TAG, "LB_CLIENT_TSV_URL stream is short");
 			return -1;
+		}
 
 		Stream_Read_UINT32(s, redirection->TsvUrlLength);
 
 		if (Stream_GetRemainingLength(s) < redirection->TsvUrlLength)
+		{
+			WLog_ERR(TAG, "LB_CLIENT_TSV_URL stream is short");
 			return -1;
+		}
 
 		redirection->TsvUrl = (BYTE*) malloc(redirection->TsvUrlLength);
 		if (!redirection->TsvUrl)
+		{
+			WLog_ERR(TAG, "LB_CLIENT_TSV_URL stream is short [malloc]");
 			return -1;
+		}
 		Stream_Read(s, redirection->TsvUrl, redirection->TsvUrlLength);
 
 		WLog_DBG(TAG, "TsvUrl:");
@@ -429,14 +465,17 @@ static BOOL rdp_recv_server_redirection_pdu(rdpRdp* rdp, wStream* s)
 		redirection->TargetNetAddresses = (char**) calloc(count, sizeof(char*));
 
 		if (!redirection->TargetNetAddresses)
-			return FALSE;
+		{
+			WLog_ERR(TAG, "LB_TARGET_NET_ADDRESSES stream is short [malloc]");
+			return -1;
+		}
 
 		WLog_DBG(TAG, "TargetNetAddressesCount: %"PRIu32"", redirection->TargetNetAddressesCount);
 
 		for (i = 0; i < count; i++)
 		{
 			if (!rdp_redirection_read_unicode_string(s, &(redirection->TargetNetAddresses[i]), 80))
-				return FALSE;
+				return -1;
 
 			WLog_DBG(TAG, "TargetNetAddresses[%d]: %s", i, redirection->TargetNetAddresses[i]);
 		}
