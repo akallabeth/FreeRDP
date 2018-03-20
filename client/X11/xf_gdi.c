@@ -950,7 +950,7 @@ static BOOL xf_gdi_surface_frame_marker(rdpContext* context,
 	}
 
 	xf_unlock_x11(xfc, FALSE);
-	return ret;
+	return TRUE;
 }
 
 static BOOL xf_gdi_surface_update_frame(xfContext* xfc, UINT16 tx, UINT16 ty,
@@ -987,7 +987,7 @@ static BOOL xf_gdi_surface_update_frame(xfContext* xfc, UINT16 tx, UINT16 ty,
 		ret = gdi_InvalidateRegion(xfc->hdc, tx, ty, width, height);
 	}
 
-	return ret;
+	return TRUE;
 }
 
 static BOOL xf_gdi_update_screen(xfContext* xfc, const BYTE* pSrcData,
