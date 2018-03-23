@@ -116,6 +116,7 @@ void freerdp_client_context_free(rdpContext* context)
 		free(instance->pClientEntryPoints);
 		freerdp_free(instance);
 	}
+
 	WLog_Uninit();
 }
 
@@ -237,6 +238,7 @@ int freerdp_client_settings_parse_command_line(rdpSettings* settings, int argc,
 	if (!freerdp_client_settings_post_process(settings))
 		status = -1;
 
+	WLog_VRB(TAG, "%s", freerdp_get_build_config());
 	return status;
 }
 
