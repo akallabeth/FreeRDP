@@ -158,9 +158,6 @@ BOOL freerdp_connect(freerdp* instance)
 
 	/* We always set the return code to 0 before we start the connect sequence*/
 	connectErrorCode = 0;
-	freerdp_set_last_error(instance->context, FREERDP_ERROR_SUCCESS);
-	clearChannelError(instance->context);
-	ResetEvent(instance->context->abortEvent);
 	rdp = instance->context->rdp;
 	settings = instance->settings;
 	instance->context->codecs = codecs_new(instance->context);
@@ -513,7 +510,6 @@ BOOL freerdp_reconnect(freerdp* instance)
 {
 	BOOL status;
 	rdpRdp* rdp = instance->context->rdp;
-	ResetEvent(instance->context->abortEvent);
 	status = rdp_client_reconnect(rdp);
 	return status;
 }

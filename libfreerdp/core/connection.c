@@ -180,6 +180,9 @@ BOOL rdp_client_connect(rdpRdp* rdp)
 	rdpSettings* settings = rdp->settings;
 	/* make sure SSL is initialize for earlier enough for crypto, by taking advantage of winpr SSL FIPS flag for openssl initialization */
 	DWORD flags = WINPR_SSL_INIT_DEFAULT;
+	freerdp_set_last_error(rdp->context, FREERDP_ERROR_SUCCESS);
+	clearChannelError(rdp->context);
+	ResetEvent(rdp->context->abortEvent);
 
 	if (settings->FIPSMode)
 		flags |= WINPR_SSL_INIT_ENABLE_FIPS;
