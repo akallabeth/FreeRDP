@@ -1115,7 +1115,7 @@ static UINT rdpsnd_process_connect(rdpsndPlugin* rdpsnd)
 		}
 
 		rdpsnd->ScheduleThread = CreateThread(NULL, 0,
-											  rdpsnd_schedule_thread,
+		                                      rdpsnd_schedule_thread,
 		                                      (void*) rdpsnd, 0, NULL);
 
 		if (!rdpsnd->ScheduleThread)
@@ -1355,7 +1355,7 @@ static UINT rdpsnd_virtual_channel_event_connected(rdpsndPlugin* rdpsnd,
 	}
 
 	rdpsnd->thread = CreateThread(NULL, 0,
-								  rdpsnd_virtual_channel_client_thread, (void*) rdpsnd,
+	                              rdpsnd_virtual_channel_client_thread, (void*) rdpsnd,
 	                              0, NULL);
 
 	if (!rdpsnd->thread)
@@ -1377,6 +1377,10 @@ static UINT rdpsnd_virtual_channel_event_connected(rdpsndPlugin* rdpsnd,
 static UINT rdpsnd_virtual_channel_event_disconnected(rdpsndPlugin* rdpsnd)
 {
 	UINT error;
+
+	if (rdpsnd->OpenHandle == 0)
+		return CHANNEL_RC_NOT_INITIALIZED;
+
 	MessagePipe_PostQuit(rdpsnd->MsgPipe, 0);
 
 	if (WaitForSingleObject(rdpsnd->thread, INFINITE) == WAIT_FAILED)

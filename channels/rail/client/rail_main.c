@@ -97,17 +97,15 @@ UINT rail_send_channel_data(railPlugin* rail, void* data, size_t length)
  */
 static void rail_client_clean_exec_order(RAIL_EXEC_ORDER* exec)
 {
-    if (!exec)
-        return;
+	if (!exec)
+		return;
 
-    free(exec->exeOrFile.string);
-    exec->exeOrFile.string = NULL;
-
-    free(exec->workingDir.string);
-    exec->workingDir.string = NULL;
-
-    free(exec->arguments.string);
-    exec->arguments.string = NULL;
+	free(exec->exeOrFile.string);
+	exec->exeOrFile.string = NULL;
+	free(exec->workingDir.string);
+	exec->workingDir.string = NULL;
+	free(exec->arguments.string);
+	exec->arguments.string = NULL;
 }
 
 /**
@@ -635,9 +633,9 @@ static DWORD WINAPI rail_virtual_channel_client_thread(LPVOID arg)
 		if (message.id == 0)
 		{
 			data = (wStream*) message.wParam;
-
 			error = rail_order_recv(rail, data);
 			Stream_Free(data, TRUE);
+
 			if (error)
 			{
 				WLog_ERR(TAG, "rail_order_recv failed with error %"PRIu32"!", error);
@@ -682,7 +680,7 @@ static UINT rail_virtual_channel_event_connected(railPlugin* rail, LPVOID pData,
 	}
 
 	if (!(rail->thread = CreateThread(NULL, 0,
-									  rail_virtual_channel_client_thread, (void*) rail, 0,
+	                                  rail_virtual_channel_client_thread, (void*) rail, 0,
 	                                  NULL)))
 	{
 		WLog_ERR(TAG, "CreateThread failed!");
@@ -702,6 +700,9 @@ static UINT rail_virtual_channel_event_connected(railPlugin* rail, LPVOID pData,
 static UINT rail_virtual_channel_event_disconnected(railPlugin* rail)
 {
 	UINT rc;
+
+	if (rail->OpenHandle == 0)
+		return CHANNEL_RC_NOT_INITIALIZED;
 
 	if (MessageQueue_PostQuit(rail->queue, 0)
 	    && (WaitForSingleObject(rail->thread, INFINITE) == WAIT_FAILED))
