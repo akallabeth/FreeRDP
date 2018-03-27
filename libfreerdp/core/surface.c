@@ -31,10 +31,16 @@
 static BOOL update_recv_surfcmd_bitmap_header_ex(wStream* s, TS_COMPRESSED_BITMAP_HEADER_EX* header)
 {
 	if (!s || !header)
+	{
+		WLog_ERR(TAG, "header_ex %p %p", s, header);
 		return FALSE;
+	}
 
 	if (Stream_GetRemainingLength(s) < 24)
+	{
+		WLog_ERR(TAG, "header_ex short");
 		return FALSE;
+	}
 
 	Stream_Read_UINT32(s, header->highUniqueId);
 	Stream_Read_UINT32(s, header->lowUniqueId);
@@ -46,11 +52,18 @@ static BOOL update_recv_surfcmd_bitmap_header_ex(wStream* s, TS_COMPRESSED_BITMA
 static BOOL update_recv_surfcmd_bitmap_ex(wStream* s, TS_BITMAP_DATA_EX* bmp)
 {
 	size_t pos;
+
 	if (!s || !bmp)
+	{
+		WLog_ERR(TAG, "bitmap_ex %p %p", s, bmp);
 		return FALSE;
+	}
 
 	if (Stream_GetRemainingLength(s) < 12)
+	{
+		WLog_ERR(TAG, "bitmap_ex short");
 		return FALSE;
+	}
 
 	Stream_Read_UINT8(s, bmp->bpp);
 	Stream_Read_UINT8(s, bmp->flags);
@@ -67,6 +80,7 @@ static BOOL update_recv_surfcmd_bitmap_ex(wStream* s, TS_BITMAP_DATA_EX* bmp)
 	}
 
 	memset(&bmp->exBitmapDataHeader, 0, sizeof(TS_COMPRESSED_BITMAP_HEADER_EX));
+
 	if (bmp->flags & EX_COMPRESSED_BITMAP_HEADER_PRESENT)
 	{
 		if (!update_recv_surfcmd_bitmap_header_ex(s, &bmp->exBitmapDataHeader))
@@ -74,28 +88,38 @@ static BOOL update_recv_surfcmd_bitmap_ex(wStream* s, TS_BITMAP_DATA_EX* bmp)
 	}
 
 	if (Stream_GetRemainingLength(s) < bmp->bitmapDataLength)
+	{
+		WLog_ERR(TAG, "bitmap_ex short, no image");
 		return FALSE;
+	}
 
 	pos = Stream_GetPosition(s) + bmp->bitmapDataLength;
 	bmp->bitmapData = Stream_Pointer(s);
 	Stream_SetPosition(s, pos);
-
 	return TRUE;
 }
 
 static BOOL update_recv_surfcmd_surface_bits(rdpUpdate* update, wStream* s)
 {
+	BOOL rc;
 	SURFACE_BITS_COMMAND* cmd = &update->surface_bits_command;
 
 	if (Stream_GetRemainingLength(s) < 8)
+	{
+		WLog_ERR(TAG, "surface_bits short");
 		return FALSE;
+	}
 
 	Stream_Read_UINT16(s, cmd->destLeft);
 	Stream_Read_UINT16(s, cmd->destTop);
 	Stream_Read_UINT16(s, cmd->destRight);
 	Stream_Read_UINT16(s, cmd->destBottom);
+
 	if (!update_recv_surfcmd_bitmap_ex(s, &cmd->bmp))
+	{
+		WLog_ERR(TAG, "surface_bits bitmap error");
 		return FALSE;
+	}
 
 	if (!update->SurfaceBits)
 	{
@@ -103,15 +127,24 @@ static BOOL update_recv_surfcmd_surface_bits(rdpUpdate* update, wStream* s)
 		return FALSE;
 	}
 
-	return update->SurfaceBits(update->context, cmd);
+	rc = update->SurfaceBits(update->context, cmd);
+
+	if (!rc)
+		WLog_ERR(TAG, "SurfaceBits callback failed");
+
+	return rc;
 }
 
 static BOOL update_recv_surfcmd_frame_marker(rdpUpdate* update, wStream* s)
 {
+	BOOL rc;
 	SURFACE_FRAME_MARKER* marker = &update->surface_frame_marker;
 
 	if (Stream_GetRemainingLength(s) < 6)
+	{
+		WLog_ERR(TAG, "frame marker short");
 		return FALSE;
+	}
 
 	Stream_Read_UINT16(s, marker->frameAction);
 	Stream_Read_UINT32(s, marker->frameId);
@@ -125,7 +158,12 @@ static BOOL update_recv_surfcmd_frame_marker(rdpUpdate* update, wStream* s)
 		return FALSE;
 	}
 
-	return update->SurfaceFrameMarker(update->context, marker);
+	rc = update->SurfaceFrameMarker(update->context, marker);
+
+	if (!rc)
+		WLog_ERR(TAG, "SurfaceFrameMarker failed");
+
+	return rc;
 }
 
 int update_recv_surfcmds(rdpUpdate* update, wStream* s)
@@ -144,13 +182,19 @@ int update_recv_surfcmds(rdpUpdate* update, wStream* s)
 			case CMDTYPE_SET_SURFACE_BITS:
 			case CMDTYPE_STREAM_SURFACE_BITS:
 				if (!update_recv_surfcmd_surface_bits(update, s))
+				{
+					WLog_ERR(TAG, "surface_bits failed");
 					return -1;
+				}
 
 				break;
 
 			case CMDTYPE_FRAME_MARKER:
 				if (!update_recv_surfcmd_frame_marker(update, s))
+				{
+					WLog_ERR(TAG, "frame_marker failed");
 					return -1;
+				}
 
 				break;
 
@@ -171,7 +215,8 @@ int update_recv_surfcmds(rdpUpdate* update, wStream* s)
 	return 0;
 }
 
-static BOOL update_write_surfcmd_bitmap_header_ex(wStream* s, const TS_COMPRESSED_BITMAP_HEADER_EX* header)
+static BOOL update_write_surfcmd_bitmap_header_ex(wStream* s,
+        const TS_COMPRESSED_BITMAP_HEADER_EX* header)
 {
 	if (!s || !header)
 		return FALSE;
@@ -183,7 +228,6 @@ static BOOL update_write_surfcmd_bitmap_header_ex(wStream* s, const TS_COMPRESSE
 	Stream_Write_UINT32(s, header->lowUniqueId);
 	Stream_Write_UINT64(s, header->tmMilliseconds);
 	Stream_Write_UINT64(s, header->tmSeconds);
-
 	return TRUE;
 }
 
@@ -226,7 +270,6 @@ BOOL update_write_surfcmd_surface_bits(wStream* s, const SURFACE_BITS_COMMAND* c
 	Stream_Write_UINT16(s, cmd->destTop);
 	Stream_Write_UINT16(s, cmd->destRight);
 	Stream_Write_UINT16(s, cmd->destBottom);
-
 	return update_write_surfcmd_bitmap_ex(s, &cmd->bmp);
 }
 
