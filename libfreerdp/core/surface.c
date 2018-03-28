@@ -79,6 +79,9 @@ static BOOL update_recv_surfcmd_bitmap_ex(wStream* s, TS_BITMAP_DATA_EX* bmp)
 		return FALSE;
 	}
 
+	WLog_DBG(TAG,
+	         "%s: bpp=%"PRIu8", flags=%02"PRIx8", codecIC=%02"PRIx8", width=%"PRIu16", height=%"PRIu16", bitmapLength=%"PRIu32,
+	         __FUNCTION__, bmp->bpp, bmp->flags, bmp->codecID, bmp->width, bmp->height, bmp->bitmapDataLength);
 	memset(&bmp->exBitmapDataHeader, 0, sizeof(TS_COMPRESSED_BITMAP_HEADER_EX));
 
 	if (bmp->flags & EX_COMPRESSED_BITMAP_HEADER_PRESENT)
