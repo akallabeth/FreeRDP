@@ -51,8 +51,6 @@ static BOOL update_recv_surfcmd_bitmap_header_ex(wStream* s, TS_COMPRESSED_BITMA
 
 static BOOL update_recv_surfcmd_bitmap_ex(wStream* s, TS_BITMAP_DATA_EX* bmp)
 {
-	size_t pos;
-
 	if (!s || !bmp)
 	{
 		WLog_ERR(TAG, "bitmap_ex %p %p", s, bmp);
@@ -96,9 +94,8 @@ static BOOL update_recv_surfcmd_bitmap_ex(wStream* s, TS_BITMAP_DATA_EX* bmp)
 		return FALSE;
 	}
 
-	pos = Stream_GetPosition(s) + bmp->bitmapDataLength;
 	bmp->bitmapData = Stream_Pointer(s);
-	Stream_SetPosition(s, pos);
+	Stream_Seek(s, bmp->bitmapDataLength);
 	return TRUE;
 }
 
