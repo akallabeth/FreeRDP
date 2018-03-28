@@ -140,14 +140,33 @@ static BOOL update_recv_surfcmd_frame_marker(rdpUpdate* update, wStream* s)
 	BOOL rc;
 	SURFACE_FRAME_MARKER* marker = &update->surface_frame_marker;
 
-	if (Stream_GetRemainingLength(s) < 6)
+	if (Stream_GetRemainingLength(s) < 2)
 	{
-		WLog_ERR(TAG, "frame marker short");
+		WLog_ERR(TAG, "1. frame marker short %"PRIdz, Stream_GetRemainingLength(s));
 		return FALSE;
 	}
 
 	Stream_Read_UINT16(s, marker->frameAction);
-	Stream_Read_UINT32(s, marker->frameId);
+
+	switch (marker->frameAction)
+	{
+		case SURFACECMD_FRAMEACTION_BEGIN:
+		case SURFACECMD_FRAMEACTION_END:
+			break;
+
+		default:
+			WLog_ERR(TAG, "1.a frame action %04"PRIx32, marker->frameAction);
+			return FALSE;
+	}
+
+	if (Stream_GetRemainingLength(s) < 4)
+	{
+		WLog_ERR(TAG, "2. frame marker short %"PRIdz, Stream_GetRemainingLength(s));
+		marker->frameId = 0;
+	}
+	else
+		Stream_Read_UINT32(s, marker->frameId);
+
 	WLog_Print(update->log, WLOG_DEBUG, "SurfaceFrameMarker: action: %s (%"PRIu32") id: %"PRIu32"",
 	           (!marker->frameAction) ? "Begin" : "End",
 	           marker->frameAction, marker->frameId);
