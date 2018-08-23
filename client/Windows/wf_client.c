@@ -629,7 +629,6 @@ static DWORD WINAPI wf_client_thread(LPVOID lpParam)
 	rdpChannels* channels;
 	rdpSettings* settings;
 	BOOL async_input;
-	BOOL async_transport;
 	HANDLE input_thread;
 	instance = (freerdp*) lpParam;
 	context = instance->context;
@@ -641,7 +640,6 @@ static DWORD WINAPI wf_client_thread(LPVOID lpParam)
 	channels = instance->context->channels;
 	settings = instance->context->settings;
 	async_input = settings->AsyncInput;
-	async_transport = settings->AsyncTransport;
 
 	if (async_input)
 	{
@@ -663,7 +661,6 @@ static DWORD WINAPI wf_client_thread(LPVOID lpParam)
 			wf_event_focus_in(wfc);
 		}
 
-		if (!async_transport)
 		{
 			DWORD tmp = freerdp_get_event_handles(context, &handles[nCount], 64 - nCount);
 
@@ -684,7 +681,6 @@ static DWORD WINAPI wf_client_thread(LPVOID lpParam)
 			break;
 		}
 
-		if (!async_transport)
 		{
 			if (!freerdp_check_event_handles(context))
 			{

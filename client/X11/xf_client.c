@@ -1570,7 +1570,6 @@ static DWORD WINAPI xf_client_thread(LPVOID param)
 			xf_keyboard_focus_in(xfc);
 		}
 
-		if (!settings->AsyncTransport)
 		{
 			DWORD tmp = freerdp_get_event_handles(context, &handles[nCount], ARRAYSIZE(handles) - nCount);
 
@@ -1591,7 +1590,6 @@ static DWORD WINAPI xf_client_thread(LPVOID param)
 		if (waitStatus == WAIT_FAILED)
 			break;
 
-		if (!settings->AsyncTransport)
 		{
 			if (!freerdp_check_event_handles(context))
 			{
