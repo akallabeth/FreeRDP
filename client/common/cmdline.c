@@ -158,11 +158,11 @@ BOOL freerdp_client_print_command_line_help_ex(int argc, char** argv,
 	printf("Multimedia Redirection: /multimedia:sys:alsa\n");
 	printf("USB Device Redirection: /usb:id,dev:054c:0268\n");
 	printf("\n");
-	printf("For Gateways, the https_proxy environment variable is respected:\n");
+	printf("For Gateways, the http_proxy environment variable is respected:\n");
 #ifdef _WIN32
-	printf("    set HTTPS_PROXY=http://proxy.contoso.com:3128/\n");
+	printf("    set HTTP_PROXY=http://proxy.contoso.com:3128/\n");
 #else
-	printf("    export https_proxy=http://proxy.contoso.com:3128/\n");
+	printf("    export http_proxy=http://proxy.contoso.com:3128/\n");
 #endif
 	printf("    xfreerdp /g:rdp.contoso.com ...\n");
 	printf("\n");
@@ -1875,14 +1875,13 @@ int freerdp_client_settings_parse_command_line_arguments(rdpSettings* settings,
 				{
 					*p = '\0';
 
-					if (!strcmp("http", arg->Value))
-					{
+					if (_stricmp("no_proxy", arg->Value) == 0)
+						settings->ProxyType = PROXY_TYPE_IGNORE;
+
+					if (_stricmp("http", arg->Value) == 0)
 						settings->ProxyType = PROXY_TYPE_HTTP;
-					}
-					else if (!strcmp("socks5", arg->Value))
-					{
+					else if (_stricmp("socks5", arg->Value) == 0)
 						settings->ProxyType = PROXY_TYPE_SOCKS;
-					}
 					else
 					{
 						WLog_ERR(TAG, "Only HTTP and SOCKS5 proxies supported by now");
