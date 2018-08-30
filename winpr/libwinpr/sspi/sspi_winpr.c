@@ -25,7 +25,6 @@
 #include <winpr/windows.h>
 
 #include <winpr/crt.h>
-#include <winpr/sspi.h>
 #include <winpr/ssl.h>
 #include <winpr/print.h>
 
@@ -277,10 +276,6 @@ void sspi_CredentialsFree(SSPI_CREDENTIALS* credentials)
 	size_t pinLength = 0;
 	size_t userHintLength = 0;
 	size_t domainHintLength = 0;
-	size_t cardNameLength = 0;
-	size_t readerNameLength = 0;
-	size_t containerNameLength = 0;
-	size_t cspNameLength = 0;
 
 	if (!credentials)
 		return;
@@ -288,9 +283,6 @@ void sspi_CredentialsFree(SSPI_CREDENTIALS* credentials)
 	userLength = credentials->identity.UserLength;
 	domainLength = credentials->identity.DomainLength;
 	passwordLength = credentials->identity.PasswordLength;
-	pinLength = credentials->identity.PinLength;
-	userHintLength = credentials->identity.UserHintLength;
-	domainHintLength = credentials->identity.DomainHintLength;
 
 	if (passwordLength > SSPI_CREDENTIALS_HASH_LENGTH_OFFSET) /* [pth] */
 		passwordLength -= SSPI_CREDENTIALS_HASH_LENGTH_OFFSET;
@@ -303,41 +295,14 @@ void sspi_CredentialsFree(SSPI_CREDENTIALS* credentials)
 		pinLength *= 2;
 		userHintLength *= 2;
 		domainHintLength *= 2;
-
-		if (credentials->identity.CspData)
-		{
-			cardNameLength *= 2;
-			readerNameLength *= 2;
-			containerNameLength *= 2;
-			cspNameLength *= 2;
-		}
-	}
-
-	if (credentials->identity.CspData)
-	{
-		cardNameLength = credentials->identity.CspData->CardNameLength;
-		readerNameLength = credentials->identity.CspData->ReaderNameLength;
-		containerNameLength = credentials->identity.CspData->ContainerNameLength;
-		cspNameLength = credentials->identity.CspData->CspNameLength;
 	}
 
 	memset(credentials->identity.User, 0, userLength);
 	memset(credentials->identity.Domain, 0, domainLength);
 	memset(credentials->identity.Password, 0, passwordLength);
-	memset(credentials->identity.Pin, 0, pinLength);
-	memset(credentials->identity.UserHint, 0, userHintLength);
-	memset(credentials->identity.DomainHint, 0, domainHintLength);
-	memset(credentials->identity.CspData->CardName, 0, cardNameLength);
-	memset(credentials->identity.CspData->ReaderName, 0, readerNameLength);
-	memset(credentials->identity.CspData->ContainerName, 0, containerNameLength);
-	memset(credentials->identity.CspData->CspName, 0, cspNameLength);
 	free(credentials->identity.User);
 	free(credentials->identity.Domain);
 	free(credentials->identity.Password);
-	free(credentials->identity.Pin);
-	free(credentials->identity.CspData);
-	free(credentials->identity.UserHint);
-	free(credentials->identity.DomainHint);
 	free(credentials);
 }
 
@@ -448,9 +413,10 @@ int sspi_SetAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity, const char* user, co
 	return rc;
 }
 
-int sspi_SetAuthIdentityWithUnicodePassword(SEC_WINNT_AUTH_IDENTITY* identity, const char* user,
+int sspi_SetAuthIdentityWithUnicodePassword(SEC_WINNT_AUTH_IDENTITY* pidentity, const char* user,
         const char* domain, LPWSTR password, ULONG passwordLength)
 {
+	SEC_WINNT_AUTH_IDENTITY* identity = (SEC_WINNT_AUTH_IDENTITY*)pidentity;
 	identity->Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
 	free(identity->User);
 
@@ -471,138 +437,12 @@ int sspi_SetAuthIdentityWithUnicodePassword(SEC_WINNT_AUTH_IDENTITY* identity, c
 	return 1;
 }
 
-static void FreeCSPData(SEC_WINNT_AUTH_IDENTITY_CSPDATADETAIL* dsp)
+int sspi_CopyAuthIdentity(const SEC_WINNT_AUTH_IDENTITY* psrcIdentity,
+                          SEC_WINNT_AUTH_IDENTITY* pidentity)
 {
-	if (dsp)
-	{
-		free(dsp->CardName);
-		free(dsp->ContainerName);
-		free(dsp->CspName);
-		free(dsp->ReaderName);
-		free(dsp);
-	}
-}
-
-static BOOL setCSPData(SEC_WINNT_AUTH_IDENTITY_CSPDATADETAIL** pIdentityCspData,
-                       const UINT32 keySpec, const char* cardName, const char* readerName, const char* containerName,
-                       const char* cspName)
-{
-	*pIdentityCspData = (SEC_WINNT_AUTH_IDENTITY_CSPDATADETAIL*) calloc(1,
-	                    sizeof(SEC_WINNT_AUTH_IDENTITY_CSPDATADETAIL));
-
-	if (*pIdentityCspData == NULL)
-	{
-		WLog_ERR(TAG, "Error allocation identity CspData");
-		return FALSE;
-	}
-
-	(*pIdentityCspData)->KeySpec = keySpec;
-	(*pIdentityCspData)->CardName = (UINT16*) NULL;
-	(*pIdentityCspData)->CardNameLength = 0;
-
-	if (!convertIf(&(*pIdentityCspData)->CardName, cardName, &(*pIdentityCspData)->CardNameLength))
-		goto fail;
-
-	if (!convertIf(&(*pIdentityCspData)->ReaderName, readerName,
-	               &(*pIdentityCspData)->ReaderNameLength))
-		goto fail;
-
-	if (!convertIf(&(*pIdentityCspData)->ContainerName, containerName,
-	               &(*pIdentityCspData)->ContainerNameLength))
-		goto fail;
-
-	if (!convertIf(&(*pIdentityCspData)->CspName, cspName, &(*pIdentityCspData)->CspNameLength))
-		goto fail;
-
-	return TRUE;
-fail:
-	FreeCSPData(*pIdentityCspData);
-	*pIdentityCspData = NULL;
-	return FALSE;
-}
-
-static BOOL CopyCSPData(SEC_WINNT_AUTH_IDENTITY* identity,
-                        const SEC_WINNT_AUTH_IDENTITY* srcIdentity)
-{
-	if (!identity || !srcIdentity)
-		return FALSE;
-
-	identity->CspData = NULL;
-
-	if (!srcIdentity->CspData)
-		return TRUE;
-
-	FreeCSPData(identity->CspData);
-	identity->CspData = (SEC_WINNT_AUTH_IDENTITY_CSPDATADETAIL*) calloc(1,
-	                    sizeof(SEC_WINNT_AUTH_IDENTITY_CSPDATADETAIL));
-
-	if (!identity->CspData)
-	{
-		WLog_ERR(TAG, "Error allocation CspData identity ");
-		return FALSE;
-	}
-
-	*identity->CspData = *srcIdentity->CspData;
-
-	if (!copyIf(&identity->CspData->CardName, srcIdentity->CspData->CardName,
-	            srcIdentity->CspData->CardNameLength))
-		goto fail;
-
-	if (!copyIf(&identity->CspData->CardName, srcIdentity->CspData->CardName,
-	            srcIdentity->CspData->CardNameLength))
-		goto fail;
-
-	if (!copyIf(&identity->CspData->CardName, srcIdentity->CspData->CardName,
-	            srcIdentity->CspData->CardNameLength))
-		goto fail;
-
-	if (!copyIf(&identity->CspData->CardName, srcIdentity->CspData->CardName,
-	            srcIdentity->CspData->CardNameLength))
-		goto fail;
-
-	return TRUE;
-fail:
-	FreeCSPData(identity->CspData);
-	identity->CspData = NULL;
-	return FALSE;
-}
-
-int sspi_SetAuthIdentity_Smartcard(SEC_WINNT_AUTH_IDENTITY* identity, const char* pin,
-                                   const UINT32 keySpec, const char* cardName,
-                                   const char* readerName, const char* containerName, const char* cspName, const char* userHint,
-                                   const char* domainHint)
-{
-	identity->Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
-
-	if (identity->Pin)
-		free(identity->Pin);
-
-	if (!convertIf(&identity->Pin, pin, &identity->PinLength))
-		return -1;
-
-	FreeCSPData(identity->CspData);
-	identity->CspData = (SEC_WINNT_AUTH_IDENTITY_CSPDATADETAIL*) NULL;
-
-	if (!setCSPData(&identity->CspData, keySpec, cardName, readerName, containerName,
-	                cspName))
-		return -1;
-
-	free(identity->UserHint);
-
-	if (!convertIf(&identity->UserHint, userHint, &identity->UserHintLength))
-		return -1;
-
-	free(identity->DomainHint);
-
-	if (!convertIf(&identity->DomainHint, userHint, &identity->DomainHintLength))
-		return -1;
-
-	return 1;
-}
-
-int sspi_CopyAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity,
-                          const SEC_WINNT_AUTH_IDENTITY* srcIdentity)
-{
+	// TODO: Find out what we actualy have
+	const SEC_WINNT_AUTH_IDENTITY* srcIdentity = psrcIdentity;
+	SEC_WINNT_AUTH_IDENTITY* identity = pidentity;
 	*identity = *srcIdentity;
 
 	if (!copyIf(&identity->User, srcIdentity->User, srcIdentity->UserLength))
@@ -614,19 +454,29 @@ int sspi_CopyAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity,
 	if (!copyIf(&identity->Password, srcIdentity->Password, srcIdentity->PasswordLength))
 		return -1;
 
-	if (!copyIf(&identity->Pin, srcIdentity->Pin, srcIdentity->PinLength))
-		return -1;
-
-	if (!copyIf(&identity->UserHint, srcIdentity->UserHint, srcIdentity->UserHintLength))
-		return -1;
-
-	if (!copyIf(&identity->DomainHint, srcIdentity->DomainHint, srcIdentity->DomainHintLength))
-		return -1;
-
-	if (!CopyCSPData(identity, srcIdentity))
-		return -1;
-
 	return 1;
+}
+
+void sspi_FreeAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity)
+{
+	if (!identity)
+		return;
+
+	sspi_ZeroAuthIdentity(identity);
+	free(identity->Domain);
+	free(identity->Password);
+	free(identity->User);
+	free(identity);
+}
+
+void sspi_ZeroAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity)
+{
+	if (!identity)
+		return;
+
+	memset(identity->Domain, 0, identity->DomainLength);
+	memset(identity->Password, 0, identity->PasswordLength);
+	memset(identity->User, 0, identity->UserLength);
 }
 
 PSecBuffer sspi_FindSecBuffer(PSecBufferDesc pMessage, ULONG BufferType)
