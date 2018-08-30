@@ -33,10 +33,10 @@
 
 #include "../log.h"
 
-void winpr_HexDump(const char* tag, UINT32 level, const BYTE* data, int length)
+void winpr_HexDump(const char* tag, UINT32 level, const BYTE* data, size_t length)
 {
 	const BYTE* p = data;
-	int i, line, offset = 0;
+	size_t i, line, offset = 0;
 	size_t blen = 7 + WINPR_HEXDUMP_LINE_LENGTH * 5;
 	size_t pos = 0;
 	char* buffer = malloc(blen);
@@ -49,7 +49,7 @@ void winpr_HexDump(const char* tag, UINT32 level, const BYTE* data, int length)
 
 	while (offset < length)
 	{
-		pos += trio_snprintf(&buffer[pos], blen - pos, "%04x ", offset);
+		pos += trio_snprintf(&buffer[pos], blen - pos, "%04"PRIxz" ", offset);
 		line = length - offset;
 
 		if (line > WINPR_HEXDUMP_LINE_LENGTH)
@@ -63,7 +63,7 @@ void winpr_HexDump(const char* tag, UINT32 level, const BYTE* data, int length)
 
 		for (i = 0; i < line; i++)
 			pos += trio_snprintf(&buffer[pos], blen - pos, "%c",
-							(p[i] >= 0x20 && p[i] < 0x7F) ? (char) p[i] : '.');
+			                     (p[i] >= 0x20 && p[i] < 0x7F) ? (char) p[i] : '.');
 
 		WLog_LVL(tag, level, "%s", buffer);
 		offset += line;
@@ -74,10 +74,10 @@ void winpr_HexDump(const char* tag, UINT32 level, const BYTE* data, int length)
 	free(buffer);
 }
 
-void winpr_CArrayDump(const char* tag, UINT32 level, const BYTE* data, int length, int width)
+void winpr_CArrayDump(const char* tag, UINT32 level, const BYTE* data, size_t length, size_t width)
 {
 	const BYTE* p = data;
-	int i, line, offset = 0;
+	size_t i, line, offset = 0;
 	const size_t llen = ((length > width) ? width : length) * 4 + 1;
 	size_t pos;
 	char* buffer = malloc(llen);
@@ -108,15 +108,16 @@ void winpr_CArrayDump(const char* tag, UINT32 level, const BYTE* data, int lengt
 	free(buffer);
 }
 
-char* winpr_BinToHexString(const BYTE* data, int length, BOOL space)
+char* winpr_BinToHexString(const BYTE* data, size_t length, BOOL space)
 {
-	int i;
-	int n;
+	size_t i;
+	size_t n;
 	char* p;
 	int ln, hn;
 	char bin2hex[] = "0123456789ABCDEF";
 	n = space ? 3 : 2;
 	p = (char*) malloc((length + 1) * n);
+
 	if (!p)
 		return NULL;
 
