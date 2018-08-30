@@ -38,8 +38,6 @@
 #include "../../log.h"
 #define TAG WINPR_TAG("sspi.NTLM")
 
-const char LM_MAGIC[] = "KGS!@#$%";
-
 static const char NTLM_CLIENT_SIGN_MAGIC[] =
     "session key to client-to-server signing key magic constant";
 static const char NTLM_SERVER_SIGN_MAGIC[] =
@@ -121,7 +119,7 @@ void ntlm_print_version_info(NTLM_VERSION_INFO* versionInfo)
 	WLog_INFO(TAG, "\tNTLMRevisionCurrent: 0x%02"PRIX8"", versionInfo->NTLMRevisionCurrent);
 }
 
-int ntlm_read_ntlm_v2_client_challenge(wStream* s, NTLMv2_CLIENT_CHALLENGE* challenge)
+static int ntlm_read_ntlm_v2_client_challenge(wStream* s, NTLMv2_CLIENT_CHALLENGE* challenge)
 {
 	size_t size;
 	Stream_Read_UINT8(s, challenge->RespType);
@@ -141,7 +139,7 @@ int ntlm_read_ntlm_v2_client_challenge(wStream* s, NTLMv2_CLIENT_CHALLENGE* chal
 	return 1;
 }
 
-int ntlm_write_ntlm_v2_client_challenge(wStream* s, NTLMv2_CLIENT_CHALLENGE* challenge)
+static int ntlm_write_ntlm_v2_client_challenge(wStream* s, NTLMv2_CLIENT_CHALLENGE* challenge)
 {
 	ULONG length;
 	Stream_Write_UINT8(s, challenge->RespType);
@@ -190,14 +188,17 @@ void ntlm_current_time(BYTE* timestamp)
 
 void ntlm_generate_timestamp(NTLM_CONTEXT* context)
 {
-	if (memcmp(context->ChallengeTimestamp, NTLM_NULL_BUFFER, 8) != 0)
+	if (memcmp(context->ChallengeTimestamp, NTLM_NULL_BUFFER,
+	           ARRAYSIZE(context->ChallengeTimestamp)) != 0)
 		CopyMemory(context->Timestamp, context->ChallengeTimestamp, 8);
 	else
 		ntlm_current_time(context->Timestamp);
 }
 
-int ntlm_fetch_ntlm_v2_hash(NTLM_CONTEXT* context, BYTE* hash)
+static int ntlm_fetch_ntlm_v2_hash(NTLM_CONTEXT* context, BYTE* hash)
 {
+	size_t userLen, domainLen;
+	PCWSTR user, domain;
 	WINPR_SAM* sam;
 	WINPR_SAM_ENTRY* entry;
 	SSPI_CREDENTIALS* credentials = context->credentials;
@@ -206,9 +207,12 @@ int ntlm_fetch_ntlm_v2_hash(NTLM_CONTEXT* context, BYTE* hash)
 	if (!sam)
 		return -1;
 
-	entry = SamLookupUserW(sam, (LPWSTR) credentials->identity.User,
-	                       credentials->identity.UserLength * 2,
-	                       (LPWSTR) credentials->identity.Domain, credentials->identity.DomainLength * 2);
+	if (sspi_EncodeAuthIdentityAsStrings(credentials->identity, &user, &domain, NULL) != SEC_E_OK)
+		return -1;
+
+	userLen = _wcslen(user) * sizeof(WCHAR);
+	domainLen = _wcslen(domain) * sizeof(WCHAR);
+	entry = SamLookupUserW(sam, user, userLen, domain, domainLen);
 
 	if (entry)
 	{
@@ -216,17 +220,13 @@ int ntlm_fetch_ntlm_v2_hash(NTLM_CONTEXT* context, BYTE* hash)
 		WLog_DBG(TAG, "NTLM Hash:");
 		winpr_HexDump(TAG, WLOG_DEBUG, entry->NtHash, 16);
 #endif
-		NTOWFv2FromHashW(entry->NtHash,
-		                 (LPWSTR) credentials->identity.User, credentials->identity.UserLength * 2,
-		                 (LPWSTR) credentials->identity.Domain, credentials->identity.DomainLength * 2,
-		                 (BYTE*) hash);
+		NTOWFv2FromHashW(entry->NtHash, user, userLen, domain, domainLen, (BYTE*) hash);
 		SamFreeEntry(sam, entry);
 		SamClose(sam);
 		return 1;
 	}
 
-	entry = SamLookupUserW(sam, (LPWSTR) credentials->identity.User,
-	                       credentials->identity.UserLength * 2, NULL, 0);
+	entry = SamLookupUserW(sam, user, userLen, NULL, 0);
 
 	if (entry)
 	{
@@ -234,10 +234,7 @@ int ntlm_fetch_ntlm_v2_hash(NTLM_CONTEXT* context, BYTE* hash)
 		WLog_DBG(TAG, "NTLM Hash:");
 		winpr_HexDump(TAG, WLOG_DEBUG, entry->NtHash, 16);
 #endif
-		NTOWFv2FromHashW(entry->NtHash,
-		                 (LPWSTR) credentials->identity.User, credentials->identity.UserLength * 2,
-		                 (LPWSTR) credentials->identity.Domain, credentials->identity.DomainLength * 2,
-		                 (BYTE*) hash);
+		NTOWFv2FromHashW(entry->NtHash, user, userLen, domain, domainLen, (BYTE*) hash);
 		SamFreeEntry(sam, entry);
 		SamClose(sam);
 		return 1;
@@ -253,50 +250,23 @@ int ntlm_fetch_ntlm_v2_hash(NTLM_CONTEXT* context, BYTE* hash)
 	return 1;
 }
 
-int ntlm_convert_password_hash(NTLM_CONTEXT* context, BYTE* hash)
-{
-	int status;
-	int i, hn, ln;
-	char* PasswordHash = NULL;
-	UINT32 PasswordHashLength = 0;
-	SSPI_CREDENTIALS* credentials = context->credentials;
-	/* Password contains a password hash of length (PasswordLength - SSPI_CREDENTIALS_HASH_LENGTH_OFFSET) */
-	PasswordHashLength = credentials->identity.PasswordLength - SSPI_CREDENTIALS_HASH_LENGTH_OFFSET;
-	status = ConvertFromUnicode(CP_UTF8, 0, (LPCWSTR) credentials->identity.Password,
-	                            PasswordHashLength, &PasswordHash, 0, NULL, NULL);
-
-	if (status <= 0)
-		return -1;
-
-	CharUpperBuffA(PasswordHash, PasswordHashLength);
-
-	for (i = 0; i < 32; i += 2)
-	{
-		hn = PasswordHash[i] > '9' ? PasswordHash[i] - 'A' + 10 : PasswordHash[i] - '0';
-		ln = PasswordHash[i + 1] > '9' ? PasswordHash[i + 1] - 'A' + 10 : PasswordHash[i + 1] - '0';
-		hash[i / 2] = (hn << 4) | ln;
-	}
-
-	free(PasswordHash);
-	return 1;
-}
-
 static int ntlm_compute_ntlm_v2_hash(NTLM_CONTEXT* context, BYTE* hash)
 {
 	SSPI_CREDENTIALS* credentials = context->credentials;
+	size_t userLen, domainLen, pwdLen;
+	LPCWSTR user, domain, password;
+	sspi_EncodeAuthIdentityAsStrings(credentials->identity, &user, &domain, &password);
+	userLen = _wcslen(user) * sizeof(WCHAR);
+	domainLen = _wcslen(domain) * sizeof(WCHAR);
+	pwdLen = _wcslen(password) * sizeof(WCHAR);
 #ifdef WITH_DEBUG_NTLM
 
 	if (credentials)
 	{
-		WLog_DBG(TAG, "Password (length = %"PRIu32")", credentials->identity.PasswordLength * 2);
-		winpr_HexDump(TAG, WLOG_DEBUG, (BYTE*) credentials->identity.Password,
-		              credentials->identity.PasswordLength * 2);
-		WLog_DBG(TAG, "Username (length = %"PRIu32")", credentials->identity.UserLength * 2);
-		winpr_HexDump(TAG, WLOG_DEBUG, (BYTE*) credentials->identity.User,
-		              credentials->identity.UserLength * 2);
-		WLog_DBG(TAG, "Domain (length = %"PRIu32")", credentials->identity.DomainLength * 2);
-		winpr_HexDump(TAG, WLOG_DEBUG, (BYTE*) credentials->identity.Domain,
-		              credentials->identity.DomainLength * 2);
+		WLog_DBG(TAG, "Username (length = %"PRIu32")", domainLen);
+		winpr_HexDump(TAG, WLOG_DEBUG, user, userLen);
+		WLog_DBG(TAG, "Domain (length = %"PRIu32")", domainLen);
+		winpr_HexDump(TAG, WLOG_DEBUG, domain, domainLen);
 	}
 	else
 		WLog_DBG(TAG, "Strange, NTLM_CONTEXT is missing valid credentials...");
@@ -307,32 +277,16 @@ static int ntlm_compute_ntlm_v2_hash(NTLM_CONTEXT* context, BYTE* hash)
 	winpr_HexDump(TAG, WLOG_DEBUG, context->NtlmV2Hash, WINPR_MD5_DIGEST_LENGTH);
 #endif
 
-	if (memcmp(context->NtlmV2Hash, NTLM_NULL_BUFFER, 16) != 0)
+	if (memcmp(context->NtlmV2Hash, NTLM_NULL_BUFFER, ARRAYSIZE(context->NtlmV2Hash)) != 0)
 		return 1;
 
-	if (memcmp(context->NtlmHash, NTLM_NULL_BUFFER, 16) != 0)
+	if (memcmp(context->NtlmHash, NTLM_NULL_BUFFER, ARRAYSIZE(context->NtlmHash)) != 0)
 	{
-		NTOWFv2FromHashW(context->NtlmHash,
-		                 (LPWSTR) credentials->identity.User, credentials->identity.UserLength * 2,
-		                 (LPWSTR) credentials->identity.Domain, credentials->identity.DomainLength * 2,
-		                 (BYTE*) hash);
+		NTOWFv2FromHashW(context->NtlmHash, user, userLen, domain, domainLen, (BYTE*) hash);
 	}
-	else if (credentials->identity.PasswordLength > SSPI_CREDENTIALS_HASH_LENGTH_OFFSET)
+	else if (pwdLen > 0)
 	{
-		/* Special case for WinPR: password hash */
-		if (ntlm_convert_password_hash(context, context->NtlmHash) < 0)
-			return -1;
-
-		NTOWFv2FromHashW(context->NtlmHash,
-		                 (LPWSTR) credentials->identity.User, credentials->identity.UserLength * 2,
-		                 (LPWSTR) credentials->identity.Domain, credentials->identity.DomainLength * 2,
-		                 (BYTE*) hash);
-	}
-	else if (credentials->identity.Password)
-	{
-		NTOWFv2W((LPWSTR) credentials->identity.Password, credentials->identity.PasswordLength * 2,
-		         (LPWSTR) credentials->identity.User, credentials->identity.UserLength * 2,
-		         (LPWSTR) credentials->identity.Domain, credentials->identity.DomainLength * 2, (BYTE*) hash);
+		NTOWFv2W(password, pwdLen, user, userLen, domain, domainLen, (BYTE*) hash);
 	}
 	else if (context->HashCallback)
 	{
@@ -477,7 +431,7 @@ int ntlm_compute_ntlm_v2_response(NTLM_CONTEXT* context)
  * @param ciphertext cipher text
  */
 
-void ntlm_rc4k(BYTE* key, int length, BYTE* plaintext, BYTE* ciphertext)
+static void ntlm_rc4k(BYTE* key, int length, BYTE* plaintext, BYTE* ciphertext)
 {
 	WINPR_RC4_CTX* rc4 = winpr_RC4_New(key, 16);
 
@@ -496,7 +450,7 @@ void ntlm_rc4k(BYTE* key, int length, BYTE* plaintext, BYTE* ciphertext)
 void ntlm_generate_client_challenge(NTLM_CONTEXT* context)
 {
 	/* ClientChallenge is used in computation of LMv2 and NTLMv2 responses */
-	if (memcmp(context->ClientChallenge, NTLM_NULL_BUFFER, 8) == 0)
+	if (memcmp(context->ClientChallenge, NTLM_NULL_BUFFER, ARRAYSIZE(context->ClientChallenge)) == 0)
 		winpr_RAND(context->ClientChallenge, 8);
 }
 
@@ -507,7 +461,7 @@ void ntlm_generate_client_challenge(NTLM_CONTEXT* context)
 
 void ntlm_generate_server_challenge(NTLM_CONTEXT* context)
 {
-	if (memcmp(context->ServerChallenge, NTLM_NULL_BUFFER, 8) == 0)
+	if (memcmp(context->ServerChallenge, NTLM_NULL_BUFFER, ARRAYSIZE(context->ServerChallenge)) == 0)
 		winpr_RAND(context->ServerChallenge, 8);
 }
 
@@ -585,7 +539,8 @@ void ntlm_decrypt_random_session_key(NTLM_CONTEXT* context)
  * @param signing_key Destination signing key
  */
 
-int ntlm_generate_signing_key(BYTE* exported_session_key, PSecBuffer sign_magic, BYTE* signing_key)
+static int ntlm_generate_signing_key(BYTE* exported_session_key, PSecBuffer sign_magic,
+                                     BYTE* signing_key)
 {
 	int length;
 	BYTE* value;
@@ -645,7 +600,8 @@ void ntlm_generate_server_signing_key(NTLM_CONTEXT* context)
  * @param sealing_key Destination sealing key
  */
 
-int ntlm_generate_sealing_key(BYTE* exported_session_key, PSecBuffer seal_magic, BYTE* sealing_key)
+static int ntlm_generate_sealing_key(BYTE* exported_session_key, PSecBuffer seal_magic,
+                                     BYTE* sealing_key)
 {
 	BYTE* p;
 	SecBuffer buffer;

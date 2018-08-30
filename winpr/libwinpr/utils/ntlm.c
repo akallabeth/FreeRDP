@@ -32,7 +32,7 @@
  * EndDefine
  */
 
-BOOL NTOWFv1W(LPWSTR Password, UINT32 PasswordLength, BYTE* NtHash)
+BOOL NTOWFv1W(LPCWSTR Password, UINT32 PasswordLength, BYTE* NtHash)
 {
 	if (!Password || !NtHash)
 		return FALSE;
@@ -44,7 +44,7 @@ BOOL NTOWFv1W(LPWSTR Password, UINT32 PasswordLength, BYTE* NtHash)
 	return TRUE;
 }
 
-BOOL NTOWFv1A(LPSTR Password, UINT32 PasswordLength, BYTE* NtHash)
+BOOL NTOWFv1A(LPCSTR Password, UINT32 PasswordLength, BYTE* NtHash)
 {
 	LPWSTR PasswordW = NULL;
 	BOOL result = FALSE;
@@ -73,8 +73,8 @@ out_fail:
  * EndDefine
  */
 
-BOOL NTOWFv2W(LPWSTR Password, UINT32 PasswordLength, LPWSTR User,
-              UINT32 UserLength, LPWSTR Domain, UINT32 DomainLength, BYTE* NtHash)
+BOOL NTOWFv2W(LPCWSTR Password, UINT32 PasswordLength, LPCWSTR User,
+              UINT32 UserLength, LPCWSTR Domain, UINT32 DomainLength, BYTE* NtHash)
 {
 	BYTE* buffer;
 	BYTE NtHashV1[16];
@@ -105,8 +105,8 @@ out_fail:
 	return result;
 }
 
-BOOL NTOWFv2A(LPSTR Password, UINT32 PasswordLength, LPSTR User,
-              UINT32 UserLength, LPSTR Domain, UINT32 DomainLength, BYTE* NtHash)
+BOOL NTOWFv2A(LPCSTR Password, UINT32 PasswordLength, LPCSTR User,
+              UINT32 UserLength, LPCSTR Domain, UINT32 DomainLength, BYTE* NtHash)
 {
 	LPWSTR UserW = NULL;
 	LPWSTR DomainW = NULL;
@@ -139,7 +139,7 @@ out_fail:
 	return result;
 }
 
-BOOL NTOWFv2FromHashW(BYTE* NtHashV1, LPWSTR User, UINT32 UserLength, LPWSTR Domain,
+BOOL NTOWFv2FromHashW(const BYTE* NtHashV1, LPCWSTR User, UINT32 UserLength, LPCWSTR Domain,
                       UINT32 DomainLength, BYTE* NtHash)
 {
 	BYTE* buffer;
@@ -171,7 +171,7 @@ out_fail:
 	return result;
 }
 
-BOOL NTOWFv2FromHashA(BYTE* NtHashV1, LPSTR User, UINT32 UserLength, LPSTR Domain,
+BOOL NTOWFv2FromHashA(const BYTE* NtHashV1, LPCSTR User, UINT32 UserLength, LPCSTR Domain,
                       UINT32 DomainLength, BYTE* NtHash)
 {
 	LPWSTR UserW = NULL;

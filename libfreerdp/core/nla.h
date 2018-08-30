@@ -48,7 +48,7 @@ typedef enum
 	NLA_STATE_FINAL
 } NLA_STATE;
 
-FREERDP_LOCAL SEC_WINNT_AUTH_IDENTITY* nla_get_identity(rdpNla* nla);
+FREERDP_LOCAL PSEC_WINNT_AUTH_IDENTITY_OPAQUE nla_get_identity(rdpNla* nla);
 FREERDP_LOCAL NLA_STATE nla_get_state(rdpNla* nla);
 FREERDP_LOCAL BOOL nla_set_state(rdpNla* nla, NLA_STATE state);
 

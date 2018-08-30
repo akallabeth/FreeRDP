@@ -48,7 +48,8 @@ typedef void (*psPeerDisconnect)(freerdp_peer* peer);
 typedef BOOL (*psPeerCapabilities)(freerdp_peer* peer);
 typedef BOOL (*psPeerPostConnect)(freerdp_peer* peer);
 typedef BOOL (*psPeerActivate)(freerdp_peer* peer);
-typedef BOOL (*psPeerLogon)(freerdp_peer* peer, SEC_WINNT_AUTH_IDENTITY* identity, BOOL automatic);
+typedef BOOL (*psPeerLogon)(freerdp_peer* peer, const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity,
+                            BOOL automatic);
 typedef BOOL (*psPeerAdjustMonitorsLayout)(freerdp_peer* peer);
 typedef BOOL (*psPeerClientCapabilities)(freerdp_peer* peer);
 
@@ -114,7 +115,7 @@ struct rdp_freerdp_peer
 	BOOL connected;
 	BOOL activated;
 	BOOL authenticated;
-	SEC_WINNT_AUTH_IDENTITY identity;
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity;
 
 	psPeerIsWriteBlocked IsWriteBlocked;
 	psPeerDrainOutputBuffer DrainOutputBuffer;

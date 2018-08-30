@@ -35,6 +35,86 @@
 #include "../log.h"
 #define TAG WINPR_TAG("sspi")
 
+#define SEC_WINNT_AUTH_IDENTITY_VERSION 0x200
+#define SEC_WINNT_AUTH_IDENTITY_VERSION_2 0x201
+
+typedef struct _SEC_WINNT_AUTH_IDENTITY_EXA
+{
+	unsigned long Version;
+	unsigned long Length;
+	unsigned char* User;            //  Non-NULL terminated string.
+	unsigned long UserLength;       //  # of characters (NOT bytes), not including NULL.
+	unsigned char* Domain;          //  Non-NULL terminated string.
+	unsigned long DomainLength;     //  # of characters (NOT bytes), not including NULL.
+	unsigned char* Password;        //  Non-NULL terminated string.
+	unsigned long PasswordLength;   //  # of characters (NOT bytes), not including NULL.
+	unsigned long Flags;
+	unsigned char* PackageList;
+	unsigned long PackageListLength;
+} SEC_WINNT_AUTH_IDENTITY_EXA, *PSEC_WINNT_AUTH_IDENTITY_EXA;
+
+typedef struct _SEC_WINNT_AUTH_IDENTITY_EXW
+{
+	unsigned long Version;
+	unsigned long Length;
+	unsigned short* User;           //  Non-NULL terminated string.
+	unsigned long UserLength;       //  # of characters (NOT bytes), not including NULL.
+	unsigned short* Domain;         //  Non-NULL terminated string.
+	unsigned long DomainLength;     //  # of characters (NOT bytes), not including NULL.
+	unsigned short* Password;       //  Non-NULL terminated string.
+	unsigned long PasswordLength;   //  # of characters (NOT bytes), not including NULL.
+	unsigned long Flags;
+	unsigned short* PackageList;
+	unsigned long PackageListLength;
+} SEC_WINNT_AUTH_IDENTITY_EXW, *PSEC_WINNT_AUTH_IDENTITY_EXW;
+
+typedef struct _SEC_WINNT_AUTH_IDENTITY_EX2
+{
+	unsigned long Version; // contains SEC_WINNT_AUTH_IDENTITY_VERSION_2
+	unsigned short cbHeaderLength;
+	unsigned long cbStructureLength;
+	unsigned long UserOffset;                // Non-NULL terminated string, unicode only
+	unsigned short UserLength;               // # of bytes (NOT WCHARs), not including NULL.
+	unsigned long DomainOffset;              // Non-NULL terminated string, unicode only
+	unsigned short DomainLength;             // # of bytes (NOT WCHARs), not including NULL.
+	unsigned long PackedCredentialsOffset;   // Non-NULL terminated string, unicode only
+	unsigned short PackedCredentialsLength;  // # of bytes (NOT WCHARs), not including NULL.
+	unsigned long Flags;
+	unsigned long PackageListOffset;         // Non-NULL terminated string, unicode only
+	unsigned short PackageListLength;
+} SEC_WINNT_AUTH_IDENTITY_EX2, *PSEC_WINNT_AUTH_IDENTITY_EX2;
+
+typedef struct
+{
+	UINT16* User;
+	UINT32 UserLength;
+	UINT16* Domain;
+	UINT32 DomainLength;
+	UINT16* Password;
+	UINT32 PasswordLength;
+	UINT32 Flags;
+} SEC_WINNT_AUTH_IDENTITY_W, *PSEC_WINNT_AUTH_IDENTITY_W;
+
+typedef struct
+{
+	BYTE* User;
+	UINT32 UserLength;
+	BYTE* Domain;
+	UINT32 DomainLength;
+	BYTE* Password;
+	UINT32 PasswordLength;
+	UINT32 Flags;
+} SEC_WINNT_AUTH_IDENTITY_A, *PSEC_WINNT_AUTH_IDENTITY_A;
+
+typedef union _SEC_WINNT_AUTH_IDENTITY_INFO
+{
+	SEC_WINNT_AUTH_IDENTITY_EXW AuthIdExw;
+	SEC_WINNT_AUTH_IDENTITY_EXA AuthIdExa;
+	SEC_WINNT_AUTH_IDENTITY_A AuthId_a;
+	SEC_WINNT_AUTH_IDENTITY_W AuthId_w;
+	SEC_WINNT_AUTH_IDENTITY_EX2 AuthIdEx2;
+} SEC_WINNT_AUTH_IDENTITY_INFO, *PSEC_WINNT_AUTH_IDENTITY_INFO;
+
 /* Authentication Functions: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374731/ */
 
 extern const SecPkgInfoA NTLM_SecPkgInfoA;
@@ -141,12 +221,23 @@ typedef struct _CONTEXT_BUFFER_ALLOC_TABLE CONTEXT_BUFFER_ALLOC_TABLE;
 
 static CONTEXT_BUFFER_ALLOC_TABLE ContextBufferAllocTable = { 0 };
 
-static BOOL copyIf(UINT16** dst, const UINT16* data, UINT32 length)
+
+static DWORD sspi_AuthIdentityType(PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity)
+{
+	const DWORD* type = identity;
+
+	if (!type)
+		return 0;
+
+	return *type;
+}
+
+static BOOL copyIfA(BYTE** dst, const void* data, size_t length)
 {
 	if (!dst)
 		return FALSE;
 
-	if (!data && length != 0)
+	if (!data && (length != 0))
 		return FALSE;
 
 	if (length == 0)
@@ -159,6 +250,22 @@ static BOOL copyIf(UINT16** dst, const UINT16* data, UINT32 length)
 
 	memcpy(*dst, data, length);
 	return TRUE;
+}
+
+static BOOL copyIf(UINT16** dst, const UINT16* data, size_t length)
+{
+	return copyIfA((BYTE**)dst, data, length * sizeof(WCHAR));
+}
+
+static BOOL copyAndSetIf(UINT16** dst, const UINT16* data, unsigned long* length)
+{
+	const size_t len = _wcslen(data);
+
+	if (!length)
+		return FALSE;
+
+	*length = len;
+	return copyIf(dst, data, len);
 }
 
 static BOOL convertIf(UINT16** dst, const char* data, UINT32* length)
@@ -270,39 +377,10 @@ SSPI_CREDENTIALS* sspi_CredentialsNew(void)
 
 void sspi_CredentialsFree(SSPI_CREDENTIALS* credentials)
 {
-	size_t userLength = 0;
-	size_t domainLength = 0;
-	size_t passwordLength = 0;
-	size_t pinLength = 0;
-	size_t userHintLength = 0;
-	size_t domainHintLength = 0;
-
 	if (!credentials)
 		return;
 
-	userLength = credentials->identity.UserLength;
-	domainLength = credentials->identity.DomainLength;
-	passwordLength = credentials->identity.PasswordLength;
-
-	if (passwordLength > SSPI_CREDENTIALS_HASH_LENGTH_OFFSET) /* [pth] */
-		passwordLength -= SSPI_CREDENTIALS_HASH_LENGTH_OFFSET;
-
-	if (credentials->identity.Flags & SEC_WINNT_AUTH_IDENTITY_UNICODE)
-	{
-		userLength *= 2;
-		domainLength *= 2;
-		passwordLength *= 2;
-		pinLength *= 2;
-		userHintLength *= 2;
-		domainHintLength *= 2;
-	}
-
-	memset(credentials->identity.User, 0, userLength);
-	memset(credentials->identity.Domain, 0, domainLength);
-	memset(credentials->identity.Password, 0, passwordLength);
-	free(credentials->identity.User);
-	free(credentials->identity.Domain);
-	free(credentials->identity.Password);
+	sspi_FreeAuthIdentity(credentials->identity);
 	free(credentials);
 }
 
@@ -396,7 +474,8 @@ void sspi_SecureHandleFree(SecHandle* handle)
 	free(handle);
 }
 
-int sspi_SetAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity, const char* user, const char* domain,
+int sspi_SetAuthIdentity(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity, const char* user,
+                         const char* domain,
                          const char* password)
 {
 	int rc;
@@ -413,70 +492,243 @@ int sspi_SetAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity, const char* user, co
 	return rc;
 }
 
-int sspi_SetAuthIdentityWithUnicodePassword(SEC_WINNT_AUTH_IDENTITY* pidentity, const char* user,
-        const char* domain, LPWSTR password, ULONG passwordLength)
+SECURITY_STATUS sspi_EncodeStringsAsAuthIdentity(PCWSTR user, PCWSTR domain,
+        PCWSTR pszPackedCredentialsString, PSEC_WINNT_AUTH_IDENTITY_OPAQUE* raw_identity)
 {
-	SEC_WINNT_AUTH_IDENTITY* identity = (SEC_WINNT_AUTH_IDENTITY*)pidentity;
-	identity->Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
-	free(identity->User);
+	PSEC_WINNT_AUTH_IDENTITY_INFO identity;
 
-	if (!convertIf(&identity->User, user, &identity->UserLength))
-		return -1;
+	if (!raw_identity)
+		return SEC_E_INVALID_PARAMETER;
 
-	free(identity->Domain);
+	sspi_FreeAuthIdentity(*raw_identity);
+	*raw_identity = NULL;
+	identity = calloc(1, sizeof(SEC_WINNT_AUTH_IDENTITY_EXW));
 
-	if (!convertIf(&identity->Domain, domain, &identity->DomainLength))
-		return -1;
+	if (!identity)
+		return SEC_E_INSUFFICIENT_MEMORY;
 
-	free(identity->Password);
+	identity->AuthIdExw.Version = SEC_WINNT_AUTH_IDENTITY_VERSION;
+	identity->AuthIdExw.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
 
-	if (!copyIf(&identity->Password, password, passwordLength))
-		return -1;
+	if (!copyAndSetIf(&identity->AuthIdExw.Domain, domain, &identity->AuthIdExw.DomainLength))
+		goto fail;
 
-	identity->PasswordLength = passwordLength;
-	return 1;
+	if (!copyAndSetIf(&identity->AuthIdExw.Password, pszPackedCredentialsString,
+	                  &identity->AuthIdExw.PasswordLength))
+		goto fail;
+
+	if (!copyAndSetIf(&identity->AuthIdExw.User, user, &identity->AuthIdExw.UserLength))
+		goto fail;
+
+	*raw_identity = identity;
+	return SEC_E_OK;
+fail:
+	sspi_FreeAuthIdentity(identity);
+	return SEC_E_INSUFFICIENT_MEMORY;
 }
 
-int sspi_CopyAuthIdentity(const SEC_WINNT_AUTH_IDENTITY* psrcIdentity,
-                          SEC_WINNT_AUTH_IDENTITY* pidentity)
+SECURITY_STATUS SEC_ENTRY sspi_EncodeAuthIdentityAsStrings(
+    const PSEC_WINNT_AUTH_IDENTITY_OPAQUE pAuthIdentity,
+    PCWSTR* ppszUserName, PCWSTR* ppszDomainName,
+    PCWSTR* ppszPackedCredentialsString)
 {
-	// TODO: Find out what we actualy have
-	const SEC_WINNT_AUTH_IDENTITY* srcIdentity = psrcIdentity;
-	SEC_WINNT_AUTH_IDENTITY* identity = pidentity;
-	*identity = *srcIdentity;
+	PSEC_WINNT_AUTH_IDENTITY_INFO identity = pAuthIdentity;
 
-	if (!copyIf(&identity->User, srcIdentity->User, srcIdentity->UserLength))
-		return -1;
+	switch (sspi_AuthIdentityType(pAuthIdentity))
+	{
+		case SEC_WINNT_AUTH_IDENTITY_VERSION:
+			if ((identity->AuthIdExw.Flags & SEC_WINNT_AUTH_IDENTITY_UNICODE) == 0)
+				return SEC_E_INVALID_HANDLE;
 
-	if (!copyIf(&identity->Domain, srcIdentity->Domain, srcIdentity->DomainLength))
-		return -1;
+			*ppszUserName = identity->AuthIdExw.User;
+			*ppszDomainName = identity->AuthIdExw.Domain;
+			*ppszPackedCredentialsString = identity->AuthIdExw.Password;
+			return SEC_E_OK;
 
-	if (!copyIf(&identity->Password, srcIdentity->Password, srcIdentity->PasswordLength))
-		return -1;
-
-	return 1;
+		case SEC_WINNT_AUTH_IDENTITY_VERSION_2:
+		default:
+			return SEC_E_INVALID_HANDLE;
+	}
 }
 
-void sspi_FreeAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity)
+int sspi_SetAuthIdentityWithUnicodePassword(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity,
+        const char* user,
+        const char* domain, LPCWSTR password, ULONG passwordLength)
 {
+	PWCHAR userW = NULL;
+	PWCHAR domainW = NULL;
+	SECURITY_STATUS status = SEC_E_INTERNAL_ERROR;
+
+	if (!convertIf(&userW, user, NULL))
+		goto fail;
+
+	if (!convertIf(&domainW, domain, NULL))
+		goto fail;
+
+	status = sspi_EncodeStringsAsAuthIdentity(userW, domainW, password, identity);
+fail:
+	free(userW);
+	free(domainW);
+	return status;
+}
+
+int sspi_CopyAuthIdentity(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE psrcIdentity,
+                          PSEC_WINNT_AUTH_IDENTITY_OPAQUE pidentity)
+{
+	const PSEC_WINNT_AUTH_IDENTITY_INFO srcIdentity = psrcIdentity;
+	PSEC_WINNT_AUTH_IDENTITY_INFO identity = pidentity;
+
+	switch (sspi_AuthIdentityType(psrcIdentity))
+	{
+		case SEC_WINNT_AUTH_IDENTITY_VERSION:
+			*identity = *srcIdentity;
+
+			if (identity->AuthIdExw.Flags & SEC_WINNT_AUTH_IDENTITY_UNICODE)
+			{
+				if (!copyIf(&identity->AuthIdExw.User, srcIdentity->AuthIdExw.User,
+				            srcIdentity->AuthIdExw.UserLength))
+					goto fail;
+
+				if (!copyIf(&identity->AuthIdExw.Domain, srcIdentity->AuthIdExw.Domain,
+				            srcIdentity->AuthIdExw.DomainLength))
+					goto fail;
+
+				if (!copyIf(&identity->AuthIdExw.Password, srcIdentity->AuthIdExw.Password,
+				            srcIdentity->AuthIdExw.PasswordLength))
+					goto fail;
+
+				if (!copyIf(&identity->AuthIdExw.PackageList, srcIdentity->AuthIdExw.PackageList,
+				            srcIdentity->AuthIdExw.PackageListLength))
+					goto fail;
+			}
+
+			if (identity->AuthIdExa.Flags & SEC_WINNT_AUTH_IDENTITY_ANSI)
+			{
+				if (!copyIfA(&identity->AuthIdExa.User, srcIdentity->AuthIdExa.User,
+				             srcIdentity->AuthIdExa.UserLength))
+					goto fail;
+
+				if (!copyIfA(&identity->AuthIdExa.Domain, srcIdentity->AuthIdExa.Domain,
+				             srcIdentity->AuthIdExa.DomainLength))
+					goto fail;
+
+				if (!copyIfA(&identity->AuthIdExa.Password, srcIdentity->AuthIdExa.Password,
+				             srcIdentity->AuthIdExa.PasswordLength))
+					goto fail;
+
+				if (!copyIfA(&identity->AuthIdExa.PackageList, srcIdentity->AuthIdExa.PackageList,
+				             srcIdentity->AuthIdExa.PackageListLength))
+					goto fail;
+			}
+
+			break;
+
+		case SEC_WINNT_AUTH_IDENTITY_VERSION_2:
+			// TODO
+			break;
+
+		default:
+			*identity = *srcIdentity;
+
+			if (identity->AuthId_w.Flags & SEC_WINNT_AUTH_IDENTITY_UNICODE)
+			{
+				if (!copyIf(&identity->AuthId_w.User, srcIdentity->AuthId_w.User, srcIdentity->AuthId_w.UserLength))
+					goto fail;
+
+				if (!copyIf(&identity->AuthId_w.Domain, srcIdentity->AuthId_w.Domain,
+				            srcIdentity->AuthId_w.DomainLength))
+					goto fail;
+
+				if (!copyIf(&identity->AuthId_w.Password, srcIdentity->AuthId_w.Password,
+				            srcIdentity->AuthId_w.PasswordLength))
+					goto fail;
+			}
+
+			if (identity->AuthId_a.Flags & SEC_WINNT_AUTH_IDENTITY_ANSI)
+			{
+				if (!copyIfA(&identity->AuthId_a.User, srcIdentity->AuthId_a.User,
+				             srcIdentity->AuthId_a.UserLength))
+					goto fail;
+
+				if (!copyIfA(&identity->AuthId_a.Domain, srcIdentity->AuthId_a.Domain,
+				             srcIdentity->AuthId_a.DomainLength))
+					goto fail;
+
+				if (!copyIfA(&identity->AuthId_a.Password, srcIdentity->AuthId_a.Password,
+				             srcIdentity->AuthId_a.PasswordLength))
+					goto fail;
+			}
+
+			break;
+	}
+
+	return 1;
+fail:
+	sspi_ZeroAuthIdentity(pidentity);
+	return -1;
+}
+
+void sspi_FreeAuthIdentity(PSEC_WINNT_AUTH_IDENTITY_OPAQUE pidentity)
+{
+	PSEC_WINNT_AUTH_IDENTITY_INFO identity = pidentity;
+
 	if (!identity)
 		return;
 
 	sspi_ZeroAuthIdentity(identity);
-	free(identity->Domain);
-	free(identity->Password);
-	free(identity->User);
-	free(identity);
+
+	switch (sspi_AuthIdentityType(identity))
+	{
+		case SEC_WINNT_AUTH_IDENTITY_VERSION:
+			sspi_LocalFree(identity->AuthIdExw.Domain);
+			sspi_LocalFree(identity->AuthIdExw.Password);
+			sspi_LocalFree(identity->AuthIdExw.User);
+			sspi_LocalFree(identity->AuthIdExw.PackageList);
+			break;
+
+		case SEC_WINNT_AUTH_IDENTITY_VERSION_2:
+			break;
+
+		default:
+			sspi_LocalFree(identity->AuthId_w.Domain);
+			sspi_LocalFree(identity->AuthId_w.User);
+			sspi_LocalFree(identity->AuthId_w.Password);
+			break;
+	}
+
+	sspi_LocalFree(identity);
 }
 
-void sspi_ZeroAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity)
+void sspi_ZeroAuthIdentity(PSEC_WINNT_AUTH_IDENTITY_OPAQUE pidentity)
 {
+	PSEC_WINNT_AUTH_IDENTITY_INFO identity = pidentity;
+
 	if (!identity)
 		return;
 
-	memset(identity->Domain, 0, identity->DomainLength);
-	memset(identity->Password, 0, identity->PasswordLength);
-	memset(identity->User, 0, identity->UserLength);
+	switch (sspi_AuthIdentityType(pidentity))
+	{
+		case SEC_WINNT_AUTH_IDENTITY_VERSION:
+			memset(identity->AuthIdExw.Domain, 0, identity->AuthIdExw.DomainLength);
+			memset(identity->AuthIdExw.Password, 0, identity->AuthIdExw.PasswordLength);
+			memset(identity->AuthIdExw.User, 0, identity->AuthIdExw.UserLength);
+			memset(identity->AuthIdExw.PackageList, 0, identity->AuthIdExw.PackageListLength);
+			break;
+
+		case SEC_WINNT_AUTH_IDENTITY_VERSION_2:
+			break;
+
+		default:
+			memset(identity->AuthId_w.Domain, 0, identity->AuthId_w.DomainLength);
+			memset(identity->AuthId_w.Password, 0, identity->AuthId_w.PasswordLength);
+			memset(identity->AuthId_w.User, 0, identity->AuthId_w.UserLength);
+			break;
+	}
+}
+
+void sspi_LocalFree(PVOID buffer)
+{
+	free(buffer);
 }
 
 PSecBuffer sspi_FindSecBuffer(PSecBufferDesc pMessage, ULONG BufferType)

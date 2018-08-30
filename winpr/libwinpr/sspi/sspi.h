@@ -26,15 +26,13 @@
 
 #define SSPI_CREDENTIALS_PASSWORD_HASH	0x00000001
 
-#define SSPI_CREDENTIALS_HASH_LENGTH_OFFSET	512
-
 struct _SSPI_CREDENTIALS
 {
 	DWORD flags;
 	ULONG fCredentialUse;
 	SEC_GET_KEY_FN pGetKeyFn;
 	void* pvGetKeyArgument;
-	SEC_WINNT_AUTH_IDENTITY identity;
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity;
 };
 typedef struct _SSPI_CREDENTIALS SSPI_CREDENTIALS;
 
@@ -53,34 +51,34 @@ void sspi_SecureHandleFree(SecHandle* handle);
 
 enum SecurityFunctionTableIndex
 {
-    EnumerateSecurityPackagesIndex = 1,
-    Reserved1Index = 2,
-    QueryCredentialsAttributesIndex = 3,
-    AcquireCredentialsHandleIndex = 4,
-    FreeCredentialsHandleIndex = 5,
-    Reserved2Index = 6,
-    InitializeSecurityContextIndex = 7,
-    AcceptSecurityContextIndex = 8,
-    CompleteAuthTokenIndex = 9,
-    DeleteSecurityContextIndex = 10,
-    ApplyControlTokenIndex = 11,
-    QueryContextAttributesIndex = 12,
-    ImpersonateSecurityContextIndex = 13,
-    RevertSecurityContextIndex = 14,
-    MakeSignatureIndex = 15,
-    VerifySignatureIndex = 16,
-    FreeContextBufferIndex = 17,
-    QuerySecurityPackageInfoIndex = 18,
-    Reserved3Index = 19,
-    Reserved4Index = 20,
-    ExportSecurityContextIndex = 21,
-    ImportSecurityContextIndex = 22,
-    AddCredentialsIndex = 23,
-    Reserved8Index = 24,
-    QuerySecurityContextTokenIndex = 25,
-    EncryptMessageIndex = 26,
-    DecryptMessageIndex = 27,
-    SetContextAttributesIndex = 28
+	EnumerateSecurityPackagesIndex = 1,
+	Reserved1Index = 2,
+	QueryCredentialsAttributesIndex = 3,
+	AcquireCredentialsHandleIndex = 4,
+	FreeCredentialsHandleIndex = 5,
+	Reserved2Index = 6,
+	InitializeSecurityContextIndex = 7,
+	AcceptSecurityContextIndex = 8,
+	CompleteAuthTokenIndex = 9,
+	DeleteSecurityContextIndex = 10,
+	ApplyControlTokenIndex = 11,
+	QueryContextAttributesIndex = 12,
+	ImpersonateSecurityContextIndex = 13,
+	RevertSecurityContextIndex = 14,
+	MakeSignatureIndex = 15,
+	VerifySignatureIndex = 16,
+	FreeContextBufferIndex = 17,
+	QuerySecurityPackageInfoIndex = 18,
+	Reserved3Index = 19,
+	Reserved4Index = 20,
+	ExportSecurityContextIndex = 21,
+	ImportSecurityContextIndex = 22,
+	AddCredentialsIndex = 23,
+	Reserved8Index = 24,
+	QuerySecurityContextTokenIndex = 25,
+	EncryptMessageIndex = 26,
+	DecryptMessageIndex = 27,
+	SetContextAttributesIndex = 28
 };
 
 BOOL IsSecurityStatusError(SECURITY_STATUS status);

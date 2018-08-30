@@ -93,7 +93,7 @@ struct _TEST_NTLM_CLIENT
 	BOOL confidentiality;
 	SecPkgInfo* pPackageInfo;
 	SecurityFunctionTable* table;
-	SEC_WINNT_AUTH_IDENTITY identity;
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity;
 };
 typedef struct _TEST_NTLM_CLIENT TEST_NTLM_CLIENT;
 
@@ -151,9 +151,7 @@ void test_ntlm_client_uninit(TEST_NTLM_CLIENT* ntlm)
 		ntlm->outputBuffer[0].pvBuffer = NULL;
 	}
 
-	free(ntlm->identity.User);
-	free(ntlm->identity.Domain);
-	free(ntlm->identity.Password);
+	sspi_FreeAuthIdentity(ntlm->identity);
 	free(ntlm->ServicePrincipalName);
 
 	if (ntlm->table)
@@ -305,7 +303,7 @@ struct _TEST_NTLM_SERVER
 	BOOL confidentiality;
 	SecPkgInfo* pPackageInfo;
 	SecurityFunctionTable* table;
-	SEC_WINNT_AUTH_IDENTITY identity;
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity;
 };
 typedef struct _TEST_NTLM_SERVER TEST_NTLM_SERVER;
 
@@ -363,9 +361,7 @@ void test_ntlm_server_uninit(TEST_NTLM_SERVER* ntlm)
 		ntlm->outputBuffer[0].pvBuffer = NULL;
 	}
 
-	free(ntlm->identity.User);
-	free(ntlm->identity.Domain);
-	free(ntlm->identity.Password);
+	sspi_FreeAuthIdentity(ntlm->identity);
 	free(ntlm->ServicePrincipalName);
 
 	if (ntlm->table)

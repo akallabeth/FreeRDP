@@ -114,7 +114,7 @@ static SECURITY_STATUS SEC_ENTRY credssp_AcquireCredentialsHandleA(SEC_CHAR* psz
         void* pvGetKeyArgument, PCredHandle phCredential, PTimeStamp ptsExpiry)
 {
 	SSPI_CREDENTIALS* credentials;
-	SEC_WINNT_AUTH_IDENTITY* identity;
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity;
 
 	if (fCredentialUse == SECPKG_CRED_OUTBOUND)
 	{
@@ -123,8 +123,8 @@ static SECURITY_STATUS SEC_ENTRY credssp_AcquireCredentialsHandleA(SEC_CHAR* psz
 		if (!credentials)
 			return SEC_E_INSUFFICIENT_MEMORY;
 
-		identity = (SEC_WINNT_AUTH_IDENTITY*) pAuthData;
-		CopyMemory(&(credentials->identity), identity, sizeof(SEC_WINNT_AUTH_IDENTITY));
+		identity = (PSEC_WINNT_AUTH_IDENTITY_OPAQUE) pAuthData;
+		sspi_CopyAuthIdentity(identity, &credentials->identity);
 		sspi_SecureHandleSetLowerPointer(phCredential, (void*) credentials);
 		sspi_SecureHandleSetUpperPointer(phCredential, (void*) CREDSSP_PACKAGE_NAME);
 		return SEC_E_OK;

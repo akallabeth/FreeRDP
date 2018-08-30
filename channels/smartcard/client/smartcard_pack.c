@@ -635,9 +635,13 @@ void smartcard_trace_list_reader_groups_return(SMARTCARD_DEVICE* smartcard,
 	}
 	else
 	{
-		length = ret->cBytes;
-		mszA = (char*) malloc(length);
-		CopyMemory(mszA, ret->msz, ret->cBytes);
+		length = ret->cBytes + 1;
+		mszA = (char*) calloc(length, sizeof(char));
+
+		if (!mszA)
+			return;
+
+		sprintf_s(mszA, length, "%s", ret->msz);
 	}
 
 	for (index = 0; index < length - 2; index++)

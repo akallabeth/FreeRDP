@@ -48,7 +48,7 @@ struct _KRB_CONTEXT
 {
 	CtxtHandle context;
 	SSPI_CREDENTIALS* credentials;
-	SEC_WINNT_AUTH_IDENTITY identity;
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity;
 
 	/* GSSAPI */
 	UINT32 major_status;

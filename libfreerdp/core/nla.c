@@ -64,7 +64,7 @@ struct rdp_nla
 	BOOL server;
 	NLA_STATE state;
 	ULONG sendSeqNum;
-	int recvSeqNum;
+	ULONG recvSeqNum;
 	freerdp* instance;
 	CtxtHandle context;
 	LPTSTR SspiModule;
@@ -101,7 +101,7 @@ struct rdp_nla
 	SecBuffer tsCredentials;
 	LPTSTR ServicePrincipalName;
 	UINT32 credType;
-	SEC_WINNT_AUTH_IDENTITY* identity;
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity;
 	PSecurityFunctionTable table;
 	SecPkgContext_Sizes ContextSizes;
 };
@@ -168,26 +168,43 @@ static SECURITY_STATUS nla_decrypt_public_key_echo(rdpNla* nla);
 static SECURITY_STATUS nla_decrypt_public_key_hash(rdpNla* nla);
 static SECURITY_STATUS nla_encrypt_ts_credentials(rdpNla* nla);
 static SECURITY_STATUS nla_decrypt_ts_credentials(rdpNla* nla);
-static BOOL nla_read_ts_password_creds(rdpNla* nla, wStream* s);
 
-static size_t nla_sizeof_ts_csp_data_detail(rdpNla* nla);
-static size_t nla_write_ts_csp_data_detail(rdpNla* nla, wStream* s);
+static BOOL nla_read_ts_password_creds(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity, wStream* s);
+static size_t nla_write_ts_password_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity,
+        wStream* s);
+static size_t nla_sizeof_ts_password_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
 
-static size_t nla_write_ts_password_creds(rdpNla* nla, wStream* s);
-static size_t nla_sizeof_ts_password_creds(rdpNla* nla);
-static BOOL nla_read_ts_smartcard_creds(rdpNla* nla, wStream* s);
-static size_t nla_write_ts_smartcard_creds(rdpNla* nla, wStream* s);
-static size_t nla_sizeof_ts_smartcard_creds(rdpNla* nla);
-static BOOL nla_read_ts_remoteguard_creds(rdpNla* nla, wStream* s);
-static size_t nla_write_ts_remoteguard_creds(rdpNla* nla, wStream* s);
-static size_t nla_sizeof_ts_remoteguard_creds(rdpNla* nla);
-static size_t nla_sizeof_ts_remoteguard_package_cred(rdpNla* nla);
+static size_t nla_read_ts_csp_data_detail(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity, wStream* s);
+static size_t nla_write_ts_csp_data_detail(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity,
+        wStream* s);
+static size_t nla_sizeof_ts_csp_data_detail(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
 
-static size_t nla_sizeof_ts_creds(rdpNla* nla);
-static size_t nla_sizeof_ts_credentials(rdpNla* nla);
+static BOOL nla_read_ts_smartcard_creds(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity, wStream* s);
+static size_t nla_write_ts_smartcard_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity,
+        wStream* s);
+static size_t nla_sizeof_ts_smartcard_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
 
-#define ber_sizeof_sequence_octet_string(length) ber_sizeof_contextual_tag(ber_sizeof_octet_string(length)) + ber_sizeof_octet_string(length)
-#define ber_write_sequence_octet_string(stream, context, value, length) ber_write_contextual_tag(stream, context, ber_sizeof_octet_string(length), TRUE) + ber_write_octet_string(stream, value, length)
+static BOOL nla_read_ts_remoteguard_creds(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity, wStream* s);
+static size_t nla_write_ts_remoteguard_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity,
+        wStream* s);
+static size_t nla_sizeof_ts_remoteguard_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
+static size_t nla_sizeof_ts_remoteguard_package_cred(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE
+        identity);
+
+static size_t nla_sizeof_ts_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
+static size_t nla_sizeof_ts_credentials(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
+
+static size_t ber_sizeof_sequence_octet_string(size_t length)
+{
+	return ber_sizeof_contextual_tag(ber_sizeof_octet_string(length)) + ber_sizeof_octet_string(length);
+}
+
+static size_t ber_write_sequence_octet_string(wStream* stream, BYTE context, const BYTE* value,
+        size_t length)
+{
+	return ber_write_contextual_tag(stream, context, ber_sizeof_octet_string(length),
+	                                TRUE) + ber_write_octet_string(stream, value, length);
+}
 
 /* CredSSP Client-To-Server Binding Hash\0 */
 static const BYTE ClientServerHashMagic[] =
@@ -210,6 +227,113 @@ static const BYTE ServerClientHashMagic[] =
 };
 
 static const UINT32 NonceLength = 32;
+
+
+static BYTE fromHex(char byte)
+{
+	switch (byte)
+	{
+		case '0':
+			return 0;
+
+		case '1':
+			return 1;
+
+		case '2':
+			return 2;
+
+		case '3':
+			return 3;
+
+		case '4':
+			return 4;
+
+		case '5':
+			return 5;
+
+		case '6':
+			return 6;
+
+		case '7':
+			return 7;
+
+		case '8':
+			return 8;
+
+		case '9':
+			return 9;
+
+		case 'A':
+			return 10;
+
+		case 'B':
+			return 11;
+
+		case 'C':
+			return 12;
+
+		case 'D':
+			return 13;
+
+		case 'E':
+			return 14;
+
+		case 'F':
+			return 15;
+
+		case 'a':
+			return 10;
+
+		case 'b':
+			return 11;
+
+		case 'c':
+			return 12;
+
+		case 'd':
+			return 13;
+
+		case 'e':
+			return 14;
+
+		case 'f':
+			return 15;
+
+		default:
+			return 0;
+	}
+}
+
+static BYTE toByte(char hi, char lo)
+{
+	const BYTE hn = fromHex(hi);
+	const BYTE ln = fromHex(lo);
+	return ((hn << 4) | ln) & 0xFF;
+}
+
+static BOOL ntlm_convert_password_hash(const char* srcHash, size_t srcLength, WCHAR* whash,
+                                       size_t whashSize)
+{
+	size_t i;
+	BYTE* hash = (BYTE*)whash;
+
+	if (whashSize < 16)
+		return FALSE;
+
+	if (srcLength < 32)
+		return FALSE;
+
+	memset(hash, 0, whashSize);
+
+	for (i = 0; i < 32; i += 2)
+	{
+		const char hi = srcHash[i];
+		const char lo = srcHash[i + 1];
+		hash[i / 2] = toByte(hi, lo);
+	}
+
+	return TRUE;
+}
 
 /**
  * Initialize NTLM/Kerberos SSP authentication module (client).
@@ -300,8 +424,8 @@ static int nla_client_init(rdpNla* nla)
 	{
 		if (settings->RedirectionPassword && (settings->RedirectionPasswordLength > 0))
 		{
-			if (sspi_SetAuthIdentityWithUnicodePassword(nla->identity, settings->Username, settings->Domain,
-			        (UINT16*) settings->RedirectionPassword,
+			if (sspi_SetAuthIdentityWithUnicodePassword(&nla->identity, settings->Username, settings->Domain,
+			        (const UINT16*) settings->RedirectionPassword,
 			        settings->RedirectionPasswordLength / sizeof(WCHAR) - 1) < 0)
 				return -1;
 		}
@@ -313,17 +437,17 @@ static int nla_client_init(rdpNla* nla)
 			{
 				if (settings->PasswordHash)
 				{
-					if (strlen(settings->PasswordHash) == 32)
+					const size_t hashLen = strlen(settings->PasswordHash);
+
+					if (hashLen == 32)
 					{
-						if (sspi_SetAuthIdentity(nla->identity, settings->Username, settings->Domain,
-						                         settings->PasswordHash) < 0)
+						WCHAR hash[8];
+						ntlm_convert_password_hash(settings->PasswordHash, hashLen, hash, sizeof(hash));
+
+						if (sspi_SetAuthIdentityWithUnicodePassword(&nla->identity, settings->Username, settings->Domain,
+						        hash, ARRAYSIZE(hash)) < 0)
 							return -1;
 
-						/**
-						 * Increase password hash length by LB_PASSWORD_MAX_LENGTH to obtain a length exceeding
-						 * the maximum (LB_PASSWORD_MAX_LENGTH) and use it this for hash identification in WinPR.
-						 */
-						nla->identity->PasswordLength += LB_PASSWORD_MAX_LENGTH;
 						usePassword = FALSE;
 					}
 				}
@@ -331,7 +455,7 @@ static int nla_client_init(rdpNla* nla)
 
 			if (usePassword)
 			{
-				if (sspi_SetAuthIdentity(nla->identity, settings->Username, settings->Domain,
+				if (sspi_SetAuthIdentity(&nla->identity, settings->Username, settings->Domain,
 				                         settings->Password) < 0)
 					return -1;
 			}
@@ -1452,81 +1576,72 @@ fail:
 	return status;
 }
 
-size_t nla_sizeof_ts_password_creds(rdpNla* nla)
+size_t nla_sizeof_ts_password_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity)
 {
+	PCWSTR user, domain, password;
 	size_t length = 0;
 
-	if (nla->identity)
+	if (SEC_E_OK == sspi_EncodeAuthIdentityAsStrings(identity, &user, &domain, &password))
 	{
-		length += ber_sizeof_sequence_octet_string(nla->identity->DomainLength * 2);
-		length += ber_sizeof_sequence_octet_string(nla->identity->UserLength * 2);
-		length += ber_sizeof_sequence_octet_string(nla->identity->PasswordLength * 2);
+		length += ber_sizeof_sequence_octet_string(_wcslen(domain) * sizeof(WCHAR));
+		length += ber_sizeof_sequence_octet_string(_wcslen(user) * sizeof(WCHAR));
+		length += ber_sizeof_sequence_octet_string(_wcslen(password) * sizeof(WCHAR));
 	}
 
 	return length;
 }
 
-size_t nla_sizeof_ts_smartcard_creds(rdpNla* nla)
+size_t nla_sizeof_ts_remoteguard_package_cred(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE pidentity)
 {
 	size_t length = 0;
-
 	// TODO
+	/*
 	if (nla->identity)
 	{
 		length += ber_sizeof_sequence_octet_string(nla->identity->DomainLength * 2);
 		length += ber_sizeof_sequence_octet_string(nla->identity->UserLength * 2);
 		length += ber_sizeof_sequence_octet_string(nla->identity->PasswordLength * 2);
 	}
-
+	*/
 	return length;
 }
 
-size_t nla_sizeof_ts_remoteguard_package_cred(rdpNla* nla)
+size_t nla_sizeof_ts_remoteguard_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE pidentity)
 {
 	size_t length = 0;
-
 	// TODO
+	/*
 	if (nla->identity)
 	{
 		length += ber_sizeof_sequence_octet_string(nla->identity->DomainLength * 2);
 		length += ber_sizeof_sequence_octet_string(nla->identity->UserLength * 2);
 		length += ber_sizeof_sequence_octet_string(nla->identity->PasswordLength * 2);
 	}
-
+	*/
 	return length;
 }
 
-size_t nla_sizeof_ts_remoteguard_creds(rdpNla* nla)
-{
-	size_t length = 0;
-
-	// TODO
-	if (nla->identity)
-	{
-		length += ber_sizeof_sequence_octet_string(nla->identity->DomainLength * 2);
-		length += ber_sizeof_sequence_octet_string(nla->identity->UserLength * 2);
-		length += ber_sizeof_sequence_octet_string(nla->identity->PasswordLength * 2);
-	}
-
-	return length;
-}
-
-size_t nla_sizeof_ts_creds(rdpNla* nla)
+size_t nla_sizeof_ts_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE pidentity)
 {
 	size_t size = 0;
 
-	switch (nla->credType)
+	// TODO: Detect type of credentials
+	//switch (nla->credType)
+	switch (0)
 	{
 		case TS_PASSWORD_CREDS:
-			size += ber_sizeof_sequence_octet_string(ber_sizeof_sequence(nla_sizeof_ts_password_creds(nla)));
+			size += ber_sizeof_sequence_octet_string(ber_sizeof_sequence(nla_sizeof_ts_password_creds(
+			            pidentity)));
 			break;
 
 		case TS_SMARTCARD_CREDS:
-			size += ber_sizeof_sequence_octet_string(ber_sizeof_sequence(nla_sizeof_ts_smartcard_creds(nla)));
+			size += ber_sizeof_sequence_octet_string(ber_sizeof_sequence(nla_sizeof_ts_smartcard_creds(
+			            pidentity)));
 			break;
 
 		case TS_REMOTEGUARD_CREDS:
-			size += ber_sizeof_sequence_octet_string(ber_sizeof_sequence(nla_sizeof_ts_remoteguard_creds(nla)));
+			size += ber_sizeof_sequence_octet_string(ber_sizeof_sequence(nla_sizeof_ts_remoteguard_creds(
+			            pidentity)));
 			break;
 
 		default:
@@ -1536,147 +1651,125 @@ size_t nla_sizeof_ts_creds(rdpNla* nla)
 	return size;
 }
 
-size_t nla_sizeof_ts_credentials(rdpNla* nla)
+size_t nla_sizeof_ts_credentials(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity)
 {
 	size_t size = 0;
 	size += ber_sizeof_integer(1);
 	size += ber_sizeof_contextual_tag(ber_sizeof_integer(1));
-	return size + nla_sizeof_ts_creds(nla);
+	return size + nla_sizeof_ts_creds(identity);
 }
 
-BOOL nla_read_ts_password_creds(rdpNla* nla, wStream* s)
+BOOL nla_read_ts_password_creds(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity, wStream* s)
 {
-	size_t length;
+	size_t userLength, domainLength, pwdLength, totalLength;
+	const WCHAR* user;
+	const WCHAR* domain;
+	const WCHAR* pwd;
 
-	if (!nla->identity)
+	if (!identity)
 	{
 		WLog_ERR(TAG, "nla->identity is NULL!");
 		return FALSE;
 	}
 
-	sspi_FreeAuthIdentity(nla->identity);
-	nla->identity = NULL;
-	/* TSPasswordCreds (SEQUENCE)
-	 * Initialise to default values. */
-	nla->identity->Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
-	nla->identity->UserLength = (UINT32) 0;
-	nla->identity->User = NULL;
-	nla->identity->DomainLength = (UINT32) 0;
-	nla->identity->Domain = NULL;
-	nla->identity->Password = NULL;
-	nla->identity->PasswordLength = (UINT32) 0;
+	sspi_FreeAuthIdentity(*identity);
+	*identity = NULL;
 
-	if (!ber_read_sequence_tag(s, &length))
+	/* TSPasswordCreds (SEQUENCE) */
+	if (!ber_read_sequence_tag(s, &totalLength))
 		return FALSE;
 
 	/* The sequence is empty, return early,
 	 * TSPasswordCreds (SEQUENCE) is optional. */
-	if (length == 0)
+	if (totalLength == 0)
 		return TRUE;
 
 	/* [0] domainName (OCTET STRING) */
-	if (!ber_read_contextual_tag(s, 0, &length, TRUE) ||
-	    !ber_read_octet_string_tag(s, &length))
+	if (!ber_read_contextual_tag(s, 0, &domainLength, TRUE) ||
+	    !ber_read_octet_string_tag(s, &domainLength))
 	{
 		return FALSE;
 	}
 
-	nla->identity->DomainLength = (UINT32) length;
-
-	if (nla->identity->DomainLength > 0)
-	{
-		nla->identity->Domain = (UINT16*) malloc(length);
-
-		if (!nla->identity->Domain)
-			return FALSE;
-
-		CopyMemory(nla->identity->Domain, Stream_Pointer(s), nla->identity->DomainLength);
-		Stream_Seek(s, nla->identity->DomainLength);
-		nla->identity->DomainLength /= 2;
-	}
+	domain = (WCHAR*)Stream_Pointer(s);
+	Stream_Seek(s, domainLength);
 
 	/* [1] userName (OCTET STRING) */
-	if (!ber_read_contextual_tag(s, 1, &length, TRUE) ||
-	    !ber_read_octet_string_tag(s, &length))
+	if (!ber_read_contextual_tag(s, 1, &userLength, TRUE) ||
+	    !ber_read_octet_string_tag(s, &userLength))
 	{
 		return FALSE;
 	}
 
-	nla->identity->UserLength = (UINT32) length;
-
-	if (nla->identity->UserLength > 0)
-	{
-		nla->identity->User = (UINT16*) malloc(length);
-
-		if (!nla->identity->User)
-			return FALSE;
-
-		CopyMemory(nla->identity->User, Stream_Pointer(s), nla->identity->UserLength);
-		Stream_Seek(s, nla->identity->UserLength);
-		nla->identity->UserLength /= 2;
-	}
+	user = (WCHAR*)Stream_Pointer(s);
+	Stream_Seek(s, userLength);
 
 	/* [2] password (OCTET STRING) */
-	if (!ber_read_contextual_tag(s, 2, &length, TRUE) ||
-	    !ber_read_octet_string_tag(s, &length))
+	if (!ber_read_contextual_tag(s, 2, &pwdLength, TRUE) ||
+	    !ber_read_octet_string_tag(s, &pwdLength))
 	{
 		return FALSE;
 	}
 
-	nla->identity->PasswordLength = (UINT32) length;
+	pwd = (WCHAR*)Stream_Pointer(s);
+	Stream_Seek(s, pwdLength);
 
-	if (nla->identity->PasswordLength > 0)
-	{
-		nla->identity->Password = (UINT16*) malloc(length);
-
-		if (!nla->identity->Password)
-			return FALSE;
-
-		CopyMemory(nla->identity->Password, Stream_Pointer(s), nla->identity->PasswordLength);
-		Stream_Seek(s, nla->identity->PasswordLength);
-		nla->identity->PasswordLength /= 2;
-	}
+	if (sspi_EncodeStringsAsAuthIdentity(user, domain, pwd, identity) != SEC_E_OK)
+		return FALSE;
 
 	return TRUE;
 }
 
-size_t nla_write_ts_password_creds(rdpNla* nla, wStream* s)
+size_t nla_write_ts_password_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity, wStream* s)
 {
+	PCWSTR user, domain, password;
 	size_t size = 0;
-	size_t innerSize = nla_sizeof_ts_password_creds(nla);
-	/* TSPasswordCreds (SEQUENCE) */
-	size += ber_write_sequence_tag(s, innerSize);
 
-	if (nla->identity)
+	if (SEC_E_OK == sspi_EncodeAuthIdentityAsStrings(identity, &user, &domain, &password))
 	{
+		const size_t multiplier = sizeof(WCHAR);
+		const size_t innerSize = nla_sizeof_ts_password_creds(identity);
+		/* TSPasswordCreds (SEQUENCE) */
+		size += ber_write_sequence_tag(s, innerSize);
 		/* [0] domainName (OCTET STRING) */
 		size += ber_write_sequence_octet_string(
-		            s, 0, (BYTE*) nla->identity->Domain,
-		            nla->identity->DomainLength * 2);
+		            s, 0, (BYTE*) domain, _wcslen(domain) * multiplier);
 		/* [1] userName (OCTET STRING) */
 		size += ber_write_sequence_octet_string(
-		            s, 1, (BYTE*) nla->identity->User,
-		            nla->identity->UserLength * 2);
+		            s, 1, (BYTE*) user, _wcslen(user) * multiplier);
 		/* [2] password (OCTET STRING) */
 		size += ber_write_sequence_octet_string(
-		            s, 2, (BYTE*) nla->identity->Password,
-		            nla->identity->PasswordLength * 2);
+		            s, 2, (BYTE*) password, _wcslen(password) * multiplier);
 	}
 
 	return size;
 }
 
-size_t nla_sizeof_ts_csp_data_detail(rdpNla* nla)
+size_t nla_sizeof_ts_csp_data_detail(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity)
+{
+	size_t length = 0;
+#if 0
+	length += ber_sizeof_integer(nla->identity->DomainLength * 2);                 /* keySpec */
+	length += ber_sizeof_sequence_octet_string(nla->identity->UserLength * 2);     /* cardName */
+	length += ber_sizeof_sequence_octet_string(nla->identity->PasswordLength * 2); /* readerName */
+	length += ber_sizeof_sequence_octet_string(nla->identity->PasswordLength * 2); /* containerName */
+	length += ber_sizeof_sequence_octet_string(nla->identity->DomainLength * 2);   /* cspName */
+#endif
+	return length;
+}
+
+size_t nla_read_ts_csp_data_detail(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity, wStream* s)
 {
 	// TODO
 	return 0;
 }
 
-size_t nla_write_ts_csp_data_detail(rdpNla* nla, wStream* s)
+size_t nla_write_ts_csp_data_detail(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity, wStream* s)
 {
 	size_t size = 0;
 	// TODO
-	size_t innerSize = nla_sizeof_ts_csp_data_detail(nla);
+#if 0
+	size_t innerSize = nla_sizeof_ts_csp_data_detail(identity);
 	/* TSCspDataDetail (SEQUENCE) */
 	size += ber_write_sequence_tag(s, innerSize);
 	/* [0] keySpec (INTEGER) */
@@ -1698,25 +1791,66 @@ size_t nla_write_ts_csp_data_detail(rdpNla* nla, wStream* s)
 	size += ber_write_sequence_octet_string(
 	            s, 2, (BYTE*) nla->identity->Password,
 	            nla->identity->PasswordLength * 2);
+#endif
 	return size;
 }
 
-BOOL nla_read_ts_smartcard_creds(rdpNla* nla, wStream* s)
+BOOL nla_read_ts_smartcard_creds(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity, wStream* s)
 {
-	size_t length = 0;
-	// TODO
-	return FALSE;
+	size_t length;
+
+	if (!ber_read_sequence_tag(s, &length))
+		return FALSE;
+
+	/* The sequence is empty, return early,
+	 * TSSmartcardCreds (SEQUENCE) is optional. */
+	if (length == 0)
+		return TRUE;
+
+	/* [0] pin (OCTET STRING) */
+	if (!ber_read_contextual_tag(s, 0, &length, TRUE) ||
+	    !ber_read_octet_string_tag(s, &length))
+	{
+		return FALSE;
+	}
+
+	Stream_Pointer(s); // TODO: Copy string
+
+	/* [1] cspData (TSCspDataDetail) */
+	if (!nla_read_ts_csp_data_detail(identity, s))
+		return FALSE;
+
+	/* [2] userHint (OCTET STRING) */
+	if (!ber_read_contextual_tag(s, 0, &length, TRUE) ||
+	    !ber_read_octet_string_tag(s, &length))
+	{
+		return FALSE;
+	}
+
+	Stream_Pointer(s); // TODO: Copy string
+
+	/* [3] domainHint (OCTET STRING) */
+	if (!ber_read_contextual_tag(s, 0, &length, TRUE) ||
+	    !ber_read_octet_string_tag(s, &length))
+	{
+		return FALSE;
+	}
+
+	Stream_Pointer(s); // TODO: Copy string
+	return TRUE;
 }
 
-size_t nla_write_ts_smartcard_creds(rdpNla* nla, wStream* s)
+size_t nla_write_ts_smartcard_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity, wStream* s)
 {
 	size_t size = 0;
-	size_t innerSize = nla_sizeof_ts_smartcard_creds(nla);
+	size_t innerSize = nla_sizeof_ts_smartcard_creds(identity);
 	/* TSSmartCardCreds (SEQUENCE) */
 	size += ber_write_sequence_tag(s, innerSize);
 
-	if (nla->identity)
+	if (identity)
+		// TODO
 	{
+#if 0
 		/* [0] pin (OCTET STRING) */
 		size += ber_write_sequence_octet_string(
 		            s, 0, (BYTE*) nla->identity->Domain,
@@ -1731,24 +1865,41 @@ size_t nla_write_ts_smartcard_creds(rdpNla* nla, wStream* s)
 		size += ber_write_sequence_octet_string(
 		            s, 2, (BYTE*) nla->identity->Password,
 		            nla->identity->PasswordLength * 2);
+#endif
 	}
 
 	return size;
 }
 
-BOOL nla_read_ts_remoteguard_creds(rdpNla* nla, wStream* s)
+size_t nla_sizeof_ts_smartcard_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity)
+{
+	size_t length = 0;
+	// TODO
+#if 0
+	length += ber_sizeof_sequence_octet_string(nla->identity->DomainLength * 2); /* Pin */
+	length += nla_sizeof_ts_csp_data_detail(nla);                                /* cspData */
+	length += ber_sizeof_sequence_octet_string(nla->identity->DomainLength * 2); /* userHint */
+	length += ber_sizeof_sequence_octet_string(nla->identity->DomainLength * 2); /* domainHint */
+#endif
+	return length;
+}
+
+BOOL nla_read_ts_remoteguard_creds(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity, wStream* s)
 {
 	size_t length = 0;
 	// TODO
 	return FALSE;
 }
 
-size_t nla_write_ts_remoteguard_package_cred(rdpNla* nla, wStream* s)
+size_t nla_write_ts_remoteguard_package_cred(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity,
+        wStream* s)
 {
 	size_t size = 0;
-	size_t innerSize = nla_sizeof_ts_remoteguard_package_cred(nla);
+	size_t innerSize = nla_sizeof_ts_remoteguard_package_cred(identity);
 	/* TSRemoteGuardPackageCred (SEQUENCE) */
 	size += ber_write_sequence_tag(s, innerSize);
+	// TODO
+#if 0
 	/* [0] packageName (OCTET STRING) */
 	size += ber_write_sequence_octet_string(
 	            s, 2, (BYTE*) nla->identity->Password,
@@ -1757,19 +1908,20 @@ size_t nla_write_ts_remoteguard_package_cred(rdpNla* nla, wStream* s)
 	size += ber_write_sequence_octet_string(
 	            s, 2, (BYTE*) nla->identity->Password,
 	            nla->identity->PasswordLength * 2);
+#endif
 	return size;
 }
 
-size_t nla_write_ts_remoteguard_creds(rdpNla* nla, wStream* s)
+size_t nla_write_ts_remoteguard_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity, wStream* s)
 {
 	size_t size = 0;
-	size_t innerSize = nla_sizeof_ts_remoteguard_creds(nla);
+	size_t innerSize = nla_sizeof_ts_remoteguard_creds(identity);
 	/* TSRemoteGuardCreds (SEQUENCE) */
 	size += ber_write_sequence_tag(s, innerSize);
 	/* [0] logonCred (TSRemoteGuardPackageCred) */
-	size += nla_write_ts_remoteguard_package_cred(nla, s);
+	size += nla_write_ts_remoteguard_package_cred(identity, s);
 	/* [1] supplementalCreds (SEQUENCE TSRemoteGuardPackageCred) */
-	size += nla_write_ts_remoteguard_package_cred(nla, s);
+	size += nla_write_ts_remoteguard_package_cred(identity, s);
 	return size;
 }
 
@@ -1808,18 +1960,19 @@ static BOOL nla_read_ts_credentials(rdpNla* nla, PSecBuffer ts_credentials)
 		switch (nla->credType)
 		{
 			case TS_PASSWORD_CREDS: /* TSPasswordCreds */
-				ret = nla_read_ts_password_creds(nla, s);
+				ret = nla_read_ts_password_creds(&nla->identity, s);
 				break;
 
 			case TS_SMARTCARD_CREDS: /* TSSmartCardCreds */
-				ret = nla_read_ts_smartcard_creds(nla, s);
+				ret = nla_read_ts_smartcard_creds(&nla->identity, s);
 				break;
 
 			case TS_REMOTEGUARD_CREDS: /* TSRemoteGuardCreds */
-				ret = nla_read_ts_remoteguard_creds(nla, s);
+				ret = nla_read_ts_remoteguard_creds(&nla->identity, s);
 				break;
 
 			default:
+				ret = FALSE;
 				break;
 		}
 	}
@@ -1871,25 +2024,10 @@ static BOOL nla_encode_ts_credentials(rdpNla* nla)
 {
 	wStream* s;
 	size_t length;
-	int DomainLength = 0;
-	int UserLength = 0;
-	int PasswordLength = 0;
-
-	if (nla->identity)
-	{
-		/* TSPasswordCreds */
-		DomainLength = nla->identity->DomainLength;
-		UserLength = nla->identity->UserLength;
-		PasswordLength = nla->identity->PasswordLength;
-	}
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity = nla->identity;
 
 	if (nla->settings->DisableCredentialsDelegation && nla->identity)
-	{
-		/* TSPasswordCreds */
-		nla->identity->DomainLength = 0;
-		nla->identity->UserLength = 0;
-		nla->identity->PasswordLength = 0;
-	}
+		nla->identity = NULL;
 
 	length = ber_sizeof_sequence(nla_sizeof_ts_credentials(nla));
 
@@ -1911,12 +2049,7 @@ static BOOL nla_encode_ts_credentials(rdpNla* nla)
 	nla_write_ts_credentials(nla, s);
 
 	if (nla->settings->DisableCredentialsDelegation && nla->identity)
-	{
-		/* TSPasswordCreds */
-		nla->identity->DomainLength = DomainLength;
-		nla->identity->UserLength = UserLength;
-		nla->identity->PasswordLength = PasswordLength;
-	}
+		nla->identity = identity;
 
 	Stream_Free(s, FALSE);
 	return TRUE;
@@ -2503,14 +2636,6 @@ rdpNla* nla_new(freerdp* instance, rdpTransport* transport, rdpSettings* setting
 	if (!nla)
 		return NULL;
 
-	nla->identity = calloc(1, sizeof(SEC_WINNT_AUTH_IDENTITY));
-
-	if (!nla->identity)
-	{
-		free(nla);
-		return NULL;
-	}
-
 	nla->instance = instance;
 	nla->settings = settings;
 	nla->server = settings->ServerMode;
@@ -2644,7 +2769,7 @@ BOOL nla_set_state(rdpNla* nla, NLA_STATE state)
 	return TRUE;
 }
 
-SEC_WINNT_AUTH_IDENTITY* nla_get_identity(rdpNla* nla)
+PSEC_WINNT_AUTH_IDENTITY_OPAQUE nla_get_identity(rdpNla* nla)
 {
 	if (!nla)
 		return NULL;

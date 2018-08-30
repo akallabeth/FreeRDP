@@ -878,35 +878,8 @@ SECURITY_STATUS ntlm_read_AuthenticateMessage(NTLM_CONTEXT* context, PSecBuffer 
 	}
 
 #endif
-
-	if (message->UserName.Len > 0)
-	{
-		credentials->identity.User = (UINT16*) malloc(message->UserName.Len);
-
-		if (!credentials->identity.User)
-		{
-			Stream_Free(s, FALSE);
-			return SEC_E_INTERNAL_ERROR;
-		}
-
-		CopyMemory(credentials->identity.User, message->UserName.Buffer, message->UserName.Len);
-		credentials->identity.UserLength = message->UserName.Len / 2;
-	}
-
-	if (message->DomainName.Len > 0)
-	{
-		credentials->identity.Domain = (UINT16*) malloc(message->DomainName.Len);
-
-		if (!credentials->identity.Domain)
-		{
-			Stream_Free(s, FALSE);
-			return SEC_E_INTERNAL_ERROR;
-		}
-
-		CopyMemory(credentials->identity.Domain, message->DomainName.Buffer, message->DomainName.Len);
-		credentials->identity.DomainLength = message->DomainName.Len / 2;
-	}
-
+	SECURITY_STATUS localBuffer = sspi_EncodeStringsAsAuthIdentity(message->UserName.Buffer,
+	                              message->DomainName.Buffer, NULL, credentials->identity);
 	Stream_Free(s, FALSE);
 	/* Computations beyond this point require the NTLM hash of the password */
 	context->state = NTLM_STATE_COMPLETION;
@@ -922,6 +895,7 @@ SECURITY_STATUS ntlm_read_AuthenticateMessage(NTLM_CONTEXT* context, PSecBuffer 
 
 SECURITY_STATUS ntlm_write_AuthenticateMessage(NTLM_CONTEXT* context, PSecBuffer buffer)
 {
+	PWCHAR user, domain;
 	wStream* s;
 	size_t length;
 	UINT32 PayloadBufferOffset;
@@ -971,15 +945,17 @@ SECURITY_STATUS ntlm_write_AuthenticateMessage(NTLM_CONTEXT* context, PSecBuffer
 		message->Workstation.Buffer = (BYTE*) context->Workstation.Buffer;
 	}
 
-	if (credentials->identity.DomainLength > 0)
+	sspi_EncodeAuthIdentityAsStrings(credentials->identity, &user, &domain, NULL);
+
+	if (_wcslen(domain) > 0)
 	{
 		message->NegotiateFlags |= NTLMSSP_NEGOTIATE_DOMAIN_SUPPLIED;
-		message->DomainName.Len = (UINT16) credentials->identity.DomainLength * 2;
-		message->DomainName.Buffer = (BYTE*) credentials->identity.Domain;
+		message->DomainName.Len = _wcslen(domain) * sizeof(WCHAR);
+		message->DomainName.Buffer = (BYTE*) domain;
 	}
 
-	message->UserName.Len = (UINT16) credentials->identity.UserLength * 2;
-	message->UserName.Buffer = (BYTE*) credentials->identity.User;
+	message->UserName.Len = (UINT16) _wcslen(user) * sizeof(WCHAR);
+	message->UserName.Buffer = (BYTE*) user;
 	message->LmChallengeResponse.Len = (UINT16) context->LmChallengeResponse.cbBuffer;
 	message->LmChallengeResponse.Buffer = (BYTE*) context->LmChallengeResponse.pvBuffer;
 	message->NtChallengeResponse.Len = (UINT16) context->NtChallengeResponse.cbBuffer;

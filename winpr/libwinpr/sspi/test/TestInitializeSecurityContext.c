@@ -20,7 +20,7 @@ int TestInitializeSecurityContext(int argc, char* argv[])
 	CredHandle credentials = { 0 };
 	TimeStamp expiration;
 	PSecPkgInfo pPackageInfo;
-	SEC_WINNT_AUTH_IDENTITY identity = { 0 };
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity = NULL;
 	SecurityFunctionTable* table;
 	PSecBuffer p_SecBuffer;
 	SecBuffer output_SecBuffer;
@@ -36,19 +36,12 @@ int TestInitializeSecurityContext(int argc, char* argv[])
 	}
 
 	cbMaxLen = pPackageInfo->cbMaxToken;
-	identity.User = (UINT16*) _strdup(test_User);
-	identity.Domain = (UINT16*) _strdup(test_Domain);
-	identity.Password = (UINT16*) _strdup(test_Password);
 
-	if (!identity.User || !identity.Domain || !identity.Password)
+	if (SEC_E_OK != sspi_SetAuthIdentity(&identity, test_User, test_Domain, test_Password))
 		goto fail;
 
-	identity.UserLength = strlen(test_User);
-	identity.DomainLength = strlen(test_Domain);
-	identity.PasswordLength = strlen(test_Password);
-	identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
 	status = table->AcquireCredentialsHandle(NULL, NTLM_SSP_NAME,
-	         SECPKG_CRED_OUTBOUND, NULL, &identity, NULL, NULL, &credentials, &expiration);
+	         SECPKG_CRED_OUTBOUND, NULL, identity, NULL, NULL, &credentials, &expiration);
 
 	if (status != SEC_E_OK)
 	{
@@ -96,9 +89,7 @@ int TestInitializeSecurityContext(int argc, char* argv[])
 
 	rc = 0;
 fail:
-	free(identity.User);
-	free(identity.Domain);
-	free(identity.Password);
+	sspi_FreeAuthIdentity(identity);
 	free(output_buffer);
 
 	if (SecIsValidHandle(&credentials))

@@ -588,29 +588,7 @@ typedef SecPkgCredentials_NamesW* PSecPkgCredentials_NamesW;
 #ifndef _AUTH_IDENTITY_DEFINED
 #define _AUTH_IDENTITY_DEFINED
 
-typedef struct
-{
-	UINT16* User;
-	UINT32 UserLength;
-	UINT16* Domain;
-	UINT32 DomainLength;
-	UINT16* Password;
-	UINT32 PasswordLength;
-	UINT32 Flags;
-} SEC_WINNT_AUTH_IDENTITY_W, *PSEC_WINNT_AUTH_IDENTITY_W;
-
-typedef struct
-{
-	BYTE* User;
-	UINT32 UserLength;
-	BYTE* Domain;
-	UINT32 DomainLength;
-	BYTE* Password;
-	UINT32 PasswordLength;
-	UINT32 Flags;
-} SEC_WINNT_AUTH_IDENTITY_A, *PSEC_WINNT_AUTH_IDENTITY_A;
-
-#define SEC_WINNT_AUTH_IDENTITY SEC_WINNT_AUTH_IDENTITY_W
+typedef PVOID PSEC_WINNT_AUTH_IDENTITY_OPAQUE;
 #endif /* _AUTH_IDENTITY_DEFINED */
 
 struct _SecHandle
@@ -1118,20 +1096,26 @@ WINPR_API void sspi_GlobalFinish(void);
 WINPR_API void* sspi_SecBufferAlloc(PSecBuffer SecBuffer, ULONG size);
 WINPR_API void sspi_SecBufferFree(PSecBuffer SecBuffer);
 
-WINPR_API int sspi_SetAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity, const char* user,
+WINPR_API int sspi_SetAuthIdentity(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity, const char* user,
                                    const char* domain, const char* password);
-WINPR_API int sspi_SetAuthIdentityWithUnicodePassword(SEC_WINNT_AUTH_IDENTITY* identity,
-        const char* user, const char* domain,
-        LPWSTR password, ULONG passwordLength);
-WINPR_API int sspi_SetAuthIdentity_Smartcard(SEC_WINNT_AUTH_IDENTITY* identity, const char* pin,
-        const UINT32 keySpec, const char* cardName,
-        const char* readerName, const char* containerName, const char* cspName, const char* userHint,
-        const char* domainHint);
 
-WINPR_API int sspi_CopyAuthIdentity(const SEC_WINNT_AUTH_IDENTITY* srcIdentity,
-                                    SEC_WINNT_AUTH_IDENTITY* identity);
-WINPR_API void sspi_FreeAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity);
-WINPR_API void sspi_ZeroAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity);
+WINPR_API SECURITY_STATUS SEC_ENTRY sspi_EncodeStringsAsAuthIdentity(PCWSTR pszUserName,
+        PCWSTR pszDomainName, PCWSTR pszPackedCredentialsString,
+        PSEC_WINNT_AUTH_IDENTITY_OPAQUE* ppAuthIdentity);
+WINPR_API SECURITY_STATUS SEC_ENTRY sspi_EncodeAuthIdentityAsStrings(
+    const PSEC_WINNT_AUTH_IDENTITY_OPAQUE pAuthIdentity,
+    PCWSTR* ppszUserName, PCWSTR* ppszDomainName,
+    PCWSTR* ppszPackedCredentialsString);
+
+WINPR_API int sspi_SetAuthIdentityWithUnicodePassword(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity,
+        const char* user, const char* domain,
+        LPCWSTR password, ULONG passwordLength);
+
+WINPR_API SEC_ENTRY int sspi_CopyAuthIdentity(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE srcIdentity,
+        PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
+WINPR_API SEC_ENTRY void sspi_FreeAuthIdentity(PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
+WINPR_API SEC_ENTRY void sspi_ZeroAuthIdentity(PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
+WINPR_API SEC_ENTRY void sspi_LocalFree(PVOID buffer);
 
 WINPR_API const char* GetSecurityStatusString(SECURITY_STATUS status);
 

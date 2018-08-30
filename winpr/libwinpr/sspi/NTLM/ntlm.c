@@ -297,7 +297,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_AcquireCredentialsHandleW(SEC_WCHAR* pszPr
         void* pvGetKeyArgument, PCredHandle phCredential, PTimeStamp ptsExpiry)
 {
 	SSPI_CREDENTIALS* credentials;
-	SEC_WINNT_AUTH_IDENTITY* identity;
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity;
 
 	if ((fCredentialUse != SECPKG_CRED_OUTBOUND) &&
 	    (fCredentialUse != SECPKG_CRED_INBOUND) &&
@@ -314,7 +314,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_AcquireCredentialsHandleW(SEC_WCHAR* pszPr
 	credentials->fCredentialUse = fCredentialUse;
 	credentials->pGetKeyFn = pGetKeyFn;
 	credentials->pvGetKeyArgument = pvGetKeyArgument;
-	identity = (SEC_WINNT_AUTH_IDENTITY*) pAuthData;
+	identity = (PSEC_WINNT_AUTH_IDENTITY_OPAQUE) pAuthData;
 
 	if (identity)
 		sspi_CopyAuthIdentity(&(credentials->identity), identity);
@@ -330,7 +330,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_AcquireCredentialsHandleA(SEC_CHAR* pszPri
         void* pvGetKeyArgument, PCredHandle phCredential, PTimeStamp ptsExpiry)
 {
 	SSPI_CREDENTIALS* credentials;
-	SEC_WINNT_AUTH_IDENTITY* identity;
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity;
 
 	if ((fCredentialUse != SECPKG_CRED_OUTBOUND) &&
 	    (fCredentialUse != SECPKG_CRED_INBOUND) &&
@@ -347,7 +347,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_AcquireCredentialsHandleA(SEC_CHAR* pszPri
 	credentials->fCredentialUse = fCredentialUse;
 	credentials->pGetKeyFn = pGetKeyFn;
 	credentials->pvGetKeyArgument = pvGetKeyArgument;
-	identity = (SEC_WINNT_AUTH_IDENTITY*) pAuthData;
+	identity = (PSEC_WINNT_AUTH_IDENTITY_OPAQUE) pAuthData;
 
 	if (identity)
 		sspi_CopyAuthIdentity(&(credentials->identity), identity);
@@ -750,6 +750,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_QueryContextAttributesW(PCtxtHandle phCont
 	}
 	else if (ulAttribute == SECPKG_ATTR_AUTH_IDENTITY)
 	{
+		PWCHAR user, domain;
 		int status;
 		char* UserA = NULL;
 		char* DomainA = NULL;
@@ -759,13 +760,11 @@ static SECURITY_STATUS SEC_ENTRY ntlm_QueryContextAttributesW(PCtxtHandle phCont
 		credentials = context->credentials;
 		ZeroMemory(AuthIdentity, sizeof(SecPkgContext_AuthIdentity));
 		UserA = AuthIdentity->User;
+		sspi_EncodeAuthIdentityAsStrings(credentials->identity, &user, &domain, NULL);
 
-		if (credentials->identity.UserLength > 0)
+		if (_wcslen(user) > 0)
 		{
-			status = ConvertFromUnicode(CP_UTF8, 0,
-			                            (WCHAR*)credentials->identity.User,
-			                            credentials->identity.UserLength, &UserA, 256, NULL,
-			                            NULL);
+			status = ConvertFromUnicode(CP_UTF8, 0, user, -1, &UserA, 256, NULL, NULL);
 
 			if (status <= 0)
 				return SEC_E_INTERNAL_ERROR;
@@ -773,12 +772,9 @@ static SECURITY_STATUS SEC_ENTRY ntlm_QueryContextAttributesW(PCtxtHandle phCont
 
 		DomainA = AuthIdentity->Domain;
 
-		if (credentials->identity.DomainLength > 0)
+		if (_wcslen(domain) > 0)
 		{
-			status = ConvertFromUnicode(CP_UTF8, 0,
-			                            (WCHAR*)credentials->identity.Domain,
-			                            credentials->identity.DomainLength, &DomainA, 256,
-			                            NULL, NULL);
+			status = ConvertFromUnicode(CP_UTF8, 0, domain, -1, &DomainA, 256, NULL, NULL);
 
 			if (status <= 0)
 				return SEC_E_INTERNAL_ERROR;

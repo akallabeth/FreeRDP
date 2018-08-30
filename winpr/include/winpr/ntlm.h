@@ -32,22 +32,22 @@ extern "C" {
 #endif
 
 typedef SECURITY_STATUS(*psPeerComputeNtlmHash)(void* client,
-        const SEC_WINNT_AUTH_IDENTITY* authIdentity,
+        const PSEC_WINNT_AUTH_IDENTITY_OPAQUE authIdentity,
         const SecBuffer* ntproofvalue, const BYTE* randkey, const BYTE* mic, const SecBuffer* micvalue,
         BYTE* ntlmhash);
 
-WINPR_API BOOL NTOWFv1W(LPWSTR Password, UINT32 PasswordLength, BYTE* NtHash);
-WINPR_API BOOL NTOWFv1A(LPSTR Password, UINT32 PasswordLength, BYTE* NtHash);
+WINPR_API BOOL NTOWFv1W(LPCWSTR Password, UINT32 PasswordLength, BYTE* NtHash);
+WINPR_API BOOL NTOWFv1A(LPCSTR Password, UINT32 PasswordLength, BYTE* NtHash);
 
-WINPR_API BOOL NTOWFv2W(LPWSTR Password, UINT32 PasswordLength, LPWSTR User,
-                        UINT32 UserLength, LPWSTR Domain, UINT32 DomainLength, BYTE* NtHash);
-WINPR_API BOOL NTOWFv2A(LPSTR Password, UINT32 PasswordLength, LPSTR User,
-                        UINT32 UserLength, LPSTR Domain, UINT32 DomainLength, BYTE* NtHash);
+WINPR_API BOOL NTOWFv2W(LPCWSTR Password, UINT32 PasswordLength, LPCWSTR User,
+                        UINT32 UserLength, LPCWSTR Domain, UINT32 DomainLength, BYTE* NtHash);
+WINPR_API BOOL NTOWFv2A(LPCSTR Password, UINT32 PasswordLength, LPCSTR User,
+                        UINT32 UserLength, LPCSTR Domain, UINT32 DomainLength, BYTE* NtHash);
 
-WINPR_API BOOL NTOWFv2FromHashW(BYTE* NtHashV1, LPWSTR User, UINT32 UserLength,
-                                LPWSTR Domain, UINT32 DomainLength, BYTE* NtHash);
-WINPR_API BOOL NTOWFv2FromHashA(BYTE* NtHashV1, LPSTR User, UINT32 UserLength,
-                                LPSTR Domain, UINT32 DomainLength, BYTE* NtHash);
+WINPR_API BOOL NTOWFv2FromHashW(const BYTE* NtHashV1, LPCWSTR User, UINT32 UserLength,
+                                LPCWSTR Domain, UINT32 DomainLength, BYTE* NtHash);
+WINPR_API BOOL NTOWFv2FromHashA(const BYTE* NtHashV1, LPCSTR User, UINT32 UserLength,
+                                LPCSTR Domain, UINT32 DomainLength, BYTE* NtHash);
 
 #ifdef __cplusplus
 }

@@ -285,7 +285,7 @@ typedef struct _RPC_SECURITY_QOS
 
 typedef struct _RPC_HTTP_TRANSPORT_CREDENTIALS_W
 {
-	SEC_WINNT_AUTH_IDENTITY_W* TransportCredentials;
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE TransportCredentials;
 	unsigned long Flags;
 	unsigned long AuthenticationTarget;
 	unsigned long NumberOfAuthnSchemes;
@@ -295,7 +295,7 @@ typedef struct _RPC_HTTP_TRANSPORT_CREDENTIALS_W
 
 typedef struct _RPC_HTTP_TRANSPORT_CREDENTIALS_A
 {
-	SEC_WINNT_AUTH_IDENTITY_A* TransportCredentials;
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE TransportCredentials;
 	unsigned long Flags;
 	unsigned long AuthenticationTarget;
 	unsigned long NumberOfAuthnSchemes;
@@ -439,7 +439,7 @@ typedef struct
 	unsigned short* ServerPrincName;
 	unsigned long AuthnLevel;
 	unsigned long AuthnSvc;
-	SEC_WINNT_AUTH_IDENTITY* AuthIdentity;
+	PSEC_WINNT_AUTH_IDENTITY_OPAQUE AuthIdentity;
 	RPC_SECURITY_QOS* SecurityQos;
 } RPC_BINDING_HANDLE_SECURITY_V1, RPC_BINDING_HANDLE_SECURITY;
 
