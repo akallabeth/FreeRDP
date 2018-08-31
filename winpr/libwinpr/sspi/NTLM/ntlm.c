@@ -317,7 +317,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_AcquireCredentialsHandleW(SEC_WCHAR* pszPr
 	identity = (PSEC_WINNT_AUTH_IDENTITY_OPAQUE) pAuthData;
 
 	if (identity)
-		sspi_CopyAuthIdentity(&(credentials->identity), identity);
+		sspi_CopyAuthIdentity(identity, &credentials->identity);
 
 	sspi_SecureHandleSetLowerPointer(phCredential, (void*) credentials);
 	sspi_SecureHandleSetUpperPointer(phCredential, (void*) NTLM_PACKAGE_NAME);
@@ -350,7 +350,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_AcquireCredentialsHandleA(SEC_CHAR* pszPri
 	identity = (PSEC_WINNT_AUTH_IDENTITY_OPAQUE) pAuthData;
 
 	if (identity)
-		sspi_CopyAuthIdentity(&(credentials->identity), identity);
+		sspi_CopyAuthIdentity(identity, &credentials->identity);
 
 	sspi_SecureHandleSetLowerPointer(phCredential, (void*) credentials);
 	sspi_SecureHandleSetUpperPointer(phCredential, (void*) NTLM_PACKAGE_NAME);
@@ -847,9 +847,9 @@ static SECURITY_STATUS SEC_ENTRY ntlm_SetContextAttributesW(PCtxtHandle phContex
 			return SEC_E_INVALID_PARAMETER;
 
 		if (AuthNtlmHash->Version == 1)
-			CopyMemory(context->NtlmHash, AuthNtlmHash->NtlmHash, 16);
+			CopyMemory(context->NtlmHash, AuthNtlmHash->NtlmHash, ARRAYSIZE(context->NtlmHash));
 		else if (AuthNtlmHash->Version == 2)
-			CopyMemory(context->NtlmV2Hash, AuthNtlmHash->NtlmHash, 16);
+			CopyMemory(context->NtlmV2Hash, AuthNtlmHash->NtlmHash, ARRAYSIZE(context->NtlmV2Hash));
 
 		return SEC_E_OK;
 	}

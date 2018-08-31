@@ -350,10 +350,19 @@ static int nla_client_init(rdpNla* nla)
 	rdpSettings* settings = nla->settings;
 	WINPR_SAM* sam;
 	WINPR_SAM_ENTRY* entry;
+	size_t userLength = 0;
+	size_t pwdLength = 0;
+	size_t hashLength = 0;
 	nla->state = NLA_STATE_INITIAL;
-	const size_t userLength = strlen(settings->Username);
-	const size_t pwdLength = strlen(settings->Password);
-	const size_t hashLength = strlen(settings->PasswordHash);
+
+	if (settings->Username)
+		userLength = strlen(settings->Username);
+
+	if (settings->Password)
+		pwdLength = strlen(settings->Password);
+
+	if (settings->PasswordHash)
+		hashLength = strlen(settings->PasswordHash);
 
 	if (settings->RestrictedAdminModeRequired)
 		settings->DisableCredentialsDelegation = TRUE;

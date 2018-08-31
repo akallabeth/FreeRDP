@@ -1112,7 +1112,7 @@ WINPR_API int sspi_SetAuthIdentityWithUnicodePassword(PSEC_WINNT_AUTH_IDENTITY_O
         LPCWSTR password, ULONG passwordLength);
 
 WINPR_API SEC_ENTRY int sspi_CopyAuthIdentity(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE srcIdentity,
-        PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
+        PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity);
 WINPR_API SEC_ENTRY void sspi_FreeAuthIdentity(PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
 WINPR_API SEC_ENTRY void sspi_ZeroAuthIdentity(PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
 WINPR_API SEC_ENTRY void sspi_LocalFree(PVOID buffer);

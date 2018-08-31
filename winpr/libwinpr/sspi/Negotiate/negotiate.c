@@ -427,7 +427,7 @@ static SECURITY_STATUS SEC_ENTRY negotiate_AcquireCredentialsHandleW(SEC_WCHAR* 
 	identity = (PSEC_WINNT_AUTH_IDENTITY_OPAQUE) pAuthData;
 
 	if (identity)
-		sspi_CopyAuthIdentity(&(credentials->identity), identity);
+		sspi_CopyAuthIdentity(identity, &credentials->identity);
 
 	sspi_SecureHandleSetLowerPointer(phCredential, (void*) credentials);
 	sspi_SecureHandleSetUpperPointer(phCredential, (void*) NEGO_SSP_NAME);
@@ -460,7 +460,7 @@ static SECURITY_STATUS SEC_ENTRY negotiate_AcquireCredentialsHandleA(SEC_CHAR* p
 	identity = (PSEC_WINNT_AUTH_IDENTITY_OPAQUE) pAuthData;
 
 	if (identity)
-		sspi_CopyAuthIdentity(&(credentials->identity), identity);
+		sspi_CopyAuthIdentity(identity, &credentials->identity);
 
 	sspi_SecureHandleSetLowerPointer(phCredential, (void*) credentials);
 	sspi_SecureHandleSetUpperPointer(phCredential, (void*) NEGO_SSP_NAME);

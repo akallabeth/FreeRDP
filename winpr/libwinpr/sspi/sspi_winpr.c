@@ -243,7 +243,8 @@ static BOOL copyIfA(BYTE** dst, const void* data, size_t length)
 	if (length == 0)
 		return TRUE;
 
-	*dst = malloc(length);
+	/* Ensure the string is null terminated. */
+	*dst = calloc(length + 2, 1);
 
 	if (!*dst)
 		return FALSE;
@@ -270,7 +271,7 @@ static BOOL copyAndSetIf(UINT16** dst, const UINT16* data, unsigned long* length
 
 static BOOL convertIf(UINT16** dst, const char* data, UINT32* length)
 {
-	if (!dst || !length)
+	if (!dst)
 		return FALSE;
 
 	if (!data)
@@ -284,7 +285,9 @@ static BOOL convertIf(UINT16** dst, const char* data, UINT32* length)
 	if (status <= 0)
 		return FALSE;
 
-	*length = (UINT32)status - 1;
+	if (length)
+		*length = (UINT32)status - 1;
+
 	return TRUE;
 }
 
@@ -540,9 +543,15 @@ SECURITY_STATUS SEC_ENTRY sspi_EncodeAuthIdentityAsStrings(
 			if ((identity->AuthIdExw.Flags & SEC_WINNT_AUTH_IDENTITY_UNICODE) == 0)
 				return SEC_E_INVALID_HANDLE;
 
-			*ppszUserName = identity->AuthIdExw.User;
-			*ppszDomainName = identity->AuthIdExw.Domain;
-			*ppszPackedCredentialsString = identity->AuthIdExw.Password;
+			if (ppszUserName)
+				*ppszUserName = identity->AuthIdExw.User;
+
+			if (ppszDomainName)
+				*ppszDomainName = identity->AuthIdExw.Domain;
+
+			if (ppszPackedCredentialsString)
+				*ppszPackedCredentialsString = identity->AuthIdExw.Password;
+
 			return SEC_E_OK;
 
 		case SEC_WINNT_AUTH_IDENTITY_VERSION_2:
@@ -573,10 +582,22 @@ fail:
 }
 
 int sspi_CopyAuthIdentity(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE psrcIdentity,
-                          PSEC_WINNT_AUTH_IDENTITY_OPAQUE pidentity)
+                          PSEC_WINNT_AUTH_IDENTITY_OPAQUE* pidentity)
 {
 	const PSEC_WINNT_AUTH_IDENTITY_INFO srcIdentity = psrcIdentity;
-	PSEC_WINNT_AUTH_IDENTITY_INFO identity = pidentity;
+	PSEC_WINNT_AUTH_IDENTITY_INFO identity;
+	PSEC_WINNT_AUTH_IDENTITY_INFO* id = pidentity;
+
+	if (!id || !srcIdentity)
+		return SEC_E_INVALID_PARAMETER;
+
+	sspi_FreeAuthIdentity(*id);
+	*id = calloc(1, sizeof(SEC_WINNT_AUTH_IDENTITY_INFO));
+
+	if (!(*id))
+		return SEC_E_INSUFFICIENT_MEMORY;
+
+	identity = *id;
 
 	switch (sspi_AuthIdentityType(psrcIdentity))
 	{
