@@ -500,15 +500,26 @@ static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextA(PCredHandle
 			/* GSSAPI failed because we do not have credentials */
 			if (context->major_status & SSPI_GSS_S_NO_CRED)
 			{
+				SECURITY_STATUS status;
+				PCWSTR user, password;
+				size_t userLength = 0, passwordLength = 0;
+				status = sspi_EncodeAuthIdentityAsStrings(context->credentials, &user, NULL, &password);
+
+				if (SEC_E_OK != status)
+					return status;
+
+				if (user)
+					userLength = _wcslen(user);
+
+				if (password)
+					passwordLength = _wcslen(password);
+
 				/* Then let's try to acquire credentials using login and password,
 				 * and only those two, means not with a smartcard.
 				 * If we use smartcard-logon, the credentials have already
 				 * been acquired by pkinit process. If not, returned error previously.
 				 */
-				if (init_creds(context->credentials->identity.User,
-				               context->credentials->identity.UserLength,
-				               context->credentials->identity.Password,
-				               context->credentials->identity.PasswordLength))
+				if (init_creds(user, userLength, password, passwordLength))
 					return SEC_E_NO_CREDENTIALS;
 
 				WLog_INFO(TAG, "Authenticated to Kerberos v5 via login/password");
