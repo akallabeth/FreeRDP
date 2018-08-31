@@ -189,7 +189,7 @@ void ntlm_current_time(BYTE* timestamp)
 void ntlm_generate_timestamp(NTLM_CONTEXT* context)
 {
 	if (memcmp(context->ChallengeTimestamp, NTLM_NULL_BUFFER,
-	           ARRAYSIZE(context->ChallengeTimestamp)) != 0)
+	           sizeof(context->ChallengeTimestamp)) != 0)
 		CopyMemory(context->Timestamp, context->ChallengeTimestamp, 8);
 	else
 		ntlm_current_time(context->Timestamp);
@@ -277,10 +277,10 @@ static int ntlm_compute_ntlm_v2_hash(NTLM_CONTEXT* context, BYTE* hash)
 	winpr_HexDump(TAG, WLOG_DEBUG, context->NtlmV2Hash, WINPR_MD5_DIGEST_LENGTH);
 #endif
 
-	if (memcmp(context->NtlmV2Hash, NTLM_NULL_BUFFER, ARRAYSIZE(context->NtlmV2Hash)) != 0)
+	if (memcmp(context->NtlmV2Hash, NTLM_NULL_BUFFER, sizeof(context->NtlmV2Hash)) != 0)
 		return 1;
 
-	if (memcmp(context->NtlmHash, NTLM_NULL_BUFFER, ARRAYSIZE(context->NtlmHash)) != 0)
+	if (memcmp(context->NtlmHash, NTLM_NULL_BUFFER, sizeof(context->NtlmHash)) != 0)
 	{
 		NTOWFv2FromHashW(context->NtlmHash, user, userLen, domain, domainLen, (BYTE*) hash);
 	}
@@ -431,7 +431,7 @@ int ntlm_compute_ntlm_v2_response(NTLM_CONTEXT* context)
  * @param ciphertext cipher text
  */
 
-static void ntlm_rc4k(BYTE* key, int length, BYTE* plaintext, BYTE* ciphertext)
+static void ntlm_rc4k(const BYTE* key, size_t length, const BYTE* plaintext, BYTE* ciphertext)
 {
 	WINPR_RC4_CTX* rc4 = winpr_RC4_New(key, 16);
 
@@ -450,7 +450,7 @@ static void ntlm_rc4k(BYTE* key, int length, BYTE* plaintext, BYTE* ciphertext)
 void ntlm_generate_client_challenge(NTLM_CONTEXT* context)
 {
 	/* ClientChallenge is used in computation of LMv2 and NTLMv2 responses */
-	if (memcmp(context->ClientChallenge, NTLM_NULL_BUFFER, ARRAYSIZE(context->ClientChallenge)) == 0)
+	if (memcmp(context->ClientChallenge, NTLM_NULL_BUFFER, sizeof(context->ClientChallenge)) == 0)
 		winpr_RAND(context->ClientChallenge, 8);
 }
 
@@ -461,7 +461,7 @@ void ntlm_generate_client_challenge(NTLM_CONTEXT* context)
 
 void ntlm_generate_server_challenge(NTLM_CONTEXT* context)
 {
-	if (memcmp(context->ServerChallenge, NTLM_NULL_BUFFER, ARRAYSIZE(context->ServerChallenge)) == 0)
+	if (memcmp(context->ServerChallenge, NTLM_NULL_BUFFER, sizeof(context->ServerChallenge)) == 0)
 		winpr_RAND(context->ServerChallenge, 8);
 }
 

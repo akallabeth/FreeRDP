@@ -58,7 +58,7 @@ BOOL ntlm_client_init(rdpNtlm* ntlm, BOOL http, char* user, char* domain, char* 
 
 	ntlm->cbMaxToken = ntlm->pPackageInfo->cbMaxToken;
 	status = ntlm->table->AcquireCredentialsHandle(NULL, NTLM_SSP_NAME,
-	         SECPKG_CRED_OUTBOUND, NULL, &ntlm->identity, NULL, NULL,
+	         SECPKG_CRED_OUTBOUND, NULL, ntlm->identity, NULL, NULL,
 	         &ntlm->credentials, &ntlm->expiration);
 
 	if (status != SEC_E_OK)
