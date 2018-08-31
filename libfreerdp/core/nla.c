@@ -1635,8 +1635,7 @@ size_t nla_sizeof_ts_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE pidentity)
 	size_t size = 0;
 
 	// TODO: Detect type of credentials
-	//switch (nla->credType)
-	switch (0)
+	switch (TS_PASSWORD_CREDS) //(nla->credType)
 	{
 		case TS_PASSWORD_CREDS:
 			size += ber_sizeof_sequence_octet_string(ber_sizeof_sequence(nla_sizeof_ts_password_creds(
@@ -1994,7 +1993,7 @@ static size_t nla_write_ts_credentials(rdpNla* nla, wStream* s)
 {
 	size_t size = 0;
 	size_t credentialSize;
-	size_t innerSize = nla_sizeof_ts_credentials(nla);
+	size_t innerSize = nla_sizeof_ts_credentials(nla->identity);
 	/* TSCredentials (SEQUENCE) */
 	size += ber_write_sequence_tag(s, innerSize);
 	/* [0] credType (INTEGER) */
@@ -2038,7 +2037,7 @@ static BOOL nla_encode_ts_credentials(rdpNla* nla)
 	if (nla->settings->DisableCredentialsDelegation && nla->identity)
 		nla->identity = NULL;
 
-	length = ber_sizeof_sequence(nla_sizeof_ts_credentials(nla));
+	length = ber_sizeof_sequence(nla_sizeof_ts_credentials(nla->identity));
 
 	if (!sspi_SecBufferAlloc(&nla->tsCredentials, length))
 	{
