@@ -847,9 +847,9 @@ static SECURITY_STATUS SEC_ENTRY ntlm_SetContextAttributesW(PCtxtHandle phContex
 			return SEC_E_INVALID_PARAMETER;
 
 		if (AuthNtlmHash->Version == 1)
-			CopyMemory(context->NtlmHash, AuthNtlmHash->NtlmHash, ARRAYSIZE(context->NtlmHash));
+			CopyMemory(context->NtlmHash, AuthNtlmHash->NtlmHash, sizeof(context->NtlmHash));
 		else if (AuthNtlmHash->Version == 2)
-			CopyMemory(context->NtlmV2Hash, AuthNtlmHash->NtlmHash, ARRAYSIZE(context->NtlmV2Hash));
+			CopyMemory(context->NtlmV2Hash, AuthNtlmHash->NtlmHash, sizeof(context->NtlmV2Hash));
 
 		return SEC_E_OK;
 	}

@@ -250,6 +250,8 @@ static BOOL copyIfA(BYTE** dst, const void* data, size_t length)
 	if (!data && (length != 0))
 		return FALSE;
 
+	*dst = NULL;
+
 	if (length == 0)
 		return TRUE;
 

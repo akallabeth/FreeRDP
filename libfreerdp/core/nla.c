@@ -191,8 +191,11 @@ static size_t nla_sizeof_ts_remoteguard_creds(const PSEC_WINNT_AUTH_IDENTITY_OPA
 static size_t nla_sizeof_ts_remoteguard_package_cred(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE
         identity);
 
-static size_t nla_sizeof_ts_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
-static size_t nla_sizeof_ts_credentials(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity);
+static size_t nla_sizeof_ts_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity, UINT32 credType);
+static size_t nla_sizeof_ts_creds_by_type(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity,
+        UINT32 credType);
+static size_t nla_sizeof_ts_credentials(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity,
+                                        UINT32 credType);
 
 static size_t ber_sizeof_sequence_octet_string(size_t length)
 {
@@ -354,6 +357,7 @@ static int nla_client_init(rdpNla* nla)
 	size_t pwdLength = 0;
 	size_t hashLength = 0;
 	nla->state = NLA_STATE_INITIAL;
+	nla->credType = TS_PASSWORD_CREDS; /* TODO: Set to smartcard here if support added */
 
 	if (settings->Username)
 		userLength = strlen(settings->Username);
@@ -1630,26 +1634,29 @@ size_t nla_sizeof_ts_remoteguard_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE pid
 	return length;
 }
 
-size_t nla_sizeof_ts_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE pidentity)
+size_t nla_sizeof_ts_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE pidentity, UINT32 credType)
+{
+	size_t size = 0;
+	return ber_sizeof_sequence_octet_string(ber_sizeof_sequence(nla_sizeof_ts_creds_by_type(pidentity,
+	                                        credType)));
+}
+
+size_t nla_sizeof_ts_creds_by_type(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE pidentity, UINT32 credType)
 {
 	size_t size = 0;
 
-	// TODO: Detect type of credentials
-	switch (TS_PASSWORD_CREDS) //(nla->credType)
+	switch (credType)
 	{
 		case TS_PASSWORD_CREDS:
-			size += ber_sizeof_sequence_octet_string(ber_sizeof_sequence(nla_sizeof_ts_password_creds(
-			            pidentity)));
+			size += nla_sizeof_ts_password_creds(pidentity);
 			break;
 
 		case TS_SMARTCARD_CREDS:
-			size += ber_sizeof_sequence_octet_string(ber_sizeof_sequence(nla_sizeof_ts_smartcard_creds(
-			            pidentity)));
+			size += nla_sizeof_ts_smartcard_creds(pidentity);
 			break;
 
 		case TS_REMOTEGUARD_CREDS:
-			size += ber_sizeof_sequence_octet_string(ber_sizeof_sequence(nla_sizeof_ts_remoteguard_creds(
-			            pidentity)));
+			size += nla_sizeof_ts_remoteguard_creds(pidentity);
 			break;
 
 		default:
@@ -1659,12 +1666,12 @@ size_t nla_sizeof_ts_creds(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE pidentity)
 	return size;
 }
 
-size_t nla_sizeof_ts_credentials(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity)
+size_t nla_sizeof_ts_credentials(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity, UINT32 credType)
 {
 	size_t size = 0;
 	size += ber_sizeof_integer(1);
 	size += ber_sizeof_contextual_tag(ber_sizeof_integer(1));
-	return size + nla_sizeof_ts_creds(identity);
+	return size + nla_sizeof_ts_creds(identity, credType);
 }
 
 BOOL nla_read_ts_password_creds(PSEC_WINNT_AUTH_IDENTITY_OPAQUE* identity, wStream* s)
@@ -1993,14 +2000,14 @@ static size_t nla_write_ts_credentials(rdpNla* nla, wStream* s)
 {
 	size_t size = 0;
 	size_t credentialSize;
-	size_t innerSize = nla_sizeof_ts_credentials(nla->identity);
+	size_t innerSize = nla_sizeof_ts_credentials(nla->identity, nla->credType);
 	/* TSCredentials (SEQUENCE) */
 	size += ber_write_sequence_tag(s, innerSize);
 	/* [0] credType (INTEGER) */
 	size += ber_write_contextual_tag(s, 0, ber_sizeof_integer(1), TRUE);
 	size += ber_write_integer(s, nla->credType);
 	/* Start tag */
-	credentialSize = ber_sizeof_sequence(nla_sizeof_ts_creds(nla->identity));
+	credentialSize = ber_sizeof_sequence(nla_sizeof_ts_creds_by_type(nla->identity, nla->credType));
 	size += ber_write_contextual_tag(s, 1, ber_sizeof_octet_string(credentialSize), TRUE);
 	size += ber_write_octet_string_tag(s, credentialSize);
 
@@ -2037,7 +2044,7 @@ static BOOL nla_encode_ts_credentials(rdpNla* nla)
 	if (nla->settings->DisableCredentialsDelegation && nla->identity)
 		nla->identity = NULL;
 
-	length = ber_sizeof_sequence(nla_sizeof_ts_credentials(nla->identity));
+	length = ber_sizeof_sequence(nla_sizeof_ts_credentials(nla->identity, nla->credType));
 
 	if (!sspi_SecBufferAlloc(&nla->tsCredentials, length))
 	{

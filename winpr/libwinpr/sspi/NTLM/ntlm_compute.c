@@ -255,7 +255,10 @@ static int ntlm_compute_ntlm_v2_hash(NTLM_CONTEXT* context, BYTE* hash)
 	SSPI_CREDENTIALS* credentials = context->credentials;
 	size_t userLen, domainLen, pwdLen;
 	LPCWSTR user, domain, password;
-	sspi_EncodeAuthIdentityAsStrings(credentials->identity, &user, &domain, &password);
+
+	if (SEC_E_OK != sspi_EncodeAuthIdentityAsStrings(credentials->identity, &user, &domain, &password))
+		return -1;
+
 	userLen = _wcslen(user) * sizeof(WCHAR);
 	domainLen = _wcslen(domain) * sizeof(WCHAR);
 	pwdLen = _wcslen(password) * sizeof(WCHAR);

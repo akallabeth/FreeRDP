@@ -895,6 +895,7 @@ SECURITY_STATUS ntlm_read_AuthenticateMessage(NTLM_CONTEXT* context, PSecBuffer 
 
 SECURITY_STATUS ntlm_write_AuthenticateMessage(NTLM_CONTEXT* context, PSecBuffer buffer)
 {
+	SECURITY_STATUS status;
 	PCWSTR user, domain;
 	wStream* s;
 	size_t length;
@@ -945,7 +946,10 @@ SECURITY_STATUS ntlm_write_AuthenticateMessage(NTLM_CONTEXT* context, PSecBuffer
 		message->Workstation.Buffer = (BYTE*) context->Workstation.Buffer;
 	}
 
-	sspi_EncodeAuthIdentityAsStrings(credentials->identity, &user, &domain, NULL);
+	status = sspi_EncodeAuthIdentityAsStrings(credentials->identity, &user, &domain, NULL);
+
+	if (status != SEC_E_OK)
+		return status;
 
 	if (_wcslen(domain) > 0)
 	{
