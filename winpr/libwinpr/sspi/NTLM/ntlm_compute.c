@@ -302,7 +302,7 @@ static int ntlm_compute_ntlm_v2_hash(NTLM_CONTEXT* context, BYTE* hash)
 			return -1;
 		}
 
-		ret = context->HashCallback(context->HashCallbackArg, &credentials->identity, &proofValue,
+		ret = context->HashCallback(context->HashCallbackArg, credentials->identity, &proofValue,
 		                            context->EncryptedRandomSessionKey,
 		                            (&context->AUTHENTICATE_MESSAGE)->MessageIntegrityCheck,
 		                            &micValue, hash);

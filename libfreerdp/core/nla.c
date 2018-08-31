@@ -2000,22 +2000,22 @@ static size_t nla_write_ts_credentials(rdpNla* nla, wStream* s)
 	size += ber_write_contextual_tag(s, 0, ber_sizeof_integer(1), TRUE);
 	size += ber_write_integer(s, nla->credType);
 	/* Start tag */
-	credentialSize = ber_sizeof_sequence(nla_sizeof_ts_creds(nla));
+	credentialSize = ber_sizeof_sequence(nla_sizeof_ts_creds(nla->identity));
 	size += ber_write_contextual_tag(s, 1, ber_sizeof_octet_string(credentialSize), TRUE);
 	size += ber_write_octet_string_tag(s, credentialSize);
 
 	switch (nla->credType)
 	{
 		case TS_PASSWORD_CREDS:
-			size += nla_write_ts_password_creds(nla, s);
+			size += nla_write_ts_password_creds(nla->identity, s);
 			break;
 
 		case TS_SMARTCARD_CREDS:
-			size += nla_write_ts_smartcard_creds(nla, s);
+			size += nla_write_ts_smartcard_creds(nla->identity, s);
 			break;
 
 		case TS_REMOTEGUARD_CREDS:
-			size += nla_write_ts_remoteguard_creds(nla, s);
+			size += nla_write_ts_remoteguard_creds(nla->identity, s);
 			break;
 
 		default:

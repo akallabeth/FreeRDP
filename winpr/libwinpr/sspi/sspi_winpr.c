@@ -35,6 +35,16 @@
 #include "../log.h"
 #define TAG WINPR_TAG("sspi")
 
+#if defined(__GNUC__) || defined(__llvm__) || defined(__clang__)
+#define ALIGN64 __attribute__((aligned(8)))
+#else
+#ifdef _WIN32
+#define ALIGN64 __declspec(align(8))
+#else
+#define ALIGN64
+#endif
+#endif
+
 #define SEC_WINNT_AUTH_IDENTITY_VERSION 0x200
 #define SEC_WINNT_AUTH_IDENTITY_VERSION_2 0x201
 
@@ -206,16 +216,16 @@ static const SecurityFunctionTableW_NAME SecurityFunctionTableW_NAME_LIST[] =
 
 struct _CONTEXT_BUFFER_ALLOC_ENTRY
 {
-	void* contextBuffer;
-	UINT32 allocatorIndex;
+	ALIGN64 void* contextBuffer;
+	ALIGN64 UINT32 allocatorIndex;
 };
 typedef struct _CONTEXT_BUFFER_ALLOC_ENTRY CONTEXT_BUFFER_ALLOC_ENTRY;
 
 struct _CONTEXT_BUFFER_ALLOC_TABLE
 {
-	UINT32 cEntries;
-	UINT32 cMaxEntries;
-	CONTEXT_BUFFER_ALLOC_ENTRY* entries;
+	ALIGN64 UINT32 cEntries;
+	ALIGN64 UINT32 cMaxEntries;
+	ALIGN64 CONTEXT_BUFFER_ALLOC_ENTRY* entries;
 };
 typedef struct _CONTEXT_BUFFER_ALLOC_TABLE CONTEXT_BUFFER_ALLOC_TABLE;
 
@@ -224,7 +234,7 @@ static CONTEXT_BUFFER_ALLOC_TABLE ContextBufferAllocTable = { 0 };
 
 static DWORD sspi_AuthIdentityType(PSEC_WINNT_AUTH_IDENTITY_OPAQUE identity)
 {
-	const DWORD* type = identity;
+	const DWORD* type = (DWORD*)identity;
 
 	if (!type)
 		return 0;
@@ -585,7 +595,7 @@ int sspi_CopyAuthIdentity(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE psrcIdentity,
                           PSEC_WINNT_AUTH_IDENTITY_OPAQUE* pidentity)
 {
 	const PSEC_WINNT_AUTH_IDENTITY_INFO srcIdentity = psrcIdentity;
-	PSEC_WINNT_AUTH_IDENTITY_INFO identity;
+	PSEC_WINNT_AUTH_IDENTITY_INFO identity = NULL;
 	PSEC_WINNT_AUTH_IDENTITY_INFO* id = pidentity;
 
 	if (!id || !srcIdentity)
@@ -685,7 +695,7 @@ int sspi_CopyAuthIdentity(const PSEC_WINNT_AUTH_IDENTITY_OPAQUE psrcIdentity,
 
 	return 1;
 fail:
-	sspi_ZeroAuthIdentity(pidentity);
+	sspi_ZeroAuthIdentity(identity);
 	return -1;
 }
 

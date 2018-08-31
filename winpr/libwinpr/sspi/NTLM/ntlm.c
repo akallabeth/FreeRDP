@@ -750,7 +750,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_QueryContextAttributesW(PCtxtHandle phCont
 	}
 	else if (ulAttribute == SECPKG_ATTR_AUTH_IDENTITY)
 	{
-		PWCHAR user, domain;
+		PCWSTR user, domain;
 		int status;
 		char* UserA = NULL;
 		char* DomainA = NULL;

@@ -878,8 +878,8 @@ SECURITY_STATUS ntlm_read_AuthenticateMessage(NTLM_CONTEXT* context, PSecBuffer 
 	}
 
 #endif
-	SECURITY_STATUS localBuffer = sspi_EncodeStringsAsAuthIdentity(message->UserName.Buffer,
-	                              message->DomainName.Buffer, NULL, credentials->identity);
+	SECURITY_STATUS localBuffer = sspi_EncodeStringsAsAuthIdentity((PCWSTR)message->UserName.Buffer,
+	                              (PCWSTR)message->DomainName.Buffer, NULL, &credentials->identity);
 	Stream_Free(s, FALSE);
 	/* Computations beyond this point require the NTLM hash of the password */
 	context->state = NTLM_STATE_COMPLETION;
@@ -895,7 +895,7 @@ SECURITY_STATUS ntlm_read_AuthenticateMessage(NTLM_CONTEXT* context, PSecBuffer 
 
 SECURITY_STATUS ntlm_write_AuthenticateMessage(NTLM_CONTEXT* context, PSecBuffer buffer)
 {
-	PWCHAR user, domain;
+	PCWSTR user, domain;
 	wStream* s;
 	size_t length;
 	UINT32 PayloadBufferOffset;

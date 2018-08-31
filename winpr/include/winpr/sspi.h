@@ -588,7 +588,8 @@ typedef SecPkgCredentials_NamesW* PSecPkgCredentials_NamesW;
 #ifndef _AUTH_IDENTITY_DEFINED
 #define _AUTH_IDENTITY_DEFINED
 
-typedef PVOID PSEC_WINNT_AUTH_IDENTITY_OPAQUE;
+union _SEC_WINNT_AUTH_IDENTITY_INFO;
+typedef union _SEC_WINNT_AUTH_IDENTITY_INFO* PSEC_WINNT_AUTH_IDENTITY_OPAQUE;
 #endif /* _AUTH_IDENTITY_DEFINED */
 
 struct _SecHandle
