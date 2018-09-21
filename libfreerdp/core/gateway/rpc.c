@@ -456,14 +456,14 @@ static BOOL rpc_channel_rpch_init(const rdpSettings* settings, RpcChannel* chann
 	return TRUE;
 }
 
-static int rpc_in_channel_rpch_init(rdpRpc* rpc, RpcInChannel* inChannel)
+static int rpc_in_channel_rpch_init(RpcClient* client, RpcInChannel* inChannel)
 {
 	HttpContext* http;
 
-	if (!rpc || !inChannel)
+	if (!client || !client->context || !inChannel)
 		return -1;
 
-	if (!rpc_channel_rpch_init(rpc->settings, &inChannel->common))
+	if (!rpc_channel_rpch_init(client->context->settings, &inChannel->common))
 		return -1;
 
 	http = inChannel->common.http;
@@ -472,17 +472,17 @@ static int rpc_in_channel_rpch_init(rdpRpc* rpc, RpcInChannel* inChannel)
 	return 1;
 }
 
-static BOOL rpc_in_channel_init(rdpRpc* rpc, RpcInChannel* inChannel)
+static BOOL rpc_in_channel_init(RpcInChannel* inChannel, RpcClient* client, UINT32 ReceiveWindow)
 {
 	rts_generate_cookie(inChannel->common.Cookie, sizeof(inChannel->common.Cookie));
-	inChannel->common.rpc = rpc;
+	inChannel->common.client = client;
 	inChannel->State = CLIENT_IN_CHANNEL_STATE_INITIAL;
 	inChannel->BytesSent = 0;
-	inChannel->SenderAvailableWindow = rpc->ReceiveWindow;
+	inChannel->SenderAvailableWindow = ReceiveWindow;
 	inChannel->PingOriginator.ConnectionTimeout = 30;
 	inChannel->PingOriginator.KeepAliveInterval = 0;
 
-	if (rpc_in_channel_rpch_init(rpc, inChannel) < 0)
+	if (rpc_in_channel_rpch_init(client, inChannel) < 0)
 		return FALSE;
 
 	return TRUE;
@@ -513,7 +513,7 @@ static RpcInChannel* rpc_in_channel_new(rdpRpc* rpc)
 
 	if (inChannel)
 	{
-		if (!rpc_in_channel_init(rpc, inChannel))
+		if (!rpc_in_channel_init(inChannel, rpc->client, rpc->ReceiveWindow))
 			goto fail;
 	}
 
@@ -597,18 +597,23 @@ static int rpc_out_channel_rpch_init(rdpSettings* settings, RpcOutChannel* outCh
 	return 1;
 }
 
-static BOOL rpc_out_channel_init(rdpRpc* rpc, RpcOutChannel* outChannel)
+static BOOL rpc_out_channel_init(RpcOutChannel* outChannel, RpcClient* client, UINT32 ReceiveWindow)
 {
-	rts_generate_cookie(outChannel->common.Cookie, sizeof(outChannel->common.Cookie));
-	outChannel->common.rpc = rpc;
+	if (!outChannel || !client || !client->context)
+		return FALSE;
+
+	if (!rts_generate_cookie(outChannel->common.Cookie, sizeof(outChannel->common.Cookie)))
+		return FALSE;
+
+	outChannel->common.client = client;
 	outChannel->State = CLIENT_OUT_CHANNEL_STATE_INITIAL;
 	outChannel->BytesReceived = 0;
-	outChannel->ReceiverAvailableWindow = rpc->ReceiveWindow;
-	outChannel->ReceiveWindow = rpc->ReceiveWindow;
-	outChannel->ReceiveWindowSize = rpc->ReceiveWindow;
-	outChannel->AvailableWindowAdvertised = rpc->ReceiveWindow;
+	outChannel->ReceiverAvailableWindow = ReceiveWindow;
+	outChannel->ReceiveWindow = ReceiveWindow;
+	outChannel->ReceiveWindowSize = ReceiveWindow;
+	outChannel->AvailableWindowAdvertised = ReceiveWindow;
 
-	if (rpc_out_channel_rpch_init(rpc->settings, outChannel) < 0)
+	if (rpc_out_channel_rpch_init(client->context->settings, outChannel) < 0)
 		return FALSE;
 
 	return TRUE;
@@ -629,7 +634,7 @@ RpcOutChannel* rpc_out_channel_new(rdpRpc* rpc)
 
 	if (outChannel)
 	{
-		if (!rpc_out_channel_init(rpc, outChannel))
+		if (!rpc_out_channel_init(outChannel, rpc->client, rpc->ReceiveWindow))
 			goto fail;
 	}
 
@@ -720,26 +725,41 @@ static void rpc_virtual_connection_free(RpcVirtualConnection* connection)
 	free(connection);
 }
 
-static int rpc_channel_tls_connect(RpcChannel* channel, int timeout)
+static bool rpc_channel_tls_connect(RpcChannel* channel, int timeout)
 {
 	int sockfd;
 	rdpTls* tls;
 	int tlsStatus;
 	BIO* socketBio;
 	BIO* bufferedBio;
-	rdpRpc* rpc = channel->rpc;
-	rdpContext* context = rpc->context;
-	rdpSettings* settings = context->settings;
-	const char* peerHostname = settings->GatewayHostname;
-	UINT16 peerPort = settings->GatewayPort;
-	const char* proxyUsername = settings->ProxyUsername, *proxyPassword = settings->ProxyPassword;
-	BOOL isProxyConnection = proxy_prepare(settings, &peerHostname, &peerPort, &proxyUsername,
-	                                       &proxyPassword);
-	sockfd = freerdp_tcp_connect(context, settings, peerHostname,
-	                             peerPort, timeout);
+	rdpContext* context;
+	rdpSettings* settings;
+	BOOL isProxyConnection;
+	const char* proxyUsername;
+	const char* proxyPassword;
 
-	if (sockfd < 0)
-		return -1;
+	if (!channel || !channel->client || !channel->client->context ||
+	    !channel->client->context->settings)
+		return FALSE;
+	else
+	{
+		UINT16 peerPort;
+		const char* peerHostname;
+		RpcClient* client = channel->client;
+		context = client->context;
+		settings = context->settings;
+		peerHostname = settings->GatewayHostname;
+		peerPort = settings->GatewayPort;
+		proxyUsername = settings->ProxyUsername;
+		proxyPassword = settings->ProxyPassword;
+		isProxyConnection = proxy_prepare(settings, &peerHostname, &peerPort, &proxyUsername,
+		                                  &proxyPassword);
+		sockfd = freerdp_tcp_connect(context, settings, peerHostname,
+		                             peerPort, timeout);
+
+		if (sockfd < 0)
+			return FALSE;
+	}
 
 	socketBio = BIO_new(BIO_s_simple_socket());
 
@@ -755,20 +775,20 @@ static int rpc_channel_tls_connect(RpcChannel* channel, int timeout)
 	bufferedBio = BIO_push(bufferedBio, socketBio);
 
 	if (!BIO_set_nonblock(bufferedBio, TRUE))
-		return -1;
+		return FALSE;
 
 	if (isProxyConnection)
 	{
 		if (!proxy_connect(settings, bufferedBio, proxyUsername, proxyPassword,	settings->GatewayHostname,
 		                   settings->GatewayPort))
-			return -1;
+			return FALSE;
 	}
 
 	channel->bio = bufferedBio;
 	tls = channel->tls = tls_new(settings);
 
 	if (!tls)
-		return -1;
+		return FALSE;
 
 	tls->hostname = settings->GatewayHostname;
 	tls->port = settings->GatewayPort;
@@ -788,50 +808,62 @@ static int rpc_channel_tls_connect(RpcChannel* channel, int timeout)
 				freerdp_set_last_error(context, FREERDP_ERROR_CONNECT_CANCELLED);
 		}
 
-		return -1;
+		return FALSE;
 	}
 
-	return 1;
+	return TRUE;
 }
 
-static int rpc_in_channel_connect(RpcInChannel* inChannel, int timeout)
+static BOOL rpc_in_channel_connect(RpcInChannel* inChannel, int timeout)
 {
-	rdpRpc* rpc = inChannel->common.rpc;
+	RpcClient* client;
+
+	if (!inChannel)
+		return FALSE;
+
+	client = inChannel->common.client;
+
+	if (!client)
+		return FALSE;
 
 	/* Connect IN Channel */
 
-	if (rpc_channel_tls_connect(&inChannel->common, timeout) < 0)
-		return -1;
+	if (!rpc_channel_tls_connect(&inChannel->common, timeout))
+		return FALSE;
 
 	rpc_in_channel_transition_to_state(inChannel, CLIENT_IN_CHANNEL_STATE_CONNECTED);
 
-	if (!rpc_ncacn_http_ntlm_init(rpc->context, &inChannel->common))
-		return -1;
+	if (!rpc_ncacn_http_ntlm_init(client->context, &inChannel->common))
+		return FALSE;
 
 	/* Send IN Channel Request */
 
 	if (!rpc_ncacn_http_send_in_channel_request(inChannel))
 	{
 		WLog_ERR(TAG, "rpc_ncacn_http_send_in_channel_request failure");
-		return -1;
+		return FALSE;
 	}
 
-	rpc_in_channel_transition_to_state(inChannel, CLIENT_IN_CHANNEL_STATE_SECURITY);
-	return 1;
+	return rpc_in_channel_transition_to_state(inChannel, CLIENT_IN_CHANNEL_STATE_SECURITY);
 }
 
-static int rpc_out_channel_connect(RpcOutChannel* outChannel, int timeout)
+static BOOL rpc_out_channel_connect(RpcOutChannel* outChannel, int timeout)
 {
-	rdpRpc* rpc = outChannel->common.rpc;
+	RpcClient* client;
+
+	if (!outChannel || !outChannel->common.client)
+		return FALSE;
+
+	client = outChannel->common.client;
 
 	/* Connect OUT Channel */
 
-	if (rpc_channel_tls_connect(&outChannel->common, timeout) < 0)
-		return -1;
+	if (!rpc_channel_tls_connect(&outChannel->common, timeout))
+		return false;
 
 	rpc_out_channel_transition_to_state(outChannel, CLIENT_OUT_CHANNEL_STATE_CONNECTED);
 
-	if (!rpc_ncacn_http_ntlm_init(rpc->context, &outChannel->common))
+	if (!rpc_ncacn_http_ntlm_init(client->context, &outChannel->common))
 		return FALSE;
 
 	/* Send OUT Channel Request */
@@ -842,22 +874,30 @@ static int rpc_out_channel_connect(RpcOutChannel* outChannel, int timeout)
 		return FALSE;
 	}
 
-	rpc_out_channel_transition_to_state(outChannel, CLIENT_OUT_CHANNEL_STATE_SECURITY);
-	return 1;
+	return rpc_out_channel_transition_to_state(outChannel, CLIENT_OUT_CHANNEL_STATE_SECURITY);
 }
 
-int rpc_out_channel_replacement_connect(RpcOutChannel* outChannel, int timeout)
+BOOL rpc_out_channel_replacement_connect(RpcOutChannel* outChannel, int timeout)
 {
-	rdpRpc* rpc = outChannel->common.rpc;
+	RpcClient* client;
+
+	if (!outChannel)
+		return FALSE;
+
+	client = outChannel->common.client;
+
+	if (!client)
+		return FALSE;
 
 	/* Connect OUT Channel */
 
-	if (rpc_channel_tls_connect(&outChannel->common, timeout) < 0)
-		return -1;
+	if (!rpc_channel_tls_connect(&outChannel->common, timeout))
+		return FALSE;
 
-	rpc_out_channel_transition_to_state(outChannel, CLIENT_OUT_CHANNEL_STATE_CONNECTED);
+	if (!rpc_out_channel_transition_to_state(outChannel, CLIENT_OUT_CHANNEL_STATE_CONNECTED))
+		return FALSE;
 
-	if (!rpc_ncacn_http_ntlm_init(rpc->context,  &outChannel->common))
+	if (!rpc_ncacn_http_ntlm_init(client->context,  &outChannel->common))
 		return FALSE;
 
 	/* Send OUT Channel Request */
@@ -868,8 +908,7 @@ int rpc_out_channel_replacement_connect(RpcOutChannel* outChannel, int timeout)
 		return FALSE;
 	}
 
-	rpc_out_channel_transition_to_state(outChannel, CLIENT_OUT_CHANNEL_STATE_SECURITY);
-	return 1;
+	return rpc_out_channel_transition_to_state(outChannel, CLIENT_OUT_CHANNEL_STATE_SECURITY);
 }
 
 BOOL rpc_connect(rdpRpc* rpc, int timeout)
@@ -885,12 +924,14 @@ BOOL rpc_connect(rdpRpc* rpc, int timeout)
 	connection = rpc->VirtualConnection;
 	inChannel = connection->DefaultInChannel;
 	outChannel = connection->DefaultOutChannel;
-	rpc_virtual_connection_transition_to_state(connection, VIRTUAL_CONNECTION_STATE_INITIAL);
 
-	if (rpc_in_channel_connect(inChannel, timeout) < 0)
+	if (!rpc_virtual_connection_transition_to_state(connection, VIRTUAL_CONNECTION_STATE_INITIAL))
 		return FALSE;
 
-	if (rpc_out_channel_connect(outChannel, timeout) < 0)
+	if (!rpc_in_channel_connect(inChannel, timeout))
+		return FALSE;
+
+	if (!rpc_out_channel_connect(outChannel, timeout))
 		return FALSE;
 
 	return TRUE;
@@ -931,7 +972,7 @@ rdpRpc* rpc_new(rdpTransport* transport)
 	rpc->CurrentKeepAliveInterval = rpc->KeepAliveInterval;
 	rpc->CurrentKeepAliveTime = 0;
 	rpc->CallId = 2;
-	rpc->client = rpc_client_new(rpc->max_recv_frag);
+	rpc->client = rpc_client_new(rpc->context, rpc->max_recv_frag);
 
 	if (!rpc->client)
 		goto out_free;

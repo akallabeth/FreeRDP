@@ -836,14 +836,14 @@ BOOL rpc_in_channel_send_pdu(RpcInChannel* inChannel, BYTE* buffer, UINT32 lengt
 	int status;
 	RpcClientCall* clientCall;
 	rpcconn_common_hdr_t* header;
-	rdpRpc* rpc = inChannel->common.rpc;
+	RpcClient* client = inChannel->common.client;
 	status = rpc_in_channel_write(inChannel, buffer, length);
 
 	if (status <= 0)
 		return FALSE;
 
 	header = (rpcconn_common_hdr_t*) buffer;
-	clientCall = rpc_client_call_find_by_id(rpc->client, header->call_id);
+	clientCall = rpc_client_call_find_by_id(client, header->call_id);
 	clientCall->State = RPC_CLIENT_CALL_STATE_DISPATCHED;
 
 	/*
@@ -963,12 +963,17 @@ out_free_pdu:
 	return -1;
 }
 
-RpcClient* rpc_client_new(UINT32 max_recv_frag)
+RpcClient* rpc_client_new(rdpContext* context, UINT32 max_recv_frag)
 {
 	RpcClient* client = (RpcClient*) calloc(1, sizeof(RpcClient));
 
 	if (!client)
 		return NULL;
+
+	client->context = context;
+
+	if (!client->context)
+		goto fail;
 
 	client->pdu = rpc_pdu_new();
 

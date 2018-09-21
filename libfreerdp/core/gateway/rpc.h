@@ -582,9 +582,21 @@ struct rpc_client_call
 };
 typedef struct rpc_client_call RpcClientCall;
 
+struct rpc_client
+{
+	rdpContext* context;
+	RPC_PDU* pdu;
+	HANDLE PipeEvent;
+	RingBuffer ReceivePipe;
+	wStream* ReceiveFragment;
+	CRITICAL_SECTION PipeLock;
+	wArrayList* ClientCallList;
+};
+typedef struct rpc_client RpcClient;
+
 struct rpc_channel
 {
-	rdpRpc* rpc;
+	RpcClient* client;
 	BIO* bio;
 	rdpTls* tls;
 	rdpNtlm* ntlm;
@@ -695,17 +707,6 @@ struct rpc_virtual_connection
 };
 typedef struct rpc_virtual_connection RpcVirtualConnection;
 
-struct rpc_client
-{
-	RPC_PDU* pdu;
-	HANDLE PipeEvent;
-	RingBuffer ReceivePipe;
-	wStream* ReceiveFragment;
-	CRITICAL_SECTION PipeLock;
-	wArrayList* ClientCallList;
-};
-typedef struct rpc_client RpcClient;
-
 struct rdp_rpc
 {
 	RPC_CLIENT_STATE State;
@@ -761,7 +762,7 @@ FREERDP_LOCAL int rpc_out_channel_write(RpcOutChannel* outChannel,
                                         const BYTE* data, size_t length);
 
 FREERDP_LOCAL RpcOutChannel* rpc_out_channel_new(rdpRpc* rpc);
-FREERDP_LOCAL int rpc_out_channel_replacement_connect(RpcOutChannel* outChannel,
+FREERDP_LOCAL BOOL rpc_out_channel_replacement_connect(RpcOutChannel* outChannel,
         int timeout);
 FREERDP_LOCAL void rpc_out_channel_free(RpcOutChannel* outChannel);
 

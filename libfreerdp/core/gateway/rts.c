@@ -818,7 +818,6 @@ BOOL rts_send_OUT_R1_A3_pdu(rdpRpc* rpc)
 
 static int rts_recv_OUT_R1_A2_pdu(rdpRpc* rpc, BYTE* buffer, UINT32 length)
 {
-	int status;
 	UINT32 offset;
 	UINT32 Destination = 0;
 	RpcVirtualConnection* connection = rpc->VirtualConnection;
@@ -834,9 +833,7 @@ static int rts_recv_OUT_R1_A2_pdu(rdpRpc* rpc, BYTE* buffer, UINT32 length)
 	if (!connection->NonDefaultOutChannel)
 		return -1;
 
-	status = rpc_out_channel_replacement_connect(connection->NonDefaultOutChannel, 5000);
-
-	if (status < 0)
+	if (!rpc_out_channel_replacement_connect(connection->NonDefaultOutChannel, 5000))
 	{
 		WLog_ERR(TAG, "rpc_out_channel_replacement_connect failure");
 		return -1;
