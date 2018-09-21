@@ -277,16 +277,19 @@ static const RTS_PDU_SIGNATURE_ENTRY RTS_PDU_SIGNATURE_TABLE[] =
 	{ 0, FALSE, NULL, NULL }
 };
 
-BOOL rts_match_pdu_signature(rdpRpc* rpc, const RtsPduSignature* signature,
+BOOL rts_match_pdu_signature(const RtsPduSignature* signature,
                              const rpcconn_rts_hdr_t* rts)
 {
-	int i;
+	UINT16 i;
 	int status;
 	const BYTE* buffer;
 	UINT32 length;
 	UINT32 offset;
 	UINT32 CommandType;
 	UINT32 CommandLength;
+
+	if (!signature || !rts)
+		return FALSE;
 
 	if (rts->Flags != signature->Flags)
 		return FALSE;
@@ -306,7 +309,7 @@ BOOL rts_match_pdu_signature(rdpRpc* rpc, const RtsPduSignature* signature,
 		if (CommandType != signature->CommandTypes[i])
 			return FALSE;
 
-		status = rts_command_length(rpc, CommandType, &buffer[offset], length);
+		status = rts_command_length(CommandType, &buffer[offset], length);
 
 		if (status < 0)
 			return FALSE;
@@ -319,7 +322,7 @@ BOOL rts_match_pdu_signature(rdpRpc* rpc, const RtsPduSignature* signature,
 	return TRUE;
 }
 
-int rts_extract_pdu_signature(rdpRpc* rpc, RtsPduSignature* signature, const rpcconn_rts_hdr_t* rts)
+BOOL rts_extract_pdu_signature(RtsPduSignature* signature, const rpcconn_rts_hdr_t* rts)
 {
 	int i;
 	int status;
@@ -328,6 +331,10 @@ int rts_extract_pdu_signature(rdpRpc* rpc, RtsPduSignature* signature, const rpc
 	UINT32 offset;
 	UINT32 CommandType;
 	UINT32 CommandLength;
+
+	if (!signature || !rts)
+		return FALSE;
+
 	signature->Flags = rts->Flags;
 	signature->NumberOfCommands = rts->NumberOfCommands;
 	buffer = (BYTE*) rts;
@@ -339,7 +346,7 @@ int rts_extract_pdu_signature(rdpRpc* rpc, RtsPduSignature* signature, const rpc
 		CommandType = *((UINT32*) &buffer[offset]); /* CommandType (4 bytes) */
 		offset += 4;
 		signature->CommandTypes[i] = CommandType;
-		status = rts_command_length(rpc, CommandType, &buffer[offset], length);
+		status = rts_command_length(CommandType, &buffer[offset], length);
 
 		if (status < 0)
 			return FALSE;
@@ -349,10 +356,10 @@ int rts_extract_pdu_signature(rdpRpc* rpc, RtsPduSignature* signature, const rpc
 		length = rts->frag_length - offset;
 	}
 
-	return 0;
+	return TRUE;
 }
 
-UINT32 rts_identify_pdu_signature(rdpRpc* rpc, const RtsPduSignature* signature,
+UINT32 rts_identify_pdu_signature(const RtsPduSignature* signature,
                                   const RTS_PDU_SIGNATURE_ENTRY** entry)
 {
 	size_t i, j;
@@ -385,16 +392,20 @@ UINT32 rts_identify_pdu_signature(rdpRpc* rpc, const RtsPduSignature* signature,
 	return 0;
 }
 
-int rts_print_pdu_signature(rdpRpc* rpc, const RtsPduSignature* signature)
+BOOL rts_print_pdu_signature(const RtsPduSignature* signature)
 {
 	UINT32 SignatureId;
 	const RTS_PDU_SIGNATURE_ENTRY* entry;
+
+	if (!signature)
+		return FALSE;
+
 	WLog_INFO(TAG,  "RTS PDU Signature: Flags: 0x%04"PRIX16" NumberOfCommands: %"PRIu16"",
 	          signature->Flags, signature->NumberOfCommands);
-	SignatureId = rts_identify_pdu_signature(rpc, signature, &entry);
+	SignatureId = rts_identify_pdu_signature(signature, &entry);
 
 	if (SignatureId)
 		WLog_ERR(TAG,  "Identified %s RTS PDU", entry->PduName);
 
-	return 0;
+	return TRUE;
 }
