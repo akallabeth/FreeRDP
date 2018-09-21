@@ -37,7 +37,7 @@ FREERDP_LOCAL BOOL rpc_in_channel_send_pdu(RpcInChannel* inChannel, BYTE* buffer
 FREERDP_LOCAL BOOL rpc_client_in_channel_recv(rdpRpc* rpc);
 FREERDP_LOCAL BOOL rpc_client_out_channel_recv(rdpRpc* rpc);
 
-FREERDP_LOCAL int rpc_client_receive_pipe_read(rdpRpc* rpc, BYTE* buffer,
+FREERDP_LOCAL int rpc_client_receive_pipe_read(RpcClient* client, BYTE* buffer,
         size_t length);
 
 FREERDP_LOCAL int rpc_client_write_call(rdpRpc* rpc, BYTE* data, int length,

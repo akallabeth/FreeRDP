@@ -92,13 +92,16 @@ static int rpc_client_receive_pipe_write(rdpRpc* rpc, const BYTE* buffer, size_t
 	return status;
 }
 
-int rpc_client_receive_pipe_read(rdpRpc* rpc, BYTE* buffer, size_t length)
+int rpc_client_receive_pipe_read(RpcClient* client, BYTE* buffer, size_t length)
 {
 	int index = 0;
 	int status = 0;
 	int nchunks = 0;
 	DataChunk chunks[2];
-	RpcClient* client = rpc->client;
+
+	if (!client || !buffer)
+		return -1;
+
 	EnterCriticalSection(&(client->PipeLock));
 	nchunks = ringbuffer_peek(&(client->ReceivePipe), chunks, length);
 
