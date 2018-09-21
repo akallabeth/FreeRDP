@@ -313,149 +313,121 @@ BOOL http_request_set_transfer_encoding(HttpRequest* request, const char* Transf
 	return TRUE;
 }
 
-static char* http_encode_body_line(const char* param, const char* value)
+
+static BOOL http_encode_print(wStream* s, const char* fmt, ...)
 {
-	char* line;
-	int length;
-	length = strlen(param) + strlen(value) + 2;
-	line = (char*) malloc(length + 1);
+	char* str;
+	va_list ap;
+	size_t length, used;
 
-	if (!line)
-		return NULL;
+	if (!s || !fmt)
+		return FALSE;
 
-	sprintf_s(line, length + 1, "%s: %s", param, value);
-	return line;
+	va_start(ap, fmt);
+	length = vsnprintf(NULL, 0, fmt, ap) + 1;
+	va_end(ap);
+
+	if (!Stream_EnsureRemainingCapacity(s, length))
+		return FALSE;
+
+	str = Stream_Pointer(s);
+	va_start(ap, fmt);
+	used = vsnprintf(str, length, fmt, ap);
+	va_end(ap);
+
+	/* Strip the trailing '\0' from the string. */
+	if ((used + 1) != length)
+		return FALSE;
+
+	Stream_Seek(s, used);
+	return TRUE;
 }
 
-static char* http_encode_content_length_line(int ContentLength)
+static BOOL http_encode_body_line(wStream* s, const char* param, const char* value)
 {
-	const char* key = "Content-Length:";
-	char* line;
-	int length;
-	char str[32];
-	_itoa_s(ContentLength, str, sizeof(str), 10);
-	length = strlen(key) + strlen(str) + 2;
-	line = (char*) malloc(length + 1);
+	if (!s || !param || !value)
+		return FALSE;
 
-	if (!line)
-		return NULL;
-
-	sprintf_s(line, length + 1, "%s %s", key, str);
-	return line;
+	return http_encode_print(s, "%s: %s\r\n", param, value);
 }
 
-static char* http_encode_header_line(const char* Method, const char* URI)
+static BOOL http_encode_content_length_line(wStream* s, size_t ContentLength)
 {
-	const char* key = "HTTP/1.1";
-	char* line;
-	int length;
-	length = strlen(key) + strlen(Method) + strlen(URI) + 2;
-	line = (char*)malloc(length + 1);
-
-	if (!line)
-		return NULL;
-
-	sprintf_s(line, length + 1, "%s %s %s", Method, URI, key);
-	return line;
+	return http_encode_print(s, "Content-Length: %"PRIdz"\r\n", ContentLength);
 }
 
-static char* http_encode_authorization_line(const char* AuthScheme, const char* AuthParam)
+static BOOL http_encode_header_line(wStream* s, const char* Method, const char* URI)
 {
-	const char* key = "Authorization:";
-	char* line;
-	int length;
-	length = strlen(key) + strlen(AuthScheme) + strlen(AuthParam) + 3;
-	line = (char*) malloc(length + 1);
+	if (!s || !Method || !URI)
+		return FALSE;
 
-	if (!line)
-		return NULL;
+	return http_encode_print(s, "%s %s HTTP/1.1\r\n", Method, URI);
+}
 
-	sprintf_s(line, length + 1, "%s %s %s", key, AuthScheme, AuthParam);
-	return line;
+static BOOL http_encode_authorization_line(wStream* s, const char* AuthScheme,
+        const char* AuthParam)
+{
+	if (!s || !AuthScheme || !AuthParam)
+		return FALSE;
+
+	return http_encode_print(s, "Authorization: %s %s\r\n", AuthScheme, AuthParam);
 }
 
 wStream* http_request_write(HttpContext* context, HttpRequest* request)
 {
-	wStream* s;
-	int i, count;
-	char** lines;
-	int length = 0;
-	count = 0;
-	lines = (char**) calloc(32, sizeof(char*));
+	wStream* s = Stream_New(NULL, 1024);
 
-	if (!lines)
+	if (!s)
 		return NULL;
 
-	lines[count++] = http_encode_header_line(request->Method, request->URI);
-	lines[count++] = http_encode_body_line("Cache-Control", context->CacheControl);
-	lines[count++] = http_encode_body_line("Connection", context->Connection);
-	lines[count++] = http_encode_body_line("Pragma", context->Pragma);
-	lines[count++] = http_encode_body_line("Accept", context->Accept);
-	lines[count++] = http_encode_body_line("User-Agent", context->UserAgent);
-	lines[count++] = http_encode_body_line("Host", context->Host);
+	if (!http_encode_header_line(s, request->Method, request->URI) ||
+	    !http_encode_body_line(s, "Cache-Control", context->CacheControl) ||
+	    !http_encode_body_line(s, "Connection", context->Connection) ||
+	    !http_encode_body_line(s, "Pragma", context->Pragma) ||
+	    !http_encode_body_line(s, "Accept", context->Accept) ||
+	    !http_encode_body_line(s, "User-Agent", context->UserAgent) ||
+	    !http_encode_body_line(s, "Host", context->Host))
+		goto fail;
 
 	if (context->RdgConnectionId)
-		lines[count++] = http_encode_body_line("RDG-Connection-Id", context->RdgConnectionId);
+	{
+		if (!http_encode_body_line(s, "RDG-Connection-Id", context->RdgConnectionId))
+			goto fail;
+	}
 
 	if (context->RdgAuthScheme)
-		lines[count++] = http_encode_body_line("RDG-Auth-Scheme", context->RdgAuthScheme);
+	{
+		if (!http_encode_body_line(s, "RDG-Auth-Scheme", context->RdgAuthScheme))
+			goto fail;
+	}
 
 	if (request->TransferEncoding)
 	{
-		lines[count++] = http_encode_body_line("Transfer-Encoding", request->TransferEncoding);
+		if (!http_encode_body_line(s, "Transfer-Encoding", request->TransferEncoding))
+			goto fail;
 	}
 	else
 	{
-		lines[count++] = http_encode_content_length_line(request->ContentLength);
+		if (!http_encode_content_length_line(s, request->ContentLength))
+			goto fail;
 	}
 
 	if (request->Authorization)
 	{
-		lines[count++] = http_encode_body_line("Authorization", request->Authorization);
+		if (!http_encode_body_line(s, "Authorization", request->Authorization))
+			goto fail;
 	}
 	else if (request->AuthScheme && request->AuthParam)
 	{
-		lines[count++] = http_encode_authorization_line(request->AuthScheme, request->AuthParam);
-	}
-
-	/* check that everything went well */
-	for (i = 0; i < count; i++)
-	{
-		if (!lines[i])
-			goto out_free;
-	}
-
-	for (i = 0; i < count; i++)
-	{
-		length += (strlen(lines[i]) + 2); /* add +2 for each '\r\n' character */
-	}
-
-	length += 2; /* empty line "\r\n" at end of header */
-	length += 1; /* null terminator */
-	s = Stream_New(NULL, length);
-
-	if (!s)
-		goto out_free;
-
-	for (i = 0; i < count; i++)
-	{
-		Stream_Write(s, lines[i], strlen(lines[i]));
-		Stream_Write(s, "\r\n", 2);
-		free(lines[i]);
+		if (!http_encode_authorization_line(s, request->AuthScheme, request->AuthParam))
+			goto fail;
 	}
 
 	Stream_Write(s, "\r\n", 2);
-	free(lines);
-	Stream_Write(s, "\0", 1); /* append null terminator */
-	Stream_Rewind(s, 1); /* don't include null terminator in length */
-	Stream_SetLength(s, Stream_GetPosition(s));
+	Stream_SealLength(s);
 	return s;
-out_free:
-
-	for (i = 0; i < count; i++)
-		free(lines[i]);
-
-	free(lines);
+fail:
+	Stream_Free(s, TRUE);
 	return NULL;
 }
 
