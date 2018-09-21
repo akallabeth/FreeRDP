@@ -25,7 +25,7 @@
 
 #include "rpc.h"
 
-FREERDP_LOCAL RpcClientCall* rpc_client_call_find_by_id(rdpRpc* rpc,
+FREERDP_LOCAL RpcClientCall* rpc_client_call_find_by_id(RpcClient* client,
         UINT32 CallId);
 
 FREERDP_LOCAL RpcClientCall* rpc_client_call_new(UINT32 CallId, UINT32 OpNum);

@@ -346,7 +346,7 @@ static BOOL rpc_client_recv_fragment(rdpRpc* rpc, wStream* fragment)
 			         rpc->StubCallId, header->common.call_id, rpc->StubFragCount);
 		}
 
-		call = rpc_client_call_find_by_id(rpc, rpc->StubCallId);
+		call = rpc_client_call_find_by_id(rpc->client, rpc->StubCallId);
 
 		if (!call)
 			return FALSE;
@@ -785,23 +785,27 @@ BOOL rpc_client_in_channel_recv(rdpRpc* rpc)
  * http://msdn.microsoft.com/en-us/library/gg593159/
  */
 
-RpcClientCall* rpc_client_call_find_by_id(rdpRpc* rpc, UINT32 CallId)
+RpcClientCall* rpc_client_call_find_by_id(RpcClient* client, UINT32 CallId)
 {
 	int index;
 	int count;
 	RpcClientCall* clientCall = NULL;
-	ArrayList_Lock(rpc->client->ClientCallList);
-	count = ArrayList_Count(rpc->client->ClientCallList);
+
+	if (!client)
+		return NULL;
+
+	ArrayList_Lock(client->ClientCallList);
+	count = ArrayList_Count(client->ClientCallList);
 
 	for (index = 0; index < count; index++)
 	{
-		clientCall = (RpcClientCall*) ArrayList_GetItem(rpc->client->ClientCallList, index);
+		clientCall = (RpcClientCall*) ArrayList_GetItem(client->ClientCallList, index);
 
 		if (clientCall->CallId == CallId)
 			break;
 	}
 
-	ArrayList_Unlock(rpc->client->ClientCallList);
+	ArrayList_Unlock(client->ClientCallList);
 	return clientCall;
 }
 
@@ -836,7 +840,7 @@ BOOL rpc_in_channel_send_pdu(RpcInChannel* inChannel, BYTE* buffer, UINT32 lengt
 		return FALSE;
 
 	header = (rpcconn_common_hdr_t*) buffer;
-	clientCall = rpc_client_call_find_by_id(rpc, header->call_id);
+	clientCall = rpc_client_call_find_by_id(rpc->client, header->call_id);
 	clientCall->State = RPC_CLIENT_CALL_STATE_DISPATCHED;
 
 	/*
