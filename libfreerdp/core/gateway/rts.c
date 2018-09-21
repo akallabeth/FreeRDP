@@ -828,7 +828,7 @@ static int rts_recv_OUT_R1_A2_pdu(rdpRpc* rpc, BYTE* buffer, UINT32 length)
 		return -1;
 
 	rts_destination_command_read(rpc, &buffer[offset], length - offset, &Destination);
-	connection->NonDefaultOutChannel = rpc_out_channel_new(rpc);
+	connection->NonDefaultOutChannel = rpc_out_channel_new(rpc->client, rpc->ReceiveWindow);
 
 	if (!connection->NonDefaultOutChannel)
 		return -1;

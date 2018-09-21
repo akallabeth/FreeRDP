@@ -507,13 +507,13 @@ static void rpc_in_channel_free(RpcInChannel* inChannel)
 	free(inChannel);
 }
 
-static RpcInChannel* rpc_in_channel_new(rdpRpc* rpc)
+static RpcInChannel* rpc_in_channel_new(RpcClient* client, UINT32 ReceiveWindow)
 {
 	RpcInChannel* inChannel = (RpcInChannel*) calloc(1, sizeof(RpcInChannel));
 
 	if (inChannel)
 	{
-		if (!rpc_in_channel_init(inChannel, rpc->client, rpc->ReceiveWindow))
+		if (!rpc_in_channel_init(inChannel, client, ReceiveWindow))
 			goto fail;
 	}
 
@@ -628,13 +628,13 @@ void rpc_out_channel_free(RpcOutChannel* outChannel)
 	free(outChannel);
 }
 
-RpcOutChannel* rpc_out_channel_new(rdpRpc* rpc)
+RpcOutChannel* rpc_out_channel_new(RpcClient* client, UINT32 ReceiveWindow)
 {
 	RpcOutChannel* outChannel = (RpcOutChannel*) calloc(1, sizeof(RpcOutChannel));
 
 	if (outChannel)
 	{
-		if (!rpc_out_channel_init(outChannel, rpc->client, rpc->ReceiveWindow))
+		if (!rpc_out_channel_init(outChannel, client, ReceiveWindow))
 			goto fail;
 	}
 
@@ -684,7 +684,7 @@ BOOL rpc_virtual_connection_transition_to_state(RpcVirtualConnection* connection
 	return TRUE;
 }
 
-static RpcVirtualConnection* rpc_virtual_connection_new(rdpRpc* rpc)
+static RpcVirtualConnection* rpc_virtual_connection_new(RpcClient* client, UINT32 ReceiveWindow)
 {
 	RpcVirtualConnection* connection;
 	connection = (RpcVirtualConnection*) calloc(1, sizeof(RpcVirtualConnection));
@@ -695,12 +695,12 @@ static RpcVirtualConnection* rpc_virtual_connection_new(rdpRpc* rpc)
 	rts_generate_cookie(connection->Cookie, sizeof(connection->Cookie));
 	rts_generate_cookie(connection->AssociationGroupId, sizeof(connection->AssociationGroupId));
 	connection->State = VIRTUAL_CONNECTION_STATE_INITIAL;
-	connection->DefaultInChannel = rpc_in_channel_new(rpc);
+	connection->DefaultInChannel = rpc_in_channel_new(client, ReceiveWindow);
 
 	if (!connection->DefaultInChannel)
 		goto out_free;
 
-	connection->DefaultOutChannel = rpc_out_channel_new(rpc);
+	connection->DefaultOutChannel = rpc_out_channel_new(client, ReceiveWindow);
 
 	if (!connection->DefaultOutChannel)
 		goto out_default_in;
@@ -916,7 +916,11 @@ BOOL rpc_connect(rdpRpc* rpc, int timeout)
 	RpcInChannel* inChannel;
 	RpcOutChannel* outChannel;
 	RpcVirtualConnection* connection;
-	rpc->VirtualConnection = rpc_virtual_connection_new(rpc);
+
+	if (!rpc)
+		return FALSE;
+
+	rpc->VirtualConnection = rpc_virtual_connection_new(rpc->client, rpc->ReceiveWindow);
 
 	if (!rpc->VirtualConnection)
 		return FALSE;

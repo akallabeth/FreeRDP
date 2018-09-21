@@ -761,7 +761,7 @@ FREERDP_LOCAL int rpc_out_channel_read(RpcOutChannel* outChannel, BYTE* data,
 FREERDP_LOCAL int rpc_out_channel_write(RpcOutChannel* outChannel,
                                         const BYTE* data, size_t length);
 
-FREERDP_LOCAL RpcOutChannel* rpc_out_channel_new(rdpRpc* rpc);
+FREERDP_LOCAL RpcOutChannel* rpc_out_channel_new(RpcClient* client, UINT32 ReceiveWindow);
 FREERDP_LOCAL BOOL rpc_out_channel_replacement_connect(RpcOutChannel* outChannel,
         int timeout);
 FREERDP_LOCAL void rpc_out_channel_free(RpcOutChannel* outChannel);
