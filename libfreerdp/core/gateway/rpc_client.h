@@ -43,7 +43,7 @@ FREERDP_LOCAL int rpc_client_receive_pipe_read(rdpRpc* rpc, BYTE* buffer,
 FREERDP_LOCAL int rpc_client_write_call(rdpRpc* rpc, BYTE* data, int length,
                                         UINT16 opnum);
 
-FREERDP_LOCAL int rpc_client_new(rdpRpc* rpc);
-FREERDP_LOCAL void rpc_client_free(rdpRpc* rpc);
+FREERDP_LOCAL RpcClient* rpc_client_new(UINT32 max_recv_frag);
+FREERDP_LOCAL void rpc_client_free(RpcClient* client);
 
 #endif /* FREERDP_LIB_CORE_GATEWAY_RPC_CLIENT_H */

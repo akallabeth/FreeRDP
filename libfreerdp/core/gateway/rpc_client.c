@@ -960,49 +960,48 @@ out_free_pdu:
 	return -1;
 }
 
-int rpc_client_new(rdpRpc* rpc)
+RpcClient* rpc_client_new(UINT32 max_recv_frag)
 {
-	RpcClient* client;
-	client = (RpcClient*) calloc(1, sizeof(RpcClient));
-	rpc->client = client;
+	RpcClient* client = (RpcClient*) calloc(1, sizeof(RpcClient));
 
 	if (!client)
-		return -1;
+		return NULL;
 
 	client->pdu = rpc_pdu_new();
 
 	if (!client->pdu)
-		return -1;
+		goto fail;
 
-	client->ReceiveFragment = Stream_New(NULL, rpc->max_recv_frag);
+	client->ReceiveFragment = Stream_New(NULL, max_recv_frag);
 
 	if (!client->ReceiveFragment)
-		return -1;
+		goto fail;
 
 	client->PipeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
 	if (!client->PipeEvent)
-		return -1;
+		goto fail;
 
 	if (!ringbuffer_init(&(client->ReceivePipe), 4096))
-		return -1;
+		goto fail;
 
 	if (!InitializeCriticalSectionAndSpinCount(&(client->PipeLock), 4000))
-		return -1;
+		goto fail;
 
 	client->ClientCallList = ArrayList_New(TRUE);
 
 	if (!client->ClientCallList)
-		return -1;
+		goto fail;
 
-	ArrayList_Object(client->ClientCallList)->fnObjectFree = (OBJECT_FREE_FN) rpc_client_call_free;
-	return 1;
+	ArrayList_Object(client->ClientCallList)->fnObjectFree = rpc_client_call_free;
+	return client;
+fail:
+	rpc_client_free(client);
+	return NULL;
 }
 
-void rpc_client_free(rdpRpc* rpc)
+void rpc_client_free(RpcClient* client)
 {
-	RpcClient* client = rpc->client;
-
 	if (!client)
 		return;
 
@@ -1022,5 +1021,4 @@ void rpc_client_free(rdpRpc* rpc)
 		ArrayList_Free(client->ClientCallList);
 
 	free(client);
-	rpc->client = NULL;
 }
