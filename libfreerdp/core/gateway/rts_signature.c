@@ -299,7 +299,7 @@ BOOL rts_match_pdu_signature(const RtsPduSignature* signature,
 
 	buffer = (const BYTE*) rts;
 	offset = RTS_PDU_HEADER_LENGTH;
-	length = rts->frag_length - offset;
+	length = rts->common.frag_length - offset;
 
 	for (i = 0; i < rts->NumberOfCommands; i++)
 	{
@@ -316,7 +316,7 @@ BOOL rts_match_pdu_signature(const RtsPduSignature* signature,
 
 		CommandLength = (UINT32) status;
 		offset += CommandLength;
-		length = rts->frag_length - offset;
+		length = rts->common.frag_length - offset;
 	}
 
 	return TRUE;
@@ -339,7 +339,7 @@ BOOL rts_extract_pdu_signature(RtsPduSignature* signature, const rpcconn_rts_hdr
 	signature->NumberOfCommands = rts->NumberOfCommands;
 	buffer = (BYTE*) rts;
 	offset = RTS_PDU_HEADER_LENGTH;
-	length = rts->frag_length - offset;
+	length = rts->common.frag_length - offset;
 
 	for (i = 0; i < rts->NumberOfCommands; i++)
 	{
@@ -353,7 +353,7 @@ BOOL rts_extract_pdu_signature(RtsPduSignature* signature, const rpcconn_rts_hdr
 
 		CommandLength = (UINT32) status;
 		offset += CommandLength;
-		length = rts->frag_length - offset;
+		length = rts->common.frag_length - offset;
 	}
 
 	return TRUE;

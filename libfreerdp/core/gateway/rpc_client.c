@@ -312,7 +312,7 @@ static BOOL rpc_client_recv_fragment(rdpRpc* rpc, wStream* fragment)
 				return FALSE;
 		}
 
-		if (!rpc_get_stub_data_info(rpc, buffer, &StubOffset, &StubLength))
+		if (!rpc_get_stub_data_info(buffer, &StubOffset, &StubLength))
 		{
 			WLog_ERR(TAG, "expected stub");
 			return FALSE;
@@ -885,14 +885,14 @@ int rpc_client_write_call(rdpRpc* rpc, BYTE* data, int length, UINT16 opnum)
 		return -1;
 
 	rpc_pdu_header_init(rpc, (rpcconn_hdr_t*) request_pdu);
-	request_pdu->ptype = PTYPE_REQUEST;
-	request_pdu->pfc_flags = PFC_FIRST_FRAG | PFC_LAST_FRAG;
-	request_pdu->auth_length = size;
-	request_pdu->call_id = rpc->CallId++;
+	request_pdu->common.ptype = PTYPE_REQUEST;
+	request_pdu->common.pfc_flags = PFC_FIRST_FRAG | PFC_LAST_FRAG;
+	request_pdu->common.auth_length = size;
+	request_pdu->common.call_id = rpc->CallId++;
 	request_pdu->alloc_hint = length;
 	request_pdu->p_cont_id = 0x0000;
 	request_pdu->opnum = opnum;
-	clientCall = rpc_client_call_new(request_pdu->call_id, request_pdu->opnum);
+	clientCall = rpc_client_call_new(request_pdu->common.call_id, request_pdu->opnum);
 
 	if (!clientCall)
 		goto out_free_pdu;
@@ -901,7 +901,7 @@ int rpc_client_write_call(rdpRpc* rpc, BYTE* data, int length, UINT16 opnum)
 		goto out_free_clientCall;
 
 	if (request_pdu->opnum == TsProxySetupReceivePipeOpnum)
-		rpc->PipeCallId = request_pdu->call_id;
+		rpc->PipeCallId = request_pdu->common.call_id;
 
 	request_pdu->stub_data = data;
 	offset = 24;
@@ -912,9 +912,9 @@ int rpc_client_write_call(rdpRpc* rpc, BYTE* data, int length, UINT16 opnum)
 	request_pdu->auth_verifier.auth_level = RPC_C_AUTHN_LEVEL_PKT_INTEGRITY;
 	request_pdu->auth_verifier.auth_reserved = 0x00;
 	request_pdu->auth_verifier.auth_context_id = 0x00000000;
-	offset += (8 + request_pdu->auth_length);
-	request_pdu->frag_length = offset;
-	buffer = (BYTE*) calloc(1, request_pdu->frag_length);
+	offset += (8 + request_pdu->common.auth_length);
+	request_pdu->common.frag_length = offset;
+	buffer = (BYTE*) calloc(1, request_pdu->common.frag_length);
 
 	if (!buffer)
 		goto out_free_pdu;
@@ -948,7 +948,7 @@ int rpc_client_write_call(rdpRpc* rpc, BYTE* data, int length, UINT16 opnum)
 	offset += Buffers[1].cbBuffer;
 	free(Buffers[1].pvBuffer);
 
-	if (rpc_in_channel_send_pdu(inChannel, buffer, request_pdu->frag_length) < 0)
+	if (rpc_in_channel_send_pdu(inChannel, buffer, request_pdu->common.frag_length) < 0)
 		length = -1;
 
 	free(request_pdu);

@@ -34,21 +34,23 @@ typedef struct rdp_rpc rdpRpc;
 
 #pragma pack(push, 1)
 
-#define DEFINE_RPC_COMMON_FIELDS() \
-	BYTE rpc_vers; \
-	BYTE rpc_vers_minor; \
-	BYTE ptype; \
-	BYTE pfc_flags; \
-	BYTE packed_drep[4]; \
-	UINT16 frag_length; \
-	UINT16 auth_length; \
-	UINT32 call_id
+typedef struct
+{
+	BYTE rpc_vers;
+	BYTE rpc_vers_minor;
+	BYTE ptype;
+	BYTE pfc_flags;
+	BYTE packed_drep[4];
+	UINT16 frag_length;
+	UINT16 auth_length;
+	UINT32 call_id;
+} rpcconn_common_hdr_t;
 
-#define RPC_COMMON_FIELDS_LENGTH	16
+#define RPC_COMMON_FIELDS_LENGTH	sizeof(rpcconn_shutdown_hdr_t)
 
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 
 	UINT16 Flags;
 	UINT16 NumberOfCommands;
@@ -140,11 +142,6 @@ typedef struct _RPC_PDU
 #define RPC_PDU_HEADER_MAX_LENGTH   32
 
 #pragma pack(push, 1)
-
-typedef struct
-{
-	DEFINE_RPC_COMMON_FIELDS();
-} rpcconn_common_hdr_t;
 
 typedef UINT16 p_context_id_t;
 typedef UINT16 p_reject_reason_t;
@@ -314,7 +311,7 @@ typedef struct auth_verifier_co_s auth_verifier_co_t;
 
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 
 	UINT16 max_xmit_frag;
 	UINT16 max_recv_frag;
@@ -328,7 +325,7 @@ typedef struct
 
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 
 	UINT16 max_xmit_frag;
 	UINT16 max_recv_frag;
@@ -345,7 +342,7 @@ typedef struct
 /*  bind header */
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 
 	UINT16 max_xmit_frag;
 	UINT16 max_recv_frag;
@@ -358,7 +355,7 @@ typedef struct
 
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 
 	UINT16 max_xmit_frag;
 	UINT16 max_recv_frag;
@@ -375,7 +372,7 @@ typedef struct
 
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 
 	UINT16 max_xmit_frag;
 	UINT16 max_recv_frag;
@@ -385,7 +382,7 @@ typedef struct
 
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 
 	p_reject_reason_t provider_reject_reason;
 
@@ -394,7 +391,7 @@ typedef struct
 
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 
 	auth_verifier_co_t auth_verifier;
 
@@ -459,7 +456,7 @@ typedef struct _RPC_FAULT_CODE RPC_FAULT_CODE;
 
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 
 	UINT32 alloc_hint;
 	p_context_id_t p_cont_id;
@@ -478,14 +475,14 @@ typedef struct
 
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 
 	auth_verifier_co_t auth_verifier;
 } rpcconn_orphaned_hdr_t;
 
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 
 	UINT32 alloc_hint;
 
@@ -504,7 +501,7 @@ typedef struct
 
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 
 	UINT32 alloc_hint;
 	p_context_id_t p_cont_id;
@@ -521,7 +518,7 @@ typedef struct
 
 typedef struct
 {
-	DEFINE_RPC_COMMON_FIELDS();
+	rpcconn_common_hdr_t common;
 } rpcconn_shutdown_hdr_t;
 
 typedef union
@@ -698,22 +695,6 @@ struct rpc_virtual_connection
 };
 typedef struct rpc_virtual_connection RpcVirtualConnection;
 
-/* Virtual Connection Cookie Table */
-
-#define RPC_UUID_FORMAT_STRING 	"%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x"
-#define RPC_UUID_FORMAT_ARGUMENTS(_rpc_uuid) \
-	_rpc_uuid[0], _rpc_uuid[1], _rpc_uuid[2], _rpc_uuid[3], _rpc_uuid[4], _rpc_uuid[5], _rpc_uuid[6], _rpc_uuid[7], \
-	_rpc_uuid[8], _rpc_uuid[9], _rpc_uuid[10], _rpc_uuid[11], _rpc_uuid[12], _rpc_uuid[13], _rpc_uuid[14], _rpc_uuid[15]
-
-struct rpc_virtual_connection_cookie_entry
-{
-	BYTE Cookie[16];
-	UINT32 ReferenceCount;
-	RpcVirtualConnection* Reference;
-};
-typedef struct rpc_virtual_connection_cookie_entry
-	RpcVirtualConnectionCookieEntry;
-
 struct rpc_client
 {
 	RPC_PDU* pdu;
@@ -768,7 +749,7 @@ FREERDP_LOCAL void rpc_pdu_header_init(rdpRpc* rpc, rpcconn_hdr_t* header);
 FREERDP_LOCAL UINT32 rpc_offset_align(UINT32* offset, UINT32 alignment);
 FREERDP_LOCAL UINT32 rpc_offset_pad(UINT32* offset, UINT32 pad);
 
-FREERDP_LOCAL BOOL rpc_get_stub_data_info(rdpRpc* rpc, const BYTE* header,
+FREERDP_LOCAL BOOL rpc_get_stub_data_info(const BYTE* header,
         UINT32* offset, UINT32* length);
 
 FREERDP_LOCAL int rpc_in_channel_write(RpcInChannel* inChannel,

@@ -264,7 +264,7 @@ UINT32 rpc_offset_pad(UINT32* offset, UINT32 pad)
  *
  */
 
-BOOL rpc_get_stub_data_info(rdpRpc* rpc, const BYTE* buffer, UINT32* offset, UINT32* length)
+BOOL rpc_get_stub_data_info(const BYTE* buffer, UINT32* offset, UINT32* length)
 {
 	UINT32 alloc_hint = 0;
 	const rpcconn_hdr_t* header;
@@ -579,14 +579,14 @@ BOOL rpc_out_channel_transition_to_state(RpcOutChannel* outChannel, CLIENT_OUT_C
 	return TRUE;
 }
 
-static int rpc_out_channel_rpch_init(rdpRpc* rpc, RpcOutChannel* outChannel)
+static int rpc_out_channel_rpch_init(rdpSettings* settings, RpcOutChannel* outChannel)
 {
 	HttpContext* http;
 
-	if (!rpc || !outChannel)
+	if (!settings || !outChannel)
 		return -1;
 
-	if (!rpc_channel_rpch_init(rpc->settings, &outChannel->common))
+	if (!rpc_channel_rpch_init(settings, &outChannel->common))
 		return -1;
 
 	http = outChannel->common.http;
@@ -608,7 +608,7 @@ static BOOL rpc_out_channel_init(rdpRpc* rpc, RpcOutChannel* outChannel)
 	outChannel->ReceiveWindowSize = rpc->ReceiveWindow;
 	outChannel->AvailableWindowAdvertised = rpc->ReceiveWindow;
 
-	if (rpc_out_channel_rpch_init(rpc, outChannel) < 0)
+	if (rpc_out_channel_rpch_init(rpc->settings, outChannel) < 0)
 		return FALSE;
 
 	return TRUE;
