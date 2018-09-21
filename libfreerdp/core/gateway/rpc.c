@@ -474,7 +474,7 @@ static int rpc_in_channel_rpch_init(rdpRpc* rpc, RpcInChannel* inChannel)
 
 static BOOL rpc_in_channel_init(rdpRpc* rpc, RpcInChannel* inChannel)
 {
-	rts_generate_cookie(inChannel->common.Cookie);
+	rts_generate_cookie(inChannel->common.Cookie, sizeof(inChannel->common.Cookie));
 	inChannel->common.rpc = rpc;
 	inChannel->State = CLIENT_IN_CHANNEL_STATE_INITIAL;
 	inChannel->BytesSent = 0;
@@ -599,7 +599,7 @@ static int rpc_out_channel_rpch_init(rdpSettings* settings, RpcOutChannel* outCh
 
 static BOOL rpc_out_channel_init(rdpRpc* rpc, RpcOutChannel* outChannel)
 {
-	rts_generate_cookie(outChannel->common.Cookie);
+	rts_generate_cookie(outChannel->common.Cookie, sizeof(outChannel->common.Cookie));
 	outChannel->common.rpc = rpc;
 	outChannel->State = CLIENT_OUT_CHANNEL_STATE_INITIAL;
 	outChannel->BytesReceived = 0;
@@ -687,8 +687,8 @@ static RpcVirtualConnection* rpc_virtual_connection_new(rdpRpc* rpc)
 	if (!connection)
 		return NULL;
 
-	rts_generate_cookie((BYTE*) & (connection->Cookie));
-	rts_generate_cookie((BYTE*) & (connection->AssociationGroupId));
+	rts_generate_cookie(connection->Cookie, sizeof(connection->Cookie));
+	rts_generate_cookie(connection->AssociationGroupId, sizeof(connection->AssociationGroupId));
 	connection->State = VIRTUAL_CONNECTION_STATE_INITIAL;
 	connection->DefaultInChannel = rpc_in_channel_new(rpc);
 

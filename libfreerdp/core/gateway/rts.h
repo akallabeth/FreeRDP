@@ -77,7 +77,7 @@
 #define FDServer					0x00000002
 #define FDOutProxy					0x00000003
 
-FREERDP_LOCAL void rts_generate_cookie(BYTE* cookie);
+FREERDP_LOCAL BOOL rts_generate_cookie(BYTE* cookie, size_t length);
 
 FREERDP_LOCAL int rts_command_length(UINT32 CommandType, const BYTE* buffer, UINT32 length);
 

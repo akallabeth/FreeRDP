@@ -391,9 +391,13 @@ static int rts_ping_traffic_sent_notify_command_write(BYTE* buffer, UINT32 PingT
 	return 8;
 }
 
-void rts_generate_cookie(BYTE* cookie)
+BOOL rts_generate_cookie(BYTE* cookie, size_t length)
 {
-	winpr_RAND(cookie, 16);
+	if (!cookie)
+		return FALSE;
+
+	winpr_RAND(cookie, length);
+	return TRUE;
 }
 
 /* CONN/A Sequence */
