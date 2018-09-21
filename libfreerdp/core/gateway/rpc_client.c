@@ -257,7 +257,7 @@ static int rpc_client_recv_pdu(rdpRpc* rpc, RPC_PDU* pdu)
 				return -1;
 			}
 
-			if (rpc_send_rpc_auth_3_pdu(rpc) < 0)
+			if (!rpc_send_rpc_auth_3_pdu(rpc))
 			{
 				WLog_ERR(TAG, "rpc_secure_bind: error sending rpc_auth_3 pdu!");
 				return -1;

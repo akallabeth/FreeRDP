@@ -330,28 +330,34 @@ SSIZE_T rpc_recv_bind_ack_pdu(rdpRpc* rpc, const BYTE* buffer, size_t length)
  * status in this example.
  */
 
-int rpc_send_rpc_auth_3_pdu(rdpRpc* rpc)
+BOOL rpc_send_rpc_auth_3_pdu(rdpRpc* rpc)
 {
-	int status = -1;
+	BOOL rc = FALSE;
 	BYTE* buffer;
 	UINT32 offset;
 	UINT32 length;
 	RpcClientCall* clientCall;
 	rpcconn_rpc_auth_3_hdr_t* auth_3_pdu;
-	RpcVirtualConnection* connection = rpc->VirtualConnection;
-	RpcInChannel* inChannel = connection->DefaultInChannel;
+	RpcVirtualConnection* connection;
+	RpcInChannel* inChannel;
+
+	if (!rpc || !rpc->VirtualConnection || !rpc->VirtualConnection->DefaultInChannel)
+		return FALSE;
+
+	connection = rpc->VirtualConnection;
+	inChannel = connection->DefaultInChannel;
 	WLog_DBG(TAG, "Sending RpcAuth3 PDU");
 	auth_3_pdu = (rpcconn_rpc_auth_3_hdr_t*) calloc(1, sizeof(rpcconn_rpc_auth_3_hdr_t));
 
 	if (!auth_3_pdu)
-		return -1;
+		return FALSE;
 
 	rpc_pdu_header_init(rpc, (rpcconn_hdr_t*) auth_3_pdu);
 	{
 		const SecBuffer* out = ntlm_client_get_output_buffer(rpc->ntlm);
 
 		if (!out)
-			return -1;
+			return FALSE;
 
 		auth_3_pdu->auth_length = out->cbBuffer;
 		auth_3_pdu->auth_verifier.auth_value = out->pvBuffer;
@@ -374,7 +380,7 @@ int rpc_send_rpc_auth_3_pdu(rdpRpc* rpc)
 	if (!buffer)
 	{
 		free(auth_3_pdu);
-		return -1;
+		return FALSE;
 	}
 
 	CopyMemory(buffer, auth_3_pdu, 20);
@@ -389,10 +395,10 @@ int rpc_send_rpc_auth_3_pdu(rdpRpc* rpc)
 	if (ArrayList_Add(rpc->client->ClientCallList, clientCall) >= 0)
 	{
 		if (rpc_in_channel_send_pdu(inChannel, buffer, length))
-			status = 1;
+			rc = TRUE;
 	}
 
 	free(auth_3_pdu);
 	free(buffer);
-	return (status > 0) ? 1 : -1;
+	return rc;
 }
