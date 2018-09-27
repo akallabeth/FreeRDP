@@ -36,6 +36,7 @@
 #include "rpc_fault.h"
 #include "rpc_client.h"
 #include "../rdp.h"
+#include "../proxy.h"
 
 #define TAG FREERDP_TAG("core.gateway.rpc")
 
@@ -963,12 +964,40 @@ out_free_pdu:
 	return -1;
 }
 
+static BOOL rpc_client_resolve_gateway(rdpSettings* settings, char** host, UINT16* port,
+                                       BOOL* isProxy)
+{
+	struct addrinfo* result;
+
+	if (!settings || !host || !port || !isProxy)
+		return FALSE;
+	else
+	{
+		const char* peerHostname = settings->GatewayHostname;
+		const char* proxyUsername = settings->ProxyUsername;
+		const char* proxyPassword = settings->ProxyPassword;
+		*port = settings->GatewayPort;
+		*isProxy = proxy_prepare(settings, &peerHostname, port, &proxyUsername, &proxyPassword);
+		result = freerdp_tcp_resolve_host(peerHostname, *port, 0);
+
+		if (!result)
+			return FALSE;
+
+		*host = freerdp_tcp_address_to_string(result->ai_addr, NULL);
+		freeaddrinfo(result);
+		return TRUE;
+	}
+}
+
 RpcClient* rpc_client_new(rdpContext* context, UINT32 max_recv_frag)
 {
 	RpcClient* client = (RpcClient*) calloc(1, sizeof(RpcClient));
 
 	if (!client)
 		return NULL;
+
+	if (!rpc_client_resolve_gateway(context->settings, &client->host, &client->port, &client->isProxy))
+		goto fail;
 
 	client->context = context;
 
@@ -1012,6 +1041,8 @@ void rpc_client_free(RpcClient* client)
 {
 	if (!client)
 		return;
+
+	free(client->host);
 
 	if (client->ReceiveFragment)
 		Stream_Free(client->ReceiveFragment, TRUE);

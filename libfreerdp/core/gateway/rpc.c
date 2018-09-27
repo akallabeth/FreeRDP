@@ -734,33 +734,24 @@ static bool rpc_channel_tls_connect(RpcChannel* channel, int timeout)
 	BIO* bufferedBio;
 	rdpContext* context;
 	rdpSettings* settings;
-	BOOL isProxyConnection;
 	const char* proxyUsername;
 	const char* proxyPassword;
 
 	if (!channel || !channel->client || !channel->client->context ||
 	    !channel->client->context->settings)
 		return FALSE;
-	else
+
+	context = channel->client->context;
+	settings = context->settings;
+	proxyUsername = settings->ProxyUsername;
+	proxyPassword = settings->ProxyPassword;
 	{
-		UINT16 peerPort;
-		const char* peerHostname;
-		RpcClient* client = channel->client;
-		context = client->context;
-		settings = context->settings;
-		peerHostname = settings->GatewayHostname;
-		peerPort = settings->GatewayPort;
-		proxyUsername = settings->ProxyUsername;
-		proxyPassword = settings->ProxyPassword;
-		isProxyConnection = proxy_prepare(settings, &peerHostname, &peerPort, &proxyUsername,
-		                                  &proxyPassword);
-		sockfd = freerdp_tcp_connect(context, settings, peerHostname,
-		                             peerPort, timeout);
+		sockfd = freerdp_tcp_connect(context, settings, channel->client->host,
+		                             channel->client->port, timeout);
 
 		if (sockfd < 0)
 			return FALSE;
 	}
-
 	socketBio = BIO_new(BIO_s_simple_socket());
 
 	if (!socketBio)
@@ -777,7 +768,7 @@ static bool rpc_channel_tls_connect(RpcChannel* channel, int timeout)
 	if (!BIO_set_nonblock(bufferedBio, TRUE))
 		return FALSE;
 
-	if (isProxyConnection)
+	if (channel->client->isProxy)
 	{
 		if (!proxy_connect(settings, bufferedBio, proxyUsername, proxyPassword,	settings->GatewayHostname,
 		                   settings->GatewayPort))
@@ -913,6 +904,7 @@ BOOL rpc_out_channel_replacement_connect(RpcOutChannel* outChannel, int timeout)
 
 BOOL rpc_connect(rdpRpc* rpc, int timeout)
 {
+	BOOL rc = FALSE;
 	RpcInChannel* inChannel;
 	RpcOutChannel* outChannel;
 	RpcVirtualConnection* connection;
@@ -930,15 +922,17 @@ BOOL rpc_connect(rdpRpc* rpc, int timeout)
 	outChannel = connection->DefaultOutChannel;
 
 	if (!rpc_virtual_connection_transition_to_state(connection, VIRTUAL_CONNECTION_STATE_INITIAL))
-		return FALSE;
+		goto fail;
 
 	if (!rpc_in_channel_connect(inChannel, timeout))
-		return FALSE;
+		goto fail;
 
 	if (!rpc_out_channel_connect(outChannel, timeout))
-		return FALSE;
+		goto fail;
 
-	return TRUE;
+	rc = TRUE;
+fail:
+	return rc;
 }
 
 rdpRpc* rpc_new(rdpTransport* transport)

@@ -591,6 +591,9 @@ struct rpc_client
 	wStream* ReceiveFragment;
 	CRITICAL_SECTION PipeLock;
 	wArrayList* ClientCallList;
+	char* host;
+	UINT16 port;
+	BOOL isProxy;
 };
 typedef struct rpc_client RpcClient;
 
