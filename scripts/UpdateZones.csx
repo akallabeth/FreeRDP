@@ -18,6 +18,10 @@
  * limitations under the License.
  */
 
+/* Run this script with 'csi.exe scripts/UpdateZones.csx' from the FreeRDP
+ * checkout folder. After running, winpr/libwinpr/timezone/TimeZones.c and
+ * winpr/libwinpr/timezone/WindowsZones.c will be updated.
+ * Commit the changes if changed. */
 #load "WindowsZones.csx"
 #loat "TimeZones.csx"
 

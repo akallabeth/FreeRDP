@@ -1,0 +1,11 @@
+Run the script scripts/UpdateZones.csx
+
+csi.exe scripts/UpdateZones.csx
+
+from the freerdp checkout directory.
+After running the script check
+ * winpr/libwinpr/timezone/TimeZones.c
+ * winpr/libwinpr/timezone/WindowsZones.c
+for changes.
+
+Commit your changes if correct.
