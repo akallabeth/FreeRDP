@@ -16,6 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* Run with ' csi scripts/WindowsZones.csx' from freerdp checkout root */
 
 #r "System.Xml"
 

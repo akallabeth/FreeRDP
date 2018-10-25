@@ -16,6 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* Run with ' csi scripts/TimeZones.csx' from freerdp checkout root */
 
 using System;
 using System.IO;
