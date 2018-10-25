@@ -57,11 +57,15 @@ struct TIME_ZONE_ENTRY
 
 int i;
 UInt32 index;
-const string file = @"TimeZones.txt";
+const string file = @"winpr/libwinpr/timezone/TimeZones.c";
 TimeZoneInfo.AdjustmentRule[] rules;
 StreamWriter stream = new StreamWriter(file, false);
 ReadOnlyCollection<TimeZoneInfo> timeZones = TimeZoneInfo.GetSystemTimeZones();
 
+Console.WriteLine("Updating " + file);
+stream.WriteLine("/* ");
+stream.WriteLine(" * Automatically generated with scripts/TimeZones.csx");
+stream.WriteLine(" */ ");
 stream.WriteLine();
 
 stream.WriteLine("#pragma pack(push, 1)");
