@@ -429,10 +429,12 @@ BOOL interleaved_compress(BITMAP_INTERLEAVED_CONTEXT* interleaved,
 	                        palette, FREERDP_FLIP_NONE))
 		return FALSE;
 
-	s = Stream_New(pDstData, maxSize);
+	s = Stream_New(pDstData, *pDstSize);
 
 	if (!s)
 		return FALSE;
+
+	Stream_SetPosition(interleaved->bts, 0);
 
 	if (freerdp_bitmap_compress(interleaved->TempBuffer, nWidth, nHeight,
 	                            s, bpp, maxSize, nHeight - 1,
