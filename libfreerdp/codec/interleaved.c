@@ -381,7 +381,7 @@ BOOL interleaved_compress(BITMAP_INTERLEAVED_CONTEXT* interleaved,
                           UINT32 nSrcStep, UINT32 nXSrc, UINT32 nYSrc,
                           const gdiPalette* palette, UINT32 bpp)
 {
-	int status;
+	BOOL status;
 	wStream* s;
 	UINT32 DstFormat = 0;
 	const size_t maxSize = 64 * 64 * 4;
@@ -434,9 +434,13 @@ BOOL interleaved_compress(BITMAP_INTERLEAVED_CONTEXT* interleaved,
 	if (!s)
 		return FALSE;
 
-	status = freerdp_bitmap_compress(interleaved->TempBuffer, nWidth, nHeight,
-	                                 s, bpp, maxSize, nHeight - 1,
-	                                 interleaved->bts, 0);
+	if (freerdp_bitmap_compress(interleaved->TempBuffer, nWidth, nHeight,
+	                            s, bpp, maxSize, nHeight - 1,
+	                            interleaved->bts, 0) < 0)
+		status = FALSE;
+	else
+		status = TRUE;
+
 	Stream_SealLength(s);
 	*pDstSize = (UINT32) Stream_Length(s);
 	Stream_Free(s, FALSE);
