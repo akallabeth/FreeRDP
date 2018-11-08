@@ -386,6 +386,12 @@ BOOL interleaved_compress(BITMAP_INTERLEAVED_CONTEXT* interleaved,
 	UINT32 DstFormat = 0;
 	const size_t maxSize = 64 * 64 * 4;
 
+	if (!interleaved || !pDstData || !pSrcData)
+		return FALSE;
+
+	if ((nWidth == 0) || (nHeight == 0))
+		return FALSE;
+
 	if (nWidth % 4)
 	{
 		WLog_ERR(TAG, "interleaved_compress: width is not a multiple of 4");
@@ -400,21 +406,27 @@ BOOL interleaved_compress(BITMAP_INTERLEAVED_CONTEXT* interleaved,
 		return FALSE;
 	}
 
-	if (bpp == 24)
-		DstFormat = PIXEL_FORMAT_BGRX32;
-	else if (bpp == 16)
-		DstFormat = PIXEL_FORMAT_RGB16;
-	else if (bpp == 15)
-		DstFormat = PIXEL_FORMAT_RGB15;
-	else if (bpp == 8)
-		DstFormat = PIXEL_FORMAT_RGB8;
+	switch (bpp)
+	{
+		case 24:
+			DstFormat = PIXEL_FORMAT_BGRX32;
+			break;
 
-	if (!DstFormat)
-		return FALSE;
+		case 16:
+			DstFormat = PIXEL_FORMAT_RGB16;
+			break;
+
+		case 15:
+			DstFormat = PIXEL_FORMAT_RGB15;
+			break;
+
+		default:
+			return FALSE;
+	}
 
 	if (!freerdp_image_copy(interleaved->TempBuffer, DstFormat, 0, 0, 0, nWidth,
-	                        nHeight,
-	                        pSrcData, SrcFormat, nSrcStep, nXSrc, nYSrc, palette, FREERDP_FLIP_NONE))
+	                        nHeight, pSrcData, SrcFormat, nSrcStep, nXSrc, nYSrc,
+	                        palette, FREERDP_FLIP_NONE))
 		return FALSE;
 
 	s = Stream_New(pDstData, maxSize);
@@ -422,9 +434,9 @@ BOOL interleaved_compress(BITMAP_INTERLEAVED_CONTEXT* interleaved,
 	if (!s)
 		return FALSE;
 
-	status = freerdp_bitmap_compress((char*) interleaved->TempBuffer, nWidth,
-	                                 nHeight,
-	                                 s, bpp, maxSize, nHeight - 1, interleaved->bts, 0);
+	status = freerdp_bitmap_compress(interleaved->TempBuffer, nWidth, nHeight,
+	                                 s, bpp, maxSize, nHeight - 1,
+	                                 interleaved->bts, 0);
 	Stream_SealLength(s);
 	*pDstSize = (UINT32) Stream_Length(s);
 	Stream_Free(s, FALSE);
