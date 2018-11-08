@@ -24,42 +24,39 @@
 #include <freerdp/codec/bitmap.h>
 #include <freerdp/codec/planar.h>
 
-#define GETPIXEL16(d, x, y, w) (*(((unsigned short*)d) + ((y) * (w) + (x))))
-#define GETPIXEL32(d, x, y, w) (*(((unsigned int*)d) + ((y) * (w) + (x))))
+static INLINE UINT16 GETPIXEL16(const void* d, UINT32 x, UINT32 y, UINT32 w)
+{
+	return (*(((const unsigned short*)d) + ((y) * (w) + (x))));
+}
+
+static INLINE UINT32 GETPIXEL32(const void* d, UINT32 x, UINT32 y, UINT32 w)
+{
+	return (*(((const unsigned int*)d) + ((y) * (w) + (x))));
+}
 
 /*****************************************************************************/
-#define IN_PIXEL16(in_ptr, in_x, in_y, in_w, in_last_pixel, in_pixel); \
-	{ \
-		if (in_ptr == 0) \
-		{ \
-			in_pixel = 0; \
-		} \
-		else if (in_x < in_w) \
-		{ \
-			in_pixel = GETPIXEL16(in_ptr, in_x, in_y, in_w); \
-		} \
-		else \
-		{ \
-			in_pixel = in_last_pixel; \
-		} \
-	}
+static INLINE UINT16 IN_PIXEL16(const void* in_ptr, UINT32 in_x, UINT32 in_y, UINT32 in_w,
+                                UINT16 in_last_pixel)
+{
+	if (in_ptr == 0)
+		return 0;
+	else if (in_x < in_w)
+		return GETPIXEL16(in_ptr, in_x, in_y, in_w);
+	else
+		return in_last_pixel;
+}
 
 /*****************************************************************************/
-#define IN_PIXEL32(in_ptr, in_x, in_y, in_w, in_last_pixel, in_pixel); \
-	{ \
-		if (in_ptr == 0) \
-		{ \
-			in_pixel = 0; \
-		} \
-		else if (in_x < in_w) \
-		{ \
-			in_pixel = GETPIXEL32(in_ptr, in_x, in_y, in_w); \
-		} \
-		else \
-		{ \
-			in_pixel = in_last_pixel; \
-		} \
-	}
+static INLINE UINT32 IN_PIXEL32(const void* in_ptr, UINT32 in_x, UINT32 in_y, UINT32 in_w,
+                                UINT32 in_last_pixel)
+{
+	if (in_ptr == 0)
+		return 0;
+	else if (in_x < in_w)
+		return GETPIXEL32(in_ptr, in_x, in_y, in_w);
+	else
+		return in_last_pixel;
+}
 
 /*****************************************************************************/
 /* color */
@@ -461,19 +458,16 @@ static SSIZE_T freerdp_bitmap_compress_24(const void* srcData, UINT32 width, UIN
 {
 	char fom_mask[8192]; /* good for up to 64K bitmap */
 	int lines_sent;
-	int pixel;
 	int count;
 	int color_count;
-	int last_pixel;
+	UINT32 last_pixel = 0;
+	UINT32 last_ypixel = 0;
 	int bicolor_count;
 	int bicolor1;
 	int bicolor2;
 	int bicolor_spin;
 	int end;
-	size_t i;
 	int out_count;
-	int ypixel;
-	int last_ypixel;
 	int fill_count;
 	int mix_count;
 	int mix;
@@ -485,8 +479,6 @@ static SSIZE_T freerdp_bitmap_compress_24(const void* srcData, UINT32 width, UIN
 	end = width + e;
 	count = 0;
 	color_count = 0;
-	last_pixel = 0;
-	last_ypixel = 0;
 	bicolor_count = 0;
 	bicolor1 = 0;
 	bicolor2 = 0;
@@ -499,9 +491,9 @@ static SSIZE_T freerdp_bitmap_compress_24(const void* srcData, UINT32 width, UIN
 	mix = 0xFFFFFF;
 	out_count = end * 3;
 
-	while (start_line >= 0 && out_count < 32768)
+	while (out_count < 32768)
 	{
-		i = Stream_GetPosition(s) + count * 3;
+		size_t i = Stream_GetPosition(s) + count * 3;
 
 		if (i - (color_count * 3) >= byte_limit &&
 		    i - (bicolor_count * 3) >= byte_limit &&
@@ -517,8 +509,8 @@ static SSIZE_T freerdp_bitmap_compress_24(const void* srcData, UINT32 width, UIN
 		for (i = 0; i < end; i++)
 		{
 			/* read next pixel */
-			IN_PIXEL32(line, i, 0, width, last_pixel, pixel);
-			IN_PIXEL32(last_line, i, 0, width, last_ypixel, ypixel);
+			const UINT32 pixel = IN_PIXEL32(line, i, 0, width, last_pixel);
+			const UINT32  ypixel = IN_PIXEL32(last_line, i, 0, width, last_ypixel);
 
 			if (!TEST_FILL)
 			{
@@ -795,19 +787,16 @@ static SSIZE_T freerdp_bitmap_compress_16(const void* srcData, UINT32 width, UIN
 {
 	char fom_mask[8192]; /* good for up to 64K bitmap */
 	int lines_sent;
-	int pixel;
 	int count;
 	int color_count;
-	int last_pixel;
+	UINT16 last_pixel = 0;
+	UINT16 last_ypixel = 0;
 	int bicolor_count;
 	int bicolor1;
 	int bicolor2;
 	int bicolor_spin;
 	int end;
-	size_t i;
 	int out_count;
-	int ypixel;
-	int last_ypixel;
 	int fill_count;
 	int mix_count;
 	int mix;
@@ -819,8 +808,6 @@ static SSIZE_T freerdp_bitmap_compress_16(const void* srcData, UINT32 width, UIN
 	end = width + e;
 	count = 0;
 	color_count = 0;
-	last_pixel = 0;
-	last_ypixel = 0;
 	bicolor_count = 0;
 	bicolor1 = 0;
 	bicolor2 = 0;
@@ -833,9 +820,9 @@ static SSIZE_T freerdp_bitmap_compress_16(const void* srcData, UINT32 width, UIN
 	mix = (bpp == 15) ? 0xBA1F : 0xFFFF;
 	out_count = end * 2;
 
-	while (start_line >= 0 && out_count < 32768)
+	while (out_count < 32768)
 	{
-		i = Stream_GetPosition(s) + count * 2;
+		size_t i = Stream_GetPosition(s) + count * 2;
 
 		if (i - (color_count * 2) >= byte_limit &&
 		    i - (bicolor_count * 2) >= byte_limit &&
@@ -851,8 +838,8 @@ static SSIZE_T freerdp_bitmap_compress_16(const void* srcData, UINT32 width, UIN
 		for (i = 0; i < end; i++)
 		{
 			/* read next pixel */
-			IN_PIXEL16(line, i, 0, width, last_pixel, pixel);
-			IN_PIXEL16(last_line, i, 0, width, last_ypixel, ypixel);
+			const UINT16 pixel = IN_PIXEL16(line, i, 0, width, last_pixel);
+			const UINT16 ypixel = IN_PIXEL16(last_line, i, 0, width, last_ypixel);
 
 			if (!TEST_FILL)
 			{
