@@ -1,4 +1,8 @@
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <math.h>
 
 #include <winpr/crt.h>
@@ -9,11 +13,17 @@
 #include <freerdp/codec/bitmap.h>
 #include <freerdp/codec/interleaved.h>
 #include <winpr/crypto.h>
+#include <freerdp/utils/profiler.h>
 
-static BOOL run_encode_decode(UINT16 bpp, BITMAP_INTERLEAVED_CONTEXT* encoder,
-                              BITMAP_INTERLEAVED_CONTEXT* decoder)
+static BOOL run_encode_decode_single(UINT16 bpp, BITMAP_INTERLEAVED_CONTEXT* encoder,
+                                     BITMAP_INTERLEAVED_CONTEXT* decoder
+#if defined(WITH_PROFILER)
+                                     , PROFILER* profiler_comp, PROFILER* profiler_decomp
+#endif
+                                    )
 {
-	BOOL rc = FALSE;
+	BOOL rc2 = FALSE;
+	BOOL rc;
 	UINT32 i, j;
 	const UINT32 w = 64;
 	const UINT32 h = 64;
@@ -37,12 +47,20 @@ static BOOL run_encode_decode(UINT16 bpp, BITMAP_INTERLEAVED_CONTEXT* encoder,
 	if (!bitmap_interleaved_context_reset(encoder) || !bitmap_interleaved_context_reset(decoder))
 		goto fail;
 
-	if (!interleaved_compress(decoder, tmp, &DstSize, w, h, pSrcData,
-	                          format, step, x, y, NULL, bpp))
+	PROFILER_ENTER(profiler_comp);
+	rc = interleaved_compress(decoder, tmp, &DstSize, w, h, pSrcData,
+	                          format, step, x, y, NULL, bpp);
+	PROFILER_EXIT(profiler_comp);
+
+	if (!rc)
 		goto fail;
 
-	if (!interleaved_decompress(encoder, tmp, DstSize, w, h, bpp, pDstData,
-	                            format, step, x, y, w, h, NULL))
+	PROFILER_ENTER(profiler_decomp);
+	rc = interleaved_decompress(encoder, tmp, DstSize, w, h, bpp, pDstData,
+	                            format, step, x, y, w, h, NULL);
+	PROFILER_EXIT(profiler_decomp);
+
+	if (!rc)
 		goto fail;
 
 	for (i = 0; i < h; i++)
@@ -69,18 +87,47 @@ static BOOL run_encode_decode(UINT16 bpp, BITMAP_INTERLEAVED_CONTEXT* encoder,
 		}
 	}
 
-	rc = TRUE;
+	rc2 = TRUE;
 fail:
 	free(pSrcData);
 	free(pDstData);
 	free(tmp);
-	return rc;
+	return rc2;
 }
 
+static BOOL run_encode_decode(UINT16 bpp, BITMAP_INTERLEAVED_CONTEXT* encoder,
+                              BITMAP_INTERLEAVED_CONTEXT* decoder)
+{
+	BOOL rc = FALSE;
+	UINT32 x;
+	PROFILER_DEFINE(profiler_comp);
+	PROFILER_DEFINE(profiler_decomp);
+	PROFILER_CREATE(profiler_comp, "interleaved_compress")
+	PROFILER_CREATE(profiler_decomp, "interleaved_decompress")
+
+	for (x = 0; x < 100; x++)
+	{
+		if (!run_encode_decode_single(bpp, encoder, decoder
+#if defined(WITH_PROFILER)
+		                              , profiler_comp, profiler_decomp
+#endif
+		                             ))
+			goto fail;
+	}
+
+	rc = TRUE;
+fail:
+	PROFILER_PRINT_HEADER
+	PROFILER_PRINT(profiler_comp);
+	PROFILER_PRINT(profiler_decomp);
+	PROFILER_PRINT_FOOTER
+	PROFILER_FREE(profiler_comp);
+	PROFILER_FREE(profiler_decomp);
+	return rc;
+}
 int TestFreeRDPCodecInterleaved(int argc, char* argv[])
 {
 	BITMAP_INTERLEAVED_CONTEXT* encoder, * decoder;
-	UINT32 x, y;
 	int rc = -1;
 	encoder = bitmap_interleaved_context_new(TRUE);
 	decoder = bitmap_interleaved_context_new(FALSE);
@@ -88,17 +135,14 @@ int TestFreeRDPCodecInterleaved(int argc, char* argv[])
 	if (!encoder || !decoder)
 		goto fail;
 
-	for (x = 0; x < 100; x++)
-	{
-		if (!run_encode_decode(24, encoder, decoder))
-			goto fail;
+	if (!run_encode_decode(24, encoder, decoder))
+		goto fail;
 
-		if (!run_encode_decode(16, encoder, decoder))
-			goto fail;
+	if (!run_encode_decode(16, encoder, decoder))
+		goto fail;
 
-		if (!run_encode_decode(15, encoder, decoder))
-			goto fail;
-	}
+	if (!run_encode_decode(15, encoder, decoder))
+		goto fail;
 
 	rc = 0;
 fail:
