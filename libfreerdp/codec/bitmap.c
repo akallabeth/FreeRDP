@@ -148,7 +148,7 @@ static INLINE UINT16 out_copy_count_2(UINT16 in_count, wStream* in_s, wStream* i
 			Stream_Write_UINT16(in_s, in_count);
 		}
 
-		Stream_Write(in_s, Stream_Buffer(in_data), in_count);
+		Stream_Write(in_s, Stream_Buffer(in_data), in_count * 2);
 	}
 
 	Stream_SetPosition(in_data, 0);
@@ -179,7 +179,7 @@ static INLINE UINT16 out_copy_count_3(UINT16 in_count, wStream* in_s, wStream* i
 			Stream_Write_UINT16(in_s, in_count);
 		}
 
-		Stream_Write(in_s, Stream_Pointer(in_data), in_count);
+		Stream_Write(in_s, Stream_Pointer(in_data), in_count * 3);
 	}
 
 	Stream_SetPosition(in_data, 0);
@@ -727,6 +727,8 @@ static SSIZE_T freerdp_bitmap_compress_24(const void* srcData, UINT32 width, UIN
 		lines_sent++;
 	}
 
+	Stream_SetPosition(temp_s, 0);
+
 	if (fill_count > 3 &&
 	    fill_count >= color_count &&
 	    fill_count >= bicolor_count &&
@@ -1067,6 +1069,8 @@ static SSIZE_T freerdp_bitmap_compress_16(const void* srcData, UINT32 width, UIN
 		start_line--;
 		lines_sent++;
 	}
+
+	Stream_SetPosition(temp_s, 0);
 
 	if (fill_count > 3 &&
 	    fill_count >= color_count &&

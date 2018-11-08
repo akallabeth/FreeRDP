@@ -23,7 +23,7 @@ static BOOL run_encode_decode(UINT16 bpp, BITMAP_INTERLEAVED_CONTEXT* encoder,
 	const UINT32 bstep = GetBytesPerPixel(format);
 	const size_t step = (w + 13) * 4;
 	const size_t SrcSize = step * h;
-	const float maxDiff = 4.0f;
+	const float maxDiff = 4.0f * ((bpp < 24) ? 2.0f : 1.0f);
 	UINT32 DstSize = SrcSize;
 	BYTE* pSrcData = malloc(SrcSize);
 	BYTE* pDstData = malloc(SrcSize);
@@ -66,7 +66,7 @@ static BOOL run_encode_decode(UINT16 bpp, BITMAP_INTERLEAVED_CONTEXT* encoder,
 
 			if (fabsf((float)b - db) > maxDiff)
 				goto fail;
-			}
+		}
 	}
 
 	rc = TRUE;
