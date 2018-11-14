@@ -76,10 +76,6 @@ void sf_peer_audin_init(testPeerContext* context)
 	context->audin->rdpcontext = &context->_p;
 	context->audin->data = context;
 	context->audin->num_server_formats = server_audin_get_formats(&context->audin->server_formats);
-
-	if (context->audin->num_server_formats > 0)
-		context->audin->dst_format = &context->audin->server_formats[0];
-
 	context->audin->Opening = sf_peer_audin_opening;
 	context->audin->OpenResult = sf_peer_audin_open_result;
 	context->audin->ReceiveSamples = sf_peer_audin_receive_samples;

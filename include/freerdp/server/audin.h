@@ -50,9 +50,6 @@ struct _audin_server_context
 	AUDIO_FORMAT* server_formats;
 	size_t num_server_formats;
 
-	/* Server destination PCM audio format. Set by server. */
-	AUDIO_FORMAT* dst_format;
-
 	/* Server preferred frames per packet. */
 	int frames_per_packet;
 
