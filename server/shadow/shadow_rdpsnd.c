@@ -62,15 +62,22 @@ static void rdpsnd_activated(RdpsndServerContext* context)
 
 int shadow_client_rdpsnd_init(rdpShadowClient* client)
 {
-	RdpsndServerContext* rdpsnd;
-	rdpsnd = client->rdpsnd = rdpsnd_server_context_new(client->vcm);
+	const AUDIO_FORMAT format =
+	{
+		WAVE_FORMAT_PCM, /* wFormatTag */
+		2,               /* nChannels */
+		44100,           /* nSamplesPerSec */
+		0,               /* nAvgBytesPerSec */
+		4,               /* nBlockAlign */
+		16,              /* wBitsPerSample */
+		0,               /* cbSize */
+		NULL             /* data */
+	};
+	RdpsndServerContext* rdpsnd = client->rdpsnd = rdpsnd_server_context_new(client->vcm,
+	                              &client->context, client);
 
 	if (!rdpsnd)
-	{
 		return 0;
-	}
-
-	rdpsnd->data = client;
 
 	if (client->subsystem->rdpsndFormats)
 	{
@@ -82,11 +89,8 @@ int shadow_client_rdpsnd_init(rdpShadowClient* client)
 		rdpsnd->num_server_formats = server_rdpsnd_get_formats(&rdpsnd->server_formats);
 	}
 
-	if (rdpsnd->num_server_formats > 0)
-		rdpsnd->src_format = &rdpsnd->server_formats[0];
-
 	rdpsnd->Activated = rdpsnd_activated;
-	rdpsnd->Initialize(rdpsnd, TRUE);
+	rdpsnd->Initialize(rdpsnd, &format, TRUE);
 	return 1;
 }
 

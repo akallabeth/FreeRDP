@@ -65,7 +65,7 @@ void freerdp_channels_dummy()
 	RdpgfxServerContext* rdpgfx;
 	audin = audin_server_context_new(NULL);
 	audin_server_context_free(audin);
-	rdpsnd = rdpsnd_server_context_new(NULL);
+	rdpsnd = rdpsnd_server_context_new(NULL, NULL, NULL);
 	rdpsnd_server_context_free(rdpsnd);
 	cliprdr = cliprdr_server_context_new(NULL);
 	cliprdr_server_context_free(cliprdr);

@@ -268,10 +268,9 @@ typedef struct _SHADOW_MSG_OUT_POINTER_ALPHA_UPDATE
 struct _SHADOW_MSG_OUT_AUDIO_OUT_SAMPLES
 {
 	SHADOW_MSG_OUT common;
-	AUDIO_FORMAT* audio_format;
 	void* buf;
-	int nFrames;
-	UINT16 wTimestamp;
+	size_t nFrames;
+	UINT32 wTimestamp;
 };
 typedef struct _SHADOW_MSG_OUT_AUDIO_OUT_SAMPLES
 	SHADOW_MSG_OUT_AUDIO_OUT_SAMPLES;
@@ -279,8 +278,8 @@ typedef struct _SHADOW_MSG_OUT_AUDIO_OUT_SAMPLES
 struct _SHADOW_MSG_OUT_AUDIO_OUT_VOLUME
 {
 	SHADOW_MSG_OUT common;
-	int left;
-	int right;
+	UINT16 left;
+	UINT16 right;
 };
 typedef struct _SHADOW_MSG_OUT_AUDIO_OUT_VOLUME SHADOW_MSG_OUT_AUDIO_OUT_VOLUME;
 

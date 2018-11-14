@@ -395,7 +395,7 @@ static INLINE void shadow_client_convert_rects(rdpShadowClient* client,
 {
 	if (client->server->shareSubRect)
 	{
-		int i = 0;
+		UINT32 i = 0;
 		UINT16 offsetX = client->server->subRect.left;
 		UINT16 offsetY = client->server->subRect.top;
 
@@ -1565,7 +1565,6 @@ static int shadow_client_subsystem_process_message(rdpShadowClient* client,
 
 				if (client->activated && client->rdpsnd && client->rdpsnd->Activated)
 				{
-					client->rdpsnd->src_format = msg->audio_format;
 					IFCALL(client->rdpsnd->SendSamples, client->rdpsnd, msg->buf, msg->nFrames,
 					       msg->wTimestamp);
 				}

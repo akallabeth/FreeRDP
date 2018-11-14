@@ -32,13 +32,15 @@ typedef struct _rdpsnd_server_private RdpsndServerPrivate;
 typedef UINT(*psRdpsndStart)(RdpsndServerContext* context);
 typedef UINT(*psRdpsndStop)(RdpsndServerContext* context);
 
-typedef UINT(*psRdpsndServerInitialize)(RdpsndServerContext* context, BOOL ownThread);
+typedef UINT(*psRdpsndServerInitialize)(RdpsndServerContext* context, const AUDIO_FORMAT* srcFormat,
+                                        BOOL ownThread);
 typedef UINT(*psRdpsndServerSelectFormat)(RdpsndServerContext* context, UINT16 client_format_index);
-typedef UINT(*psRdpsndServerSendSamples)(RdpsndServerContext* context, const void* buf, int nframes,
-        UINT16 wTimestamp);
+typedef UINT(*psRdpsndServerSendSamples)(RdpsndServerContext* context,
+        const void* buf, size_t nframes,
+        UINT32 wTimestamp);
 typedef UINT(*psRdpsndServerConfirmBlock)(RdpsndServerContext* context, BYTE confirmBlockNum,
         UINT16 wtimestamp);
-typedef UINT(*psRdpsndServerSetVolume)(RdpsndServerContext* context, int left, int right);
+typedef UINT(*psRdpsndServerSetVolume)(RdpsndServerContext* context, UINT16 left, UINT16 right);
 typedef UINT(*psRdpsndServerClose)(RdpsndServerContext* context);
 
 
@@ -53,18 +55,12 @@ struct _rdpsnd_server_context
 
 	RdpsndServerPrivate* priv;
 
-	/* Server self-defined pointer. */
-	void* data;
-
 	/* Server supported formats. Set by server. */
 	AUDIO_FORMAT* server_formats;
-	size_t num_server_formats;
-
-	/* Server source PCM audio format. Set by server. */
-	AUDIO_FORMAT* src_format;
+	UINT16 num_server_formats;
 
 	/* Server audio latency, or buffer size, in milli-seconds. Set by server. */
-	int latency;
+	size_t latency;
 
 	/* Client supported formats. */
 	AUDIO_FORMAT* client_formats;
@@ -117,15 +113,14 @@ struct _rdpsnd_server_context
 	 *  MS-RDPEA channel version the client announces
 	 */
 	UINT16 clientVersion;
-
-	rdpContext* rdpcontext;
 };
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-FREERDP_API RdpsndServerContext* rdpsnd_server_context_new(HANDLE vcm);
+FREERDP_API RdpsndServerContext* rdpsnd_server_context_new(HANDLE vcm, rdpContext* context,
+        void* custom);
 FREERDP_API void rdpsnd_server_context_reset(RdpsndServerContext*);
 FREERDP_API void rdpsnd_server_context_free(RdpsndServerContext* context);
 FREERDP_API HANDLE rdpsnd_server_get_event_handle(RdpsndServerContext* context);

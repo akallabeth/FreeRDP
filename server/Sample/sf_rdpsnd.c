@@ -39,17 +39,22 @@ static void sf_peer_rdpsnd_activated(RdpsndServerContext* context)
 
 BOOL sf_peer_rdpsnd_init(testPeerContext* context)
 {
-	context->rdpsnd = rdpsnd_server_context_new(context->vcm);
-	context->rdpsnd->rdpcontext = &context->_p;
-	context->rdpsnd->data = context;
+	const AUDIO_FORMAT format =
+	{
+		WAVE_FORMAT_PCM, /* wFormatTag */
+		2,               /* nChannels */
+		44100,           /* nSamplesPerSec */
+		0,               /* nAvgBytesPerSec */
+		4,               /* nBlockAlign */
+		16,              /* wBitsPerSample */
+		0,               /* cbSize */
+		NULL             /* data */
+	};
+	context->rdpsnd = rdpsnd_server_context_new(context->vcm, &context->_p, context);
 	context->rdpsnd->num_server_formats = server_rdpsnd_get_formats(&context->rdpsnd->server_formats);
-
-	if (context->rdpsnd->num_server_formats > 0)
-		context->rdpsnd->src_format = &context->rdpsnd->server_formats[0];
-
 	context->rdpsnd->Activated = sf_peer_rdpsnd_activated;
 
-	if (context->rdpsnd->Initialize(context->rdpsnd, TRUE) != CHANNEL_RC_OK)
+	if (context->rdpsnd->Initialize(context->rdpsnd, &format, TRUE) != CHANNEL_RC_OK)
 	{
 		return FALSE;
 	}

@@ -33,6 +33,14 @@
 #include <freerdp/log.h>
 #define TAG SERVER_TAG("mac")
 
+static void mf_peer_rdpsnd_input_callback(
+        void*                               inUserData,
+        AudioQueueRef                       inAQ,
+        AudioQueueBufferRef                 inBuffer,
+        const AudioTimeStamp*               inStartTime,
+        UInt32                              inNumberPacketDescriptions,
+        const AudioStreamPacketDescription* inPacketDescs);
+
 AQRecorderState recorderState;
 
 static void mf_peer_rdpsnd_activated(RdpsndServerContext* context)
@@ -137,20 +145,25 @@ static void mf_peer_rdpsnd_activated(RdpsndServerContext* context)
 
 BOOL mf_peer_rdpsnd_init(mfPeerContext* context)
 {
-	context->rdpsnd = rdpsnd_server_context_new(context->vcm);
-	context->rdpsnd->rdpcontext = &context->_p;
-	context->rdpsnd->data = context;
+	const AUDIO_FORMAT format =
+	{
+		WAVE_FORMAT_PCM, /* wFormatTag */
+		2,               /* nChannels */
+		44100,           /* nSamplesPerSec */
+		0,               /* nAvgBytesPerSec */
+		4,               /* nBlockAlign */
+		16,              /* wBitsPerSample */
+		0,               /* cbSize */
+		NULL             /* data */
+	};
+	context->rdpsnd = rdpsnd_server_context_new(context->vcm, &context->_p, context);
 	context->rdpsnd->num_server_formats = server_rdpsnd_get_formats(&context->rdpsnd->server_formats);
-
-	if (context->rdpsnd->num_server_formats > 0)
-		context->rdpsnd->src_format = &context->rdpsnd->server_formats[0];
-
 	context->rdpsnd->Activated = mf_peer_rdpsnd_activated;
-	context->rdpsnd->Initialize(context->rdpsnd, TRUE);
+	context->rdpsnd->Initialize(context->rdpsnd, &format, TRUE);
 	return TRUE;
 }
 
-BOOL mf_peer_rdpsnd_stop()
+BOOL mf_peer_rdpsnd_stop(void)
 {
 	recorderState.isRunning = false;
 	AudioQueueStop(recorderState.queue, true);

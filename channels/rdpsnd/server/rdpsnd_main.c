@@ -36,6 +36,34 @@
 #include "rdpsnd_common.h"
 #include "rdpsnd_main.h"
 
+struct _rdpsnd_server_private
+{
+	BOOL ownThread;
+	HANDLE Thread;
+	HANDLE StopEvent;
+	HANDLE channelEvent;
+	void* ChannelHandle;
+
+	BOOL waitingHeader;
+	DWORD expectedBytes;
+	BYTE msgType;
+	rdpContext* rdpcontext;
+	/* Server self-defined pointer. */
+	void* data;
+	/* Server source PCM audio format. Set by server. */
+	AUDIO_FORMAT* src_format;
+	wStream* input_stream;
+	wStream* rdpsnd_pdu;
+	BYTE* out_buffer;
+	size_t out_buffer_size;
+	size_t out_frames;
+	size_t out_pending_frames;
+	UINT32 src_bytes_per_sample;
+	UINT32 src_bytes_per_frame;
+	FREERDP_DSP_CONTEXT* dsp_context;
+	CRITICAL_SECTION lock; /* Protect out_buffer and related parameters */
+};
+
 /**
  * Function description
  *
@@ -71,7 +99,7 @@ static UINT rdpsnd_server_send_formats(RdpsndServerContext* context, wStream* s)
 
 	pos = Stream_GetPosition(s);
 	Stream_SetPosition(s, 2);
-	Stream_Write_UINT16(s, pos - 4);
+	Stream_Write_UINT16(s, (pos - 4) & 0xFFFF);
 	Stream_SetPosition(s, pos);
 	status = WTSVirtualChannelWrite(context->priv->ChannelHandle,
 	                                (PCHAR) Stream_Buffer(s), Stream_GetPosition(s), &written);
@@ -268,8 +296,8 @@ static DWORD WINAPI rdpsnd_server_thread(LPVOID arg)
 		}
 	}
 
-	if (error && context->rdpcontext)
-		setChannelError(context->rdpcontext, error,
+	if (error && context->priv->rdpcontext)
+		setChannelError(context->priv->rdpcontext, error,
 		                "rdpsnd_server_thread reported an error");
 
 	ExitThread(error);
@@ -282,9 +310,14 @@ static DWORD WINAPI rdpsnd_server_thread(LPVOID arg)
  * @return 0 on success, otherwise a Win32 error code
  */
 static UINT rdpsnd_server_initialize(RdpsndServerContext* context,
+                                     const AUDIO_FORMAT* srcFormat,
                                      BOOL ownThread)
 {
 	context->priv->ownThread = ownThread;
+
+	if (!audio_format_copy(srcFormat, context->priv->src_format))
+		return ERROR_INTERNAL_ERROR;
+
 	return context->Start(context);
 }
 
@@ -296,22 +329,22 @@ static UINT rdpsnd_server_initialize(RdpsndServerContext* context,
 static UINT rdpsnd_server_select_format(RdpsndServerContext* context,
                                         UINT16 client_format_index)
 {
-	int bs;
-	int out_buffer_size;
+	size_t bs;
+	size_t out_buffer_size;
 	AUDIO_FORMAT* format;
 	UINT error = CHANNEL_RC_OK;
 
 	if ((client_format_index >= context->num_client_formats)
-	    || (!context->src_format))
+	    || (!context->priv->src_format))
 	{
 		WLog_ERR(TAG,  "index %d is not correct.", client_format_index);
 		return ERROR_INVALID_DATA;
 	}
 
 	EnterCriticalSection(&context->priv->lock);
-	context->priv->src_bytes_per_sample = context->src_format->wBitsPerSample / 8;
+	context->priv->src_bytes_per_sample = context->priv->src_format->wBitsPerSample / 8;
 	context->priv->src_bytes_per_frame = context->priv->src_bytes_per_sample *
-	                                     context->src_format->nChannels;
+	                                     context->priv->src_format->nChannels;
 	context->selected_client_format = client_format_index;
 	format = &context->client_formats[client_format_index];
 
@@ -325,7 +358,7 @@ static UINT rdpsnd_server_select_format(RdpsndServerContext* context,
 	if (context->latency <= 0)
 		context->latency = 50;
 
-	context->priv->out_frames = context->src_format->nSamplesPerSec *
+	context->priv->out_frames = context->priv->src_format->nSamplesPerSec *
 	                            context->latency / 1000;
 
 	if (context->priv->out_frames < 1)
@@ -432,7 +465,7 @@ static UINT rdpsnd_server_send_wave_pdu(RdpsndServerContext* context,
 	src = context->priv->out_buffer;
 	length = context->priv->out_pending_frames * context->priv->src_bytes_per_frame;
 
-	if (!freerdp_dsp_encode(context->priv->dsp_context, context->src_format, src, length, s))
+	if (!freerdp_dsp_encode(context->priv->dsp_context, context->priv->src_format, src, length, s))
 		return ERROR_INTERNAL_ERROR;
 	else
 	{
@@ -442,7 +475,7 @@ static UINT rdpsnd_server_send_wave_pdu(RdpsndServerContext* context,
 
 		end = Stream_GetPosition(s);
 		Stream_SetPosition(s, 2);
-		Stream_Write_UINT16(s, end - start + 8);
+		Stream_Write_UINT16(s, (end - start + 8) & 0xFFFF);
 		Stream_SetPosition(s, end);
 		context->block_no = (context->block_no + 1) % 256;
 
@@ -485,7 +518,7 @@ out:
  * @return 0 on success, otherwise a Win32 error code
  */
 static UINT rdpsnd_server_send_wave2_pdu(RdpsndServerContext* context,
-        UINT16 wTimestamp)
+        UINT32 wTimestamp)
 {
 	size_t length;
 	size_t end = 0;
@@ -504,7 +537,7 @@ static UINT rdpsnd_server_send_wave2_pdu(RdpsndServerContext* context,
 	Stream_Write_UINT8(s, SNDC_WAVE2); /* msgType */
 	Stream_Write_UINT8(s, 0); /* bPad */
 	Stream_Write_UINT16(s, 0); /* BodySize */
-	Stream_Write_UINT16(s, wTimestamp); /* wTimeStamp */
+	Stream_Write_UINT16(s, (wTimestamp >> 16) & 0xFFFF); /* wTimeStamp */
 	Stream_Write_UINT16(s, context->selected_client_format); /* wFormatNo */
 	Stream_Write_UINT8(s, context->block_no); /* cBlockNo */
 	Stream_Seek(s, 3); /* bPad */
@@ -512,7 +545,7 @@ static UINT rdpsnd_server_send_wave2_pdu(RdpsndServerContext* context,
 	src = context->priv->out_buffer;
 	length = context->priv->out_pending_frames * context->priv->src_bytes_per_frame;
 
-	if (!freerdp_dsp_encode(context->priv->dsp_context, context->src_format, src, length, s))
+	if (!freerdp_dsp_encode(context->priv->dsp_context, context->priv->src_format, src, length, s))
 		error = ERROR_INTERNAL_ERROR;
 	else
 	{
@@ -524,7 +557,7 @@ static UINT rdpsnd_server_send_wave2_pdu(RdpsndServerContext* context,
 
 		end = Stream_GetPosition(s);
 		Stream_SetPosition(s, 2);
-		Stream_Write_UINT16(s, end - 4);
+		Stream_Write_UINT16(s, (end - 4) & 0xFFFF);
 		context->block_no = (context->block_no + 1) % 256;
 		rc = WTSVirtualChannelWrite(context->priv->ChannelHandle,
 		                            (PCHAR) Stream_Buffer(s), end, &written);
@@ -544,12 +577,12 @@ static UINT rdpsnd_server_send_wave2_pdu(RdpsndServerContext* context,
 
 /* Wrapper function to send WAVE or WAVE2 PDU depending on client connected */
 static UINT rdpsnd_server_send_audio_pdu(RdpsndServerContext* context,
-        UINT16 wTimestamp)
+        UINT32 wTimestamp)
 {
 	if (context->clientVersion >= CHANNEL_VERSION_WIN_8)
 		return rdpsnd_server_send_wave2_pdu(context, wTimestamp);
 	else
-		return rdpsnd_server_send_wave_pdu(context, wTimestamp);
+		return rdpsnd_server_send_wave_pdu(context, (wTimestamp >> 16) & 0xFFFF);
 }
 
 /**
@@ -558,10 +591,11 @@ static UINT rdpsnd_server_send_audio_pdu(RdpsndServerContext* context,
  * @return 0 on success, otherwise a Win32 error code
  */
 static UINT rdpsnd_server_send_samples(RdpsndServerContext* context,
-                                       const void* buf, int nframes, UINT16 wTimestamp)
+                                       const void* buf, size_t nframes,
+                                       UINT32 wTimestamp)
 {
-	int cframes;
-	int cframesize;
+	size_t cframes;
+	size_t cframesize;
 	UINT error = CHANNEL_RC_OK;
 	EnterCriticalSection(&context->priv->lock);
 
@@ -581,7 +615,7 @@ static UINT rdpsnd_server_send_samples(RdpsndServerContext* context,
 		CopyMemory(context->priv->out_buffer +
 		           (context->priv->out_pending_frames * context->priv->src_bytes_per_frame), buf,
 		           cframesize);
-		buf = (BYTE*) buf + cframesize;
+		buf = (const BYTE*) buf + cframesize;
 		nframes -= cframes;
 		context->priv->out_pending_frames += cframes;
 
@@ -605,8 +639,8 @@ out:
  *
  * @return 0 on success, otherwise a Win32 error code
  */
-static UINT rdpsnd_server_set_volume(RdpsndServerContext* context, int left,
-                                     int right)
+static UINT rdpsnd_server_set_volume(RdpsndServerContext* context, UINT16 left,
+                                     UINT16 right)
 {
 	size_t pos;
 	BOOL status;
@@ -619,7 +653,7 @@ static UINT rdpsnd_server_set_volume(RdpsndServerContext* context, int left,
 	Stream_Write_UINT16(s, right);
 	pos = Stream_GetPosition(s);
 	Stream_SetPosition(s, 2);
-	Stream_Write_UINT16(s, pos - 4);
+	Stream_Write_UINT16(s, (pos - 4) & 0xFFFF);
 	Stream_SetPosition(s, pos);
 	status = WTSVirtualChannelWrite(context->priv->ChannelHandle,
 	                                (PCHAR) Stream_Buffer(s), Stream_GetPosition(s), &written);
@@ -665,7 +699,7 @@ static UINT rdpsnd_server_close(RdpsndServerContext* context)
 	Stream_Seek_UINT16(s);
 	pos = Stream_GetPosition(s);
 	Stream_SetPosition(s, 2);
-	Stream_Write_UINT16(s, pos - 4);
+	Stream_Write_UINT16(s, (pos - 4) & 0xFFFF);
 	Stream_SetPosition(s, pos);
 	status = WTSVirtualChannelWrite(context->priv->ChannelHandle,
 	                                (PCHAR) Stream_Buffer(s), Stream_GetPosition(s), &written);
@@ -799,11 +833,9 @@ static UINT rdpsnd_server_stop(RdpsndServerContext* context)
 	return error;
 }
 
-RdpsndServerContext* rdpsnd_server_context_new(HANDLE vcm)
+RdpsndServerContext* rdpsnd_server_context_new(HANDLE vcm, rdpContext* rdpcontext, void* data)
 {
-	RdpsndServerContext* context;
-	RdpsndServerPrivate* priv;
-	context = (RdpsndServerContext*)calloc(1, sizeof(RdpsndServerContext));
+	RdpsndServerContext* context = (RdpsndServerContext*)calloc(1, sizeof(RdpsndServerContext));
 
 	if (!context)
 	{
@@ -820,41 +852,44 @@ RdpsndServerContext* rdpsnd_server_context_new(HANDLE vcm)
 	context->SendSamples = rdpsnd_server_send_samples;
 	context->SetVolume = rdpsnd_server_set_volume;
 	context->Close = rdpsnd_server_close;
-	context->priv = priv = (RdpsndServerPrivate*)calloc(1,
-	                       sizeof(RdpsndServerPrivate));
+	context->priv = (RdpsndServerPrivate*)calloc(1,
+	                sizeof(RdpsndServerPrivate));
 
-	if (!priv)
+	if (!context->priv)
 	{
 		WLog_ERR(TAG, "calloc failed!");
-		goto out_free;
+		goto fail;
 	}
 
-	priv->dsp_context = freerdp_dsp_context_new(TRUE);
+	context->priv->rdpcontext = rdpcontext;
+	context->priv->data = data;
+	context->priv->dsp_context = freerdp_dsp_context_new(TRUE);
 
-	if (!priv->dsp_context)
+	if (!context->priv->dsp_context)
 	{
 		WLog_ERR(TAG, "freerdp_dsp_context_new failed!");
-		goto out_free_priv;
+		goto fail;
 	}
 
-	priv->input_stream = Stream_New(NULL, 4);
+	context->priv->input_stream = Stream_New(NULL, 4);
 
-	if (!priv->input_stream)
+	if (!context->priv->input_stream)
 	{
 		WLog_ERR(TAG, "Stream_New failed!");
-		goto out_free_dsp;
+		goto fail;
 	}
 
-	priv->expectedBytes = 4;
-	priv->waitingHeader = TRUE;
-	priv->ownThread = TRUE;
+	context->priv->expectedBytes = 4;
+	context->priv->waitingHeader = TRUE;
+	context->priv->ownThread = TRUE;
+	context->priv->src_format = audio_format_new();
+
+	if (!context->priv->src_format)
+		goto fail;
+
 	return context;
-out_free_dsp:
-	freerdp_dsp_context_free(priv->dsp_context);
-out_free_priv:
-	free(context->priv);
-out_free:
-	free(context);
+fail:
+	rdpsnd_server_context_free(context);
 	return NULL;
 }
 
@@ -879,6 +914,7 @@ void rdpsnd_server_context_free(RdpsndServerContext* context)
 	if (context->priv->input_stream)
 		Stream_Free(context->priv->input_stream, TRUE);
 
+	audio_format_free(context->priv->src_format);
 	free(context->client_formats);
 	free(context->priv);
 	free(context);
