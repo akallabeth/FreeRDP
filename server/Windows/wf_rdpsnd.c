@@ -128,6 +128,17 @@ int wf_rdpsnd_unlock()
 
 BOOL wf_peer_rdpsnd_init(wfPeerContext* context)
 {
+	const AUDIO_FORMAT format =
+	{
+		WAVE_FORMAT_PCM, /* wFormatTag */
+		2,               /* nChannels */
+		44100,           /* nSamplesPerSec */
+		0,               /* nAvgBytesPerSec */
+		4,               /* nBlockAlign */
+		16,              /* wBitsPerSample */
+		0,               /* cbSize */
+		NULL             /* data */
+	};
 	wfInfo* wfi = wf_info_get_instance();
 
 	if (!wfi)
@@ -136,16 +147,10 @@ BOOL wf_peer_rdpsnd_init(wfPeerContext* context)
 	if (!(wfi->snd_mutex = CreateMutex(NULL, FALSE, NULL)))
 		return FALSE;
 
-	context->rdpsnd = rdpsnd_server_context_new(context->vcm);
-	context->rdpsnd->rdpcontext = &context->_p;
-	context->rdpsnd->data = context;
+	context->rdpsnd = rdpsnd_server_context_new(context->vcm, &context->_p, context);
 	context->rdpsnd->num_server_formats = server_rdpsnd_get_formats(&context->rdpsnd->server_formats);
-
-	if (context->rdpsnd->num_server_formats > 0)
-		context->rdpsnd->src_format = &context->rdpsnd->server_formats[0];
-
 	context->rdpsnd->Activated = wf_peer_rdpsnd_activated;
-	context->rdpsnd->Initialize(context->rdpsnd, TRUE);
+	context->rdpsnd->Initialize(context->rdpsnd, &format, TRUE);
 	wf_rdpsnd_set_latest_peer(context);
 	wfi->snd_stop = FALSE;
 	return TRUE;
