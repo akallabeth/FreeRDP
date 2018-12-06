@@ -127,6 +127,16 @@ void xf_rail_send_client_system_command(xfContext* xfc, UINT32 windowId,
 	xfc->rail->ClientSystemCommand(xfc->rail, &syscommand);
 }
 
+void xf_rail_send_client_notify_event(xfContext* xfc, UINT32 windowId,
+                                      UINT32 notifyIconId, UINT32 message)
+{
+	RAIL_NOTIFY_EVENT_ORDER notifyEvent;
+	notifyEvent.windowId = windowId;
+	notifyEvent.notifyIconId = notifyIconId;
+	notifyEvent.message = message;
+	xfc->rail->ClientNotifyEvent(xfc->rail, &notifyEvent);
+}
+
 /**
  * The position of the X window can become out of sync with the RDP window
  * if the X window is moved locally by the window manager.  In this event
@@ -222,7 +232,7 @@ static void xf_rail_invalidate_region(xfContext* xfc, REGION16* invalidRegion)
 
 	for (index = 0; index < count; index++)
 	{
-		appWindow = (xfAppWindow*) HashTable_GetItemValue(xfc->railWindows, (void*)pKeys[index]);
+		appWindow = (xfAppWindow*) HashTable_GetItemValue(xfc->railWindows, (void *)pKeys[index]);
 
 		if (appWindow)
 		{
@@ -635,7 +645,7 @@ static void fill_gdi_palette_for_icon(ICON_INFO* iconInfo, gdiPalette* palette)
 	}
 }
 
-static BOOL convert_icon_color_to_argb(ICON_INFO* iconInfo, BYTE* argbPixels)
+static BOOL convert_icon_color_to_format(ICON_INFO* iconInfo, DWORD dstFormat, BYTE* dstPixels)
 {
 	DWORD format;
 	gdiPalette palette;
@@ -682,8 +692,8 @@ static BOOL convert_icon_color_to_argb(ICON_INFO* iconInfo, BYTE* argbPixels)
 
 	fill_gdi_palette_for_icon(iconInfo, &palette);
 	return freerdp_image_copy(
-	           argbPixels,
-	           PIXEL_FORMAT_ARGB32,
+	           dstPixels,
+	           dstFormat,
 	           0, 0, 0,
 	           iconInfo->width,
 	           iconInfo->height,
@@ -693,6 +703,16 @@ static BOOL convert_icon_color_to_argb(ICON_INFO* iconInfo, BYTE* argbPixels)
 	           &palette,
 	           FREERDP_FLIP_VERTICAL
 	       );
+}
+
+static BOOL convert_icon_color_to_argb(ICON_INFO* iconInfo, BYTE* argbPixels)
+{
+	return convert_icon_color_to_format(iconInfo, PIXEL_FORMAT_ARGB32, argbPixels);
+}
+
+static BOOL convert_icon_color_to_bgra(ICON_INFO* iconInfo, BYTE* bgraPixels)
+{
+	return convert_icon_color_to_format(iconInfo, PIXEL_FORMAT_BGRA32, bgraPixels);
 }
 
 static inline UINT32 div_ceil(UINT32 a, UINT32 b)
@@ -876,6 +896,35 @@ static BOOL xf_rail_window_cached_icon(rdpContext* context,
 static BOOL xf_rail_notify_icon_common(rdpContext* context,
                                        WINDOW_ORDER_INFO* orderInfo, NOTIFY_ICON_STATE_ORDER* notifyIconState)
 {
+	xfContext* xfc = NULL;
+	xfAppNotifyIcon* notifyIcon = NULL;
+	xfc = (xfContext*) context;
+
+	if (orderInfo->fieldFlags & WINDOW_ORDER_STATE_NEW)
+	{
+		notifyIcon = (xfAppNotifyIcon*) calloc(1, sizeof(xfAppNotifyIcon));
+
+		if (!notifyIcon)
+			return FALSE;
+
+		notifyIcon->xfc = xfc;
+		notifyIcon->windowId = orderInfo->windowId;
+		notifyIcon->notifyIconId = orderInfo->notifyIconId;
+		HashTable_Add(xfc->railNotifyIcons, &orderInfo->notifyIconId,
+		              (void*) notifyIcon);
+		xf_appNotifyIconCreate(xfc, notifyIcon);
+	}
+	else
+	{
+		notifyIcon = (xfAppNotifyIcon*) HashTable_GetItemValue(xfc->railNotifyIcons,
+		             &orderInfo->notifyIconId);
+	}
+
+	if (!notifyIcon)
+	{
+		return FALSE;
+	}
+
 	if (orderInfo->fieldFlags & WINDOW_ORDER_FIELD_NOTIFY_VERSION)
 	{
 	}
@@ -894,6 +943,30 @@ static BOOL xf_rail_notify_icon_common(rdpContext* context,
 
 	if (orderInfo->fieldFlags & WINDOW_ORDER_ICON)
 	{
+		ICON_INFO icon;
+		BYTE* bgraPixels = NULL;
+		XImage* image = NULL;
+		BOOL status = FALSE;
+		icon = notifyIconState->icon;
+		bgraPixels = calloc(icon.width * icon.height, 4);
+		status = convert_icon_color_to_bgra(&icon, bgraPixels);
+
+		if (!status)
+		{
+			WLog_WARN(TAG, "failed to convert notification icon image");
+			free(bgraPixels);
+			return FALSE;
+		}
+
+		image = XCreateImage(xfc->display, xfc->visual, xfc->depth,
+		                     ZPixmap, 0, (char*) bgraPixels, icon.width, icon.height,
+		                     xfc->scanline_pad, 0);
+
+		if (notifyIcon->image)
+			XDestroyImage(notifyIcon->image);
+
+		notifyIcon->image = image;
+		/* bgraPixels will be freed by XDestroyImage. */
 	}
 
 	if (orderInfo->fieldFlags & WINDOW_ORDER_CACHED_ICON)
@@ -918,6 +991,12 @@ static BOOL xf_rail_notify_icon_update(rdpContext* context,
 static BOOL xf_rail_notify_icon_delete(rdpContext* context,
                                        WINDOW_ORDER_INFO* orderInfo)
 {
+	xfContext* xfc = (xfContext*) context;
+
+	if (!xfc)
+		return FALSE;
+
+	HashTable_Remove(xfc->railNotifyIcons, &orderInfo->notifyIconId);
 	return TRUE;
 }
 
@@ -1227,6 +1306,18 @@ static void rail_window_free(void* value)
 	xf_DestroyWindow(appWindow->xfc, appWindow);
 }
 
+static void rail_notify_icon_free(void* value)
+{
+	xfAppNotifyIcon* icon = (xfAppNotifyIcon*) value;
+
+	if (!icon)
+		return;
+
+	XUnmapWindow(icon->xfc->display, icon->handle);
+	XDestroyWindow(icon->xfc->display, icon->handle);
+	free(icon);
+}
+
 int xf_rail_init(xfContext* xfc, RailClientContext* rail)
 {
 	rdpContext* context = (rdpContext*) xfc;
@@ -1246,6 +1337,7 @@ int xf_rail_init(xfContext* xfc, RailClientContext* rail)
 	rail->ServerLanguageBarInfo = xf_rail_server_language_bar_info;
 	rail->ServerGetAppIdResponse = xf_rail_server_get_appid_response;
 	xfc->railWindows = HashTable_New(TRUE);
+	xfc->railNotifyIcons = HashTable_New(TRUE);
 
 	if (!xfc->railWindows)
 		return 0;
@@ -1253,6 +1345,10 @@ int xf_rail_init(xfContext* xfc, RailClientContext* rail)
 	xfc->railWindows->keyCompare = rail_window_key_equals;
 	xfc->railWindows->hash = rail_window_key_hash;
 	xfc->railWindows->valueFree = rail_window_free;
+	xfc->railNotifyIcons->keyCompare = rail_window_key_equals;
+	xfc->railNotifyIcons->hash = rail_window_key_hash;
+	xfc->railNotifyIcons->valueFree = rail_notify_icon_free;
+
 	xfc->railIconCache = RailIconCache_New(xfc->context.settings);
 
 	if (!xfc->railIconCache)

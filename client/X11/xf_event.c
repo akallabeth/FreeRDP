@@ -283,6 +283,17 @@ static BOOL xf_event_Expose(xfContext* xfc, XEvent* event, BOOL app)
 	int w, h;
 	rdpSettings* settings = xfc->context.settings;
 
+	if (app)
+	{
+		xfAppNotifyIcon* appNotifyIcon = xf_AppNotifyIconFromX11Window(xfc, event->xany.window);
+
+		if (appNotifyIcon)
+		{
+			xf_appNotifyIconDrawIcon(xfc, appNotifyIcon);
+			return TRUE;
+		}
+	}
+
 	if (!app && (settings->SmartSizing || settings->MultiTouchGestures))
 	{
 		x = 0;
@@ -466,6 +477,25 @@ static BOOL xf_event_ButtonPress(xfContext* xfc, XEvent* event, BOOL app)
 	if (xfc->use_xinput)
 		return TRUE;
 
+	if (app)
+	{
+		xfAppNotifyIcon* appNotifyIcon = xf_AppNotifyIconFromX11Window(xfc, event->xany.window);
+
+		if (appNotifyIcon)
+		{
+			int button = event->xbutton.button;
+
+			if (button == Button1 || button == Button3)
+			{
+				xf_rail_send_client_notify_event(xfc, appNotifyIcon->windowId,
+				                                 appNotifyIcon->notifyIconId,
+				                                 button == Button1 ? WM_LBUTTONDOWN : WM_RBUTTONDOWN);
+			}
+
+			return TRUE;
+		}
+	}
+
 	return xf_generic_ButtonPress(xfc, event->xbutton.x, event->xbutton.y,
 	                              event->xbutton.button, event->xbutton.window, app);
 }
@@ -537,6 +567,25 @@ static BOOL xf_event_ButtonRelease(xfContext* xfc, XEvent* event, BOOL app)
 {
 	if (xfc->use_xinput)
 		return TRUE;
+
+	if (app)
+	{
+		xfAppNotifyIcon* appNotifyIcon = xf_AppNotifyIconFromX11Window(xfc, event->xany.window);
+
+		if (appNotifyIcon)
+		{
+			int button = event->xbutton.button;
+
+			if (button == Button1 || button == Button3)
+			{
+				xf_rail_send_client_notify_event(xfc, appNotifyIcon->windowId,
+				                                 appNotifyIcon->notifyIconId,
+				                                 button == Button1 ? WM_LBUTTONUP : WM_RBUTTONUP);
+			}
+
+			return TRUE;
+		}
+	}
 
 	return xf_generic_ButtonRelease(xfc, event->xbutton.x, event->xbutton.y,
 	                                event->xbutton.button, event->xbutton.window, app);

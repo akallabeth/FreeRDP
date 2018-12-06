@@ -986,7 +986,6 @@ void xf_ShowWindow(xfContext* xfc, xfAppWindow* appWindow, BYTE state)
 				xf_SetWindowUnlisted(xfc, appWindow->handle);
 
 			XMapWindow(xfc->display, appWindow->handle);
-
 			break;
 	}
 
@@ -1128,4 +1127,102 @@ xfAppWindow* xf_AppWindowFromX11Window(xfContext* xfc, Window wnd)
 
 	free(pKeys);
 	return NULL;
+}
+
+BOOL xf_appNotifyIconCreate(xfContext* xfc, xfAppNotifyIcon* icon)
+{
+	XEvent ev;
+	int input_mask;
+	Window win, tray, root;
+	Atom selection_atom;
+	char str_selection_atom[32];
+	root = RootWindowOfScreen(xfc->screen);
+	win = XCreateWindow(xfc->display, root,
+	                    0, 0, 16, 16,
+	                    0, xfc->depth, InputOutput, xfc->visual,
+	                    CWBackPixel | CWBackingStore | CWOverrideRedirect | CWColormap |
+	                    CWBorderPixel | CWWinGravity | CWBitGravity, &xfc->attribs);
+	sprintf(str_selection_atom, "_NET_SYSTEM_TRAY_S%d", xfc->screen_number);
+	selection_atom = XInternAtom(xfc->display, str_selection_atom, False);
+	tray = XGetSelectionOwner(xfc->display, selection_atom);
+
+	if (tray != None)
+	{
+		XSelectInput(xfc->display, tray, StructureNotifyMask);
+	}
+
+	input_mask = ButtonPressMask | ButtonReleaseMask | ExposureMask;
+	XSelectInput(xfc->display, win, input_mask);
+	memset(&ev, 0, sizeof(ev));
+	ev.xclient.type = ClientMessage;
+	ev.xclient.window = tray;
+	ev.xclient.message_type = XInternAtom(xfc->display, "_NET_SYSTEM_TRAY_OPCODE", False);
+	ev.xclient.format = 32;
+	ev.xclient.data.l[0] = CurrentTime;
+	ev.xclient.data.l[1] = 0;
+	ev.xclient.data.l[2] = win;
+	ev.xclient.data.l[3] = 0;
+	ev.xclient.data.l[4] = 0;
+	XSendEvent(xfc->display, tray, False, NoEventMask, &ev);
+	XSync(xfc->display, False);
+	/* FIXME if we don't do sleep here, the tray icon window will be end up
+	 * with a tray icon _AND_ a strange window.
+	 * Got the `usleep(10000)` code from https://stackoverflow.com/questions/45392284/ */
+	usleep(10000);
+	XMapWindow(xfc->display, win);
+	XSync(xfc->display, False);
+	icon->handle = win;
+	return TRUE;
+}
+
+xfAppNotifyIcon* xf_AppNotifyIconFromX11Window(xfContext* xfc, Window wnd)
+{
+	int index;
+	int count;
+	ULONG_PTR* pKeys = NULL;
+	xfAppNotifyIcon* notifyIcon;
+	count = HashTable_GetKeys(xfc->railNotifyIcons, &pKeys);
+
+	for (index = 0; index < count; index++)
+	{
+		notifyIcon = (xfAppNotifyIcon*) HashTable_GetItemValue(xfc->railNotifyIcons,
+		             (void*) pKeys[index]);
+
+		if (notifyIcon->handle == wnd)
+		{
+			free(pKeys);
+			return notifyIcon;
+		}
+	}
+
+	free(pKeys);
+	return NULL;
+}
+
+BOOL xf_appNotifyIconDrawIcon(xfContext* xfc, xfAppNotifyIcon* notifyIcon)
+{
+	XGCValues gcv;
+	XWindowAttributes wa;
+	int drawX, drawY;
+
+	if (!notifyIcon->gc)
+	{
+		ZeroMemory(&gcv, sizeof(gcv));
+		notifyIcon->gc = XCreateGC(xfc->display, notifyIcon->handle, 0,
+		                           &gcv);
+	}
+
+	ZeroMemory(&wa, sizeof(wa));
+
+	if (!XGetWindowAttributes(xfc->display, notifyIcon->handle, &wa))
+	{
+		return FALSE;
+	}
+
+	drawX = (wa.width - notifyIcon->image->width) / 2;
+	drawY = (wa.height - notifyIcon->image->height) / 2;
+	XPutImage(xfc->display, notifyIcon->handle, notifyIcon->gc,
+	          notifyIcon->image, 0, 0, drawX, drawY,
+	          notifyIcon->image->width, notifyIcon->image->height);
+	return TRUE;
 }
