@@ -327,14 +327,14 @@ static BOOL xf_rail_window_common(rdpContext* context,
 			return FALSE;
 		}
 
-		HashTable_Add(xfc->railWindows, (void*)(UINT_PTR) orderInfo->windowId,
+		HashTable_Add(xfc->railWindows, &orderInfo->windowId,
 		              (void*) appWindow);
 		xf_AppWindowInit(xfc, appWindow);
 	}
 	else
 	{
 		appWindow = (xfAppWindow*) HashTable_GetItemValue(xfc->railWindows,
-		            (void*)(UINT_PTR) orderInfo->windowId);
+		            &orderInfo->windowId);
 	}
 
 	if (!appWindow)
@@ -544,7 +544,7 @@ static BOOL xf_rail_window_delete(rdpContext* context,
 	if (!xfc)
 		return FALSE;
 
-	HashTable_Remove(xfc->railWindows, (void*)(UINT_PTR) orderInfo->windowId);
+	HashTable_Remove(xfc->railWindows, &orderInfo->windowId);
 	return TRUE;
 }
 
@@ -810,7 +810,7 @@ static void xf_rail_set_window_icon(xfContext* xfc,
 static xfAppWindow* xf_rail_get_window_by_id(xfContext* xfc, UINT32 windowId)
 {
 	return (xfAppWindow*) HashTable_GetItemValue(xfc->railWindows,
-	        (void*)(UINT_PTR) windowId);
+	        &windowId);
 }
 
 static BOOL xf_rail_window_icon(rdpContext* context,
@@ -1072,7 +1072,7 @@ static UINT xf_rail_server_local_move_size(RailClientContext* context,
 	xfAppWindow* appWindow = NULL;
 	xfContext* xfc = (xfContext*) context->custom;
 	appWindow = (xfAppWindow*) HashTable_GetItemValue(xfc->railWindows,
-	            (void*)(UINT_PTR) localMoveSize->windowId);
+	            &localMoveSize->windowId);
 
 	if (!appWindow)
 		return ERROR_INTERNAL_ERROR;
@@ -1168,7 +1168,7 @@ static UINT xf_rail_server_min_max_info(RailClientContext* context,
 	xfAppWindow* appWindow = NULL;
 	xfContext* xfc = (xfContext*) context->custom;
 	appWindow = (xfAppWindow*) HashTable_GetItemValue(xfc->railWindows,
-	            (void*)(UINT_PTR) minMaxInfo->windowId);
+	            &minMaxInfo->windowId);
 
 	if (appWindow)
 	{
@@ -1214,6 +1214,13 @@ static void rail_window_free(void* value)
 	xf_DestroyWindow(appWindow->xfc, appWindow);
 }
 
+static BOOL rail_window_key_compare(const void* a, const void* b)
+{
+	const UINT32* pa = (UINT32*)a;
+	const UINT32* pb = (UINT32*)b;
+	return *pa == *pb;
+}
+
 int xf_rail_init(xfContext* xfc, RailClientContext* rail)
 {
 	rdpContext* context = (rdpContext*) xfc;
@@ -1238,6 +1245,7 @@ int xf_rail_init(xfContext* xfc, RailClientContext* rail)
 		return 0;
 
 	xfc->railWindows->valueFree = rail_window_free;
+	xfc->railWindows->valueCompare = rail_window_key_compare;
 	xfc->railIconCache = RailIconCache_New(xfc->context.settings);
 
 	if (!xfc->railIconCache)
@@ -1257,11 +1265,7 @@ int xf_rail_uninit(xfContext* xfc, RailClientContext* rail)
 		xfc->rail = NULL;
 	}
 
-	if (xfc->railWindows)
-	{
-		HashTable_Free(xfc->railWindows);
-		xfc->railWindows = NULL;
-	}
+	HashTable_Free(xfc->railWindows);
 
 	if (xfc->railIconCache)
 	{
