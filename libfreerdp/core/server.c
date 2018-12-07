@@ -730,6 +730,13 @@ HANDLE WINAPI FreeRDP_WTSOpenServerW(LPWSTR pServerName)
 	return INVALID_HANDLE_VALUE;
 }
 
+static BOOL wts_session_id_compare(const void* a, const void* b)
+{
+	const DWORD* pa = (const DWORD*)a;
+	const DWORD* pb = (const DWORD*)b;
+	return *pa == *pb;
+}
+
 HANDLE WINAPI FreeRDP_WTSOpenServerA(LPSTR pServerName)
 {
 	rdpContext* context;
@@ -760,14 +767,21 @@ HANDLE WINAPI FreeRDP_WTSOpenServerA(LPSTR pServerName)
 
 	if (!g_ServerHandles)
 	{
+		wObject* keyObj;
 		g_ServerHandles = HashTable_New(TRUE);
 
 		if (!g_ServerHandles)
 			goto error_free;
+
+		keyObj = HashTable_KeyObject(g_ServerHandles);
+
+		if (!keyObj)
+			goto error_free;
+
+		keyObj->fnObjectEquals = wts_session_id_compare;
 	}
 
-	if (HashTable_Add(g_ServerHandles, (void*)(UINT_PTR) vcm->SessionId,
-	                  (void*) vcm) < 0)
+	if (!HashTable_Add(g_ServerHandles, &vcm->SessionId, vcm))
 		goto error_free;
 
 	vcm->queue = MessageQueue_New(NULL);
@@ -787,7 +801,7 @@ HANDLE WINAPI FreeRDP_WTSOpenServerA(LPSTR pServerName)
 error_dynamicVirtualChannels:
 	MessageQueue_Free(vcm->queue);
 error_queue:
-	HashTable_Remove(g_ServerHandles, (void*)(UINT_PTR) vcm->SessionId);
+	HashTable_Remove(g_ServerHandles, &vcm->SessionId);
 error_free:
 	free(vcm);
 error_vcm_alloc:
@@ -815,7 +829,7 @@ VOID WINAPI FreeRDP_WTSCloseServer(HANDLE hServer)
 
 	if (vcm)
 	{
-		HashTable_Remove(g_ServerHandles, (void*)(UINT_PTR) vcm->SessionId);
+		HashTable_Remove(g_ServerHandles, &vcm->SessionId);
 		ArrayList_Lock(vcm->dynamicVirtualChannels);
 		count = ArrayList_Count(vcm->dynamicVirtualChannels);
 
@@ -1084,8 +1098,7 @@ HANDLE WINAPI FreeRDP_WTSVirtualChannelOpenEx(DWORD SessionId,
 	if (SessionId == WTS_CURRENT_SESSION)
 		return NULL;
 
-	vcm = (WTSVirtualChannelManager*) HashTable_GetItemValue(g_ServerHandles,
-	        (void*)(UINT_PTR) SessionId);
+	vcm = (WTSVirtualChannelManager*) HashTable_GetItemValue(g_ServerHandles, &SessionId);
 
 	if (!vcm)
 		return NULL;

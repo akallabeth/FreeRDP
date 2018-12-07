@@ -209,8 +209,8 @@ void xf_rail_end_local_move(xfContext* xfc, xfAppWindow* appWindow)
 
 static void xf_rail_invalidate_region(xfContext* xfc, REGION16* invalidRegion)
 {
-	int index;
-	int count;
+	size_t index;
+	size_t count;
 	RECTANGLE_16 updateRect;
 	RECTANGLE_16 windowRect;
 	ULONG_PTR* pKeys = NULL;
@@ -1244,8 +1244,11 @@ int xf_rail_init(xfContext* xfc, RailClientContext* rail)
 	if (!xfc->railWindows)
 		return 0;
 
-	xfc->railWindows->valueFree = rail_window_free;
-	xfc->railWindows->valueCompare = rail_window_key_compare;
+	{
+		wObject* valObj = HashTable_KeyObject(xfc->railWindows);
+		valObj->fnObjectFree = rail_window_free;
+		valObj->fnObjectEquals = rail_window_key_compare;
+	}
 	xfc->railIconCache = RailIconCache_New(xfc->context.settings);
 
 	if (!xfc->railIconCache)

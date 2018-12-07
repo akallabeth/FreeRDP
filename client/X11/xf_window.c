@@ -989,7 +989,6 @@ void xf_ShowWindow(xfContext* xfc, xfAppWindow* appWindow, BYTE state)
 				xf_SetWindowUnlisted(xfc, appWindow->handle);
 
 			XMapWindow(xfc->display, appWindow->handle);
-
 			break;
 	}
 
@@ -1112,8 +1111,8 @@ void xf_DestroyWindow(xfContext* xfc, xfAppWindow* appWindow)
 
 xfAppWindow* xf_AppWindowFromX11Window(xfContext* xfc, Window wnd)
 {
-	int index;
-	int count;
+	size_t index;
+	size_t count;
 	ULONG_PTR* pKeys = NULL;
 	xfAppWindow* appWindow;
 	count = HashTable_GetKeys(xfc->railWindows, &pKeys);

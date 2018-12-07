@@ -14,7 +14,7 @@ static char* val3 = "val3";
 static int test_hash_table_pointer(void)
 {
 	int rc = -1;
-	int count;
+	size_t count;
 	char* value;
 	wHashTable* table;
 	table = HashTable_New(TRUE);
@@ -22,52 +22,62 @@ static int test_hash_table_pointer(void)
 	if (!table)
 		return -1;
 
-	HashTable_Add(table, key1, val1);
-	HashTable_Add(table, key2, val2);
-	HashTable_Add(table, key3, val3);
+	if (!HashTable_Add(table, key1, val1) ||
+	    !HashTable_Add(table, key2, val2) ||
+	    !HashTable_Add(table, key3, val3))
+		goto fail;
+
 	count = HashTable_Count(table);
 
 	if (count != 3)
 	{
-		printf("HashTable_Count: Expected : 3, Actual: %d\n", count);
+		printf("HashTable_Count: Expected : 3, Actual: %"PRIdz"\n", count);
 		goto fail;
 	}
 
-	HashTable_Remove(table, key2);
+	if (!HashTable_Remove(table, key2))
+		goto fail;
+
 	count = HashTable_Count(table);
 
 	if (count != 2)
 	{
-		printf("HashTable_Count: Expected : 2, Actual: %d\n", count);
+		printf("HashTable_Count: Expected : 2, Actual: %"PRIdz"\n", count);
 		goto fail;
 	}
 
-	HashTable_Remove(table, key3);
+	if (!HashTable_Remove(table, key3))
+		goto fail;
+
 	count = HashTable_Count(table);
 
 	if (count != 1)
 	{
-		printf("HashTable_Count: Expected : 1, Actual: %d\n", count);
+		printf("HashTable_Count: Expected : 1, Actual: %"PRIdz"\n", count);
 		goto fail;
 	}
 
-	HashTable_Remove(table, key1);
+	if (!HashTable_Remove(table, key1))
+		goto fail;
+
 	count = HashTable_Count(table);
 
 	if (count != 0)
 	{
-		printf("HashTable_Count: Expected : 0, Actual: %d\n", count);
+		printf("HashTable_Count: Expected : 0, Actual: %"PRIdz"\n", count);
 		goto fail;
 	}
 
-	HashTable_Add(table, key1, val1);
-	HashTable_Add(table, key2, val2);
-	HashTable_Add(table, key3, val3);
+	if (!HashTable_Add(table, key1, val1) ||
+	    !HashTable_Add(table, key2, val2) ||
+	    !HashTable_Add(table, key3, val3))
+		goto fail;
+
 	count = HashTable_Count(table);
 
 	if (count != 3)
 	{
-		printf("HashTable_Count: Expected : 3, Actual: %d\n", count);
+		printf("HashTable_Count: Expected : 3, Actual: %"PRIdz"\n", count);
 		goto fail;
 	}
 
@@ -95,7 +105,9 @@ static int test_hash_table_pointer(void)
 		goto fail;
 	}
 
-	HashTable_SetItemValue(table, key2, "apple");
+	if (!HashTable_SetItemValue(table, key2, "apple"))
+		goto fail;
+
 	value = (char*) HashTable_GetItemValue(table, key2);
 
 	if (strcmp(value, "apple") != 0)
@@ -127,7 +139,7 @@ static int test_hash_table_pointer(void)
 
 	if (count != 0)
 	{
-		printf("HashTable_Count: Expected : 0, Actual: %d\n", count);
+		printf("HashTable_Count: Expected : 0, Actual: %"PRIdz"\n", count);
 		goto fail;
 	}
 
@@ -140,21 +152,28 @@ fail:
 static int test_hash_table_string(void)
 {
 	int rc = -1;
-	int count;
+	size_t count;
 	char* value;
 	wHashTable* table;
+	wObject* keyObj;
+	wObject* valObj;
 	table = HashTable_New(TRUE);
 
 	if (!table)
 		return -1;
 
-	table->hash = HashTable_StringHash;
-	table->keyCompare = HashTable_StringCompare;
-	table->valueCompare = HashTable_StringCompare;
-	table->keyClone = HashTable_StringClone;
-	table->valueClone = HashTable_StringClone;
-	table->keyFree = HashTable_StringFree;
-	table->valueFree = HashTable_StringFree;
+	keyObj = HashTable_KeyObject(table);
+	valObj = HashTable_KeyObject(table);
+
+	if (!keyObj || !valObj || !HashTable_SetHashFunction(table, HashTable_StringHash))
+		goto fail;
+
+	keyObj->fnObjectEquals = HashTable_StringCompare;
+	keyObj->fnObjectNew = HashTable_StringClone;
+	keyObj->fnObjectFree = HashTable_StringFree;
+	valObj->fnObjectEquals = HashTable_StringCompare;
+	valObj->fnObjectNew = HashTable_StringClone;
+	valObj->fnObjectFree = HashTable_StringFree;
 	HashTable_Add(table, key1, val1);
 	HashTable_Add(table, key2, val2);
 	HashTable_Add(table, key3, val3);
@@ -162,34 +181,40 @@ static int test_hash_table_string(void)
 
 	if (count != 3)
 	{
-		printf("HashTable_Count: Expected : 3, Actual: %d\n", count);
+		printf("HashTable_Count: Expected : 3, Actual: %"PRIdz"\n", count);
 		goto fail;
 	}
 
-	HashTable_Remove(table, key2);
+	if (!HashTable_Remove(table, key2))
+		goto fail;
+
 	count = HashTable_Count(table);
 
 	if (count != 2)
 	{
-		printf("HashTable_Count: Expected : 3, Actual: %d\n", count);
+		printf("HashTable_Count: Expected : 3, Actual: %"PRIdz"\n", count);
 		goto fail;
 	}
 
-	HashTable_Remove(table, key3);
+	if (!HashTable_Remove(table, key3))
+		goto fail;
+
 	count = HashTable_Count(table);
 
 	if (count != 1)
 	{
-		printf("HashTable_Count: Expected : 1, Actual: %d\n", count);
+		printf("HashTable_Count: Expected : 1, Actual: %"PRIdz"\n", count);
 		goto fail;
 	}
 
-	HashTable_Remove(table, key1);
+	if (!HashTable_Remove(table, key1))
+		goto fail;
+
 	count = HashTable_Count(table);
 
 	if (count != 0)
 	{
-		printf("HashTable_Count: Expected : 0, Actual: %d\n", count);
+		printf("HashTable_Count: Expected : 0, Actual: %"PRIdz"\n", count);
 		goto fail;
 	}
 
@@ -200,7 +225,7 @@ static int test_hash_table_string(void)
 
 	if (count != 3)
 	{
-		printf("HashTable_Count: Expected : 3, Actual: %d\n", count);
+		printf("HashTable_Count: Expected : 3, Actual: %"PRIdz"\n", count);
 		goto fail;
 	}
 
@@ -260,7 +285,7 @@ static int test_hash_table_string(void)
 
 	if (count != 0)
 	{
-		printf("HashTable_Count: Expected : 0, Actual: %d\n", count);
+		printf("HashTable_Count: Expected : 0, Actual: %"PRIdz"\n", count);
 		goto fail;
 	}
 

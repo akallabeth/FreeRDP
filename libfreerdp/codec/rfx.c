@@ -141,6 +141,7 @@ static void rfx_profiler_print(RFX_CONTEXT* context)
 static void rfx_tile_init(void* obj)
 {
 	RFX_TILE* tile = (RFX_TILE*)obj;
+
 	if (tile)
 	{
 		tile->x = 0;
@@ -154,7 +155,7 @@ static void rfx_tile_init(void* obj)
 	}
 }
 
-static void* rfx_decoder_tile_new(void* val)
+static void* rfx_decoder_tile_new(const void* val)
 {
 	RFX_TILE* tile = NULL;
 	WINPR_UNUSED(val);
@@ -185,7 +186,7 @@ static void rfx_decoder_tile_free(void* obj)
 	}
 }
 
-static void* rfx_encoder_tile_new(void* val)
+static void* rfx_encoder_tile_new(const void* val)
 {
 	WINPR_UNUSED(val);
 	return calloc(1, sizeof(RFX_TILE));
@@ -427,6 +428,7 @@ static BOOL rfx_process_message_sync(RFX_CONTEXT* context, wStream* s)
 	}
 
 	Stream_Read_UINT32(s, magic); /* magic (4 bytes), 0xCACCACCA */
+
 	if (magic != WF_MAGIC)
 	{
 		WLog_ERR(TAG, "invalid magic number 0x%08"PRIX32"", magic);
@@ -434,6 +436,7 @@ static BOOL rfx_process_message_sync(RFX_CONTEXT* context, wStream* s)
 	}
 
 	Stream_Read_UINT16(s, context->version); /* version (2 bytes), WF_VERSION_1_0 (0x0100) */
+
 	if (context->version != WF_VERSION_1_0)
 	{
 		WLog_ERR(TAG, "invalid version number 0x%08"PRIX32"", context->version);
@@ -458,7 +461,8 @@ static BOOL rfx_process_message_codec_versions(RFX_CONTEXT* context, wStream* s)
 
 	Stream_Read_UINT8(s, numCodecs); /* numCodecs (1 byte), must be set to 0x01 */
 	Stream_Read_UINT8(s, context->codec_id); /* codecId (1 byte), must be set to 0x01 */
-	Stream_Read_UINT16(s, context->codec_version); /* version (2 bytes), must be set to WF_VERSION_1_0 (0x0100)  */
+	Stream_Read_UINT16(s,
+	                   context->codec_version); /* version (2 bytes), must be set to WF_VERSION_1_0 (0x0100)  */
 
 	if (numCodecs != 1)
 	{
@@ -614,7 +618,8 @@ static BOOL rfx_process_message_frame_begin(RFX_CONTEXT* context,
 		return FALSE;
 	}
 
-	Stream_Read_UINT32(s, frameIdx); /* frameIdx (4 bytes), if codec is in video mode, must be ignored */
+	Stream_Read_UINT32(s,
+	                   frameIdx); /* frameIdx (4 bytes), if codec is in video mode, must be ignored */
 	Stream_Read_UINT16(s, numRegions); /* numRegions (2 bytes) */
 	WLog_Print(context->priv->log, WLOG_DEBUG,
 	           "RFX_FRAME_BEGIN: frameIdx: %"PRIu32" numRegions: %"PRIu16"", frameIdx, numRegions);
@@ -641,7 +646,7 @@ static BOOL rfx_process_message_region(RFX_CONTEXT* context,
 	int i;
 	UINT16 regionType;
 	UINT16 numTileSets;
-	RFX_RECT *tmpRects;
+	RFX_RECT* tmpRects;
 
 	if (*pExpectedBlockType != WBT_REGION)
 	{
@@ -669,6 +674,7 @@ static BOOL rfx_process_message_region(RFX_CONTEXT* context,
 		   https://msdn.microsoft.com/en-us/library/ff635233.aspx
 		*/
 		tmpRects = realloc(message->rects, sizeof(RFX_RECT));
+
 		if (!tmpRects)
 			return FALSE;
 
@@ -689,8 +695,10 @@ static BOOL rfx_process_message_region(RFX_CONTEXT* context,
 	}
 
 	tmpRects = realloc(message->rects, message->numRects * sizeof(RFX_RECT));
+
 	if (!tmpRects)
 		return FALSE;
+
 	message->rects = tmpRects;
 
 	/* rects */
@@ -780,6 +788,7 @@ static BOOL rfx_process_message_tileset(RFX_CONTEXT* context,
 	}
 
 	Stream_Read_UINT16(s, subtype); /* subtype (2 bytes) must be set to CBT_TILESET (0xCAC2) */
+
 	if (subtype != CBT_TILESET)
 	{
 		WLog_ERR(TAG, "invalid subtype, expected CBT_TILESET.");
@@ -798,6 +807,7 @@ static BOOL rfx_process_message_tileset(RFX_CONTEXT* context,
 	}
 
 	Stream_Read_UINT16(s, numTiles); /* numTiles (2 bytes) */
+
 	if (numTiles < 1)
 	{
 		/* Windows Server 2012 (not R2) can send empty tile sets */
@@ -852,7 +862,8 @@ static BOOL rfx_process_message_tileset(RFX_CONTEXT* context,
 		message->tiles[i] = NULL;
 	}
 
-	tmpTiles = (RFX_TILE**)realloc(message->tiles, numTiles * sizeof(RFX_TILE *));
+	tmpTiles = (RFX_TILE**)realloc(message->tiles, numTiles * sizeof(RFX_TILE*));
+
 	if (!tmpTiles)
 		return FALSE;
 
@@ -948,8 +959,8 @@ static BOOL rfx_process_message_tileset(RFX_CONTEXT* context,
 			params[i].tile = message->tiles[i];
 
 			if (!(work_objects[i] = CreateThreadpoolWork(
-			                        rfx_process_message_tile_work_callback,
-			                        (void*) &params[i], &context->priv->ThreadPoolEnv)))
+			                            rfx_process_message_tile_work_callback,
+			                            (void*) &params[i], &context->priv->ThreadPoolEnv)))
 			{
 				WLog_ERR(TAG, "CreateThreadpoolWork failed.");
 				rc = FALSE;
@@ -1008,14 +1019,12 @@ BOOL rfx_process_message(RFX_CONTEXT* context, const BYTE* data, UINT32 length,
 		return FALSE;
 
 	Stream_StaticInit(s, (BYTE*)data, length);
-
 	message->freeRects = TRUE;
 
 	while (ok && Stream_GetRemainingLength(s) > 6)
 	{
 		wStream subStream;
 		size_t extraBlockLen = 0;
-
 		/* RFX_BLOCKT */
 		Stream_Read_UINT16(s, blockType); /* blockType (2 bytes) */
 		Stream_Read_UINT32(s, blockLen); /* blockLen (4 bytes) */
@@ -1634,7 +1643,6 @@ skip_encoding_loop:
 
 		region16_uninit(&tilesRegion);
 		region16_uninit(&rectsRegion);
-
 		return message;
 	}
 
