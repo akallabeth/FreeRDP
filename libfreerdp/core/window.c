@@ -199,8 +199,8 @@ static BOOL update_read_notify_icon_infotip(wStream* s, NOTIFY_ICON_INFOTIP* not
 static BOOL update_read_window_state_order(wStream* s, WINDOW_ORDER_INFO* orderInfo,
         WINDOW_STATE_ORDER* windowState)
 {
-	int i;
-	int size;
+	UINT32 i;
+	size_t size;
 	RECTANGLE_16* newRect;
 
 	if (orderInfo->fieldFlags & WINDOW_ORDER_FIELD_OWNER)
@@ -323,7 +323,7 @@ static BOOL update_read_window_state_order(wStream* s, WINDOW_ORDER_INFO* orderI
 			return FALSE;
 
 		/* windowRects */
-		for (i = 0; i < (int) windowState->numWindowRects; i++)
+		for (i = 0; i < windowState->numWindowRects; i++)
 		{
 			Stream_Read_UINT16(s, windowState->windowRects[i].left); /* left (2 bytes) */
 			Stream_Read_UINT16(s, windowState->windowRects[i].top); /* top (2 bytes) */
@@ -369,7 +369,7 @@ static BOOL update_read_window_state_order(wStream* s, WINDOW_ORDER_INFO* orderI
 			return FALSE;
 
 		/* visibilityRects */
-		for (i = 0; i < (int) windowState->numVisibilityRects; i++)
+		for (i = 0; i < windowState->numVisibilityRects; i++)
 		{
 			Stream_Read_UINT16(s, windowState->visibilityRects[i].left); /* left (2 bytes) */
 			Stream_Read_UINT16(s, windowState->visibilityRects[i].top); /* top (2 bytes) */
