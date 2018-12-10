@@ -1181,6 +1181,10 @@ xfAppNotifyIcon* xf_AppNotifyIconFromX11Window(xfContext* xfc, Window wnd)
 	int count;
 	ULONG_PTR* pKeys = NULL;
 	xfAppNotifyIcon* notifyIcon;
+
+	if (!xfc || !xfc->railNotifyIcons)
+		return NULL;
+
 	count = HashTable_GetKeys(xfc->railNotifyIcons, &pKeys);
 
 	for (index = 0; index < count; index++)
