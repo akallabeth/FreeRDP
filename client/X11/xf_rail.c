@@ -910,7 +910,7 @@ static BOOL xf_rail_notify_icon_common(rdpContext* context,
 		notifyIcon->xfc = xfc;
 		notifyIcon->windowId = orderInfo->windowId;
 		notifyIcon->notifyIconId = orderInfo->notifyIconId;
-		HashTable_Add(xfc->railNotifyIcons, &orderInfo->notifyIconId,
+		HashTable_Add(xfc->railNotifyIcons, &notifyIcon->notifyIconId,
 		              (void*) notifyIcon);
 		xf_appNotifyIconCreate(xfc, notifyIcon);
 	}
@@ -1154,8 +1154,7 @@ static UINT xf_rail_server_local_move_size(RailClientContext* context,
 	Window child_window;
 	xfAppWindow* appWindow = NULL;
 	xfContext* xfc = (xfContext*) context->custom;
-	appWindow = (xfAppWindow*) HashTable_GetItemValue(xfc->railWindows,
-	            (void*)&localMoveSize->windowId);
+	appWindow = (xfAppWindow*) HashTable_GetItemValue(xfc->railWindows, (void *)&localMoveSize->windowId);
 
 	if (!appWindow)
 		return ERROR_INTERNAL_ERROR;
@@ -1250,7 +1249,7 @@ static UINT xf_rail_server_min_max_info(RailClientContext* context,
 {
 	xfAppWindow* appWindow = NULL;
 	xfContext* xfc = (xfContext*) context->custom;
-	appWindow = (xfAppWindow*) HashTable_GetItemValue(xfc->railWindows, (void*)&minMaxInfo->windowId);
+	appWindow = (xfAppWindow*) HashTable_GetItemValue(xfc->railWindows, (void *)&minMaxInfo->windowId);
 
 	if (appWindow)
 	{
@@ -1339,8 +1338,8 @@ int xf_rail_init(xfContext* xfc, RailClientContext* rail)
 	xfc->railWindows = HashTable_New(TRUE);
 	xfc->railNotifyIcons = HashTable_New(TRUE);
 
-	if (!xfc->railWindows)
-		return 0;
+	if (!xfc->railWindows || !xfc->railNotifyIcons)
+		goto fail;
 
 	xfc->railWindows->keyCompare = rail_window_key_equals;
 	xfc->railWindows->hash = rail_window_key_hash;
@@ -1352,12 +1351,12 @@ int xf_rail_init(xfContext* xfc, RailClientContext* rail)
 	xfc->railIconCache = RailIconCache_New(xfc->context.settings);
 
 	if (!xfc->railIconCache)
-	{
-		HashTable_Free(xfc->railWindows);
-		return 0;
-	}
+		goto fail;
 
 	return 1;
+fail:
+	xf_rail_uninit(xfc, rail);
+	return 0;
 }
 
 int xf_rail_uninit(xfContext* xfc, RailClientContext* rail)
@@ -1368,17 +1367,8 @@ int xf_rail_uninit(xfContext* xfc, RailClientContext* rail)
 		xfc->rail = NULL;
 	}
 
-	if (xfc->railWindows)
-	{
-		HashTable_Free(xfc->railWindows);
-		xfc->railWindows = NULL;
-	}
-
-	if (xfc->railIconCache)
-	{
-		RailIconCache_Free(xfc->railIconCache);
-		xfc->railIconCache = NULL;
-	}
-
+	HashTable_Free(xfc->railWindows);
+	HashTable_Free(xfc->railNotifyIcons);
+	RailIconCache_Free(xfc->railIconCache);
 	return 1;
 }
