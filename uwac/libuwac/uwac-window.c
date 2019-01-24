@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <sys/mman.h>
+#include <pthread.h>
 
 #include "uwac-priv.h"
 #include "uwac-utils.h"
@@ -134,13 +135,14 @@ static void xdg_handle_configure(void *data,
 	{
 		event->event.configure.width = width;
 		event->event.configure.height = height;
+		pthread_spin_lock(&window->lock);
 		UwacWindowDestroyBuffers(window);
 		window->width = width;
 		window->stride = width * bppFromShmFormat(window->format);
 		window->height = height;
 		ret = UwacWindowShmAllocBuffers(window, UWAC_INITIAL_BUFFERS, window->stride * height,
 		                                width, height, window->format);
-
+		pthread_spin_unlock(&window->lock);
 		if (ret != UWAC_SUCCESS)
 		{
 			assert(uwacErrorHandler(window->display, ret, "failed to reallocate a wayland buffers\n"));
@@ -429,6 +431,7 @@ UwacWindow* UwacCreateWindowShm(UwacDisplay* display, uint32_t width, uint32_t h
 		return NULL;
 	}
 
+	pthread_spin_init(&w->lock, PTHREAD_PROCESS_PRIVATE);
 	w->display = display;
 	w->format = format;
 	w->width = width;
@@ -591,6 +594,7 @@ UwacReturnCode UwacWindowSetInputRegion(UwacWindow* window, uint32_t x, uint32_t
 
 void* UwacWindowGetDrawingBuffer(UwacWindow* window)
 {
+	pthread_spin_lock(&window->lock);
 	return window->drawingBuffer->data;
 }
 
@@ -697,6 +701,7 @@ UwacReturnCode UwacWindowSubmitBuffer(UwacWindow* window, bool copyContentForNex
 	UwacBuffer* drawingBuffer = window->drawingBuffer;
 
 	UwacSubmitBufferPtr(window, drawingBuffer);
+	pthread_spin_unlock(&window->lock);
 
 	return UWAC_SUCCESS;
 }

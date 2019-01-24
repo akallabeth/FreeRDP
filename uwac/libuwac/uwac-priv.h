@@ -239,6 +239,7 @@ struct uwac_window {
 	uint32_t pointer_enter_serial;
 	uint32_t pointer_cursor_serial;
 	int pointer_current_cursor;
+	pthread_spinlock_t lock;
 };
 
 
