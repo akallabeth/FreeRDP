@@ -243,7 +243,9 @@ struct uwac_window {
 
 
 /* in uwa-display.c */
-UwacEvent *UwacDisplayNewEvent(UwacDisplay *d, int type);
+UwacEventListItem *UwacNewEvent(int type);
+UwacReturnCode UwacDisplayQueueEvent(UwacDisplay *d, UwacEventListItem *event);
+
 int UwacDisplayWatchFd(UwacDisplay *display, int fd, uint32_t events, UwacTask *task);
 
 

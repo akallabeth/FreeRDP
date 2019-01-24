@@ -89,7 +89,7 @@ static void xdg_handle_configure(void *data,
                                  struct wl_array *states)
 {
 	UwacWindow* window = (UwacWindow*)data;
-	UwacConfigureEvent* event;
+	UwacEventListItem* event;
 	int ret, surfaceState;
 	enum xdg_toplevel_state* state;
 	surfaceState = 0;
@@ -118,7 +118,7 @@ static void xdg_handle_configure(void *data,
 		}
 	}
 	window->surfaceStates = surfaceState;
-	event = (UwacConfigureEvent*)UwacDisplayNewEvent(window->display, UWAC_EVENT_CONFIGURE);
+	event = UwacNewEvent(UWAC_EVENT_CONFIGURE);
 
 	if (!event)
 	{
@@ -127,13 +127,13 @@ static void xdg_handle_configure(void *data,
 		return;
 	}
 
-	event->window = window;
-	event->states = surfaceState;
+	event->event.configure.window = window;
+	event->event.configure.states = surfaceState;
 
 	if (width && height)
 	{
-		event->width = width;
-		event->height = height;
+		event->event.configure.width = width;
+		event->event.configure.height = height;
 		UwacWindowDestroyBuffers(window);
 		window->width = width;
 		window->stride = width * bppFromShmFormat(window->format);
@@ -152,17 +152,18 @@ static void xdg_handle_configure(void *data,
 	}
 	else
 	{
-		event->width = window->width;
-		event->height = window->height;
+		event->event.configure.width = window->width;
+		event->event.configure.height = window->height;
 	}
+	UwacDisplayQueueEvent(window->display, event);
 }
 
 static void xdg_handle_close(void *data,
                              struct xdg_toplevel *xdg_toplevel)
 {
-	UwacCloseEvent* event;
+	UwacEventListItem* event;
 	UwacWindow* window = (UwacWindow*)data;
-	event = (UwacCloseEvent*)UwacDisplayNewEvent(window->display, UWAC_EVENT_CLOSE);
+	event = UwacNewEvent(UWAC_EVENT_CLOSE);
 
 	if (!event)
 	{
@@ -171,7 +172,8 @@ static void xdg_handle_close(void *data,
 		return;
 	}
 
-	event->window = window;
+	event->event.close.window = window;
+	UwacDisplayQueueEvent(window->display, event);
 }
 
 static const struct xdg_toplevel_listener xdg_toplevel_listener =
@@ -185,9 +187,9 @@ static void ivi_handle_configure(void* data, struct ivi_surface* surface,
                                  int32_t width, int32_t height)
 {
 	UwacWindow* window = (UwacWindow*)data;
-	UwacConfigureEvent* event;
+	UwacEventListItem* event;
 	int ret;
-	event = (UwacConfigureEvent*)UwacDisplayNewEvent(window->display, UWAC_EVENT_CONFIGURE);
+	event = UwacNewEvent(UWAC_EVENT_CONFIGURE);
 
 	if (!event)
 	{
@@ -196,13 +198,13 @@ static void ivi_handle_configure(void* data, struct ivi_surface* surface,
 		return;
 	}
 
-	event->window = window;
-	event->states = 0;
+	event->event.configure.window = window;
+	event->event.configure.states = 0;
 
 	if (width && height)
 	{
-		event->width = width;
-		event->height = height;
+		event->event.configure.width = width;
+		event->event.configure.height = height;
 		UwacWindowDestroyBuffers(window);
 		window->width = width;
 		window->stride = width * bppFromShmFormat(window->format);
@@ -221,9 +223,10 @@ static void ivi_handle_configure(void* data, struct ivi_surface* surface,
 	}
 	else
 	{
-		event->width = window->width;
-		event->height = window->height;
+		event->event.configure.width = window->width;
+		event->event.configure.height = window->height;
 	}
+	UwacDisplayQueueEvent(window->display, event);
 }
 
 static const struct ivi_surface_listener ivi_surface_listener =
@@ -241,9 +244,9 @@ void shell_configure(void* data, struct wl_shell_surface* surface, uint32_t edge
                      int32_t width, int32_t height)
 {
 	UwacWindow* window = (UwacWindow*)data;
-	UwacConfigureEvent* event;
+	UwacEventListItem* event;
 	int ret;
-	event = (UwacConfigureEvent*)UwacDisplayNewEvent(window->display, UWAC_EVENT_CONFIGURE);
+	event = UwacNewEvent(UWAC_EVENT_CONFIGURE);
 
 	if (!event)
 	{
@@ -252,13 +255,13 @@ void shell_configure(void* data, struct wl_shell_surface* surface, uint32_t edge
 		return;
 	}
 
-	event->window = window;
-	event->states = 0;
+	event->event.configure.window = window;
+	event->event.configure.states = 0;
 
 	if (width && height)
 	{
-		event->width = width;
-		event->height = height;
+		event->event.configure.width = width;
+		event->event.configure.height = height;
 		UwacWindowDestroyBuffers(window);
 		window->width = width;
 		window->stride = width * bppFromShmFormat(window->format);
@@ -277,9 +280,10 @@ void shell_configure(void* data, struct wl_shell_surface* surface, uint32_t edge
 	}
 	else
 	{
-		event->width = window->width;
-		event->height = window->height;
+		event->event.configure.width = window->width;
+		event->event.configure.height = window->height;
 	}
+	UwacDisplayQueueEvent(window->display, event);
 }
 
 
@@ -639,12 +643,13 @@ static void UwacSubmitBufferPtr(UwacWindow* window, UwacBuffer* buffer)
 static void frame_done_cb(void* data, struct wl_callback* callback, uint32_t time)
 {
 	UwacWindow* window = (UwacWindow*)data;
-	UwacFrameDoneEvent* event;
+	UwacEventListItem* event;
 
-	event = (UwacFrameDoneEvent*)UwacDisplayNewEvent(window->display, UWAC_EVENT_FRAME_DONE);
+	event = UwacNewEvent(UWAC_EVENT_FRAME_DONE);
 
 	if (event)
-		event->window = window;
+		event->event.frame_done.window = window;
+	UwacDisplayQueueEvent(window->display, event);
 }
 
 

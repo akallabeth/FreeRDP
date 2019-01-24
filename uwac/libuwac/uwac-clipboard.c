@@ -43,8 +43,7 @@ static void data_offer_offer(void* data, struct wl_data_offer* data_offer,
 	assert(seat);
 	if (!seat->ignore_announcement)
 	{
-		UwacClipboardEvent* event = (UwacClipboardEvent*)UwacDisplayNewEvent(seat->display,
-		                            UWAC_EVENT_CLIPBOARD_OFFER);
+		UwacEventListItem* event = UwacNewEvent(UWAC_EVENT_CLIPBOARD_OFFER);
 
 		if (!event)
 		{
@@ -53,9 +52,10 @@ static void data_offer_offer(void* data, struct wl_data_offer* data_offer,
 		}
 		else
 		{
-			event->seat = seat;
-			sprintf_s(event->mime, sizeof(event->mime), "%s", offered_mime_type);
+			event->event.clipboard.seat = seat;
+			sprintf_s(event->event.clipboard.mime, sizeof(event->event.clipboard.mime), "%s", offered_mime_type);
 		}
+		UwacDisplayQueueEvent(seat->display, event);
 	}
 }
 
@@ -72,8 +72,7 @@ static void data_device_data_offer(void* data, struct wl_data_device* data_devic
 	assert(seat);
 	if (!seat->ignore_announcement)
 	{
-		UwacClipboardEvent* event = (UwacClipboardEvent*)UwacDisplayNewEvent(seat->display,
-		                            UWAC_EVENT_CLIPBOARD_SELECT);
+		UwacEventListItem* event = UwacNewEvent(UWAC_EVENT_CLIPBOARD_SELECT);
 
 		if (!event)
 		{
@@ -81,8 +80,9 @@ static void data_device_data_offer(void* data, struct wl_data_device* data_devic
 			                        "failed to allocate a close event\n"));
 		}
 		else
-			event->seat = seat;
+			event->event.clipboard.seat = seat;
 
+		UwacDisplayQueueEvent(seat->display, event);
 		wl_data_offer_add_listener(data_offer, &data_offer_listener, data);
 		seat->offer = data_offer;
 	}
@@ -145,7 +145,7 @@ UwacReturnCode UwacCreateDataSource(UwacSeat* s)
 UwacReturnCode UwacSeatRegisterClipboard(UwacSeat* s)
 {
 	UwacReturnCode rc;
-	UwacClipboardEvent* event;
+	UwacEventListItem* event;
 
 	if (!s)
 		return UWAC_ERROR_INTERNAL;
@@ -160,7 +160,7 @@ UwacReturnCode UwacSeatRegisterClipboard(UwacSeat* s)
 	if (rc != UWAC_SUCCESS)
 		return rc;
 
-	event = (UwacClipboardEvent*)UwacDisplayNewEvent(s->display, UWAC_EVENT_CLIPBOARD_AVAILABLE);
+	event = UwacNewEvent(UWAC_EVENT_CLIPBOARD_AVAILABLE);
 
 	if (!event)
 	{
@@ -169,8 +169,9 @@ UwacReturnCode UwacSeatRegisterClipboard(UwacSeat* s)
 		return UWAC_ERROR_INTERNAL;
 	}
 
-	event->seat = s;
-	return UWAC_SUCCESS;
+	event->event.clipboard.seat = s;
+
+	return UwacDisplayQueueEvent(s->display, event);
 }
 
 UwacReturnCode UwacClipboardOfferDestroy(UwacSeat* seat)

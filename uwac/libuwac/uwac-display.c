@@ -175,7 +175,7 @@ static void registry_handle_global(void* data, struct wl_registry* registry, uin
 	else if (strcmp(interface, "wl_output") == 0)
 	{
 		UwacOutput* output;
-		UwacOutputNewEvent* ev;
+		UwacEventListItem* ev;
 		output = UwacCreateOutput(d, id, version);
 
 		if (!output)
@@ -184,14 +184,15 @@ static void registry_handle_global(void* data, struct wl_registry* registry, uin
 			return;
 		}
 
-		ev = (UwacOutputNewEvent*)UwacDisplayNewEvent(d, UWAC_EVENT_NEW_OUTPUT);
+		ev = UwacNewEvent(UWAC_EVENT_NEW_OUTPUT);
 
 		if (ev)
-			ev->output = output;
+			ev->event.output_new.output = output;
+		UwacDisplayQueueEvent(d, ev);
 	}
 	else if (strcmp(interface, "wl_seat") == 0)
 	{
-		UwacSeatNewEvent* ev;
+		UwacEventListItem* ev;
 		UwacSeat* seat;
 		seat = UwacSeatNew(d, id, min(version, TARGET_SEAT_INTERFACE));
 
@@ -203,7 +204,7 @@ static void registry_handle_global(void* data, struct wl_registry* registry, uin
 
 		UwacSeatRegisterDDM(seat);
 		UwacSeatRegisterClipboard(seat);
-		ev = (UwacSeatNewEvent*)UwacDisplayNewEvent(d, UWAC_EVENT_NEW_SEAT);
+		ev = UwacNewEvent(UWAC_EVENT_NEW_SEAT);
 
 		if (!ev)
 		{
@@ -211,7 +212,8 @@ static void registry_handle_global(void* data, struct wl_registry* registry, uin
 			return;
 		}
 
-		ev->seat = seat;
+		ev->event.seat_new.seat = seat;
+		UwacDisplayQueueEvent(d, ev);
 	}
 	else if (strcmp(interface, "wl_data_device_manager") == 0)
 	{
@@ -295,12 +297,13 @@ static void registry_handle_global_remove(void* data, struct wl_registry* regist
 
 		if (strcmp(global->interface, "wl_seat") == 0)
 		{
-			UwacSeatRemovedEvent* ev;
+			UwacEventListItem* ev;
 			display_destroy_seat(d, name);
-			ev = (UwacSeatRemovedEvent*)UwacDisplayNewEvent(d, UWAC_EVENT_REMOVED_SEAT);
+			ev = UwacNewEvent(UWAC_EVENT_REMOVED_SEAT);
 
 			if (ev)
-				ev->id = name;
+				ev->event.seat_removed.id = name;
+			UwacDisplayQueueEvent(d, ev);
 		}
 
 		wl_list_remove(&global->link);
@@ -710,35 +713,35 @@ UwacReturnCode UwacOutputGetResolution(UwacOutput* output, UwacSize* resolution)
 }
 
 
-UwacEvent* UwacDisplayNewEvent(UwacDisplay* display, int type)
+UwacEventListItem* UwacNewEvent(int type)
 {
 	UwacEventListItem* ret;
-
-	if (!display)
-	{
-		return 0;
-	}
 
 	ret = zalloc(sizeof(UwacEventListItem));
 
 	if (!ret)
-	{
-		assert(uwacErrorHandler(display, UWAC_ERROR_NOMEMORY, "unable to allocate a '%s' event",
-		                        event_names[type]));
-		display->last_error = UWAC_ERROR_NOMEMORY;
 		return 0;
-	}
 
 	ret->event.type = type;
-	ret->tail = display->push_queue;
 
-	if (ret->tail)
-		ret->tail->head = ret;
+	return ret;
+}
+
+UwacReturnCode UwacDisplayQueueEvent(UwacDisplay *d, UwacEventListItem *event)
+{
+	if (!d || !event)
+		return UWAC_ERROR_INTERNAL;
+
+	event->tail = d->push_queue;
+
+	if (event->tail)
+		event->tail->head = event;
 	else
-		display->pop_queue = ret;
+		d->pop_queue = event;
 
-	display->push_queue = ret;
-	return &ret->event;
+	d->push_queue = event;
+
+	return UWAC_SUCCESS;
 }
 
 bool UwacHasEvent(UwacDisplay* display)
