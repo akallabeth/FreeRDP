@@ -144,11 +144,11 @@ static void xdg_handle_configure(void *data,
 		if (ret != UWAC_SUCCESS)
 		{
 			assert(uwacErrorHandler(window->display, ret, "failed to reallocate a wayland buffers\n"));
-			window->drawingBuffer = window->pendingBuffer = NULL;
+			window->drawingBuffer = NULL;
 			return;
 		}
 
-		window->drawingBuffer = window->pendingBuffer = &window->buffers[0];
+		window->drawingBuffer = &window->buffers[0];
 	}
 	else
 	{
@@ -213,11 +213,11 @@ static void ivi_handle_configure(void* data, struct ivi_surface* surface,
 		if (ret != UWAC_SUCCESS)
 		{
 			assert(uwacErrorHandler(window->display, ret, "failed to reallocate a wayland buffers\n"));
-			window->drawingBuffer = window->pendingBuffer = NULL;
+			window->drawingBuffer = NULL;
 			return;
 		}
 
-		window->drawingBuffer = window->pendingBuffer = &window->buffers[0];
+		window->drawingBuffer = &window->buffers[0];
 	}
 	else
 	{
@@ -269,11 +269,11 @@ void shell_configure(void* data, struct wl_shell_surface* surface, uint32_t edge
 		if (ret != UWAC_SUCCESS)
 		{
 			assert(uwacErrorHandler(window->display, ret, "failed to reallocate a wayland buffers\n"));
-			window->drawingBuffer = window->pendingBuffer = NULL;
+			window->drawingBuffer = NULL;
 			return;
 		}
 
-		window->drawingBuffer = window->pendingBuffer = &window->buffers[0];
+		window->drawingBuffer = &window->buffers[0];
 	}
 	else
 	{
@@ -640,7 +640,7 @@ static void frame_done_cb(void* data, struct wl_callback* callback, uint32_t tim
 {
 	UwacWindow* window = (UwacWindow*)data;
 	UwacFrameDoneEvent* event;
-	window->pendingBuffer = NULL;
+
 	event = (UwacFrameDoneEvent*)UwacDisplayNewEvent(window->display, UWAC_EVENT_FRAME_DONE);
 
 	if (event)
@@ -675,25 +675,7 @@ UwacReturnCode UwacWindowSubmitBuffer(UwacWindow* window, bool copyContentForNex
 {
 	UwacBuffer* drawingBuffer = window->drawingBuffer;
 
-	if (window->pendingBuffer)
-	{
-		/* we already have a pending frame. resubmit as the buffer
-		 * might have been discarded due to focus loss */
-		UwacSubmitBufferPtr(window, window->pendingBuffer);
-		return UWAC_SUCCESS;
-	}
-
 	UwacSubmitBufferPtr(window, drawingBuffer);
-	window->pendingBuffer = window->drawingBuffer;
-	window->drawingBuffer = UwacWindowFindFreeBuffer(window);
-
-	if (!window->drawingBuffer)
-		return UWAC_ERROR_NOMEMORY;
-
-	if (copyContentForNextFrame)
-	{
-		memcpy(window->drawingBuffer->data, window->pendingBuffer->data, window->stride * window->height);
-	}
 
 	return UWAC_SUCCESS;
 }

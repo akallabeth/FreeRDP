@@ -224,7 +224,7 @@ struct uwac_window {
 	struct wl_region *opaque_region;
 	struct wl_region *input_region;
 	struct wl_callback *frame_callback;
-	UwacBuffer *drawingBuffer, *pendingBuffer;
+	UwacBuffer *drawingBuffer;
 	struct wl_surface *surface;
 	struct wl_shell_surface *shell_surface;
 	struct xdg_surface *xdg_surface;
