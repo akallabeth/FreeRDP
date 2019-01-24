@@ -83,6 +83,53 @@ void UwacWindowDestroyBuffers(UwacWindow* w)
 int UwacWindowShmAllocBuffers(UwacWindow* w, int nbuffers, int allocSize, uint32_t width,
                               uint32_t height, enum wl_shm_format format);
 
+static void queue_configure_event(UwacWindow* window, int32_t width,
+                                  int32_t height, int32_t surfaceState)
+{
+	UwacEventListItem* event = UwacNewEvent(UWAC_EVENT_CONFIGURE);
+
+	if (!event)
+	{
+		assert(uwacErrorHandler(window->display, UWAC_ERROR_NOMEMORY,
+		                        "failed to allocate a configure event\n"));
+		return;
+	}
+
+	event->event.configure.window = window;
+	event->event.configure.states = surfaceState;
+
+	if (width && height)
+	{
+		UwacReturnCode ret;
+		event->event.configure.width = width;
+		event->event.configure.height = height;
+		pthread_spin_lock(&window->lock);
+		UwacWindowDestroyBuffers(window);
+		window->width = width;
+		window->stride = width * bppFromShmFormat(window->format);
+		window->height = height;
+		ret = UwacWindowShmAllocBuffers(window, UWAC_INITIAL_BUFFERS, window->stride * height,
+		                                width, height, window->format);
+
+		if (ret != UWAC_SUCCESS)
+		{
+			assert(uwacErrorHandler(window->display, ret, "failed to reallocate a wayland buffers\n"));
+			window->drawingBuffer = NULL;
+			pthread_spin_unlock(&window->lock);
+			return;
+		}
+
+		window->drawingBuffer = &window->buffers[0];
+		pthread_spin_unlock(&window->lock);
+	}
+	else
+	{
+		event->event.configure.width = window->width;
+		event->event.configure.height = window->height;
+	}
+	UwacDisplayQueueEvent(window->display, event);
+}
+
 static void xdg_handle_configure(void *data,
                                  struct xdg_toplevel *xdg_toplevel,
                                  int32_t width,
@@ -90,7 +137,6 @@ static void xdg_handle_configure(void *data,
                                  struct wl_array *states)
 {
 	UwacWindow* window = (UwacWindow*)data;
-	UwacEventListItem* event;
 	int ret, surfaceState;
 	enum xdg_toplevel_state* state;
 	surfaceState = 0;
@@ -118,46 +164,7 @@ static void xdg_handle_configure(void *data,
 				break;
 		}
 	}
-	window->surfaceStates = surfaceState;
-	event = UwacNewEvent(UWAC_EVENT_CONFIGURE);
-
-	if (!event)
-	{
-		assert(uwacErrorHandler(window->display, UWAC_ERROR_NOMEMORY,
-		                        "failed to allocate a configure event\n"));
-		return;
-	}
-
-	event->event.configure.window = window;
-	event->event.configure.states = surfaceState;
-
-	if (width && height)
-	{
-		event->event.configure.width = width;
-		event->event.configure.height = height;
-		pthread_spin_lock(&window->lock);
-		UwacWindowDestroyBuffers(window);
-		window->width = width;
-		window->stride = width * bppFromShmFormat(window->format);
-		window->height = height;
-		ret = UwacWindowShmAllocBuffers(window, UWAC_INITIAL_BUFFERS, window->stride * height,
-		                                width, height, window->format);
-		pthread_spin_unlock(&window->lock);
-		if (ret != UWAC_SUCCESS)
-		{
-			assert(uwacErrorHandler(window->display, ret, "failed to reallocate a wayland buffers\n"));
-			window->drawingBuffer = NULL;
-			return;
-		}
-
-		window->drawingBuffer = &window->buffers[0];
-	}
-	else
-	{
-		event->event.configure.width = window->width;
-		event->event.configure.height = window->height;
-	}
-	UwacDisplayQueueEvent(window->display, event);
+	queue_configure_event(window, width, height, surfaceState);
 }
 
 static void xdg_handle_close(void *data,
@@ -189,46 +196,7 @@ static void ivi_handle_configure(void* data, struct ivi_surface* surface,
                                  int32_t width, int32_t height)
 {
 	UwacWindow* window = (UwacWindow*)data;
-	UwacEventListItem* event;
-	int ret;
-	event = UwacNewEvent(UWAC_EVENT_CONFIGURE);
-
-	if (!event)
-	{
-		assert(uwacErrorHandler(window->display, UWAC_ERROR_NOMEMORY,
-		                        "failed to allocate a configure event\n"));
-		return;
-	}
-
-	event->event.configure.window = window;
-	event->event.configure.states = 0;
-
-	if (width && height)
-	{
-		event->event.configure.width = width;
-		event->event.configure.height = height;
-		UwacWindowDestroyBuffers(window);
-		window->width = width;
-		window->stride = width * bppFromShmFormat(window->format);
-		window->height = height;
-		ret = UwacWindowShmAllocBuffers(window, UWAC_INITIAL_BUFFERS, window->stride * height,
-		                                width, height, window->format);
-
-		if (ret != UWAC_SUCCESS)
-		{
-			assert(uwacErrorHandler(window->display, ret, "failed to reallocate a wayland buffers\n"));
-			window->drawingBuffer = NULL;
-			return;
-		}
-
-		window->drawingBuffer = &window->buffers[0];
-	}
-	else
-	{
-		event->event.configure.width = window->width;
-		event->event.configure.height = window->height;
-	}
-	UwacDisplayQueueEvent(window->display, event);
+	queue_configure_event(window, width, height, 0);
 }
 
 static const struct ivi_surface_listener ivi_surface_listener =
@@ -246,46 +214,8 @@ void shell_configure(void* data, struct wl_shell_surface* surface, uint32_t edge
                      int32_t width, int32_t height)
 {
 	UwacWindow* window = (UwacWindow*)data;
-	UwacEventListItem* event;
-	int ret;
-	event = UwacNewEvent(UWAC_EVENT_CONFIGURE);
 
-	if (!event)
-	{
-		assert(uwacErrorHandler(window->display, UWAC_ERROR_NOMEMORY,
-		                        "failed to allocate a configure event\n"));
-		return;
-	}
-
-	event->event.configure.window = window;
-	event->event.configure.states = 0;
-
-	if (width && height)
-	{
-		event->event.configure.width = width;
-		event->event.configure.height = height;
-		UwacWindowDestroyBuffers(window);
-		window->width = width;
-		window->stride = width * bppFromShmFormat(window->format);
-		window->height = height;
-		ret = UwacWindowShmAllocBuffers(window, UWAC_INITIAL_BUFFERS, window->stride * height,
-		                                width, height, window->format);
-
-		if (ret != UWAC_SUCCESS)
-		{
-			assert(uwacErrorHandler(window->display, ret, "failed to reallocate a wayland buffers\n"));
-			window->drawingBuffer = NULL;
-			return;
-		}
-
-		window->drawingBuffer = &window->buffers[0];
-	}
-	else
-	{
-		event->event.configure.width = window->width;
-		event->event.configure.height = window->height;
-	}
-	UwacDisplayQueueEvent(window->display, event);
+	queue_configure_event(window, width, height, 0);
 }
 
 
