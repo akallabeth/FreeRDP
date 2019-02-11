@@ -63,12 +63,6 @@ struct _PRINTER_DEVICE
 
 	rdpPrinter* printer;
 
-	WINPR_PSLIST_HEADER pIrpList;
-
-	HANDLE event;
-	HANDLE stopEvent;
-
-	HANDLE thread;
 	rdpContext* rdpcontext;
 	char port[64];
 };
@@ -113,7 +107,6 @@ static char* get_printer_config_path(const rdpSettings* settings, const WCHAR* n
 static BOOL printer_write_setting(const char* path, prn_conf_t type, const void* data,
                                   size_t length)
 {
-	DWORD written = 0;
 	BOOL rc = FALSE;
 	HANDLE file;
 	size_t b64len;
@@ -131,15 +124,18 @@ static BOOL printer_write_setting(const char* path, prn_conf_t type, const void*
 	if (file == INVALID_HANDLE_VALUE)
 		return FALSE;
 
-	if (length > 0)
+	if ((length > 0) && (length < INT_MAX))
 	{
-		base64 = crypto_base64_encode(data, length);
+		DWORD written = 0;
+		base64 = crypto_base64_encode(data, (int)length);
 
 		if (!base64)
 			goto fail;
 
 		b64len = strlen(base64);
-		rc = WriteFile(file, base64, b64len, &written, NULL);
+
+		if (b64len <= UINT32_MAX)
+			rc = WriteFile(file, base64, (DWORD)b64len, &written, NULL);
 
 		if (b64len != written)
 			rc = FALSE;
@@ -592,54 +588,6 @@ static UINT printer_process_irp(PRINTER_DEVICE* printer_dev, IRP* irp)
 	return CHANNEL_RC_OK;
 }
 
-static DWORD WINAPI printer_thread_func(LPVOID arg)
-{
-	IRP* irp;
-	PRINTER_DEVICE* printer_dev = (PRINTER_DEVICE*) arg;
-	HANDLE obj[] = {printer_dev->event, printer_dev->stopEvent};
-	UINT error = CHANNEL_RC_OK;
-
-	while (1)
-	{
-		DWORD rc = WaitForMultipleObjects(2, obj, FALSE, INFINITE);
-
-		if (rc == WAIT_FAILED)
-		{
-			error = GetLastError();
-			WLog_ERR(TAG, "WaitForMultipleObjects failed with error %"PRIu32"!", error);
-			break;
-		}
-
-		if (rc == WAIT_OBJECT_0 + 1)
-			break;
-		else if (rc != WAIT_OBJECT_0)
-			continue;
-
-		ResetEvent(printer_dev->event);
-		irp = (IRP*) InterlockedPopEntrySList(printer_dev->pIrpList);
-
-		if (irp == NULL)
-		{
-			WLog_ERR(TAG, "InterlockedPopEntrySList failed!");
-			error = ERROR_INTERNAL_ERROR;
-			break;
-		}
-
-		if ((error = printer_process_irp(printer_dev, irp)))
-		{
-			WLog_ERR(TAG, "printer_process_irp failed with error %"PRIu32"!", error);
-			break;
-		}
-	}
-
-	if (error && printer_dev->rdpcontext)
-		setChannelError(printer_dev->rdpcontext, error,
-		                "printer_thread_func reported an error");
-
-	ExitThread(error);
-	return error;
-}
-
 /**
  * Function description
  *
@@ -648,9 +596,7 @@ static DWORD WINAPI printer_thread_func(LPVOID arg)
 static UINT printer_irp_request(DEVICE* device, IRP* irp)
 {
 	PRINTER_DEVICE* printer_dev = (PRINTER_DEVICE*) device;
-	InterlockedPushEntrySList(printer_dev->pIrpList, &(irp->ItemEntry));
-	SetEvent(printer_dev->event);
-	return CHANNEL_RC_OK;
+	return printer_process_irp(printer_dev, irp);
 }
 
 static UINT printer_custom_component(DEVICE* device, UINT16 component, UINT16 packetId, wStream* s)
@@ -836,31 +782,7 @@ static UINT printer_custom_component(DEVICE* device, UINT16 component, UINT16 pa
  */
 static UINT printer_free(DEVICE* device)
 {
-	IRP* irp;
 	PRINTER_DEVICE* printer_dev = (PRINTER_DEVICE*) device;
-	UINT error;
-	SetEvent(printer_dev->stopEvent);
-
-	if (WaitForSingleObject(printer_dev->thread, INFINITE) == WAIT_FAILED)
-	{
-		error = GetLastError();
-		WLog_ERR(TAG, "WaitForSingleObject failed with error %"PRIu32"", error);
-
-		/* The analyzer is confused by this premature return value.
-		 * Since this case can not be handled gracefully silence the
-		 * analyzer here. */
-#ifndef __clang_analyzer__
-		return error;
-#endif
-	}
-
-	while ((irp = (IRP*) InterlockedPopEntrySList(printer_dev->pIrpList)) != NULL)
-		irp->Discard(irp);
-
-	CloseHandle(printer_dev->thread);
-	CloseHandle(printer_dev->stopEvent);
-	CloseHandle(printer_dev->event);
-	_aligned_free(printer_dev->pIrpList);
 
 	if (printer_dev->printer)
 		printer_dev->printer->Free(printer_dev->printer);
@@ -875,8 +797,8 @@ static UINT printer_free(DEVICE* device)
  *
  * @return 0 on success, otherwise a Win32 error code
  */
-UINT printer_register(PDEVICE_SERVICE_ENTRY_POINTS pEntryPoints,
-                      rdpPrinter* printer)
+static UINT printer_register(PDEVICE_SERVICE_ENTRY_POINTS pEntryPoints,
+                             rdpPrinter* printer)
 {
 	PRINTER_DEVICE* printer_dev;
 	UINT error = ERROR_INTERNAL_ERROR;
@@ -901,47 +823,14 @@ UINT printer_register(PDEVICE_SERVICE_ENTRY_POINTS pEntryPoints,
 	printer_dev->device.Free = printer_free;
 	printer_dev->rdpcontext = pEntryPoints->rdpcontext;
 	printer_dev->printer = printer;
-	printer_dev->pIrpList = (WINPR_PSLIST_HEADER) _aligned_malloc(sizeof(
-	                            WINPR_SLIST_HEADER), MEMORY_ALLOCATION_ALIGNMENT);
-
-	if (!printer_dev->pIrpList)
-	{
-		WLog_ERR(TAG, "_aligned_malloc failed!");
-		error = CHANNEL_RC_NO_MEMORY;
-		goto error_out;
-	}
 
 	if (!printer_load_from_config(pEntryPoints->rdpcontext->settings, printer, printer_dev))
 		goto error_out;
-
-	InitializeSListHead(printer_dev->pIrpList);
-
-	if (!(printer_dev->event = CreateEvent(NULL, TRUE, FALSE, NULL)))
-	{
-		WLog_ERR(TAG, "CreateEvent failed!");
-		error = ERROR_INTERNAL_ERROR;
-		goto error_out;
-	}
-
-	if (!(printer_dev->stopEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
-	{
-		WLog_ERR(TAG, "CreateEvent failed!");
-		error = ERROR_INTERNAL_ERROR;
-		goto error_out;
-	}
 
 	if ((error = pEntryPoints->RegisterDevice(pEntryPoints->devman,
 	             (DEVICE*) printer_dev)))
 	{
 		WLog_ERR(TAG, "RegisterDevice failed with error %"PRIu32"!", error);
-		goto error_out;
-	}
-
-	if (!(printer_dev->thread = CreateThread(NULL, 0, printer_thread_func, (void*) printer_dev, 0,
-	                            NULL)))
-	{
-		WLog_ERR(TAG, "CreateThread failed!");
-		error = ERROR_INTERNAL_ERROR;
 		goto error_out;
 	}
 
