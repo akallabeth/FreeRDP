@@ -29,8 +29,9 @@ typedef struct rdp_printer_driver rdpPrinterDriver;
 typedef struct rdp_printer rdpPrinter;
 typedef struct rdp_print_job rdpPrintJob;
 
-typedef rdpPrinter** (*pcEnumPrinters) (rdpPrinterDriver* driver);
-typedef rdpPrinter* (*pcGetPrinter) (rdpPrinterDriver* driver, const char* name, const char* driverName);
+typedef rdpPrinter** (*pcEnumPrinters)(rdpPrinterDriver* driver);
+typedef rdpPrinter* (*pcGetPrinter)(rdpPrinterDriver* driver, const char* name,
+                                    const char* driverName);
 
 struct rdp_printer_driver
 {
@@ -38,9 +39,9 @@ struct rdp_printer_driver
 	pcGetPrinter GetPrinter;
 };
 
-typedef rdpPrintJob* (*pcCreatePrintJob) (rdpPrinter* printer, UINT32 id);
-typedef rdpPrintJob* (*pcFindPrintJob) (rdpPrinter* printer, UINT32 id);
-typedef void (*pcFreePrinter) (rdpPrinter* printer);
+typedef rdpPrintJob* (*pcCreatePrintJob)(rdpPrinter* printer, UINT32 id);
+typedef void (*pcDestroyPrintJob)(rdpPrintJob* job);
+typedef void (*pcFreePrinter)(rdpPrinter* printer);
 
 struct rdp_printer
 {
@@ -50,12 +51,13 @@ struct rdp_printer
 	BOOL is_default;
 
 	pcCreatePrintJob CreatePrintJob;
-	pcFindPrintJob FindPrintJob;
+	pcDestroyPrintJob DestroyPrintJob;
 	pcFreePrinter Free;
+	wHashTable* jobs;
 };
 
-typedef UINT (*pcWritePrintJob) (rdpPrintJob* printjob, const BYTE* data, size_t size);
-typedef void (*pcClosePrintJob) (rdpPrintJob* printjob);
+typedef UINT(*pcWritePrintJob)(rdpPrintJob* printjob, const BYTE* data, size_t size);
+typedef void (*pcClosePrintJob)(rdpPrintJob* printjob);
 
 struct rdp_print_job
 {
@@ -63,7 +65,6 @@ struct rdp_print_job
 	rdpPrinter* printer;
 
 	pcWritePrintJob Write;
-	pcClosePrintJob Close;
 };
 
 #endif /* FREERDP_CHANNEL_PRINTER_CLIENT_MAIN_H */

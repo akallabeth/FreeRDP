@@ -437,8 +437,12 @@ static UINT printer_process_irp_create(PRINTER_DEVICE* printer_dev, IRP* irp)
 	rdpPrintJob* printjob = NULL;
 
 	if (printer_dev->printer)
+	{
+		UINT32 id = irp->devman->id_sequence++;
 		printjob = printer_dev->printer->CreatePrintJob(printer_dev->printer,
-		           irp->devman->id_sequence++);
+		           id);
+		HashTable_Add(printer_dev->printer->jobs, (void*)(UINT_PTR)id, printjob);
+	}
 
 	if (printjob)
 	{
@@ -463,8 +467,7 @@ static UINT printer_process_irp_close(PRINTER_DEVICE* printer_dev, IRP* irp)
 	rdpPrintJob* printjob = NULL;
 
 	if (printer_dev->printer)
-		printjob = printer_dev->printer->FindPrintJob(printer_dev->printer,
-		           irp->FileId);
+		printjob = HashTable_GetItemValue(printer_dev->printer->jobs, (void*)(UINT_PTR)irp->FileId);
 
 	if (!printjob)
 	{
@@ -472,7 +475,7 @@ static UINT printer_process_irp_close(PRINTER_DEVICE* printer_dev, IRP* irp)
 	}
 	else
 	{
-		printjob->Close(printjob);
+		HashTable_Remove(printer_dev->printer->jobs, (void*)(UINT_PTR)irp->FileId);
 	}
 
 	Stream_Zero(irp->output, 4); /* Padding(4) */
@@ -490,13 +493,19 @@ static UINT printer_process_irp_write(PRINTER_DEVICE* printer_dev, IRP* irp)
 	UINT64 Offset;
 	rdpPrintJob* printjob = NULL;
 	UINT error = CHANNEL_RC_OK;
+
+	if (Stream_GetRemainingLength(irp->input) < 32)
+		return ERROR_INVALID_DATA;
+
 	Stream_Read_UINT32(irp->input, Length);
 	Stream_Read_UINT64(irp->input, Offset);
 	Stream_Seek(irp->input, 20); /* Padding */
 
+	if (Stream_GetRemainingLength(irp->input) < Length)
+		return ERROR_INVALID_DATA;
+
 	if (printer_dev->printer)
-		printjob = printer_dev->printer->FindPrintJob(printer_dev->printer,
-		           irp->FileId);
+		printjob = HashTable_GetItemValue(printer_dev->printer->jobs, (void*)(UINT_PTR)irp->FileId);
 
 	if (!printjob)
 	{
@@ -582,7 +591,6 @@ static UINT printer_process_irp(PRINTER_DEVICE* printer_dev, IRP* irp)
 		default:
 			irp->IoStatus = STATUS_NOT_SUPPORTED;
 			return irp->Complete(irp);
-			break;
 	}
 
 	return CHANNEL_RC_OK;
@@ -784,11 +792,17 @@ static UINT printer_free(DEVICE* device)
 {
 	PRINTER_DEVICE* printer_dev = (PRINTER_DEVICE*) device;
 
-	if (printer_dev->printer)
-		printer_dev->printer->Free(printer_dev->printer);
+	if (printer_dev)
+	{
+		HashTable_Free(printer_dev->printer->jobs);
 
-	Stream_Free(printer_dev->device.data, TRUE);
-	free(printer_dev);
+		if (printer_dev->printer)
+			printer_dev->printer->Free(printer_dev->printer);
+
+		Stream_Free(printer_dev->device.data, TRUE);
+		free(printer_dev);
+	}
+
 	return CHANNEL_RC_OK;
 }
 
@@ -823,6 +837,10 @@ static UINT printer_register(PDEVICE_SERVICE_ENTRY_POINTS pEntryPoints,
 	printer_dev->device.Free = printer_free;
 	printer_dev->rdpcontext = pEntryPoints->rdpcontext;
 	printer_dev->printer = printer;
+	printer_dev->printer->jobs = HashTable_New(FALSE);
+
+	if (!printer_dev->printer->jobs)
+		goto error_out;
 
 	if (!printer_load_from_config(pEntryPoints->rdpcontext->settings, printer, printer_dev))
 		goto error_out;
@@ -834,6 +852,7 @@ static UINT printer_register(PDEVICE_SERVICE_ENTRY_POINTS pEntryPoints,
 		goto error_out;
 	}
 
+	printer_dev->printer->jobs->valueFree = printer_dev->printer->DestroyPrintJob;
 	return CHANNEL_RC_OK;
 error_out:
 	printer_free(&printer_dev->device);
