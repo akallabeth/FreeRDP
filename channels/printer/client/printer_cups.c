@@ -45,6 +45,10 @@ typedef struct rdp_cups_printer_driver rdpCupsPrinterDriver;
 typedef struct rdp_cups_printer rdpCupsPrinter;
 typedef struct rdp_cups_print_job rdpCupsPrintJob;
 
+#ifndef _CUPS_API_1_4
+#define LEGACY_CUPS_API
+#endif
+
 struct rdp_cups_printer_driver
 {
 	rdpPrinterDriver driver;
@@ -61,7 +65,11 @@ struct rdp_cups_print_job
 {
 	rdpPrintJob printjob;
 
+#if defined(LEGACY_CUPS_API)
+	FILE* cups;
+#else
 	http_t* cups;
+#endif
 };
 
 static void printer_cups_get_printjob_name(char* buf, size_t size)
@@ -75,6 +83,7 @@ static void printer_cups_get_printjob_name(char* buf, size_t size)
 	          t->tm_hour, t->tm_min, t->tm_sec);
 }
 
+#if defined(LEGACY_CUPS_API)
 static UINT printer_cups_print_file(rdpCupsPrintJob* job, FILE* file)
 {
 	http_t* cups;
@@ -87,7 +96,7 @@ static UINT printer_cups_print_file(rdpCupsPrintJob* job, FILE* file)
 	int nrOptions = 0;
 	cups_option_t* options = NULL;
 	char jobtitle[100];
-	printer = job->printjob.printer;
+	printer = (rdpCupsPrinter*) job->printjob.printer;
 	pos = _ftelli64(file);
 	cups = httpConnectEncrypt(cupsServer(), ippPort(), HTTP_ENCRYPT_IF_REQUESTED);
 
@@ -138,6 +147,7 @@ fail:
 	httpClose(cups);
 	return result;
 }
+#endif
 
 /**
  * Function description
@@ -146,7 +156,9 @@ fail:
  */
 static UINT printer_cups_write_printjob(rdpPrintJob* printjob, const BYTE* data, size_t size)
 {
+#if !defined(LEGACY_CUPS_API)
 	http_status_t http;
+#endif
 	rdpCupsPrinter* printer;
 	rdpCupsPrintJob* cups_printjob = (rdpCupsPrintJob*) printjob;
 
@@ -154,6 +166,7 @@ static UINT printer_cups_write_printjob(rdpPrintJob* printjob, const BYTE* data,
 		return ERROR_INTERNAL_ERROR;
 
 	printer = (rdpCupsPrinter*) printjob->printer;
+#if !defined(LEGACY_CUPS_API)
 	http = cupsWriteRequestData(cups_printjob->cups, (const char*)data, size);
 
 	if (http != HTTP_STATUS_CONTINUE)
@@ -162,6 +175,12 @@ static UINT printer_cups_write_printjob(rdpPrintJob* printjob, const BYTE* data,
 		return ERROR_INTERNAL_ERROR;
 	}
 
+#else
+
+	if (fwrite(data, 1, size, cups_printjob->cups) != size)
+		return ERROR_INTERNAL_ERROR;
+
+#endif
 	return CHANNEL_RC_OK;
 }
 
@@ -171,12 +190,17 @@ static void printer_cups_free_printjob(rdpPrintJob* printjob)
 
 	if (cups_printjob && cups_printjob->cups)
 	{
+#if !defined(LEGACY_CUPS_API)
 		rdpCupsPrinter* printer = (rdpCupsPrinter*) printjob->printer;
 
 		if (printer->printer.id != 0)
 			cupsFinishDocument(cups_printjob->cups, printer->printer.name);
 
 		httpClose(cups_printjob->cups);
+#else
+		printer_cups_print_file(cups_printjob, cups_printjob->cups);
+		fclose(cups_printjob->cups);
+#endif
 	}
 
 	free(cups_printjob);
@@ -186,8 +210,10 @@ static rdpPrintJob* printer_cups_create_printjob(rdpPrinter* printer, UINT32 id)
 {
 	rdpCupsPrinter* cups_printer = (rdpCupsPrinter*) printer;
 	rdpCupsPrintJob* cups_printjob;
+#if !defined(LEGACY_CUPS_API)
 	char jobtitle[100];
 	http_status_t http;
+#endif
 
 	if (!cups_printer)
 		return NULL;
@@ -200,6 +226,7 @@ static rdpPrintJob* printer_cups_create_printjob(rdpPrinter* printer, UINT32 id)
 	cups_printjob->printjob.id = id;
 	cups_printjob->printjob.printer = printer;
 	cups_printjob->printjob.Write = printer_cups_write_printjob;
+#if !defined(LEGACY_CUPS_API)
 	cups_printjob->cups = httpConnectEncrypt(cupsServer(), ippPort(), HTTP_ENCRYPT_IF_REQUESTED);
 
 	if (!cups_printjob->cups)
@@ -217,6 +244,13 @@ static rdpPrintJob* printer_cups_create_printjob(rdpPrinter* printer, UINT32 id)
 	if (http != HTTP_STATUS_CONTINUE)
 		goto fail;
 
+#else
+	cups_printjob->cups = tmpfile();
+
+	if (!cups_printjob->cups)
+		goto fail;
+
+#endif
 	return &cups_printjob->printjob;
 fail:
 	printer_cups_free_printjob((rdpPrintJob*) cups_printjob);
