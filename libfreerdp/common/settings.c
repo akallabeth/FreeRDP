@@ -746,4 +746,7 @@ void freerdp_update_gateway_usage_method(rdpSettings* settings, UINT32 GatewayEn
 	freerdp_set_gateway_usage_method(settings, GatewayUsageMethod);
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> Fixed broken implicit fallthrough
