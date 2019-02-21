@@ -82,11 +82,11 @@ void UwacWindowDestroyBuffers(UwacWindow* w)
 int UwacWindowShmAllocBuffers(UwacWindow* w, int nbuffers, int allocSize, uint32_t width,
                               uint32_t height, enum wl_shm_format format);
 
-static void xdg_handle_configure(void *data,
-                                 struct xdg_toplevel *xdg_toplevel,
+static void xdg_handle_configure(void* data,
+                                 struct xdg_toplevel* xdg_toplevel,
                                  int32_t width,
                                  int32_t height,
-                                 struct wl_array *states)
+                                 struct wl_array* states)
 {
 	UwacWindow* window = (UwacWindow*)data;
 	UwacConfigureEvent* event;
@@ -157,8 +157,8 @@ static void xdg_handle_configure(void *data,
 	}
 }
 
-static void xdg_handle_close(void *data,
-                             struct xdg_toplevel *xdg_toplevel)
+static void xdg_handle_close(void* data,
+                             struct xdg_toplevel* xdg_toplevel)
 {
 	UwacCloseEvent* event;
 	UwacWindow* window = (UwacWindow*)data;
@@ -381,28 +381,39 @@ UwacBuffer* UwacWindowFindFreeBuffer(UwacWindow* w)
 	return &w->buffers[i];
 }
 
-static UwacReturnCode UwacWindowSetDecorations(UwacWindow *w)
+static UwacReturnCode UwacWindowSetDecorations(UwacWindow* w)
 {
 	if (!w || !w->display)
 		return UWAC_ERROR_INTERNAL;
 
-	if (w->display->deco_manager) {
+	if (w->display->deco_manager)
+	{
 		w->deco = zxdg_decoration_manager_v1_get_toplevel_decoration(
-		            w->display->deco_manager, w->xdg_toplevel);
-		if (!w->deco) {
-			uwacErrorHandler(w->display, UWAC_NOT_FOUND, "Current window manager does not allow decorating with SSD");
+		              w->display->deco_manager, w->xdg_toplevel);
+
+		if (!w->deco)
+		{
+			uwacErrorHandler(w->display, UWAC_NOT_FOUND,
+			                 "Current window manager does not allow decorating with SSD");
 		}
 		else
 			zxdg_toplevel_decoration_v1_set_mode(w->deco, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
 	}
-	else if (w->display->kde_deco_manager) {
-		w->kde_deco = org_kde_kwin_server_decoration_manager_create(w->display->kde_deco_manager, w->surface);
-		if (!w->kde_deco) {
-			uwacErrorHandler(w->display, UWAC_NOT_FOUND, "Current window manager does not allow decorating with SSD");
+	else if (w->display->kde_deco_manager)
+	{
+		w->kde_deco = org_kde_kwin_server_decoration_manager_create(w->display->kde_deco_manager,
+		              w->surface);
+
+		if (!w->kde_deco)
+		{
+			uwacErrorHandler(w->display, UWAC_NOT_FOUND,
+			                 "Current window manager does not allow decorating with SSD");
 		}
 		else
-			org_kde_kwin_server_decoration_request_mode(w->kde_deco, ORG_KDE_KWIN_SERVER_DECORATION_MODE_SERVER);
+			org_kde_kwin_server_decoration_request_mode(w->kde_deco,
+			        ORG_KDE_KWIN_SERVER_DECORATION_MODE_SERVER);
 	}
+
 	return UWAC_SUCCESS;
 }
 
@@ -462,6 +473,7 @@ UwacWindow* UwacCreateWindowShm(UwacDisplay* display, uint32_t width, uint32_t h
 		}
 
 		w->xdg_toplevel = xdg_surface_get_toplevel(w->xdg_surface);
+
 		if (!w->xdg_toplevel)
 		{
 			display->last_error = UWAC_ERROR_NOMEMORY;
@@ -471,6 +483,7 @@ UwacWindow* UwacCreateWindowShm(UwacDisplay* display, uint32_t width, uint32_t h
 		assert(w->xdg_surface);
 		xdg_toplevel_add_listener(w->xdg_toplevel, &xdg_toplevel_listener, w);
 	}
+
 #if BUILD_IVI
 	else if (display->ivi_application)
 	{
@@ -478,13 +491,15 @@ UwacWindow* UwacCreateWindowShm(UwacDisplay* display, uint32_t width, uint32_t h
 		assert(w->ivi_surface);
 		ivi_surface_add_listener(w->ivi_surface, &ivi_surface_listener, w);
 	}
+
 #endif
 #if BUILD_FULLSCREEN_SHELL
 	else if (display->fullscreen_shell)
 	{
 		zwp_fullscreen_shell_v1_present_surface(display->fullscreen_shell, w->surface,
-		                                     ZWP_FULLSCREEN_SHELL_V1_PRESENT_METHOD_CENTER, NULL);
+		                                        ZWP_FULLSCREEN_SHELL_V1_PRESENT_METHOD_CENTER, NULL);
 	}
+
 #endif
 	else
 	{
@@ -637,7 +652,6 @@ static void frame_done_cb(void* data, struct wl_callback* callback, uint32_t tim
 {
 	UwacWindow* window = (UwacWindow*)data;
 	UwacFrameDoneEvent* event;
-
 	wl_callback_destroy(callback);
 	window->pendingBuffer = NULL;
 	event = (UwacFrameDoneEvent*)UwacDisplayNewEvent(window->display, UWAC_EVENT_FRAME_DONE);
@@ -669,7 +683,8 @@ UwacReturnCode UwacWindowAddDamage(UwacWindow* window, uint32_t x, uint32_t y, u
 	return UWAC_SUCCESS;
 }
 
-UwacReturnCode UwacWindowGetDrawingBufferGeometry(UwacWindow* window, UwacSize* geometry, size_t* stride)
+UwacReturnCode UwacWindowGetDrawingBufferGeometry(UwacWindow* window, UwacSize* geometry,
+        size_t* stride)
 {
 	if (!window || !window->drawingBuffer)
 		return UWAC_ERROR_INTERNAL;

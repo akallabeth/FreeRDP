@@ -242,6 +242,7 @@ static BOOL wl_post_connect(freerdp* instance)
 
 	w = (UINT32)gdi->width;
 	h = (UINT32)gdi->height;
+
 	if (settings->SmartSizing && !context->fullscreen)
 	{
 		if (settings->SmartSizingWidth > 0)
@@ -321,9 +322,6 @@ static BOOL handle_uwac_events(freerdp* instance, UwacDisplay* display)
 				break;
 
 			case UWAC_EVENT_FRAME_DONE:
-				if (UwacWindowSubmitBuffer(context->window, true) != UWAC_SUCCESS)
-					return FALSE;
-
 				break;
 
 			case UWAC_EVENT_POINTER_ENTER:
