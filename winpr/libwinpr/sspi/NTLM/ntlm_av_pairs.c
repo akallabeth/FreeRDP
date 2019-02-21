@@ -170,7 +170,7 @@ NTLM_AV_PAIR* ntlm_av_pair_get_next_pointer(NTLM_AV_PAIR* pAvPair, size_t* pcbAv
 
 	offset = ntlm_av_pair_get_next_offset(pAvPair, *pcbAvPair);
 
-	if ((offset <= 0) || (offset > *pcbAvPair))
+	if ((offset <= 0) || ((size_t)offset > *pcbAvPair))
 		return NULL;
 
 	*pcbAvPair -= offset;
