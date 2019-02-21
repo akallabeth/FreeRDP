@@ -300,7 +300,7 @@ DWORD GetModuleFileNameA(HMODULE hModule, LPSTR lpFilename, DWORD nSize)
 
 #elif defined(__MACOSX__)
 	int status;
-	int length;
+	size_t length;
 
 	if (!hModule)
 	{
@@ -327,7 +327,7 @@ DWORD GetModuleFileNameA(HMODULE hModule, LPSTR lpFilename, DWORD nSize)
 		{
 			CopyMemory(lpFilename, buffer, length);
 			lpFilename[length] = '\0';
-			return length;
+			return (DWORD)length;
 		}
 
 		CopyMemory(lpFilename, buffer, nSize - 1);
