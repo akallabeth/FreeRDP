@@ -148,6 +148,7 @@ static UINT rdpgfx_send_caps_advertise_pdu(RDPGFX_CHANNEL_CALLBACK* callback)
 		capsSet->version = RDPGFX_CAPVERSION_105;
 		capsSet->length = 0x4;
 		capsSet->flags = caps10Flags;
+
 		/* TODO: Until  RDPGFX_MAP_SURFACE_TO_SCALED_OUTPUT_PDU and
 		 * RDPGFX_MAP_SURFACE_TO_SCALED_WINDOW_PDU are not implemented do not
 		 * announce the following version */
@@ -641,7 +642,6 @@ static UINT rdpgfx_recv_end_frame_pdu(RDPGFX_CHANNEL_CALLBACK* callback,
 		else
 		{
 			ack.queueDepth = QUEUE_DEPTH_UNAVAILABLE;
-
 			if ((error = rdpgfx_send_frame_acknowledge_pdu(callback, &ack)))
 				WLog_Print(gfx->log, WLOG_ERROR, "rdpgfx_send_frame_acknowledge_pdu failed with error %"PRIu32"",
 				           error);
@@ -796,7 +796,6 @@ static UINT rdpgfx_recv_wire_to_surface_2_pdu(RDPGFX_CHANNEL_CALLBACK* callback,
 	cmd.surfaceId = pdu.surfaceId;
 	cmd.codecId = pdu.codecId;
 	cmd.contextId = pdu.codecContextId;
-
 	switch (pdu.pixelFormat)
 	{
 		case GFX_PIXEL_FORMAT_XRGB_8888:
@@ -810,7 +809,6 @@ static UINT rdpgfx_recv_wire_to_surface_2_pdu(RDPGFX_CHANNEL_CALLBACK* callback,
 		default:
 			return ERROR_INVALID_DATA;
 	}
-
 	cmd.left = 0;
 	cmd.top = 0;
 	cmd.right = 0;
