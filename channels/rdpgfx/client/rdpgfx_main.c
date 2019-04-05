@@ -626,7 +626,10 @@ static UINT rdpgfx_recv_end_frame_pdu(RDPGFX_CHANNEL_CALLBACK* callback,
 	gfx->TotalDecodedFrames++;
 	ack.frameId = pdu.frameId;
 	ack.totalFramesDecoded = gfx->TotalDecodedFrames;
-	IFCALLRET(context->PreFrameAck, sendAck, context, &ack);
+	if (context)
+	{
+		IFCALLRET(context->PreFrameAck, sendAck, context, &ack);
+	}
 
 	if (sendAck)
 	{
