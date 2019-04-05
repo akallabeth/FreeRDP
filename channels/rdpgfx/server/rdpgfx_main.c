@@ -1216,6 +1216,7 @@ static UINT rdpgfx_recv_caps_advertise_pdu(RdpgfxServerContext* context,
 		if (Stream_GetRemainingLength(s) < 8)
 		{
 			WLog_ERR(TAG, "not enough data!");
+			free(capsSets);
 			return ERROR_INVALID_DATA;
 		}
 
@@ -1225,13 +1226,19 @@ static UINT rdpgfx_recv_caps_advertise_pdu(RdpgfxServerContext* context,
 		if (capsSet->length >= 4)
 		{
 			if (Stream_GetRemainingLength(s) < 4)
+			{
+				free(capsSets);
 				return ERROR_INVALID_DATA;
+			}
 
 			Stream_Peek_UINT32(s, capsSet->flags); /* capsData (4 bytes) */
 		}
 
 		if (Stream_SafeSeek(s, capsSet->length))
+		{
+			free(capsSets);
 			return ERROR_INVALID_DATA;
+		}
 	}
 
 	if (context)
