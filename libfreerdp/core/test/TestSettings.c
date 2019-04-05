@@ -115,7 +115,7 @@ int TestSettings(int argc, char* argv[])
 	for (x = 0; x < ARRAYSIZE(string_list_indices); x++)
 	{
 		const size_t key = string_list_indices[x];
-		const char* val = "test-string";
+		const char val[] = "test-string";
 		const char* res;
 
 		if (!freerdp_set_param_string(settings, key, val))
@@ -133,6 +133,7 @@ int TestSettings(int argc, char* argv[])
 	{
 		const size_t key = pointer_list_indices[x];
 		const void* val = freerdp_get_param_pointer(settings, key);
+		printf("%p\n", val);
 	}
 
 #endif
