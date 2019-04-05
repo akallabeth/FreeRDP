@@ -421,7 +421,7 @@ static BOOL process_uri(const char* uri, size_t uri_len, wArrayList* files)
 	const char* prefix = "file://";
 	BOOL result = FALSE;
 	char* name = NULL;
-	const size_t prefixLen = strnlen(prefix, sizeof (prefix));
+	const size_t prefixLen = strnlen(prefix, sizeof(prefix));
 	WLog_VRB(TAG, "processing URI: %.*s", uri_len, uri);
 
 	if ((uri_len < prefixLen) || strncmp(uri, prefix, prefixLen))
@@ -579,7 +579,7 @@ static void* convert_filedescriptors_to_uri_list(wClipboard* clipboard, UINT32 f
         const void* data, UINT32* pSize)
 {
 	const FILEDESCRIPTOR* descriptors;
-	UINT32 nrDescriptors;
+	UINT32 nrDescriptors = 0;
 	size_t count, x, alloc, pos, baseLength = 0;
 	const char* src = (const char*) data;
 	char* dst;
