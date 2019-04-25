@@ -269,7 +269,7 @@ void xf_rail_paint(xfContext* xfc, INT32 uleft, INT32 utop, UINT32 uright,
 /* RemoteApp Core Protocol Extension */
 
 static BOOL xf_rail_window_common(rdpContext* context,
-                                  WINDOW_ORDER_INFO* orderInfo, WINDOW_STATE_ORDER* windowState)
+                                  const WINDOW_ORDER_INFO* orderInfo, const WINDOW_STATE_ORDER* windowState)
 {
 	xfAppWindow* appWindow = NULL;
 	xfContext* xfc = (xfContext*) context;
@@ -534,7 +534,7 @@ static BOOL xf_rail_window_common(rdpContext* context,
 }
 
 static BOOL xf_rail_window_delete(rdpContext* context,
-                                  WINDOW_ORDER_INFO* orderInfo)
+                                  const WINDOW_ORDER_INFO* orderInfo)
 {
 	xfContext* xfc = (xfContext*) context;
 
@@ -810,7 +810,7 @@ static xfAppWindow* xf_rail_get_window_by_id(xfContext* xfc, UINT32 windowId)
 }
 
 static BOOL xf_rail_window_icon(rdpContext* context,
-                                WINDOW_ORDER_INFO* orderInfo, WINDOW_ICON_ORDER* windowIcon)
+                                const WINDOW_ORDER_INFO* orderInfo, const WINDOW_ICON_ORDER* windowIcon)
 {
 	xfContext* xfc = (xfContext*) context;
 	xfAppWindow* railWindow;
@@ -845,7 +845,7 @@ static BOOL xf_rail_window_icon(rdpContext* context,
 }
 
 static BOOL xf_rail_window_cached_icon(rdpContext* context,
-                                       WINDOW_ORDER_INFO* orderInfo, WINDOW_CACHED_ICON_ORDER* windowCachedIcon)
+                                       const WINDOW_ORDER_INFO* orderInfo, const WINDOW_CACHED_ICON_ORDER* windowCachedIcon)
 {
 	xfContext* xfc = (xfContext*) context;
 	xfAppWindow* railWindow;
@@ -874,7 +874,7 @@ static BOOL xf_rail_window_cached_icon(rdpContext* context,
 }
 
 static BOOL xf_rail_notify_icon_common(rdpContext* context,
-                                       WINDOW_ORDER_INFO* orderInfo, NOTIFY_ICON_STATE_ORDER* notifyIconState)
+                                       const WINDOW_ORDER_INFO* orderInfo, const NOTIFY_ICON_STATE_ORDER* notifyIconState)
 {
 	if (orderInfo->fieldFlags & WINDOW_ORDER_FIELD_NOTIFY_VERSION)
 	{
@@ -904,31 +904,31 @@ static BOOL xf_rail_notify_icon_common(rdpContext* context,
 }
 
 static BOOL xf_rail_notify_icon_create(rdpContext* context,
-                                       WINDOW_ORDER_INFO* orderInfo, NOTIFY_ICON_STATE_ORDER* notifyIconState)
+                                       const WINDOW_ORDER_INFO* orderInfo, const NOTIFY_ICON_STATE_ORDER* notifyIconState)
 {
 	return xf_rail_notify_icon_common(context, orderInfo, notifyIconState);
 }
 
 static BOOL xf_rail_notify_icon_update(rdpContext* context,
-                                       WINDOW_ORDER_INFO* orderInfo, NOTIFY_ICON_STATE_ORDER* notifyIconState)
+                                       const WINDOW_ORDER_INFO* orderInfo, const NOTIFY_ICON_STATE_ORDER* notifyIconState)
 {
 	return xf_rail_notify_icon_common(context, orderInfo, notifyIconState);
 }
 
 static BOOL xf_rail_notify_icon_delete(rdpContext* context,
-                                       WINDOW_ORDER_INFO* orderInfo)
+                                       const WINDOW_ORDER_INFO* orderInfo)
 {
 	return TRUE;
 }
 
 static BOOL xf_rail_monitored_desktop(rdpContext* context,
-                                      WINDOW_ORDER_INFO* orderInfo, MONITORED_DESKTOP_ORDER* monitoredDesktop)
+                                      const WINDOW_ORDER_INFO* orderInfo, const MONITORED_DESKTOP_ORDER* monitoredDesktop)
 {
 	return TRUE;
 }
 
 static BOOL xf_rail_non_monitored_desktop(rdpContext* context,
-        WINDOW_ORDER_INFO* orderInfo)
+        const WINDOW_ORDER_INFO* orderInfo)
 {
 	xfContext* xfc = (xfContext*) context;
 	xf_rail_disable_remoteapp_mode(xfc);
@@ -1267,6 +1267,7 @@ int xf_rail_init(xfContext* xfc, RailClientContext* rail)
 int xf_rail_uninit(xfContext* xfc, RailClientContext* rail)
 {
 	WINPR_UNUSED(rail);
+
 	if (xfc->rail)
 	{
 		xfc->rail->custom = NULL;

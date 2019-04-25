@@ -226,16 +226,23 @@ struct _MONITORED_DESKTOP_ORDER
 };
 typedef struct _MONITORED_DESKTOP_ORDER MONITORED_DESKTOP_ORDER;
 
-typedef BOOL (*pWindowCreate)(rdpContext* context, WINDOW_ORDER_INFO* orderInfo, WINDOW_STATE_ORDER* window_state);
-typedef BOOL (*pWindowUpdate)(rdpContext* context, WINDOW_ORDER_INFO* orderInfo, WINDOW_STATE_ORDER* window_state);
-typedef BOOL (*pWindowIcon)(rdpContext* context, WINDOW_ORDER_INFO* orderInfo, WINDOW_ICON_ORDER* window_icon);
-typedef BOOL (*pWindowCachedIcon)(rdpContext* context, WINDOW_ORDER_INFO* orderInfo, WINDOW_CACHED_ICON_ORDER* window_cached_icon);
-typedef BOOL (*pWindowDelete)(rdpContext* context, WINDOW_ORDER_INFO* orderInfo);
-typedef BOOL (*pNotifyIconCreate)(rdpContext* context, WINDOW_ORDER_INFO* orderInfo, NOTIFY_ICON_STATE_ORDER* notify_icon_state);
-typedef BOOL (*pNotifyIconUpdate)(rdpContext* context, WINDOW_ORDER_INFO* orderInfo, NOTIFY_ICON_STATE_ORDER* notify_icon_state);
-typedef BOOL (*pNotifyIconDelete)(rdpContext* context, WINDOW_ORDER_INFO* orderInfo);
-typedef BOOL (*pMonitoredDesktop)(rdpContext* context, WINDOW_ORDER_INFO* orderInfo, MONITORED_DESKTOP_ORDER* monitored_desktop);
-typedef BOOL (*pNonMonitoredDesktop)(rdpContext* context, WINDOW_ORDER_INFO* orderInfo);
+typedef BOOL (*pWindowCreate)(rdpContext* context, const WINDOW_ORDER_INFO* orderInfo,
+                              const WINDOW_STATE_ORDER* window_state);
+typedef BOOL (*pWindowUpdate)(rdpContext* context, const WINDOW_ORDER_INFO* orderInfo,
+                              const WINDOW_STATE_ORDER* window_state);
+typedef BOOL (*pWindowIcon)(rdpContext* context, const WINDOW_ORDER_INFO* orderInfo,
+                            const WINDOW_ICON_ORDER* window_icon);
+typedef BOOL (*pWindowCachedIcon)(rdpContext* context, const WINDOW_ORDER_INFO* orderInfo,
+                                  const WINDOW_CACHED_ICON_ORDER* window_cached_icon);
+typedef BOOL (*pWindowDelete)(rdpContext* context, const WINDOW_ORDER_INFO* orderInfo);
+typedef BOOL (*pNotifyIconCreate)(rdpContext* context, const WINDOW_ORDER_INFO* orderInfo,
+                                  const NOTIFY_ICON_STATE_ORDER* notify_icon_state);
+typedef BOOL (*pNotifyIconUpdate)(rdpContext* context, const WINDOW_ORDER_INFO* orderInfo,
+                                  const NOTIFY_ICON_STATE_ORDER* notify_icon_state);
+typedef BOOL (*pNotifyIconDelete)(rdpContext* context, const WINDOW_ORDER_INFO* orderInfo);
+typedef BOOL (*pMonitoredDesktop)(rdpContext* context, const WINDOW_ORDER_INFO* orderInfo,
+                                  const MONITORED_DESKTOP_ORDER* monitored_desktop);
+typedef BOOL (*pNonMonitoredDesktop)(rdpContext* context, const WINDOW_ORDER_INFO* orderInfo);
 
 struct rdp_window_update
 {
