@@ -131,11 +131,6 @@ static UINT rdpgfx_send_caps_advertise_pdu(RDPGFX_CHANNEL_CALLBACK* callback)
 		if (gfx->ThinClient)
 			caps10Flags |= RDPGFX_CAPS_FLAG_AVC_THINCLIENT;
 
-		/* Reports from Remmina suggest that current H264 decoder settings do
-		 * not work with newer GFX protocol versions.
-		 * Need to investigate this.
-		 * Until resolved, disable the newer protocol versions. */
-#if 0
 		capsSet = &capsSets[pdu.capsSetCount++];
 		capsSet->version = RDPGFX_CAPVERSION_103;
 		capsSet->length = 0x4;
@@ -148,17 +143,10 @@ static UINT rdpgfx_send_caps_advertise_pdu(RDPGFX_CHANNEL_CALLBACK* callback)
 		capsSet->version = RDPGFX_CAPVERSION_105;
 		capsSet->length = 0x4;
 		capsSet->flags = caps10Flags;
-
-		/* TODO: Until  RDPGFX_MAP_SURFACE_TO_SCALED_OUTPUT_PDU and
-		 * RDPGFX_MAP_SURFACE_TO_SCALED_WINDOW_PDU are not implemented do not
-		 * announce the following version */
-#if 0
 		capsSet = &capsSets[pdu.capsSetCount++];
 		capsSet->version = RDPGFX_CAPVERSION_106;
 		capsSet->length = 0x4;
 		capsSet->flags = caps10Flags;
-#endif
-#endif
 	}
 
 	header.pduLength = RDPGFX_HEADER_SIZE + 2;
@@ -626,6 +614,7 @@ static UINT rdpgfx_recv_end_frame_pdu(RDPGFX_CHANNEL_CALLBACK* callback,
 	gfx->TotalDecodedFrames++;
 	ack.frameId = pdu.frameId;
 	ack.totalFramesDecoded = gfx->TotalDecodedFrames;
+
 	if (context)
 	{
 		IFCALLRET(context->PreFrameAck, sendAck, context, &ack);
@@ -645,6 +634,7 @@ static UINT rdpgfx_recv_end_frame_pdu(RDPGFX_CHANNEL_CALLBACK* callback,
 		else
 		{
 			ack.queueDepth = QUEUE_DEPTH_UNAVAILABLE;
+
 			if ((error = rdpgfx_send_frame_acknowledge_pdu(callback, &ack)))
 				WLog_Print(gfx->log, WLOG_ERROR, "rdpgfx_send_frame_acknowledge_pdu failed with error %"PRIu32"",
 				           error);
@@ -656,6 +646,9 @@ static UINT rdpgfx_recv_end_frame_pdu(RDPGFX_CHANNEL_CALLBACK* callback,
 		case RDPGFX_CAPVERSION_10:
 		case RDPGFX_CAPVERSION_102:
 		case RDPGFX_CAPVERSION_103:
+		case RDPGFX_CAPVERSION_104:
+		case RDPGFX_CAPVERSION_105:
+		case RDPGFX_CAPVERSION_106:
 			if (gfx->SendQoeAck)
 			{
 				RDPGFX_QOE_FRAME_ACKNOWLEDGE_PDU qoe;
@@ -799,6 +792,7 @@ static UINT rdpgfx_recv_wire_to_surface_2_pdu(RDPGFX_CHANNEL_CALLBACK* callback,
 	cmd.surfaceId = pdu.surfaceId;
 	cmd.codecId = pdu.codecId;
 	cmd.contextId = pdu.codecContextId;
+
 	switch (pdu.pixelFormat)
 	{
 		case GFX_PIXEL_FORMAT_XRGB_8888:
@@ -812,6 +806,7 @@ static UINT rdpgfx_recv_wire_to_surface_2_pdu(RDPGFX_CHANNEL_CALLBACK* callback,
 		default:
 			return ERROR_INVALID_DATA;
 	}
+
 	cmd.left = 0;
 	cmd.top = 0;
 	cmd.right = 0;

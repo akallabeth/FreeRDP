@@ -1230,6 +1230,8 @@ static UINT gdi_MapSurfaceToOutput(RdpgfxClientContext* context,
 	surface->outputMapped = TRUE;
 	surface->outputOriginX = surfaceToOutput->outputOriginX;
 	surface->outputOriginY = surfaceToOutput->outputOriginY;
+	surface->outputTargetX = surfaceToOutput->outputOriginX;
+	surface->outputTargetY = surfaceToOutput->outputOriginY;
 	region16_clear(&surface->invalidRegion);
 	rc = CHANNEL_RC_OK;
 fail:
@@ -1252,7 +1254,8 @@ static UINT gdi_MapSurfaceToScaledOutput(RdpgfxClientContext* context,
 	surface->outputMapped = TRUE;
 	surface->outputOriginX = surfaceToOutput->outputOriginX;
 	surface->outputOriginY = surfaceToOutput->outputOriginY;
-	// TODO: Target x,y
+	surface->outputTargetX = surfaceToOutput->targetX;
+	surface->outputTargetY = surfaceToOutput->targetY;
 	region16_clear(&surface->invalidRegion);
 	rc = CHANNEL_RC_OK;
 fail:
@@ -1268,13 +1271,47 @@ fail:
 static UINT gdi_MapSurfaceToWindow(RdpgfxClientContext* context,
                                    const RDPGFX_MAP_SURFACE_TO_WINDOW_PDU* surfaceToWindow)
 {
-	return CHANNEL_RC_OK;
+	UINT rc = ERROR_INTERNAL_ERROR;
+	gdiGfxSurface* surface;
+	EnterCriticalSection(&context->mux);
+	surface = (gdiGfxSurface*) context->GetSurfaceData(context,
+	          surfaceToWindow->surfaceId);
+
+	if (!surface)
+		goto fail;
+
+	surface->windowId = surfaceToWindow->windowId;
+	surface->width = surfaceToWindow->mappedWidth;
+	surface->height = surfaceToWindow->mappedHeight;
+	surface->scaledWidth = 0;
+	surface->scaledHeight = 0;
+	rc = CHANNEL_RC_OK;
+fail:
+	LeaveCriticalSection(&context->mux);
+	return rc;
 }
 
 static UINT gdi_MapSurfaceToScaledWindow(RdpgfxClientContext* context,
         const RDPGFX_MAP_SURFACE_TO_SCALED_WINDOW_PDU* surfaceToWindow)
 {
-	return CHANNEL_RC_OK;
+	UINT rc = ERROR_INTERNAL_ERROR;
+	gdiGfxSurface* surface;
+	EnterCriticalSection(&context->mux);
+	surface = (gdiGfxSurface*) context->GetSurfaceData(context,
+	          surfaceToWindow->surfaceId);
+
+	if (!surface)
+		goto fail;
+
+	surface->windowId = surfaceToWindow->windowId;
+	surface->width = surfaceToWindow->mappedWidth;
+	surface->height = surfaceToWindow->mappedHeight;
+	surface->scaledWidth = surfaceToWindow->targetWidth;
+	surface->scaledHeight = surfaceToWindow->targetHeight;
+	rc = CHANNEL_RC_OK;
+fail:
+	LeaveCriticalSection(&context->mux);
+	return rc;
 }
 
 BOOL gdi_graphics_pipeline_init(rdpGdi* gdi, RdpgfxClientContext* gfx)
