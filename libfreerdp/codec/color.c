@@ -33,6 +33,10 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/primitives.h>
 
+#if defined(CAIRO_FOUND)
+#include <cairo.h>
+#endif
+
 #define TAG FREERDP_TAG("color")
 
 BYTE* freerdp_glyph_convert(UINT32 width, UINT32 height, const BYTE* data)
@@ -569,4 +573,59 @@ BOOL freerdp_image_fill(BYTE* pDstData, DWORD DstFormat,
 	}
 
 	return TRUE;
+}
+
+BOOL freerdp_image_scale(BYTE* pDstData, DWORD DstFormat, UINT32 nDstStep,
+                         UINT32 nXDst, UINT32 nYDst, UINT32 nDstWidth, UINT32 nDstHeight,
+                         const BYTE* pSrcData, DWORD SrcFormat, UINT32 nSrcStep,
+                         UINT32 nXSrc, UINT32 nYSrc, UINT32 nSrcWidth, UINT32 nSrcHeight)
+{
+	BOOL rc = FALSE;
+#if defined(CAIRO_FOUND)
+	const double sx = (double)nDstWidth / (double)nSrcWidth;
+	const double sy = (double)nDstHeight / (double)nSrcHeight;
+	cairo_t* cairo_context;
+	cairo_surface_t* csrc, *cdst;
+
+	if ((nSrcWidth > INT_MAX) || (nSrcHeight > INT_MAX) || (nSrcStep > INT_MAX))
+		return FALSE;
+
+	if ((nDstWidth > INT_MAX) || (nDstHeight > INT_MAX) || (nDstStep > INT_MAX))
+		return FALSE;
+
+	csrc = cairo_image_surface_create_for_data((void*)&pSrcData[nXSrc * 4 + nYSrc * nSrcStep],
+	        CAIRO_FORMAT_ARGB32, (int)nSrcWidth, (int)nSrcHeight, (int)nSrcStep);
+	cdst = cairo_image_surface_create_for_data(&pDstData[nXDst * 4 + nYDst * nDstStep],
+	        CAIRO_FORMAT_ARGB32, (int)nDstWidth, (int)nDstHeight, (int)nDstStep);
+
+	if (!csrc || !cdst)
+		goto fail;
+
+	cairo_context = cairo_create(cdst);
+
+	if (!cairo_context)
+		goto fail2;
+
+	cairo_scale(cairo_context, sx, sy);
+	cairo_set_operator(cairo_context, CAIRO_OPERATOR_SOURCE);
+	cairo_set_source_surface(cairo_context, csrc, 0, 0);
+	cairo_paint(cairo_context);
+	rc = TRUE;
+fail2:
+	cairo_destroy(cairo_context);
+fail:
+	cairo_surface_destroy(csrc);
+	cairo_surface_destroy(cdst);
+#else
+
+	if ((nDstWidth == nSrcWidth) && (nDstHeight == nSrcHeight))
+	{
+		return freerdp_image_copy(pDstData, DstFormat, nDstStep, nXDst, nYDst, nDstWidth, nDstHeight,
+		                          pSrcData, SrcFormat, nSrcStep, nXSrc, nYSrc,
+		                          NULL, FREERDP_FLIP_NONE);
+	}
+
+	WLog_WARN(TAG, "SmartScaling requested but compiled without libcairo support!");
+#endif
+	return rc;
 }

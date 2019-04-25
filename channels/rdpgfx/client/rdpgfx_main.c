@@ -1183,11 +1183,11 @@ static UINT rdpgfx_recv_map_surface_to_scaled_output_pdu(RDPGFX_CHANNEL_CALLBACK
 	Stream_Read_UINT16(s, pdu.reserved); /* reserved (2 bytes) */
 	Stream_Read_UINT32(s, pdu.outputOriginX); /* outputOriginX (4 bytes) */
 	Stream_Read_UINT32(s, pdu.outputOriginY); /* outputOriginY (4 bytes) */
-	Stream_Read_UINT32(s, pdu.targetX);
-	Stream_Read_UINT32(s, pdu.targetY);
+	Stream_Read_UINT32(s, pdu.targetWidth);
+	Stream_Read_UINT32(s, pdu.targetHeight);
 	WLog_Print(gfx->log, WLOG_DEBUG,
 	           "RecvMapSurfaceToOutputPdu: surfaceId: %"PRIu16" outputOriginX: %"PRIu32" outputOriginY: %"PRIu32" targetX: %"PRIu32" targetY: %"PRIu32,
-	           pdu.surfaceId, pdu.outputOriginX, pdu.outputOriginY, pdu.targetX, pdu.targetY);
+	           pdu.surfaceId, pdu.outputOriginX, pdu.outputOriginY, pdu.targetWidth, pdu.targetHeight);
 
 	if (context)
 	{

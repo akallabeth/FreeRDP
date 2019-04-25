@@ -109,6 +109,7 @@ static UINT gdi_OutputUpdate(rdpGdi* gdi, gdiGfxSurface* surface)
 	RECTANGLE_16 surfaceRect;
 	const RECTANGLE_16* rects;
 	UINT32 i, nbRects;
+	double sx, sy;
 	rdpUpdate* update = gdi->context->update;
 
 	if (gdi->suppressOutput)
@@ -122,6 +123,8 @@ static UINT gdi_OutputUpdate(rdpGdi* gdi, gdiGfxSurface* surface)
 	surfaceRect.bottom = surface->height;
 	region16_intersect_rect(&(surface->invalidRegion),
 	                        &(surface->invalidRegion), &surfaceRect);
+	sx = surface->outputTargetWidth / (double)surface->width;
+	sy = surface->outputTargetHeight / (double)surface->height;
 
 	if (!(rects = region16_rects(&surface->invalidRegion, &nbRects)) || !nbRects)
 		return CHANNEL_RC_OK;
@@ -138,11 +141,10 @@ static UINT gdi_OutputUpdate(rdpGdi* gdi, gdiGfxSurface* surface)
 		width = rects[i].right - rects[i].left;
 		height = rects[i].bottom - rects[i].top;
 
-		if (!freerdp_image_copy(gdi->primary_buffer, gdi->primary->hdc->format,
-		                        gdi->stride,
-		                        nXDst, nYDst, width, height,
-		                        surface->data, surface->format,
-		                        surface->scanline, nXSrc, nYSrc, NULL, FREERDP_FLIP_NONE))
+		if (!freerdp_image_scale(gdi->primary_buffer, gdi->primary->hdc->format,
+		                         gdi->stride, nXDst, nYDst, width * sx, height * sy,
+		                         surface->data, surface->format,
+		                         surface->scanline, nXSrc, nYSrc, width, height))
 			return CHANNEL_RC_NULL_DATA;
 
 		gdi_InvalidateRegion(gdi->primary->hdc, nXDst, nYDst, width, height);
@@ -1230,8 +1232,8 @@ static UINT gdi_MapSurfaceToOutput(RdpgfxClientContext* context,
 	surface->outputMapped = TRUE;
 	surface->outputOriginX = surfaceToOutput->outputOriginX;
 	surface->outputOriginY = surfaceToOutput->outputOriginY;
-	surface->outputTargetX = surfaceToOutput->outputOriginX;
-	surface->outputTargetY = surfaceToOutput->outputOriginY;
+	surface->outputTargetWidth = surface->width;
+	surface->outputTargetHeight = surface->height;
 	region16_clear(&surface->invalidRegion);
 	rc = CHANNEL_RC_OK;
 fail:
@@ -1254,8 +1256,8 @@ static UINT gdi_MapSurfaceToScaledOutput(RdpgfxClientContext* context,
 	surface->outputMapped = TRUE;
 	surface->outputOriginX = surfaceToOutput->outputOriginX;
 	surface->outputOriginY = surfaceToOutput->outputOriginY;
-	surface->outputTargetX = surfaceToOutput->targetX;
-	surface->outputTargetY = surfaceToOutput->targetY;
+	surface->outputTargetWidth = surfaceToOutput->targetWidth;
+	surface->outputTargetHeight = surfaceToOutput->targetHeight;
 	region16_clear(&surface->invalidRegion);
 	rc = CHANNEL_RC_OK;
 fail:
@@ -1283,8 +1285,8 @@ static UINT gdi_MapSurfaceToWindow(RdpgfxClientContext* context,
 	surface->windowId = surfaceToWindow->windowId;
 	surface->width = surfaceToWindow->mappedWidth;
 	surface->height = surfaceToWindow->mappedHeight;
-	surface->scaledWidth = 0;
-	surface->scaledHeight = 0;
+	surface->outputTargetWidth = surfaceToWindow->mappedWidth;
+	surface->outputTargetHeight = surfaceToWindow->mappedHeight;
 	rc = CHANNEL_RC_OK;
 fail:
 	LeaveCriticalSection(&context->mux);
@@ -1306,8 +1308,8 @@ static UINT gdi_MapSurfaceToScaledWindow(RdpgfxClientContext* context,
 	surface->windowId = surfaceToWindow->windowId;
 	surface->width = surfaceToWindow->mappedWidth;
 	surface->height = surfaceToWindow->mappedHeight;
-	surface->scaledWidth = surfaceToWindow->targetWidth;
-	surface->scaledHeight = surfaceToWindow->targetHeight;
+	surface->outputTargetWidth = surfaceToWindow->targetWidth;
+	surface->outputTargetHeight = surfaceToWindow->targetHeight;
 	rc = CHANNEL_RC_OK;
 fail:
 	LeaveCriticalSection(&context->mux);

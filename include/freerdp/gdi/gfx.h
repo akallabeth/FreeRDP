@@ -38,10 +38,8 @@ struct gdi_gfx_surface
 	UINT32 outputOriginY;
 	REGION16 invalidRegion;
 	UINT64 windowId;
-	UINT32 scaledWidth;
-	UINT32 scaledHeight;
-	UINT32 outputTargetX;
-	UINT32 outputTargetY;
+	UINT32 outputTargetWidth;
+	UINT32 outputTargetHeight;
 };
 typedef struct gdi_gfx_surface gdiGfxSurface;
 

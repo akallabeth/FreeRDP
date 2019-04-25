@@ -38,6 +38,7 @@ static UINT xf_OutputUpdate(xfContext* xfc, xfGfxSurface* surface)
 	RECTANGLE_16 surfaceRect;
 	rdpGdi* gdi;
 	UINT32 nbRects, x;
+	double sx, sy;
 	const RECTANGLE_16* rects;
 	gdi = xfc->context.gdi;
 	surfaceX = surface->gdi.outputOriginX;
@@ -51,6 +52,8 @@ static UINT xf_OutputUpdate(xfContext* xfc, xfGfxSurface* surface)
 	XSetFillStyle(xfc->display, xfc->gc, FillSolid);
 	region16_intersect_rect(&(surface->gdi.invalidRegion),
 	                        &(surface->gdi.invalidRegion), &surfaceRect);
+	sx = surface->gdi.outputTargetWidth / (double)surface->gdi.width;
+	sy = surface->gdi.outputTargetHeight / (double)surface->gdi.height;
 
 	if (!(rects = region16_rects(&surface->gdi.invalidRegion, &nbRects)))
 		return CHANNEL_RC_OK;
@@ -66,12 +69,12 @@ static UINT xf_OutputUpdate(xfContext* xfc, xfGfxSurface* surface)
 
 		if (surface->stage)
 		{
-			if (!freerdp_image_copy(surface->stage, gdi->dstFormat,
-			                        surface->stageScanline, nXSrc, nYSrc,
-			                        width, height,
-			                        surface->gdi.data, surface->gdi.format,
-			                        surface->gdi.scanline, nXSrc, nYSrc,
-			                        NULL, FREERDP_FLIP_NONE))
+			if (!freerdp_image_scale(surface->stage, gdi->dstFormat,
+			                         surface->stageScanline, nXSrc, nYSrc,
+			                         width * sx, height * sy,
+			                         surface->gdi.data, surface->gdi.format,
+			                         surface->gdi.scanline, nXSrc, nYSrc,
+			                         width, height))
 				goto fail;
 		}
 
@@ -182,8 +185,8 @@ UINT xf_OutputExpose(xfContext* xfc, UINT32 x, UINT32 y,
 
 		surfaceRect.left = surface->gdi.outputOriginX;
 		surfaceRect.top = surface->gdi.outputOriginY;
-		surfaceRect.right = surface->gdi.outputOriginX + surface->gdi.width;
-		surfaceRect.bottom = surface->gdi.outputOriginY + surface->gdi.height;
+		surfaceRect.right = surface->gdi.outputOriginX + surface->gdi.outputTargetWidth;
+		surfaceRect.bottom = surface->gdi.outputOriginY + surface->gdi.outputTargetHeight;
 
 		if (rectangles_intersection(&invalidRect, &surfaceRect, &intersection))
 		{

@@ -1303,8 +1303,8 @@ static UINT rdpgfx_send_map_surface_to_scaled_output_pdu(RdpgfxServerContext* co
 	Stream_Write_UINT16(s, 0); /* reserved (2 bytes). Must be 0 */
 	Stream_Write_UINT32(s, pdu->outputOriginX); /* outputOriginX (4 bytes) */
 	Stream_Write_UINT32(s, pdu->outputOriginY); /* outputOriginY (4 bytes) */
-	Stream_Write_UINT32(s, pdu->targetX);
-	Stream_Write_UINT32(s, pdu->targetY);
+	Stream_Write_UINT32(s, pdu->targetWidth);
+	Stream_Write_UINT32(s, pdu->targetHeight);
 	return rdpgfx_server_single_packet_send(context, s);
 }
 

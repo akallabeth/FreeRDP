@@ -18,6 +18,15 @@
 set(MODULE_NAME "freerdp")
 set(MODULE_PREFIX "FREERDP")
 
+find_package(Cairo)
+if (CAIRO_FOUND)
+    add_definitions(-DCAIRO_FOUND=1)
+    include_directories(${CAIRO_INCLUDE_DIR})
+    list(APPEND ${MODULE_PREFIX}_LIBS ${CAIRO_LIBRARY})
+else(CAIRO_FOUND)
+    message(WARNING "libcairo not detected, compiling without wayland smart scaling support!")
+endif(CAIRO_FOUND)
+
 # Create imported targets for Intel IPP libraries
 
 if(IPP_FOUND)
