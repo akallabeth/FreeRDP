@@ -398,10 +398,13 @@ static UINT rail_server_handshake(RailClientContext* context,
 static UINT rail_server_handshake_ex(RailClientContext* context,
                                      const RAIL_HANDSHAKE_EX_ORDER* handshakeEx)
 {
+	railPlugin* rail;
+
 	if (!context || !handshakeEx)
 		return ERROR_INVALID_PARAMETER;
 
-	return CHANNEL_RC_OK; /* stub - should be registered by client */
+	rail = (railPlugin*) context->handle;
+	return CHANNEL_RC_OK;
 }
 
 /**
