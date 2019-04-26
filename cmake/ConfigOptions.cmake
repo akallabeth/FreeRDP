@@ -149,7 +149,14 @@ if(ANDROID)
 include(ConfigOptionsAndroid)
 endif(ANDROID)
 
-if(IOS)
-include(ConfigOptionsiOS)
+option(WITH_CAIRO    "Use CAIRO image library for screen resizing" OFF)
+option(WITH_SWSCALE  "Use SWScale image library for screen resizing" ON)
+
+if (ANDROID)
+	include(ConfigOptionsAndroid)
+endif(ANDROID)
+
+if (IOS)
+	include(ConfigOptionsiOS)
 endif(IOS)
 

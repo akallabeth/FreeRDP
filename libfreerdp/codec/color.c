@@ -37,6 +37,10 @@
 #include <cairo.h>
 #endif
 
+#if defined(SWSCALE_FOUND)
+#include <libswscale/swscale.h>
+#endif
+
 #define TAG FREERDP_TAG("color")
 
 BYTE* freerdp_glyph_convert(UINT32 width, UINT32 height, const BYTE* data)
@@ -575,47 +579,98 @@ BOOL freerdp_image_fill(BYTE* pDstData, DWORD DstFormat,
 	return TRUE;
 }
 
+#if defined(SWSCALE_FOUND)
+static int av_format_for_buffer(UINT32 format)
+{
+	switch (format)
+	{
+		case PIXEL_FORMAT_ARGB32:
+			return AV_PIX_FMT_BGRA;
+
+		case PIXEL_FORMAT_XRGB32:
+			return AV_PIX_FMT_BGR0;
+
+		case PIXEL_FORMAT_BGRA32:
+			return AV_PIX_FMT_RGBA;
+
+		case PIXEL_FORMAT_BGRX32:
+			return AV_PIX_FMT_RGB0;
+
+		default:
+			return AV_PIX_FMT_NONE;
+	}
+}
+#endif
+
 BOOL freerdp_image_scale(BYTE* pDstData, DWORD DstFormat, UINT32 nDstStep,
                          UINT32 nXDst, UINT32 nYDst, UINT32 nDstWidth, UINT32 nDstHeight,
                          const BYTE* pSrcData, DWORD SrcFormat, UINT32 nSrcStep,
                          UINT32 nXSrc, UINT32 nYSrc, UINT32 nSrcWidth, UINT32 nSrcHeight)
 {
 	BOOL rc = FALSE;
-#if defined(CAIRO_FOUND)
-	const double sx = (double)nDstWidth / (double)nSrcWidth;
-	const double sy = (double)nDstHeight / (double)nSrcHeight;
-	cairo_t* cairo_context;
-	cairo_surface_t* csrc, *cdst;
+	const BYTE* src = &pSrcData[nXSrc * 4 + nYSrc * nSrcStep];
+	BYTE* dst = &pDstData[nXDst * 4 + nYDst * nDstStep];
+#if defined(SWSCALE_FOUND)
+	{
+		int res;
+		struct SwsContext* resize;
+		int srcFormat = av_format_for_buffer(SrcFormat);
+		int dstFormat = av_format_for_buffer(DstFormat);
+		const int srcStep[1] = { nSrcStep };
+		const int dstStep[1] = { nDstStep };
 
-	if ((nSrcWidth > INT_MAX) || (nSrcHeight > INT_MAX) || (nSrcStep > INT_MAX))
-		return FALSE;
+		if ((srcFormat == AV_PIX_FMT_NONE) || (dstFormat == AV_PIX_FMT_NONE))
+			return FALSE;
 
-	if ((nDstWidth > INT_MAX) || (nDstHeight > INT_MAX) || (nDstStep > INT_MAX))
-		return FALSE;
+		resize = sws_getContext(nSrcWidth + nXSrc, nSrcHeight + nYSrc, srcFormat,
+		                        nDstWidth + nXDst, nDstHeight + nYDst, dstFormat,
+		                        SWS_BICUBIC, NULL, NULL, NULL);
 
-	csrc = cairo_image_surface_create_for_data((void*)&pSrcData[nXSrc * 4 + nYSrc * nSrcStep],
-	        CAIRO_FORMAT_ARGB32, (int)nSrcWidth, (int)nSrcHeight, (int)nSrcStep);
-	cdst = cairo_image_surface_create_for_data(&pDstData[nXDst * 4 + nYDst * nDstStep],
-	        CAIRO_FORMAT_ARGB32, (int)nDstWidth, (int)nDstHeight, (int)nDstStep);
+		if (!resize)
+			goto fail;
 
-	if (!csrc || !cdst)
-		goto fail;
+		res = sws_scale(resize, &pSrcData, srcStep, 0, nSrcHeight + nYSrc, &pDstData, dstStep);
+		rc = (res == (nDstHeight + nYDst));
+	fail:
+		sws_freeContext(resize);
+	}
+#elif defined(CAIRO_FOUND)
+	{
+		const double sx = (double)nDstWidth / (double)nSrcWidth;
+		const double sy = (double)nDstHeight / (double)nSrcHeight;
+		cairo_t* cairo_context;
+		cairo_surface_t* csrc, *cdst;
 
-	cairo_context = cairo_create(cdst);
+		if ((nSrcWidth > INT_MAX) || (nSrcHeight > INT_MAX) || (nSrcStep > INT_MAX))
+			return FALSE;
 
-	if (!cairo_context)
-		goto fail2;
+		if ((nDstWidth > INT_MAX) || (nDstHeight > INT_MAX) || (nDstStep > INT_MAX))
+			return FALSE;
 
-	cairo_scale(cairo_context, sx, sy);
-	cairo_set_operator(cairo_context, CAIRO_OPERATOR_SOURCE);
-	cairo_set_source_surface(cairo_context, csrc, 0, 0);
-	cairo_paint(cairo_context);
-	rc = TRUE;
-fail2:
-	cairo_destroy(cairo_context);
-fail:
-	cairo_surface_destroy(csrc);
-	cairo_surface_destroy(cdst);
+		csrc = cairo_image_surface_create_for_data((void*)src,
+		        CAIRO_FORMAT_ARGB32, (int)nSrcWidth, (int)nSrcHeight, (int)nSrcStep);
+		cdst = cairo_image_surface_create_for_data(dst,
+		        CAIRO_FORMAT_ARGB32, (int)nDstWidth, (int)nDstHeight, (int)nDstStep);
+
+		if (!csrc || !cdst)
+			goto fail;
+
+		cairo_context = cairo_create(cdst);
+
+		if (!cairo_context)
+			goto fail2;
+
+		cairo_scale(cairo_context, sx, sy);
+		cairo_set_operator(cairo_context, CAIRO_OPERATOR_SOURCE);
+		cairo_set_source_surface(cairo_context, csrc, 0, 0);
+		cairo_paint(cairo_context);
+		rc = TRUE;
+	fail2:
+		cairo_destroy(cairo_context);
+	fail:
+		cairo_surface_destroy(csrc);
+		cairo_surface_destroy(cdst);
+	}
 #else
 
 	if ((nDstWidth == nSrcWidth) && (nDstHeight == nSrcHeight))
