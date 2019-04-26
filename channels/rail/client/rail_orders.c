@@ -754,7 +754,7 @@ static UINT rail_recv_langbar_info_order(railPlugin* rail,       wStream* s)
 	return error;
 }
 
-static UINT rail_read_zorder_sync_order(wStream* s, RAIL_ZORDER_ZYNC* zorder)
+static UINT rail_read_zorder_sync_order(wStream* s, RAIL_ZORDER_SYNC* zorder)
 {
 	if (!s || !zorder)
 		return ERROR_INVALID_PARAMETER;
@@ -772,7 +772,7 @@ static UINT rail_read_zorder_sync_order(wStream* s, RAIL_ZORDER_ZYNC* zorder)
 static UINT rail_recv_zorder_sync_order(railPlugin* rail, wStream* s)
 {
 	RailClientContext* context = rail_get_client_interface(rail);
-	RAIL_ZORDER_ZYNC zorder = { 0 };
+	RAIL_ZORDER_SYNC zorder = { 0 };
 	UINT error;
 
 	if (!context)
