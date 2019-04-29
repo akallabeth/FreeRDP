@@ -50,6 +50,8 @@ struct rail_plugin
 	DWORD OpenHandle;
 	wMessageQueue* queue;
 	rdpContext* rdpcontext;
+	DWORD channelBuildNumber;
+	DWORD channelFlags;
 };
 typedef struct rail_plugin railPlugin;
 

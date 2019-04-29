@@ -123,6 +123,7 @@ static UINT rdpgfx_send_caps_advertise_pdu(RDPGFX_CHANNEL_CALLBACK* callback)
 		capsSet->version = RDPGFX_CAPVERSION_101;
 		capsSet->length = 0x10;
 		capsSet->flags = 0;
+
 		capsSet = &capsSets[pdu.capsSetCount++];
 		capsSet->version = RDPGFX_CAPVERSION_102;
 		capsSet->length = 0x4;
@@ -135,14 +136,17 @@ static UINT rdpgfx_send_caps_advertise_pdu(RDPGFX_CHANNEL_CALLBACK* callback)
 		capsSet->version = RDPGFX_CAPVERSION_103;
 		capsSet->length = 0x4;
 		capsSet->flags = caps10Flags & ~RDPGFX_CAPS_FLAG_SMALL_CACHE;
+
 		capsSet = &capsSets[pdu.capsSetCount++];
 		capsSet->version = RDPGFX_CAPVERSION_104;
 		capsSet->length = 0x4;
 		capsSet->flags = caps10Flags;
+
 		capsSet = &capsSets[pdu.capsSetCount++];
 		capsSet->version = RDPGFX_CAPVERSION_105;
 		capsSet->length = 0x4;
 		capsSet->flags = caps10Flags;
+
 		capsSet = &capsSets[pdu.capsSetCount++];
 		capsSet->version = RDPGFX_CAPVERSION_106;
 		capsSet->length = 0x4;

@@ -507,6 +507,8 @@ static UINT rail_recv_handshake_order(railPlugin* rail, wStream* s)
 		return error;
 	}
 
+	rail->channelBuildNumber = serverHandshake.buildNumber;
+
 	clientHandshake.buildNumber = 0x00001DB0;
 	/* 2.2.2.2.3 HandshakeEx PDU (TS_RAIL_ORDER_HANDSHAKE_EX)
 	 * Client response is really a Handshake PDU */
@@ -546,6 +548,9 @@ static UINT rail_recv_handshake_ex_order(railPlugin* rail, wStream* s)
 		WLog_ERR(TAG, "rail_read_handshake_ex_order failed with error %"PRIu32"!", error);
 		return error;
 	}
+
+	rail->channelBuildNumber = serverHandshake.buildNumber;
+	rail->channelFlags = serverHandshake.railHandshakeFlags;
 
 	clientHandshake.buildNumber = 0x00001DB0;
 	/* 2.2.2.2.3 HandshakeEx PDU (TS_RAIL_ORDER_HANDSHAKE_EX)

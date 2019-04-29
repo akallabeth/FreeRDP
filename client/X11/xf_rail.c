@@ -509,8 +509,10 @@ static BOOL xf_rail_window_common(rdpContext* context,
 			    appWindow->width == (INT64)appWindow->windowWidth &&
 			    appWindow->height == (INT64)appWindow->windowHeight)
 			{
+				/*
 				xf_UpdateWindowArea(xfc, appWindow, 0, 0, appWindow->windowWidth,
 				                    appWindow->windowHeight);
+									*/
 			}
 			else
 			{

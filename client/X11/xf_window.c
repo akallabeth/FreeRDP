@@ -930,7 +930,7 @@ void xf_MoveWindow(xfContext* xfc, xfAppWindow* appWindow, int x, int y,
 	else
 		XMoveWindow(xfc->display, appWindow->handle, x, y);
 
-	xf_UpdateWindowArea(xfc, appWindow, 0, 0, width, height);
+	//xf_UpdateWindowArea(xfc, appWindow, 0, 0, width, height);
 }
 
 void xf_ShowWindow(xfContext* xfc, xfAppWindow* appWindow, BYTE state)
@@ -960,8 +960,10 @@ void xf_ShowWindow(xfContext* xfc, xfAppWindow* appWindow, BYTE state)
 			 */
 			if (appWindow->rail_state == WINDOW_SHOW_MAXIMIZED)
 			{
+				/*
 				xf_UpdateWindowArea(xfc, appWindow, 0, 0, appWindow->windowWidth,
 				                    appWindow->windowHeight);
+									*/
 			}
 
 			break;
