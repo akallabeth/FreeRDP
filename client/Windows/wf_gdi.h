@@ -37,4 +37,6 @@ void wf_gdi_register_update_callbacks(rdpUpdate* update);
 
 void wf_update_canvas_diff(wfContext* wfc);
 
+BOOL wf_scale_rect(wfContext* wfc, RECT* source);
+
 #endif /* FREERDP_CLIENT_WIN_GDI_H */
