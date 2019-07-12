@@ -478,12 +478,6 @@ WINPR_API wMessageQueue* MessageQueue_New(const wObject* callback);
 WINPR_API void MessageQueue_Free(wMessageQueue* queue);
 
 /* Message Pipe */
-
-struct _wMessagePipe
-{
-	wMessageQueue* In;
-	wMessageQueue* Out;
-};
 typedef struct _wMessagePipe wMessagePipe;
 
 WINPR_API void MessagePipe_PostQuit(wMessagePipe* pipe, int nExitCode);

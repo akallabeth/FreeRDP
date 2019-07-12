@@ -26,6 +26,12 @@
 
 #include <winpr/collections.h>
 
+struct _wMessagePipe
+{
+	wMessageQueue* In;
+	wMessageQueue* Out;
+};
+
 /**
  * Properties
  */
