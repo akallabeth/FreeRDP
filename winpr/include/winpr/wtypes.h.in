@@ -20,6 +20,14 @@
 #ifndef WINPR_WTYPES_H
 #define WINPR_WTYPES_H
 
+#if @CMAKE_COMPILER_IS_GNUCC@
+#    define winpr_deprecated __attribute__((deprecated))
+#elif defined(_MSC_VER)
+#    define winpr_deprecated __declspec(deprecated)
+#else
+#    define winpr_deprecated
+#endif
+
 /* Set by CMake during configuration */
 #cmakedefine WINPR_HAVE_STDINT_H
 #cmakedefine WINPR_HAVE_STDBOOL_H

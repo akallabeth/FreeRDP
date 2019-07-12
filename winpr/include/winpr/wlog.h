@@ -179,9 +179,9 @@ WINPR_API BOOL WLog_Layout_SetPrefixFormat(wLog* log, wLogLayout* layout,
 WINPR_API wLog* WLog_GetRoot(void);
 WINPR_API wLog* WLog_Get(LPCSTR name);
 
-/** Deprecated */
+winpr_deprecated
 WINPR_API BOOL WLog_Init(void);
-/** Deprecated */
+winpr_deprecated
 WINPR_API BOOL WLog_Uninit(void);
 
 typedef BOOL (*wLogCallbackMessage_t)(const wLogMessage* msg);
