@@ -27,6 +27,23 @@
 
 #include <winpr/collections.h>
 
+struct _wBipBlock
+{
+	size_t index;
+	size_t size;
+};
+
+struct _wBipBuffer
+{
+	size_t size;
+	BYTE* buffer;
+	size_t pageSize;
+	wBipBlock blockA;
+	wBipBlock blockB;
+	wBipBlock readR;
+	wBipBlock writeR;
+};
+
 /**
  * The Bip Buffer - The Circular Buffer with a Twist:
  * http://www.codeproject.com/Articles/3479/The-Bip-Buffer-The-Circular-Buffer-with-a-Twist
