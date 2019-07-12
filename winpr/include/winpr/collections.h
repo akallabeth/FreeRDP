@@ -290,14 +290,6 @@ WINPR_API wReferenceTable* ReferenceTable_New(BOOL synchronized, void* context,
 WINPR_API void ReferenceTable_Free(wReferenceTable* referenceTable);
 
 /* Countdown Event */
-
-struct _wCountdownEvent
-{
-	DWORD count;
-	CRITICAL_SECTION lock;
-	HANDLE event;
-	DWORD initialCount;
-};
 typedef struct _wCountdownEvent wCountdownEvent;
 
 WINPR_API DWORD CountdownEvent_CurrentCount(wCountdownEvent* countdown);

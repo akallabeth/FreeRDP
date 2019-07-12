@@ -29,6 +29,14 @@
 
 #include <winpr/collections.h>
 
+struct _wCountdownEvent
+{
+	DWORD count;
+	CRITICAL_SECTION lock;
+	HANDLE event;
+	DWORD initialCount;
+};
+
 /**
  * C equivalent of the C# CountdownEvent Class
  * http://msdn.microsoft.com/en-us/library/dd235708/
