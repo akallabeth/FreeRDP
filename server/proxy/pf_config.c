@@ -122,7 +122,7 @@ DWORD pf_server_load_config(const char* path, proxyConfig* config)
 	char** filters_names;
 	int rc;
 	int filters_count = 0;
-	UINT32 index;
+	int index;
 	DWORD result = CONFIG_PARSE_ERROR;
 	wIniFile* ini = IniFile_New();
 
