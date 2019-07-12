@@ -1210,6 +1210,7 @@ void tsmf_presentation_free(TSMF_PRESENTATION* presentation)
 TSMF_STREAM* tsmf_stream_new(TSMF_PRESENTATION* presentation, UINT32 stream_id,
                              rdpContext* rdpcontext)
 {
+	wObject* obj;
 	TSMF_STREAM* stream;
 	stream = tsmf_stream_find_by_id(presentation, stream_id);
 
@@ -1251,13 +1252,19 @@ TSMF_STREAM* tsmf_stream_new(TSMF_PRESENTATION* presentation, UINT32 stream_id,
 	if (!stream->sample_list)
 		goto error_sample_list;
 
-	stream->sample_list->object.fnObjectFree = tsmf_sample_free;
+	obj = Queue_Object(stream->sample_list);
+	if (!obj)
+		goto error_play_thread;
+	obj->fnObjectFree = tsmf_sample_free;
 	stream->sample_ack_list = Queue_New(TRUE, -1, -1);
 
 	if (!stream->sample_ack_list)
 		goto error_sample_ack_list;
 
-	stream->sample_ack_list->object.fnObjectFree = tsmf_sample_free;
+	obj = Queue_Object(stream->sample_ack_list);
+	if (!obj)
+		goto error_play_thread;
+	obj->fnObjectFree = tsmf_sample_free;
 	stream->play_thread = CreateThread(NULL, 0, tsmf_stream_playback_func,
 	                                   stream, CREATE_SUSPENDED, NULL);
 

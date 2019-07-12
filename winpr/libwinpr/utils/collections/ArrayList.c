@@ -25,6 +25,19 @@
 
 #include <winpr/collections.h>
 
+struct _wArrayList
+{
+	size_t capacity;
+	size_t growthFactor;
+	BOOL synchronized;
+
+	size_t size;
+	void** array;
+	CRITICAL_SECTION lock;
+
+	wObject object;
+};
+
 /**
  * C equivalent of the C# ArrayList Class:
  * http://msdn.microsoft.com/en-us/library/system.collections.arraylist.aspx
@@ -38,7 +51,7 @@
  * Gets or sets the number of elements that the ArrayList can contain.
  */
 
-int ArrayList_Capacity(wArrayList* arrayList)
+size_t ArrayList_Capacity(wArrayList* arrayList)
 {
 	return arrayList->capacity;
 }
@@ -47,7 +60,7 @@ int ArrayList_Capacity(wArrayList* arrayList)
  * Gets the number of elements actually contained in the ArrayList.
  */
 
-int ArrayList_Count(wArrayList* arrayList)
+size_t ArrayList_Count(wArrayList* arrayList)
 {
 	return arrayList->size;
 }
@@ -56,7 +69,7 @@ int ArrayList_Count(wArrayList* arrayList)
  * Gets the internal list of items contained in the ArrayList.
  */
 
-int ArrayList_Items(wArrayList* arrayList, ULONG_PTR** ppItems)
+size_t ArrayList_Items(wArrayList* arrayList, ULONG_PTR** ppItems)
 {
 	*ppItems = (ULONG_PTR*) arrayList->array;
 	return arrayList->size;
@@ -111,11 +124,11 @@ void ArrayList_Unlock(wArrayList* arrayList)
  * Gets the element at the specified index.
  */
 
-void* ArrayList_GetItem(wArrayList* arrayList, int index)
+void* ArrayList_GetItem(wArrayList* arrayList, size_t index)
 {
 	void* obj = NULL;
 
-	if ((index >= 0) && (index < arrayList->size))
+	if (index < arrayList->size)
 	{
 		obj = arrayList->array[index];
 	}
@@ -127,9 +140,9 @@ void* ArrayList_GetItem(wArrayList* arrayList, int index)
  * Sets the element at the specified index.
  */
 
-void ArrayList_SetItem(wArrayList* arrayList, int index, void* obj)
+void ArrayList_SetItem(wArrayList* arrayList, size_t index, void* obj)
 {
-	if ((index >= 0) && (index < arrayList->size))
+	if (index < arrayList->size)
 	{
 		arrayList->array[index] = obj;
 	}
@@ -143,14 +156,15 @@ void ArrayList_SetItem(wArrayList* arrayList, int index, void* obj)
  * Shift a section of the list.
  */
 
-BOOL ArrayList_Shift(wArrayList* arrayList, int index, int count)
+BOOL ArrayList_Shift(wArrayList* arrayList, size_t index, SSIZE_T cnt)
 {
-	if (count > 0)
+	if (cnt > 0)
 	{
+		const size_t count = (size_t)cnt;
 		if (arrayList->size + count > arrayList->capacity)
 		{
 			void** newArray;
-			int newCapacity = arrayList->capacity * arrayList->growthFactor;
+			size_t newCapacity = arrayList->capacity * arrayList->growthFactor;
 			newArray = (void**)realloc(arrayList->array, sizeof(void*) * newCapacity);
 
 			if (!newArray)
@@ -164,17 +178,25 @@ BOOL ArrayList_Shift(wArrayList* arrayList, int index, int count)
 		           (arrayList->size - index) * sizeof(void*));
 		arrayList->size += count;
 	}
-	else if (count < 0)
+	else if (cnt < 0)
 	{
-		int chunk = arrayList->size - index + count;
+		const size_t count = (size_t)(-cnt);
+		size_t chunk = arrayList->size - index - count;
 
 		if (chunk > 0)
-			MoveMemory(&arrayList->array[index], &arrayList->array[index - count], chunk * sizeof(void*));
+			MoveMemory(&arrayList->array[index], &arrayList->array[index + count], chunk * sizeof(void*));
 
-		arrayList->size += count;
+		arrayList->size -= count;
 	}
 
 	return TRUE;
+}
+
+wObject* ArrayList_Object(wArrayList* arrayList)
+{
+	if (!arrayList)
+		return NULL;
+	return &arrayList->object;
 }
 
 /**
@@ -183,7 +205,7 @@ BOOL ArrayList_Shift(wArrayList* arrayList, int index, int count)
 
 void ArrayList_Clear(wArrayList* arrayList)
 {
-	int index;
+	size_t index;
 
 	if (arrayList->synchronized)
 		EnterCriticalSection(&arrayList->lock);
@@ -208,7 +230,7 @@ void ArrayList_Clear(wArrayList* arrayList)
 
 BOOL ArrayList_Contains(wArrayList* arrayList, void* obj)
 {
-	int index;
+	size_t index;
 	BOOL rc = FALSE;
 
 	if (arrayList->synchronized)
@@ -232,9 +254,9 @@ BOOL ArrayList_Contains(wArrayList* arrayList, void* obj)
  * Adds an object to the end of the ArrayList.
  */
 
-int ArrayList_Add(wArrayList* arrayList, void* obj)
+SSIZE_T ArrayList_Add(wArrayList* arrayList, void* obj)
 {
-	int index = -1;
+	SSIZE_T index = -1;
 
 	if (arrayList->synchronized)
 		EnterCriticalSection(&arrayList->lock);
@@ -242,7 +264,7 @@ int ArrayList_Add(wArrayList* arrayList, void* obj)
 	if (arrayList->size + 1 > arrayList->capacity)
 	{
 		void** newArray;
-		int newCapacity = arrayList->capacity * arrayList->growthFactor;
+		size_t newCapacity = arrayList->capacity * arrayList->growthFactor;
 		newArray = (void**)realloc(arrayList->array, sizeof(void*) * newCapacity);
 
 		if (!newArray)
@@ -253,7 +275,7 @@ int ArrayList_Add(wArrayList* arrayList, void* obj)
 	}
 
 	arrayList->array[arrayList->size++] = obj;
-	index = arrayList->size;
+	index = (SSIZE_T)arrayList->size;
 out:
 
 	if (arrayList->synchronized)
@@ -266,14 +288,14 @@ out:
  * Inserts an element into the ArrayList at the specified index.
  */
 
-BOOL ArrayList_Insert(wArrayList* arrayList, int index, void* obj)
+BOOL ArrayList_Insert(wArrayList* arrayList, size_t index, void* obj)
 {
 	BOOL ret = TRUE;
 
 	if (arrayList->synchronized)
 		EnterCriticalSection(&arrayList->lock);
 
-	if ((index >= 0) && (index < arrayList->size))
+	if (index < arrayList->size)
 	{
 		if (!ArrayList_Shift(arrayList, index, 1))
 		{
@@ -297,7 +319,7 @@ BOOL ArrayList_Insert(wArrayList* arrayList, int index, void* obj)
 
 BOOL ArrayList_Remove(wArrayList* arrayList, void* obj)
 {
-	int index;
+	size_t index;
 	BOOL found = FALSE;
 	BOOL ret = TRUE;
 
@@ -331,14 +353,14 @@ BOOL ArrayList_Remove(wArrayList* arrayList, void* obj)
  * Removes the element at the specified index of the ArrayList.
  */
 
-BOOL ArrayList_RemoveAt(wArrayList* arrayList, int index)
+BOOL ArrayList_RemoveAt(wArrayList* arrayList, size_t index)
 {
 	BOOL ret = TRUE;
 
 	if (arrayList->synchronized)
 		EnterCriticalSection(&arrayList->lock);
 
-	if ((index >= 0) && (index < arrayList->size))
+	if (index < arrayList->size)
 	{
 		if (arrayList->object.fnObjectFree)
 			arrayList->object.fnObjectFree(arrayList->array[index]);
@@ -362,18 +384,16 @@ BOOL ArrayList_RemoveAt(wArrayList* arrayList, int index)
  * in the ArrayList that contains the specified number of elements and ends at the specified index.
  */
 
-int ArrayList_IndexOf(wArrayList* arrayList, void* obj, int startIndex, int count)
+SSIZE_T ArrayList_IndexOf(wArrayList* arrayList, void* obj, size_t startIndex, SSIZE_T cnt)
 {
-	int index;
+	size_t index;
 	BOOL found = FALSE;
+	size_t count = (size_t)cnt;
 
 	if (arrayList->synchronized)
 		EnterCriticalSection(&arrayList->lock);
 
-	if (startIndex < 0)
-		startIndex = 0;
-
-	if (count < 0)
+	if (cnt < 0)
 		count = arrayList->size;
 
 	for (index = startIndex; index < startIndex + count; index++)
@@ -385,13 +405,12 @@ int ArrayList_IndexOf(wArrayList* arrayList, void* obj, int startIndex, int coun
 		}
 	}
 
-	if (!found)
-		index = -1;
-
 	if (arrayList->synchronized)
 		LeaveCriticalSection(&arrayList->lock);
 
-	return index;
+	if (!found)
+		return -1;
+	return (SSIZE_T)index;
 }
 
 /**
@@ -404,16 +423,13 @@ int ArrayList_IndexOf(wArrayList* arrayList, void* obj, int startIndex, int coun
  * in the ArrayList that contains the specified number of elements and ends at the specified index.
  */
 
-int ArrayList_LastIndexOf(wArrayList* arrayList, void* obj, int startIndex, int count)
+SSIZE_T ArrayList_LastIndexOf(wArrayList* arrayList, void* obj, size_t startIndex, SSIZE_T count)
 {
-	int index;
+	size_t index;
 	BOOL found = FALSE;
 
 	if (arrayList->synchronized)
 		EnterCriticalSection(&arrayList->lock);
-
-	if (startIndex < 0)
-		startIndex = 0;
 
 	if (count < 0)
 		count = arrayList->size;

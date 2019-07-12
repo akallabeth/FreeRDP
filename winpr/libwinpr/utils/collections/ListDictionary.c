@@ -25,6 +25,30 @@
 
 #include <winpr/collections.h>
 
+struct _wListDictionary
+{
+	BOOL synchronized;
+	CRITICAL_SECTION lock;
+
+	wListDictionaryItem* head;
+	wObject objectKey;
+	wObject objectValue;
+};
+
+wObject* ListDictionary_KeyObject(wListDictionary* listDictionary)
+{
+	if (!listDictionary)
+		return NULL;
+	return &listDictionary->objectKey;
+}
+
+wObject* ListDictionary_ValueObject(wListDictionary* listDictionary)
+{
+	if (!listDictionary)
+		return NULL;
+	return &listDictionary->objectValue;
+}
+
 /**
  * C equivalent of the C# ListDictionary Class:
  * http://msdn.microsoft.com/en-us/library/system.collections.specialized.listdictionary.aspx
@@ -40,9 +64,9 @@
  * Gets the number of key/value pairs contained in the ListDictionary.
  */
 
-int ListDictionary_Count(wListDictionary* listDictionary)
+size_t ListDictionary_Count(wListDictionary* listDictionary)
 {
-	int count = 0;
+	size_t count = 0;
 	wListDictionaryItem* item;
 
 	if (!listDictionary)

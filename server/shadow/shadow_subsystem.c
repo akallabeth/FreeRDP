@@ -125,11 +125,22 @@ void shadow_subsystem_uninit(rdpShadowSubsystem* subsystem)
 
 	if (subsystem->MsgPipe)
 	{
+		wMessageQueue* in = MessagePipe_Get(subsystem->MsgPipe, TRUE);
+		wMessageQueue* out = MessagePipe_Get(subsystem->MsgPipe, FALSE);
 		/* Release resource in messages before free */
-		subsystem->MsgPipe->In->object.fnObjectFree = shadow_subsystem_free_queued_message;
-		MessageQueue_Clear(subsystem->MsgPipe->In);
-		subsystem->MsgPipe->Out->object.fnObjectFree = shadow_subsystem_free_queued_message;
-		MessageQueue_Clear(subsystem->MsgPipe->Out);
+
+		if (in)
+		{
+			wObject* obj = MessageQueue_Object(in);
+			obj->fnObjectFree = shadow_subsystem_free_queued_message;
+			MessageQueue_Clear(in);
+		}
+		if (out)
+		{
+			wObject* obj = MessageQueue_Object(out);
+			obj->fnObjectFree = shadow_subsystem_free_queued_message;
+			MessageQueue_Clear(out);
+		}
 		MessagePipe_Free(subsystem->MsgPipe);
 		subsystem->MsgPipe = NULL;
 	}

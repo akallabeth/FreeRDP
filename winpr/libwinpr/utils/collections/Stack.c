@@ -23,6 +23,15 @@
 
 #include <winpr/collections.h>
 
+struct _wStack
+{
+	size_t size;
+	size_t capacity;
+	void** array;
+	CRITICAL_SECTION lock;
+	BOOL synchronized;
+	wObject object;
+};
 /**
  * C equivalent of the C# Stack Class:
  * http://msdn.microsoft.com/en-us/library/system.collections.stack.aspx
@@ -36,9 +45,9 @@
  * Gets the number of elements contained in the Stack.
  */
 
-int Stack_Count(wStack* stack)
+size_t Stack_Count(wStack* stack)
 {
-	int ret;
+	size_t ret;
 
 	if (stack->synchronized)
 		EnterCriticalSection(&stack->lock);
@@ -70,7 +79,7 @@ BOOL Stack_IsSynchronized(wStack* stack)
 
 void Stack_Clear(wStack* stack)
 {
-	int index;
+	size_t index;
 
 	if (stack->synchronized)
 		EnterCriticalSection(&stack->lock);
@@ -95,7 +104,7 @@ void Stack_Clear(wStack* stack)
 
 BOOL Stack_Contains(wStack* stack, void* obj)
 {
-	int i;
+	size_t i;
 	BOOL found = FALSE;
 
 	if (stack->synchronized)

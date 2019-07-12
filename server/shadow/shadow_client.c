@@ -426,7 +426,7 @@ static BOOL shadow_client_refresh_request(rdpShadowClient* client)
 	message.lParam = NULL;
 	message.context = (void*) client;
 	message.Free = NULL;
-	return MessageQueue_Dispatch(MsgPipe->In, &message);
+	return MessageQueue_Dispatch(MessagePipe_Get(MsgPipe, TRUE), &message);
 }
 
 static BOOL shadow_client_refresh_rect(rdpShadowClient* client, BYTE count,

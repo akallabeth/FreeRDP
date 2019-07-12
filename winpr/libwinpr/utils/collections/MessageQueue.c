@@ -26,6 +26,19 @@
 
 #include <winpr/collections.h>
 
+struct _wMessageQueue
+{
+	size_t head;
+	size_t tail;
+	size_t size;
+	size_t capacity;
+	wMessage* array;
+	CRITICAL_SECTION lock;
+	HANDLE event;
+
+	wObject object;
+};
+
 /**
  * Message Queue inspired from Windows:
  * http://msdn.microsoft.com/en-us/library/ms632590/
@@ -48,9 +61,16 @@ HANDLE MessageQueue_Event(wMessageQueue* queue)
  * Gets the queue size
  */
 
-int MessageQueue_Size(wMessageQueue* queue)
+size_t MessageQueue_Size(wMessageQueue* queue)
 {
 	return queue->size;
+}
+
+wObject* MessageQueue_Object(wMessageQueue* queue)
+{
+	if (!queue)
+		return NULL;
+	return &queue->object;
 }
 
 /**
@@ -74,8 +94,8 @@ BOOL MessageQueue_Dispatch(wMessageQueue* queue, wMessage* message)
 
 	if (queue->size == queue->capacity)
 	{
-		int old_capacity;
-		int new_capacity;
+		size_t old_capacity;
+		size_t new_capacity;
 		wMessage* new_arr;
 
 		old_capacity = queue->capacity;

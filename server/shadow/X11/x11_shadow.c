@@ -914,7 +914,7 @@ static DWORD WINAPI x11_shadow_subsystem_thread(LPVOID arg)
 	MsgPipe = subsystem->common.MsgPipe;
 	nCount = 0;
 	events[nCount++] = subsystem->common.event;
-	events[nCount++] = MessageQueue_Event(MsgPipe->In);
+	events[nCount++] = MessageQueue_Event(MessagePipe_Get(MsgPipe, TRUE));
 	subsystem->common.captureFrameRate = 16;
 	dwInterval = 1000 / subsystem->common.captureFrameRate;
 	frameTime = GetTickCount64() + dwInterval;
@@ -925,9 +925,9 @@ static DWORD WINAPI x11_shadow_subsystem_thread(LPVOID arg)
 		dwTimeout = (cTime > frameTime) ? 0 : frameTime - cTime;
 		status = WaitForMultipleObjects(nCount, events, FALSE, dwTimeout);
 
-		if (WaitForSingleObject(MessageQueue_Event(MsgPipe->In), 0) == WAIT_OBJECT_0)
+		if (WaitForSingleObject(MessageQueue_Event(MessagePipe_Get(MsgPipe, TRUE)), 0) == WAIT_OBJECT_0)
 		{
-			if (MessageQueue_Peek(MsgPipe->In, &message, TRUE))
+			if (MessageQueue_Peek(MessagePipe_Get(MsgPipe, TRUE), &message, TRUE))
 			{
 				if (message.id == WMQ_QUIT)
 					break;
@@ -1416,7 +1416,7 @@ static int x11_shadow_subsystem_stop(rdpShadowSubsystem* sub)
 
 	if (subsystem->thread)
 	{
-		if (MessageQueue_PostQuit(subsystem->common.MsgPipe->In, 0))
+		if (MessageQueue_PostQuit(MessagePipe_Get(subsystem->common.MsgPipe, TRUE), 0))
 			WaitForSingleObject(subsystem->thread, INFINITE);
 
 		CloseHandle(subsystem->thread);

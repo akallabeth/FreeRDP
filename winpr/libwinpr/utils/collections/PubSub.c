@@ -25,6 +25,16 @@
 
 #include <winpr/collections.h>
 
+struct _wPubSub
+{
+	CRITICAL_SECTION lock;
+	BOOL synchronized;
+
+	size_t size;
+	size_t count;
+	wEventType* events;
+};
+
 /**
  * Events (C# Programming Guide)
  * http://msdn.microsoft.com/en-us/library/awbftdfh.aspx
@@ -34,7 +44,7 @@
  * Properties
  */
 
-wEventType* PubSub_GetEventTypes(wPubSub* pubSub, int* count)
+wEventType* PubSub_GetEventTypes(wPubSub* pubSub, size_t* count)
 {
 	if (count)
 		*count = pubSub->count;
@@ -58,7 +68,7 @@ void PubSub_Unlock(wPubSub* pubSub)
 
 wEventType* PubSub_FindEventType(wPubSub* pubSub, const char* EventName)
 {
-	int index;
+	size_t index;
 	wEventType* event = NULL;
 
 	for (index = 0; index < pubSub->count; index++)
@@ -73,14 +83,14 @@ wEventType* PubSub_FindEventType(wPubSub* pubSub, const char* EventName)
 	return event;
 }
 
-void PubSub_AddEventTypes(wPubSub* pubSub, wEventType* events, int count)
+void PubSub_AddEventTypes(wPubSub* pubSub, wEventType* events, size_t count)
 {
 	if (pubSub->synchronized)
 		PubSub_Lock(pubSub);
 
 	while (pubSub->count + count >= pubSub->size)
 	{
-		int new_size;
+		size_t new_size;
 		wEventType *new_event;
 
 		new_size = pubSub->size * 2;
@@ -131,7 +141,7 @@ int PubSub_Subscribe(wPubSub* pubSub, const char* EventName, pEventHandler Event
 
 int PubSub_Unsubscribe(wPubSub* pubSub, const char* EventName, pEventHandler EventHandler)
 {
-	int index;
+	size_t index;
 	wEventType* event;
 	int status = -1;
 
@@ -165,7 +175,7 @@ int PubSub_Unsubscribe(wPubSub* pubSub, const char* EventName, pEventHandler Eve
 
 int PubSub_OnEvent(wPubSub* pubSub, const char* EventName, void* context, wEventArgs* e)
 {
-	int index;
+	size_t index;
 	wEventType* event;
 	int status = -1;
 

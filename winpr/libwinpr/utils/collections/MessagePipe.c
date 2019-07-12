@@ -52,7 +52,7 @@ void MessagePipe_PostQuit(wMessagePipe* pipe, int nExitCode)
  * Construction, Destruction
  */
 
-wMessagePipe* MessagePipe_New()
+wMessagePipe* MessagePipe_New(void)
 {
 	wMessagePipe* pipe = NULL;
 
@@ -76,6 +76,15 @@ error_out:
 error_in:
 	free(pipe);
 	return NULL;
+}
+
+wMessageQueue* MessagePipe_Get(wMessagePipe* pipe, BOOL inputQueue)
+{
+	if (!pipe)
+		return NULL;
+	if (inputQueue)
+		return pipe->In;
+	return pipe->Out;
 }
 
 void MessagePipe_Free(wMessagePipe* pipe)

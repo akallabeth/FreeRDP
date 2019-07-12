@@ -52,32 +52,16 @@ struct _wObject
 typedef struct _wObject wObject;
 
 /* System.Collections.Queue */
-
-struct _wQueue
-{
-	int capacity;
-	int growthFactor;
-	BOOL synchronized;
-
-	int head;
-	int tail;
-	int size;
-	void** array;
-	CRITICAL_SECTION lock;
-	HANDLE event;
-
-	wObject object;
-};
 typedef struct _wQueue wQueue;
 
-WINPR_API int Queue_Count(wQueue* queue);
+WINPR_API size_t Queue_Count(wQueue* queue);
 
 WINPR_API void Queue_Lock(wQueue* queue);
 WINPR_API void Queue_Unlock(wQueue* queue);
 
 WINPR_API HANDLE Queue_Event(wQueue* queue);
 
-#define Queue_Object(_queue)	(&_queue->object)
+WINPR_API wObject* Queue_Object(wQueue* queue);
 
 WINPR_API void Queue_Clear(wQueue* queue);
 
@@ -88,23 +72,13 @@ WINPR_API void* Queue_Dequeue(wQueue* queue);
 
 WINPR_API void* Queue_Peek(wQueue* queue);
 
-WINPR_API wQueue* Queue_New(BOOL synchronized, int capacity, int growthFactor);
+WINPR_API wQueue* Queue_New(BOOL synchronized, size_t capacity, size_t growthFactor);
 WINPR_API void Queue_Free(wQueue* queue);
 
 /* System.Collections.Stack */
-
-struct _wStack
-{
-	int size;
-	int capacity;
-	void** array;
-	CRITICAL_SECTION lock;
-	BOOL synchronized;
-	wObject object;
-};
 typedef struct _wStack wStack;
 
-WINPR_API int Stack_Count(wStack* stack);
+WINPR_API size_t Stack_Count(wStack* stack);
 WINPR_API BOOL Stack_IsSynchronized(wStack* stack);
 
 #define Stack_Object(_stack)	(&_stack->object)
@@ -121,24 +95,11 @@ WINPR_API wStack* Stack_New(BOOL synchronized);
 WINPR_API void Stack_Free(wStack* stack);
 
 /* System.Collections.ArrayList */
-
-struct _wArrayList
-{
-	int capacity;
-	int growthFactor;
-	BOOL synchronized;
-
-	int size;
-	void** array;
-	CRITICAL_SECTION lock;
-
-	wObject object;
-};
 typedef struct _wArrayList wArrayList;
 
-WINPR_API int ArrayList_Capacity(wArrayList* arrayList);
-WINPR_API int ArrayList_Count(wArrayList* arrayList);
-WINPR_API int ArrayList_Items(wArrayList* arrayList, ULONG_PTR** ppItems);
+WINPR_API size_t ArrayList_Capacity(wArrayList* arrayList);
+WINPR_API size_t ArrayList_Count(wArrayList* arrayList);
+WINPR_API size_t ArrayList_Items(wArrayList* arrayList, ULONG_PTR** ppItems);
 WINPR_API BOOL ArrayList_IsFixedSized(wArrayList* arrayList);
 WINPR_API BOOL ArrayList_IsReadOnly(wArrayList* arrayList);
 WINPR_API BOOL ArrayList_IsSynchronized(wArrayList* arrayList);
@@ -146,34 +107,25 @@ WINPR_API BOOL ArrayList_IsSynchronized(wArrayList* arrayList);
 WINPR_API void ArrayList_Lock(wArrayList* arrayList);
 WINPR_API void ArrayList_Unlock(wArrayList* arrayList);
 
-WINPR_API void* ArrayList_GetItem(wArrayList* arrayList, int index);
-WINPR_API void ArrayList_SetItem(wArrayList* arrayList, int index, void* obj);
+WINPR_API void* ArrayList_GetItem(wArrayList* arrayList, size_t index);
+WINPR_API void ArrayList_SetItem(wArrayList* arrayList, size_t index, void* obj);
 
-#define ArrayList_Object(_arrayList)	(&_arrayList->object)
+WINPR_API wObject* ArrayList_Object(wArrayList* arrayList);
 
 WINPR_API void ArrayList_Clear(wArrayList* arrayList);
 WINPR_API BOOL ArrayList_Contains(wArrayList* arrayList, void* obj);
 
-WINPR_API int ArrayList_Add(wArrayList* arrayList, void* obj);
-WINPR_API BOOL ArrayList_Insert(wArrayList* arrayList, int index, void* obj);
+WINPR_API SSIZE_T ArrayList_Add(wArrayList* arrayList, void* obj);
+WINPR_API BOOL ArrayList_Insert(wArrayList* arrayList, size_t index, void* obj);
 
 WINPR_API BOOL ArrayList_Remove(wArrayList* arrayList, void* obj);
-WINPR_API BOOL ArrayList_RemoveAt(wArrayList* arrayList, int index);
+WINPR_API BOOL ArrayList_RemoveAt(wArrayList* arrayList, size_t index);
 
-WINPR_API int ArrayList_IndexOf(wArrayList* arrayList, void* obj, int startIndex, int count);
-WINPR_API int ArrayList_LastIndexOf(wArrayList* arrayList, void* obj, int startIndex, int count);
+WINPR_API SSIZE_T ArrayList_IndexOf(wArrayList* arrayList, void* obj, size_t startIndex, SSIZE_T count);
+WINPR_API SSIZE_T ArrayList_LastIndexOf(wArrayList* arrayList, void* obj, size_t startIndex, SSIZE_T count);
 
 WINPR_API wArrayList* ArrayList_New(BOOL synchronized);
 WINPR_API void ArrayList_Free(wArrayList* arrayList);
-
-/* System.Collections.DictionaryBase */
-
-struct _wDictionary
-{
-	BOOL synchronized;
-	CRITICAL_SECTION lock;
-};
-typedef struct _wDictionary wDictionary;
 
 /* System.Collections.Specialized.ListDictionary */
 
@@ -187,21 +139,12 @@ struct _wListDictionaryItem
 	wListDictionaryItem* next;
 };
 
-struct _wListDictionary
-{
-	BOOL synchronized;
-	CRITICAL_SECTION lock;
-
-	wListDictionaryItem* head;
-	wObject objectKey;
-	wObject objectValue;
-};
 typedef struct _wListDictionary wListDictionary;
 
-#define ListDictionary_KeyObject(_dictionary)	(&_dictionary->objectKey)
-#define ListDictionary_ValueObject(_dictionary)	(&_dictionary->objectValue)
+WINPR_API wObject* ListDictionary_KeyObject(wListDictionary* listDictionary);
+WINPR_API wObject* ListDictionary_ValueObject(wListDictionary* listDictionary);
 
-WINPR_API int ListDictionary_Count(wListDictionary* listDictionary);
+WINPR_API size_t ListDictionary_Count(wListDictionary* listDictionary);
 
 WINPR_API void ListDictionary_Lock(wListDictionary* listDictionary);
 WINPR_API void ListDictionary_Unlock(wListDictionary* listDictionary);
@@ -261,25 +204,8 @@ struct _wKeyValuePair
 };
 
 /* Reference Table */
-
-struct _wReference
-{
-	UINT32 Count;
-	void* Pointer;
-};
-typedef struct _wReference wReference;
-
 typedef int (*REFERENCE_FREE)(void* context, void* ptr);
 
-struct _wReferenceTable
-{
-	UINT32 size;
-	CRITICAL_SECTION lock;
-	void* context;
-	BOOL synchronized;
-	wReference* array;
-	REFERENCE_FREE ReferenceFree;
-};
 typedef struct _wReferenceTable wReferenceTable;
 
 WINPR_API UINT32 ReferenceTable_Add(wReferenceTable* referenceTable, void* ptr);
@@ -306,56 +232,44 @@ WINPR_API void CountdownEvent_Free(wCountdownEvent* countdown);
 
 /* Hash Table */
 
-typedef UINT32(*HASH_TABLE_HASH_FN)(void* key);
-typedef BOOL (*HASH_TABLE_KEY_COMPARE_FN)(void* key1, void* key2);
-typedef BOOL (*HASH_TABLE_VALUE_COMPARE_FN)(void* value1, void* value2);
-typedef void* (*HASH_TABLE_KEY_CLONE_FN)(void* key);
-typedef void* (*HASH_TABLE_VALUE_CLONE_FN)(void* value);
+typedef UINT32(*HASH_TABLE_HASH_FN)(const void* key);
+typedef BOOL (*HASH_TABLE_KEY_COMPARE_FN)(const void* key1, const void* key2);
+typedef BOOL (*HASH_TABLE_VALUE_COMPARE_FN)(const void* value1, const void* value2);
+typedef void* (*HASH_TABLE_KEY_CLONE_FN)(const void* key);
+typedef void* (*HASH_TABLE_VALUE_CLONE_FN)(const void* value);
 typedef void (*HASH_TABLE_KEY_FREE_FN)(void* key);
 typedef void (*HASH_TABLE_VALUE_FREE_FN)(void* value);
 
-struct _wHashTable
-{
-	BOOL synchronized;
-	CRITICAL_SECTION lock;
-
-	int numOfBuckets;
-	int numOfElements;
-	float idealRatio;
-	float lowerRehashThreshold;
-	float upperRehashThreshold;
-	wKeyValuePair** bucketArray;
-
-	HASH_TABLE_HASH_FN hash;
-	HASH_TABLE_KEY_COMPARE_FN keyCompare;
-	HASH_TABLE_VALUE_COMPARE_FN valueCompare;
-	HASH_TABLE_KEY_CLONE_FN keyClone;
-	HASH_TABLE_VALUE_CLONE_FN valueClone;
-	HASH_TABLE_KEY_FREE_FN keyFree;
-	HASH_TABLE_VALUE_FREE_FN valueFree;
-};
 typedef struct _wHashTable wHashTable;
 
-WINPR_API int HashTable_Count(wHashTable* table);
-WINPR_API int HashTable_Add(wHashTable* table, void* key, void* value);
-WINPR_API BOOL HashTable_Remove(wHashTable* table, void* key);
+WINPR_API size_t HashTable_Count(wHashTable* table);
+WINPR_API BOOL HashTable_Add(wHashTable* table, const void* key, const void* value);
+WINPR_API BOOL HashTable_Remove(wHashTable* table, const void* key);
 WINPR_API void HashTable_Clear(wHashTable* table);
-WINPR_API BOOL HashTable_Contains(wHashTable* table, void* key);
-WINPR_API BOOL HashTable_ContainsKey(wHashTable* table, void* key);
-WINPR_API BOOL HashTable_ContainsValue(wHashTable* table, void* value);
-WINPR_API void* HashTable_GetItemValue(wHashTable* table, void* key);
-WINPR_API BOOL HashTable_SetItemValue(wHashTable* table, void* key, void* value);
-WINPR_API int HashTable_GetKeys(wHashTable* table, ULONG_PTR** ppKeys);
+WINPR_API BOOL HashTable_Contains(wHashTable* table, const void* key);
+WINPR_API BOOL HashTable_ContainsKey(wHashTable* table, const void* key);
+WINPR_API BOOL HashTable_ContainsValue(wHashTable* table, const void* value);
+WINPR_API void* HashTable_GetItemValue(wHashTable* table, const void* key);
+WINPR_API BOOL HashTable_SetItemValue(wHashTable* table, const void* key, const void* value);
+WINPR_API SSIZE_T HashTable_GetKeys(wHashTable* table, ULONG_PTR** ppKeys);
 
-WINPR_API UINT32 HashTable_PointerHash(void* pointer);
-WINPR_API BOOL HashTable_PointerCompare(void* pointer1, void* pointer2);
+WINPR_API UINT32 HashTable_PointerHash(const void* pointer);
+WINPR_API BOOL HashTable_PointerCompare(const void* pointer1, const void* pointer2);
 
-WINPR_API UINT32 HashTable_StringHash(void* key);
-WINPR_API BOOL HashTable_StringCompare(void* string1, void* string2);
-WINPR_API void* HashTable_StringClone(void* str);
+WINPR_API UINT32 HashTable_StringHash(const void* key);
+WINPR_API BOOL HashTable_StringCompare(const void* string1, const void* string2);
+WINPR_API void* HashTable_StringClone(const void* str);
 WINPR_API void HashTable_StringFree(void* str);
 
 WINPR_API wHashTable* HashTable_New(BOOL synchronized);
+WINPR_API BOOL HashTable_SetFunction(wHashTable* table, UINT32 mask,
+									 HASH_TABLE_HASH_FN hash,
+									  HASH_TABLE_KEY_COMPARE_FN keyCompare,
+									  HASH_TABLE_VALUE_COMPARE_FN valueCompare,
+									  HASH_TABLE_KEY_CLONE_FN keyClone,
+									  HASH_TABLE_VALUE_CLONE_FN valueClone,
+									  HASH_TABLE_KEY_FREE_FN keyFree,
+									  HASH_TABLE_VALUE_FREE_FN valueFree);
 WINPR_API void HashTable_Free(wHashTable* table);
 
 /* BufferPool */
@@ -374,32 +288,21 @@ WINPR_API void BufferPool_Free(wBufferPool* pool);
 
 /* ObjectPool */
 
-struct _wObjectPool
-{
-	int size;
-	int capacity;
-	void** array;
-	CRITICAL_SECTION lock;
-	wObject object;
-	BOOL synchronized;
-};
 typedef struct _wObjectPool wObjectPool;
 
 WINPR_API void* ObjectPool_Take(wObjectPool* pool);
 WINPR_API void ObjectPool_Return(wObjectPool* pool, void* obj);
 WINPR_API void ObjectPool_Clear(wObjectPool* pool);
 
-#define ObjectPool_Object(_pool)	(&_pool->object)
+WINPR_API wObject* ObjectPool_Object(wObjectPool* pool);
 
 WINPR_API wObjectPool* ObjectPool_New(BOOL synchronized);
 WINPR_API void ObjectPool_Free(wObjectPool* pool);
 
 /* Message Queue */
-
 typedef struct _wMessage wMessage;
 
 typedef void (*MESSAGE_FREE_FN)(wMessage* message);
-
 struct _wMessage
 {
 	UINT32 id;
@@ -410,25 +313,15 @@ struct _wMessage
 	MESSAGE_FREE_FN Free;
 };
 
-struct _wMessageQueue
-{
-	int head;
-	int tail;
-	int size;
-	int capacity;
-	wMessage* array;
-	CRITICAL_SECTION lock;
-	HANDLE event;
-
-	wObject object;
-};
 typedef struct _wMessageQueue wMessageQueue;
 
 #define WMQ_QUIT	0xFFFFFFFF
 
 WINPR_API HANDLE MessageQueue_Event(wMessageQueue* queue);
 WINPR_API BOOL MessageQueue_Wait(wMessageQueue* queue);
-WINPR_API int MessageQueue_Size(wMessageQueue* queue);
+WINPR_API size_t MessageQueue_Size(wMessageQueue* queue);
+
+WINPR_API wObject* MessageQueue_Object(wMessageQueue* queue);
 
 WINPR_API BOOL MessageQueue_Dispatch(wMessageQueue* queue, wMessage* message);
 WINPR_API BOOL MessageQueue_Post(wMessageQueue* queue, void* context, UINT32 type, void* wParam,
@@ -484,6 +377,7 @@ WINPR_API void MessagePipe_PostQuit(wMessagePipe* pipe, int nExitCode);
 
 WINPR_API wMessagePipe* MessagePipe_New(void);
 WINPR_API void MessagePipe_Free(wMessagePipe* pipe);
+WINPR_API wMessageQueue* MessagePipe_Get(wMessagePipe* pipe, BOOL inputQueue);
 
 /* Publisher/Subscriber Pattern */
 
@@ -502,7 +396,7 @@ struct _wEventType
 {
 	const char* EventName;
 	wEventArgs EventArgs;
-	int EventHandlerCount;
+	size_t EventHandlerCount;
 	pEventHandler EventHandlers[MAX_EVENT_HANDLERS];
 };
 typedef struct _wEventType wEventType;
@@ -541,22 +435,13 @@ typedef struct _wEventType wEventType;
 #define DEFINE_EVENT_ENTRY(_name) \
 	{ #_name, { sizeof( _name ## EventArgs), NULL }, 0, { NULL } },
 
-	struct _wPubSub
-	{
-		CRITICAL_SECTION lock;
-		BOOL synchronized;
-
-		int size;
-		int count;
-		wEventType* events;
-	};
 	typedef struct _wPubSub wPubSub;
 
 	WINPR_API void PubSub_Lock(wPubSub* pubSub);
 	WINPR_API void PubSub_Unlock(wPubSub* pubSub);
 
-	WINPR_API wEventType* PubSub_GetEventTypes(wPubSub* pubSub, int* count);
-	WINPR_API void PubSub_AddEventTypes(wPubSub* pubSub, wEventType* events, int count);
+	WINPR_API wEventType* PubSub_GetEventTypes(wPubSub* pubSub, size_t* count);
+	WINPR_API void PubSub_AddEventTypes(wPubSub* pubSub, wEventType* events, size_t count);
 	WINPR_API wEventType* PubSub_FindEventType(wPubSub* pubSub, const char* EventName);
 
 	WINPR_API int PubSub_Subscribe(wPubSub* pubSub, const char* EventName, pEventHandler EventHandler);

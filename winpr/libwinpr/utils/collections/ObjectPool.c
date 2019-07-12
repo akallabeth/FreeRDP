@@ -25,6 +25,16 @@
 
 #include <winpr/collections.h>
 
+struct _wObjectPool
+{
+	size_t size;
+	size_t capacity;
+	void** array;
+	CRITICAL_SECTION lock;
+	wObject object;
+	BOOL synchronized;
+};
+
 /**
  * C Object Pool similar to C# BufferManager Class:
  * http://msdn.microsoft.com/en-us/library/ms405814.aspx
@@ -61,6 +71,13 @@ void* ObjectPool_Take(wObjectPool* pool)
 		LeaveCriticalSection(&pool->lock);
 
 	return obj;
+}
+
+wObject* ObjectPool_Object(wObjectPool* pool)
+{
+	if (!pool)
+		return NULL;
+	return &pool->object;
 }
 
 /**

@@ -461,6 +461,7 @@ HANDLE CreateThread(LPSECURITY_ATTRIBUTES lpThreadAttributes,
 
 	if (!thread_list)
 	{
+		wObject* key;
 		thread_list = ListDictionary_New(TRUE);
 
 		if (!thread_list)
@@ -469,7 +470,11 @@ HANDLE CreateThread(LPSECURITY_ATTRIBUTES lpThreadAttributes,
 			goto error_thread_list;
 		}
 
-		thread_list->objectKey.fnObjectEquals = thread_compare;
+		key = ListDictionary_KeyObject(thread_list);
+		if (!key)
+			goto error_thread_list;
+
+		key->fnObjectEquals = thread_compare;
 	}
 
 	if (!(dwCreationFlags & CREATE_SUSPENDED))

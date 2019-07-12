@@ -25,6 +25,22 @@
 
 #include <winpr/collections.h>
 
+struct _wQueue
+{
+	size_t capacity;
+	size_t growthFactor;
+	BOOL synchronized;
+
+	size_t head;
+	size_t tail;
+	size_t size;
+	void** array;
+	CRITICAL_SECTION lock;
+	HANDLE event;
+
+	wObject object;
+};
+
 /**
  * C equivalent of the C# Queue Class:
  * http://msdn.microsoft.com/en-us/library/system.collections.queue.aspx
@@ -38,9 +54,9 @@
  * Gets the number of elements contained in the Queue.
  */
 
-int Queue_Count(wQueue* queue)
+size_t Queue_Count(wQueue* queue)
 {
-	int ret;
+	size_t ret;
 
 	if (queue->synchronized)
 		EnterCriticalSection(&queue->lock);
@@ -80,6 +96,13 @@ HANDLE Queue_Event(wQueue* queue)
 	return queue->event;
 }
 
+wObject* Queue_Object(wQueue* queue)
+{
+	if (!queue)
+		return NULL;
+	return &queue->object;
+}
+
 /**
  * Methods
  */
@@ -90,7 +113,7 @@ HANDLE Queue_Event(wQueue* queue)
 
 void Queue_Clear(wQueue* queue)
 {
-	int index;
+	size_t index;
 
 	if (queue->synchronized)
 		EnterCriticalSection(&queue->lock);
@@ -116,7 +139,7 @@ void Queue_Clear(wQueue* queue)
 
 BOOL Queue_Contains(wQueue* queue, void* obj)
 {
-	int index;
+	size_t index;
 	BOOL found = FALSE;
 
 	if (queue->synchronized)
@@ -150,8 +173,8 @@ BOOL Queue_Enqueue(wQueue* queue, void* obj)
 
 	if (queue->size == queue->capacity)
 	{
-		int old_capacity;
-		int new_capacity;
+		size_t old_capacity;
+		size_t new_capacity;
 		void** newArray;
 		old_capacity = queue->capacity;
 		new_capacity = queue->capacity * queue->growthFactor;
@@ -244,7 +267,7 @@ static BOOL default_queue_equals(const void* obj1, const void* obj2)
  * Construction, Destruction
  */
 
-wQueue* Queue_New(BOOL synchronized, int capacity, int growthFactor)
+wQueue* Queue_New(BOOL synchronized, size_t capacity, size_t growthFactor)
 {
 	wQueue* queue = NULL;
 	queue = (wQueue*)calloc(1, sizeof(wQueue));

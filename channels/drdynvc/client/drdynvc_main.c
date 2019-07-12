@@ -185,6 +185,7 @@ static IWTSVirtualChannel* dvcman_find_channel_by_id(IWTSVirtualChannelManager*
 
 static IWTSVirtualChannelManager* dvcman_new(drdynvcPlugin* plugin)
 {
+	wObject* obj;
 	DVCMAN* dvcman;
 	dvcman = (DVCMAN*) calloc(1, sizeof(DVCMAN));
 
@@ -207,7 +208,14 @@ static IWTSVirtualChannelManager* dvcman_new(drdynvcPlugin* plugin)
 		return NULL;
 	}
 
-	dvcman->channels->object.fnObjectFree = dvcman_channel_free;
+	obj = ArrayList_Object(dvcman->channels);
+	if (!obj)
+	{
+		ArrayList_Free(dvcman->channels);
+		free(dvcman);
+		return NULL;
+	}
+	obj->fnObjectFree = dvcman_channel_free;
 	dvcman->pool = StreamPool_New(TRUE, 10);
 
 	if (!dvcman->pool)
@@ -1374,6 +1382,7 @@ static void drdynvc_queue_object_free(void* obj)
 static UINT drdynvc_virtual_channel_event_connected(drdynvcPlugin* drdynvc, LPVOID pData,
         UINT32 dataLength)
 {
+	wObject* obj;
 	UINT error;
 	UINT32 status;
 	UINT32 index;
@@ -1405,7 +1414,10 @@ static UINT drdynvc_virtual_channel_event_connected(drdynvcPlugin* drdynvc, LPVO
 		goto error;
 	}
 
-	drdynvc->queue->object.fnObjectFree = drdynvc_queue_object_free;
+	obj = MessageQueue_Object(drdynvc->queue);
+	if (!obj)
+		goto error;
+	obj->fnObjectFree = drdynvc_queue_object_free;
 	drdynvc->channel_mgr = dvcman_new(drdynvc);
 
 	if (!drdynvc->channel_mgr)

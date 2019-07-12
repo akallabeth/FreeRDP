@@ -1082,6 +1082,7 @@ fail:
 static UINT rdpsnd_virtual_channel_event_connected(rdpsndPlugin* rdpsnd,
         LPVOID pData, UINT32 dataLength)
 {
+	wObject* obj;
 	UINT32 status;
 	status = rdpsnd->channelEntryPoints.pVirtualChannelOpenEx(rdpsnd->InitHandle,
 	         &rdpsnd->OpenHandle, rdpsnd->channelDef.name,
@@ -1104,7 +1105,11 @@ static UINT rdpsnd_virtual_channel_event_connected(rdpsndPlugin* rdpsnd,
 	if (!rdpsnd->queue)
 		goto fail;
 
-	rdpsnd->queue->object.fnObjectFree = rdpsnd_queue_free;
+	obj = Queue_Object(rdpsnd->queue);
+	if (!obj)
+		goto fail;
+
+	obj->fnObjectFree = rdpsnd_queue_free;
 	rdpsnd->pool = StreamPool_New(TRUE, 4096);
 
 	if (!rdpsnd->pool)

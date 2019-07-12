@@ -73,13 +73,16 @@ struct _GEOMETRY_PLUGIN
 typedef struct _GEOMETRY_PLUGIN GEOMETRY_PLUGIN;
 
 
-static UINT32 mappedGeometryHash(UINT64 *g)
+static UINT32 mappedGeometryHash(const void* pv)
 {
+	const UINT64* g = (const UINT64*)pv;
 	return (UINT32)((*g >> 32) + (*g & 0xffffffff));
 }
 
-static BOOL mappedGeometryKeyCompare(UINT64 *g1, UINT64 *g2)
+static BOOL mappedGeometryKeyCompare(const void* pv1, const void* pv2)
 {
+	const UINT64* g1 = (const UINT64*)pv1;
+	const UINT64* g2 = (const UINT64*)pv2;
 	return *g1 == *g2;
 }
 
@@ -478,9 +481,11 @@ UINT DVCPluginEntry(IDRDYNVC_ENTRY_POINTS* pEntryPoints)
 		}
 
 		context->geometries = HashTable_New(FALSE);
-		context->geometries->hash = (HASH_TABLE_HASH_FN)mappedGeometryHash;
-		context->geometries->keyCompare = (HASH_TABLE_KEY_COMPARE_FN)mappedGeometryKeyCompare;
-		context->geometries->valueFree = (HASH_TABLE_VALUE_FREE_FN)mappedGeometryUnref;
+		if (!context->geometries)
+			goto error_context;
+		HashTable_SetFunction(context->geometries, 0x43, mappedGeometryHash,
+							  mappedGeometryKeyCompare, NULL, NULL, NULL, NULL,
+							  mappedGeometryUnref);
 
 		context->handle = (void*) geometry;
 		geometry->iface.pInterface = (void*) context;

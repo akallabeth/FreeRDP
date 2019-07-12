@@ -109,6 +109,7 @@ static void channel_queue_free(void* obj)
 
 rdpChannels* freerdp_channels_new(freerdp* instance)
 {
+	wObject* obj;
 	rdpChannels* channels;
 	channels = (rdpChannels*) calloc(1, sizeof(rdpChannels));
 
@@ -124,7 +125,9 @@ rdpChannels* freerdp_channels_new(freerdp* instance)
 	if (!channels->queue)
 		goto error;
 
-	channels->queue->object.fnObjectFree = channel_queue_free;
+	obj = MessageQueue_Object(channels->queue);
+	if (obj)
+		obj->fnObjectFree = channel_queue_free;
 	channels->openHandles = HashTable_New(TRUE);
 
 	if (!channels->openHandles)
