@@ -51,15 +51,19 @@
 #include "pf_update.h"
 #include "pf_log.h"
 
+#include <freerdp/settings.h>
+
 #define TAG PROXY_TAG("client")
 
 /**
  * Re-negotiate with original client after negotiation between the proxy
  * and the target has finished.
  */
-static void proxy_server_reactivate(rdpContext* client, rdpContext* target)
+static void proxy_server_reactivate(rdpContext* client, const rdpContext* target)
 {
-	pf_common_copy_settings(client->settings, target->settings);
+	freerdp_settings_free(client->settings);
+	client->settings = freerdp_settings_clone(target->settings);
+
 	/* DesktopResize causes internal function rdp_server_reactivate to be called,
 	 * which causes the reactivation.
 	 */

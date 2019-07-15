@@ -23,6 +23,8 @@
 #include "pf_context.h"
 #include "pf_common.h"
 
+#include <freerdp/settings.h>
+
 /* Proxy context initialization callback */
 static BOOL client_to_proxy_context_new(freerdp_peer* client,
                                         pServerContext* context)
@@ -76,49 +78,10 @@ rdpContext* p_client_context_create(rdpSettings* clientSettings)
 		return NULL;
 
 	settings = context->settings;
-	pf_common_copy_settings(settings, clientSettings);
-	settings->Username = _strdup(clientSettings->Username);
-	settings->Password = _strdup(clientSettings->Password);
-	settings->Domain = _strdup(clientSettings->Domain);
-	settings->SoftwareGdi = FALSE;
-	settings->RedirectClipboard = FALSE;
-	/* Client Monitor Data */
-	settings->MonitorCount = clientSettings->MonitorCount;
-	settings->SpanMonitors = clientSettings->SpanMonitors;
-	settings->UseMultimon = clientSettings->UseMultimon;
-	settings->ForceMultimon = clientSettings->ForceMultimon;
-	settings->DesktopPosX = clientSettings->DesktopPosX;
-	settings->DesktopPosY = clientSettings->DesktopPosY;
-	settings->ListMonitors = clientSettings->ListMonitors;
-	settings->NumMonitorIds = clientSettings->NumMonitorIds;
-	settings->MonitorLocalShiftX = clientSettings->MonitorLocalShiftX;
-	settings->MonitorLocalShiftY = clientSettings->MonitorLocalShiftY;
-	settings->HasMonitorAttributes = clientSettings->HasMonitorAttributes;
-	settings->MonitorCount = clientSettings->MonitorCount;
-	settings->MonitorDefArraySize = clientSettings->MonitorDefArraySize;
-
-	if (clientSettings->MonitorDefArraySize > 0)
-	{
-		settings->MonitorDefArray = (rdpMonitor*) calloc(clientSettings->MonitorDefArraySize,
-		                            sizeof(rdpMonitor));
-
-		if (!settings->MonitorDefArray)
-		{
-			goto error;
-		}
-
-		CopyMemory(settings->MonitorDefArray, clientSettings->MonitorDefArray,
-		           sizeof(rdpMonitor) * clientSettings->MonitorDefArraySize);
-	}
-	else
-		settings->MonitorDefArray = NULL;
-
-	settings->MonitorIds = (UINT32*) calloc(16, sizeof(UINT32));
-
-	if (!settings->MonitorIds)
+	freerdp_settings_free(settings);
+	context->settings = freerdp_settings_clone(clientSettings);
+	if (!context->settings)
 		goto error;
-
-	CopyMemory(settings->MonitorIds, clientSettings->MonitorIds, 16 * sizeof(UINT32));
 	return context;
 error:
 	freerdp_client_context_free(context);
