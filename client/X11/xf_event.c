@@ -479,6 +479,7 @@ static BOOL xf_event_KeyRelease(xfContext* xfc, XEvent* event, BOOL app)
 }
 static BOOL xf_event_FocusIn(xfContext* xfc, XEvent* event, BOOL app)
 {
+	xf_keyboard_focus_in(xfc);
 	if (event->xfocus.mode == NotifyGrab)
 		return TRUE;
 
@@ -506,7 +507,6 @@ static BOOL xf_event_FocusIn(xfContext* xfc, XEvent* event, BOOL app)
 		}
 	}
 
-	xf_keyboard_focus_in(xfc);
 	return TRUE;
 }
 static BOOL xf_event_FocusOut(xfContext* xfc, XEvent* event, BOOL app)
@@ -569,6 +569,10 @@ static BOOL xf_event_ClientMessage(xfContext* xfc, XEvent* event, BOOL app)
 }
 static BOOL xf_event_EnterNotify(xfContext* xfc, XEvent* event, BOOL app)
 {
+	UINT32 syncFlags;
+	syncFlags = xf_keyboard_get_toggle_keys_state(xfc);
+	freerdp_input_send_synchronize_event(xfc->context.input, syncFlags);
+
 	if (!app)
 	{
 		if (!xfc->window)

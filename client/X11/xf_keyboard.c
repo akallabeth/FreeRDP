@@ -219,7 +219,7 @@ void xf_keyboard_send_key(xfContext* xfc, BOOL down, BYTE keycode)
 		{
 			UINT32 syncFlags;
 			syncFlags = xf_keyboard_get_toggle_keys_state(xfc);
-			input->SynchronizeEvent(input, syncFlags);
+			freerdp_input_send_synchronize_event(input, syncFlags);
 		}
 	}
 }
