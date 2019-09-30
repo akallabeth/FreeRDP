@@ -21,6 +21,13 @@
 #ifndef WINPR_THREAD_PRIVATE_H
 #define WINPR_THREAD_PRIVATE_H
 
+#if defined(ANDROID)
+#include <jni.h>
+
+JNIEnv* thread_get_jni_env(void);
+JavaVM* thread_get_jni_jvm(void);
+#endif
+
 #ifndef _WIN32
 
 #include <pthread.h>

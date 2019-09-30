@@ -301,7 +301,10 @@ static void* thread_launcher(void* arg)
 	DWORD rc = 0;
 	WINPR_THREAD* thread = (WINPR_THREAD*) arg;
 	LPTHREAD_START_ROUTINE fkt;
-
+#if defined(ANDROID)
+  COFFEE_TRY()
+	{                      
+#endif
 	if (!thread)
 	{
 		WLog_ERR(TAG, "Called with invalid argument %p", arg);
@@ -344,9 +347,47 @@ exit:
 		if (thread->detached || !thread->started)
 			cleanup_handle(thread);
 	}
+#if defined(ANDROID)
+	}
+	COFFEE_CATCH()
+	{
+		JNIEnv* env = thread_get_jni_env();
+		coffeecatch_throw_exception(env); 
+	}
+	COFFEE_END(); 
+#endif
 
 	return NULL;
 }
+
+#if defined(ANDROID)
+static JavaVM* jniVm = NULL;
+
+JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
+{
+	jniVm = vm;
+	return JNI_VERSION_1_6;
+}
+
+JNIEnv* thread_get_jni_env(void)
+{
+	JNIEnv* env;
+
+	if (!jniVm)
+		return NULL;
+
+	if ((*jniVm)->GetEnv(jniVm, (void**)&env, JNI_VERSION_1_6) != JNI_OK))
+		return NULL;
+
+	return env;
+}
+
+JavaVM* thread_get_jni_jvm(void)
+{
+	return jniVm;
+}
+
+#endif
 
 static BOOL winpr_StartThread(WINPR_THREAD* thread)
 {

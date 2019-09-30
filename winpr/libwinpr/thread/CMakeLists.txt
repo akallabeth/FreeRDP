@@ -15,13 +15,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-winpr_module_add(
+set(SRC
 	argv.c
 	process.c
 	processor.c
 	thread.c
 	thread.h
 	tls.c)
+
+if (ANDROID)
+	list(APPEND SRC
+		coffeecatch.h
+		coffeecatch.c
+		coffeejni.h
+		coffeejni.c
+		)
+endif()
+
+winpr_module_add(${SRC})
 
 if(${CMAKE_SYSTEM_NAME} MATCHES SunOS)
 	winpr_library_add_private(rt)
