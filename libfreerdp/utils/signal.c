@@ -25,6 +25,7 @@
 #include <errno.h>
 
 #include <winpr/crt.h>
+#include <winpr/debug.h>
 
 #include <freerdp/utils/signal.h>
 #include <freerdp/log.h>
@@ -48,11 +49,100 @@ int terminal_fildes = 0;
 struct termios orig_flags;
 struct termios new_flags;
 
+static int print_stack(char** buffer, size_t* size, const char* fmt, ...)
+{
+	va_list ap;
+	int rc;
+
+	va_start(ap, fmt);
+	rc = vsnprintf(*buffer, *size, fmt, ap);
+	va_end(ap);
+
+	WLog_ERR(TAG, "%s", *buffer);
+	if ((rc >= 0) && ((size_t)rc < *size))
+	{
+		*size -= (size_t)rc;
+
+		*buffer = &((*buffer)[rc]);
+		(*buffer)[-1] = '\n';
+	}
+
+	return rc;
+}
+
+#if defined(ANDROID)
+#include <jni.h>
+static JavaVM* jniVm = NULL;
+
+JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
+{
+	jniVm = vm;
+	return JNI_VERSION_1_6;
+}
+
+
+static void throw(JNIEnv* env, const char* msg)
+{
+	jclass jcls = env->FindClass("java/lang/RuntimeException");
+	env->ThrowNew(jcls, msg);
+}
+
+static void throwWithEnv(const char* msg)
+{
+	JNIEnv * env;
+
+	int getEnvStat = jniVm->GetEnv((void **)&env, JNI_VERSION_1_6);
+	if (getEnvStat == JNI_EDETACHED) {
+		if (jniVm->AttachCurrentThread((void **) &env, NULL) != 0)
+		{
+			WLog_DBG(TAG, "Attached to JVM");
+		}
+	} else if (getEnvStat == JNI_OK) {
+		WLog_DBG(TAG, "Already attached to JVM");
+	} else if (getEnvStat == JNI_EVERSION) {
+		WLog_WARN(TAG, "Trying to attach with unsupported JVM version");
+		return;
+	}
+
+	throw(env, msg);
+
+	jniVm->DetachCurrentThread();
+}
+#endif
+
+static char trace[0x10000] = { 0 };
+
 static void fatal_handler(int signum)
 {
+	void* bt;
+	char** msg;
+	size_t used, x;
 	struct sigaction default_sigaction;
 	sigset_t this_mask;
-	WLog_DBG(TAG, "fatal_handler: signum=%d", signum);
+	size_t size = sizeof(trace);
+
+	char* out = trace;
+
+	print_stack(&out, &size, "%s: signum=%d", __FUNCTION__, signum);
+
+	bt = winpr_backtrace(10);
+	if (bt)
+	{
+		msg = winpr_backtrace_symbols(bt, &used);
+
+		if (msg)
+		{
+			print_stack(&out, &size, "------- begin backtrace ------------");
+			for (x = 0; x < used; x++)
+				print_stack(&out, &size, "%"PRIuz": %s", x, msg[x]);
+			print_stack(&out, &size, "------- end backtrace   ------------");
+		}
+		winpr_backtrace_free(bt);
+	}
+
+#if defined(ANDROID)
+	throwWithEnv(trace);
+#endif
 
 	if (terminal_needs_reset)
 		tcsetattr(terminal_fildes, TCSAFLUSH, &orig_flags);
@@ -67,7 +157,7 @@ static void fatal_handler(int signum)
 	raise(signum);
 }
 
-const int fatal_signals[] =
+static const int fatal_signals[] =
 {
 	SIGABRT,
 	SIGALRM,
