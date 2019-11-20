@@ -38,14 +38,17 @@ static primitives_t* generic = NULL;
 #ifdef WITH_SSE2
 #if !defined(WITH_IPP) || defined(ALL_PRIMITIVES_VERSIONS)
 /* ------------------------------------------------------------------------- */
-SSE3_SCD_PRE_ROUTINE(sse3_andC_32u, UINT32, generic->andC_32u, _mm_and_si128,
-                     *dptr++ = *sptr++ & val)
-SSE3_SCD_PRE_ROUTINE(sse3_orC_32u, UINT32, generic->orC_32u, _mm_or_si128, *dptr++ = *sptr++ | val)
+static SSE3_SCD_PRE_ROUTINE(sse3_andC_32u, UINT32, generic->andC_32u, _mm_and_si128,
+                            *dptr++ = *sptr++ &
+                                      val) static SSE3_SCD_PRE_ROUTINE(sse3_orC_32u, UINT32,
+                                                                       generic->orC_32u,
+                                                                       _mm_or_si128,
+                                                                       *dptr++ = *sptr++ | val)
 #endif /* !defined(WITH_IPP) || defined(ALL_PRIMITIVES_VERSIONS) */
 #endif
 
-/* ------------------------------------------------------------------------- */
-void primitives_init_andor_opt(primitives_t* prims)
+    /* ------------------------------------------------------------------------- */
+    void primitives_init_andor_opt(primitives_t* prims)
 {
 	generic = primitives_get_generic();
 	primitives_init_andor(prims);

@@ -39,13 +39,13 @@ static primitives_t* generic = NULL;
 #ifdef WITH_SSE2
 #if !defined(WITH_IPP) || defined(ALL_PRIMITIVES_VERSIONS)
 /* ------------------------------------------------------------------------- */
-SSE3_SSD_ROUTINE(sse3_add_16s, INT16, generic->add_16s, _mm_adds_epi16,
-                 generic->add_16s(sptr1++, sptr2++, dptr++, 1))
+static SSE3_SSD_ROUTINE(sse3_add_16s, INT16, generic->add_16s, _mm_adds_epi16,
+                        generic->add_16s(sptr1++, sptr2++, dptr++, 1))
 #endif /* !defined(WITH_IPP) || defined(ALL_PRIMITIVES_VERSIONS) */
 #endif
 
-/* ------------------------------------------------------------------------- */
-void primitives_init_add_opt(primitives_t* prims)
+    /* ------------------------------------------------------------------------- */
+    void primitives_init_add_opt(primitives_t* prims)
 {
 	generic = primitives_get_generic();
 	primitives_init_add(prims);
