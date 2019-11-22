@@ -22,13 +22,38 @@
 #endif
 
 #include <winpr/crt.h>
+#include <winpr/string.h>
+#include <winpr/schannel.h>
 #include <winpr/sspi.h>
 
 #include "schannel.h"
 
 #include "../sspi.h"
+#include "schannel_openssl.h"
 
-static char* SCHANNEL_PACKAGE_NAME = "Schannel";
+struct _SCHANNEL_CREDENTIALS
+{
+	SCHANNEL_CRED cred;
+	ULONG fCredentialUse;
+};
+typedef struct _SCHANNEL_CREDENTIALS SCHANNEL_CREDENTIALS;
+
+struct _SCHANNEL_CONTEXT
+{
+	BOOL server;
+	SCHANNEL_CRED cred;
+	SCHANNEL_OPENSSL* openssl;
+};
+typedef struct _SCHANNEL_CONTEXT SCHANNEL_CONTEXT;
+
+static CHAR S_SCHANNEL_PACKAGE_NAME_A[] = "Schannel";
+static WCHAR S_SCHANNEL_PACKAGE_NAME_W[] = { 'S', 'c', 'h', 'a', 'n', 'n', 'e', 'l', '\0' };
+
+const CHAR SCHANNEL_PACKAGE_NAME_A[] = "Schannel";
+const WCHAR SCHANNEL_PACKAGE_NAME_W[] = { 'S', 'c', 'h', 'a', 'n', 'n', 'e', 'l', '\0' };
+
+static SCHANNEL_CONTEXT* schannel_ContextNew(void);
+static void schannel_ContextFree(SCHANNEL_CONTEXT* context);
 
 SCHANNEL_CONTEXT* schannel_ContextNew(void)
 {
@@ -143,7 +168,7 @@ static SECURITY_STATUS SEC_ENTRY schannel_AcquireCredentialsHandleW(
 		}
 
 		sspi_SecureHandleSetLowerPointer(phCredential, (void*)credentials);
-		sspi_SecureHandleSetUpperPointer(phCredential, (void*)SCHANNEL_PACKAGE_NAME);
+		sspi_SecureHandleSetUpperPointer(phCredential, S_SCHANNEL_PACKAGE_NAME_A);
 		return SEC_E_OK;
 	}
 	else if (fCredentialUse == SECPKG_CRED_INBOUND)
@@ -151,7 +176,7 @@ static SECURITY_STATUS SEC_ENTRY schannel_AcquireCredentialsHandleW(
 		credentials = schannel_CredentialsNew();
 		credentials->fCredentialUse = fCredentialUse;
 		sspi_SecureHandleSetLowerPointer(phCredential, (void*)credentials);
-		sspi_SecureHandleSetUpperPointer(phCredential, (void*)SCHANNEL_PACKAGE_NAME);
+		sspi_SecureHandleSetUpperPointer(phCredential, S_SCHANNEL_PACKAGE_NAME_A);
 		return SEC_E_OK;
 	}
 
@@ -213,7 +238,7 @@ static SECURITY_STATUS SEC_ENTRY schannel_InitializeSecurityContextW(
 		context->server = FALSE;
 		CopyMemory(&context->cred, &credentials->cred, sizeof(SCHANNEL_CRED));
 		sspi_SecureHandleSetLowerPointer(phNewContext, context);
-		sspi_SecureHandleSetUpperPointer(phNewContext, (void*)SCHANNEL_PACKAGE_NAME);
+		sspi_SecureHandleSetUpperPointer(phNewContext, S_SCHANNEL_PACKAGE_NAME_A);
 		schannel_openssl_client_init(context->openssl);
 	}
 
@@ -259,7 +284,7 @@ static SECURITY_STATUS SEC_ENTRY schannel_AcceptSecurityContext(
 
 		context->server = TRUE;
 		sspi_SecureHandleSetLowerPointer(phNewContext, context);
-		sspi_SecureHandleSetUpperPointer(phNewContext, (void*)SCHANNEL_PACKAGE_NAME);
+		sspi_SecureHandleSetUpperPointer(phNewContext, S_SCHANNEL_PACKAGE_NAME_A);
 		schannel_openssl_server_init(context->openssl);
 	}
 
@@ -421,21 +446,19 @@ const SecPkgInfoA SCHANNEL_SecPkgInfoA = {
 	1,                          /* wVersion */
 	0x000E,                     /* wRPCID */
 	SCHANNEL_CB_MAX_TOKEN,      /* cbMaxToken */
-	"Schannel",                 /* Name */
+	S_SCHANNEL_PACKAGE_NAME_A,  /* Name */
 	"Schannel Security Package" /* Comment */
 };
 
-WCHAR SCHANNEL_SecPkgInfoW_Name[] = { 'S', 'c', 'h', 'a', 'n', 'n', 'e', 'l', '\0' };
-
-WCHAR SCHANNEL_SecPkgInfoW_Comment[] = { 'S', 'c', 'h', 'a', 'n', 'n', 'e', 'l', ' ',
-	                                     'S', 'e', 'c', 'u', 'r', 'i', 't', 'y', ' ',
-	                                     'P', 'a', 'c', 'k', 'a', 'g', 'e', '\0' };
+const WCHAR SCHANNEL_SecPkgInfoW_Comment[] = { 'S', 'c', 'h', 'a', 'n', 'n', 'e', 'l', ' ',
+	                                           'S', 'e', 'c', 'u', 'r', 'i', 't', 'y', ' ',
+	                                           'P', 'a', 'c', 'k', 'a', 'g', 'e', '\0' };
 
 const SecPkgInfoW SCHANNEL_SecPkgInfoW = {
 	0x000107B3,                  /* fCapabilities */
 	1,                           /* wVersion */
 	0x000E,                      /* wRPCID */
 	SCHANNEL_CB_MAX_TOKEN,       /* cbMaxToken */
-	SCHANNEL_SecPkgInfoW_Name,   /* Name */
+	S_SCHANNEL_PACKAGE_NAME_W,   /* Name */
 	SCHANNEL_SecPkgInfoW_Comment /* Comment */
 };
