@@ -34,23 +34,13 @@
 #include "sspi_winpr.h"
 
 #include "CredSSP/credssp.h"
+#include "Kerberos/kerberos.h"
 #include "Negotiate/negotiate.h"
+#include "NTLM/ntlm.h"
 #include "Schannel/schannel.h"
 
 #include "../log.h"
 #define TAG WINPR_TAG("sspi")
-
-/* Authentication Functions: http://msdn.microsoft.com/en-us/library/windows/desktop/aa374731/ */
-
-extern const SecPkgInfoA NTLM_SecPkgInfoA;
-extern const SecPkgInfoW NTLM_SecPkgInfoW;
-extern const SecurityFunctionTableA NTLM_SecurityFunctionTableA;
-extern const SecurityFunctionTableW NTLM_SecurityFunctionTableW;
-
-extern const SecPkgInfoA KERBEROS_SecPkgInfoA;
-extern const SecPkgInfoW KERBEROS_SecPkgInfoW;
-extern const SecurityFunctionTableA KERBEROS_SecurityFunctionTableA;
-extern const SecurityFunctionTableW KERBEROS_SecurityFunctionTableW;
 
 static const SecPkgInfoA* SecPkgInfoA_LIST[] = { &NTLM_SecPkgInfoA, &KERBEROS_SecPkgInfoA,
 	                                             &NEGOTIATE_SecPkgInfoA, &CREDSSP_SecPkgInfoA,
@@ -78,19 +68,16 @@ struct _SecurityFunctionTableW_NAME
 typedef struct _SecurityFunctionTableW_NAME SecurityFunctionTableW_NAME;
 
 static const SecurityFunctionTableA_NAME SecurityFunctionTableA_NAME_LIST[] = {
-	{ "NTLM", &NTLM_SecurityFunctionTableA },
-	{ "Kerberos", &KERBEROS_SecurityFunctionTableA },
+	{ NTLM_PACKAGE_NAME_A, &NTLM_SecurityFunctionTableA },
+	{ KERBEROS_PACKAGE_NAME_A, &KERBEROS_SecurityFunctionTableA },
 	{ NEGOTIATE_PACKAGE_NAME_A, &NEGOTIATE_SecurityFunctionTableA },
 	{ CREDSSP_PACKAGE_NAME_A, &CREDSSP_SecurityFunctionTableA },
 	{ SCHANNEL_PACKAGE_NAME_A, &SCHANNEL_SecurityFunctionTableA }
 };
 
-static const WCHAR NTLM_NAME_W[] = { 'N', 'T', 'L', 'M', '\0' };
-static const WCHAR KERBEROS_NAME_W[] = { 'K', 'e', 'r', 'b', 'e', 'r', 'o', 's', '\0' };
-
 static const SecurityFunctionTableW_NAME SecurityFunctionTableW_NAME_LIST[] = {
-	{ NTLM_NAME_W, &NTLM_SecurityFunctionTableW },
-	{ KERBEROS_NAME_W, &KERBEROS_SecurityFunctionTableW },
+	{ NTLM_PACKAGE_NAME_W, &NTLM_SecurityFunctionTableW },
+	{ KERBEROS_PACKAGE_NAME_W, &KERBEROS_SecurityFunctionTableW },
 	{ NEGOTIATE_PACKAGE_NAME_W, &NEGOTIATE_SecurityFunctionTableW },
 	{ CREDSSP_PACKAGE_NAME_W, &CREDSSP_SecurityFunctionTableW },
 	{ SCHANNEL_PACKAGE_NAME_W, &SCHANNEL_SecurityFunctionTableW }

@@ -35,6 +35,7 @@
 #include <winpr/registry.h>
 
 #include "kerberos.h"
+#include "sspi_gss.h"
 
 #ifdef WITH_GSSAPI_HEIMDAL
 #include <krb5-protos.h>
@@ -43,6 +44,15 @@
 #include "../sspi.h"
 #include "../../log.h"
 #define TAG WINPR_TAG("sspi.Kerberos")
+
+#include <winpr/windows.h>
+
+#ifdef WITH_GSSAPI
+#include <krb5.h>
+#include <gssapi.h>
+#endif
+
+typedef struct _KRB_CONTEXT KRB_CONTEXT;
 
 struct _KRB_CONTEXT
 {
@@ -59,7 +69,11 @@ struct _KRB_CONTEXT
 	sspi_gss_name_t target_name;
 };
 
-static const char* KRB_PACKAGE_NAME = "Kerberos";
+static CHAR S_KERBEROS_PACKAGE_NAME_A[] = "Kerberos";
+static WCHAR S_KERBEROS_PACKAGE_NAME_W[] = { 'K', 'e', 'r', 'b', 'e', 'r', 'o', 's', '\0' };
+
+const CHAR KERBEROS_PACKAGE_NAME_A[] = "Kerberos";
+const WCHAR KERBEROS_PACKAGE_NAME_W[] = { 'K', 'e', 'r', 'b', 'e', 'r', 'o', 's', '\0' };
 
 const SecPkgInfoA KERBEROS_SecPkgInfoA = {
 	0x000F3BBF,                 /* fCapabilities */
@@ -70,8 +84,6 @@ const SecPkgInfoA KERBEROS_SecPkgInfoA = {
 	"Kerberos Security Package" /* Comment */
 };
 
-static WCHAR KERBEROS_SecPkgInfoW_Name[] = { 'K', 'e', 'r', 'b', 'e', 'r', 'o', 's', '\0' };
-
 static WCHAR KERBEROS_SecPkgInfoW_Comment[] = { 'K', 'e', 'r', 'b', 'e', 'r', 'o', 's', ' ',
 	                                            'S', 'e', 'c', 'u', 'r', 'i', 't', 'y', ' ',
 	                                            'P', 'a', 'c', 'k', 'a', 'g', 'e', '\0' };
@@ -81,7 +93,7 @@ const SecPkgInfoW KERBEROS_SecPkgInfoW = {
 	1,                           /* wVersion */
 	0x0010,                      /* wRPCID */
 	0x0000BB80,                  /* cbMaxToken : 48k bytes maximum for Windows Server 2012 */
-	KERBEROS_SecPkgInfoW_Name,   /* Name */
+	S_KERBEROS_PACKAGE_NAME_W,   /* Name */
 	KERBEROS_SecPkgInfoW_Comment /* Comment */
 };
 
@@ -473,7 +485,7 @@ static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextA(
 		}
 
 		sspi_SecureHandleSetLowerPointer(phNewContext, context);
-		sspi_SecureHandleSetUpperPointer(phNewContext, (void*)KRB_PACKAGE_NAME);
+		sspi_SecureHandleSetUpperPointer(phNewContext, S_KERBEROS_PACKAGE_NAME_A);
 	}
 
 	if (!pInput)

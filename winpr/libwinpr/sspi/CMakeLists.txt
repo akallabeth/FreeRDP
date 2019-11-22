@@ -25,9 +25,12 @@ set(${MODULE_PREFIX}_NTLM_SRCS
 	NTLM/ntlm_message.c
 	NTLM/ntlm_message.h
 	NTLM/ntlm.c
-	NTLM/ntlm.h)
+	NTLM/ntlm.h
+	NTLM/ntlm_int.h)
 
 set(${MODULE_PREFIX}_KERBEROS_SRCS
+	Kerberos/sspi_gss.c
+	Kerberos/sspi_gss.h
 	Kerberos/kerberos.c
 	Kerberos/kerberos.h)
 
@@ -49,8 +52,6 @@ set(${MODULE_PREFIX}_SRCS
 	sspi_winpr.c
 	sspi_winpr.h
 	sspi_export.c
-	sspi_gss.c
-	sspi_gss.h
 	sspi.c
 	sspi.h)
 
