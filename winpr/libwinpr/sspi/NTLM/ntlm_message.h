@@ -20,7 +20,7 @@
 #ifndef WINPR_SSPI_NTLM_MESSAGE_H
 #define WINPR_SSPI_NTLM_MESSAGE_H
 
-#include "ntlm.h"
+#include "ntlm_int.h"
 
 SECURITY_STATUS ntlm_read_NegotiateMessage(NTLM_CONTEXT* context, PSecBuffer buffer);
 SECURITY_STATUS ntlm_write_NegotiateMessage(NTLM_CONTEXT* context, PSecBuffer buffer);

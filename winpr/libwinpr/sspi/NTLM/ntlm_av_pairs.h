@@ -20,7 +20,7 @@
 #ifndef WINPR_SSPI_NTLM_AV_PAIRS_H
 #define WINPR_SSPI_NTLM_AV_PAIRS_H
 
-#include "ntlm.h"
+#include "ntlm_int.h"
 
 #include <winpr/stream.h>
 

@@ -40,7 +40,11 @@
 
 #define WINPR_KEY "Software\\" FREERDP_VENDOR_STRING "\\" FREERDP_PRODUCT_STRING "\\WinPR\\NTLM"
 
-static const char* NTLM_PACKAGE_NAME = "NTLM";
+static CHAR S_NTLM_PACKAGE_NAME_A[] = "NTLM";
+static WCHAR S_NTLM_PACKAGE_NAME_W[] = { 'N', 'T', 'L', 'M', '\0' };
+
+const CHAR NTLM_PACKAGE_NAME_A[] = "NTLM";
+const WCHAR NTLM_PACKAGE_NAME_W[] = { 'N', 'T', 'L', 'M', '\0' };
 
 static int ntlm_SetContextWorkstation(NTLM_CONTEXT* context, char* Workstation)
 {
@@ -324,7 +328,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_AcquireCredentialsHandleW(
 		sspi_CopyAuthIdentity(&(credentials->identity), identity);
 
 	sspi_SecureHandleSetLowerPointer(phCredential, (void*)credentials);
-	sspi_SecureHandleSetUpperPointer(phCredential, (void*)NTLM_PACKAGE_NAME);
+	sspi_SecureHandleSetUpperPointer(phCredential, S_NTLM_PACKAGE_NAME_A);
 	return SEC_E_OK;
 }
 
@@ -356,7 +360,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_AcquireCredentialsHandleA(
 		sspi_CopyAuthIdentity(&(credentials->identity), identity);
 
 	sspi_SecureHandleSetLowerPointer(phCredential, (void*)credentials);
-	sspi_SecureHandleSetUpperPointer(phCredential, (void*)NTLM_PACKAGE_NAME);
+	sspi_SecureHandleSetUpperPointer(phCredential, S_NTLM_PACKAGE_NAME_A);
 	return SEC_E_OK;
 }
 
@@ -424,7 +428,7 @@ ntlm_AcceptSecurityContext(PCredHandle phCredential, PCtxtHandle phContext, PSec
 		context->credentials = credentials;
 		ntlm_SetContextTargetName(context, NULL);
 		sspi_SecureHandleSetLowerPointer(phNewContext, context);
-		sspi_SecureHandleSetUpperPointer(phNewContext, (void*)NTLM_PACKAGE_NAME);
+		sspi_SecureHandleSetUpperPointer(phNewContext, S_NTLM_PACKAGE_NAME_A);
 	}
 
 	if (context->state == NTLM_STATE_INITIAL)
@@ -550,7 +554,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_InitializeSecurityContextW(
 		}
 
 		sspi_SecureHandleSetLowerPointer(phNewContext, context);
-		sspi_SecureHandleSetUpperPointer(phNewContext, (void*)NTLM_PACKAGE_NAME);
+		sspi_SecureHandleSetUpperPointer(phNewContext, S_NTLM_PACKAGE_NAME_A);
 	}
 
 	if ((!pInput) || (context->state == NTLM_STATE_AUTHENTICATE))
@@ -1240,11 +1244,9 @@ const SecPkgInfoA NTLM_SecPkgInfoA = {
 	1,                      /* wVersion */
 	0x000A,                 /* wRPCID */
 	0x00000B48,             /* cbMaxToken */
-	"NTLM",                 /* Name */
+	S_NTLM_PACKAGE_NAME_A,  /* Name */
 	"NTLM Security Package" /* Comment */
 };
-
-static WCHAR NTLM_SecPkgInfoW_Name[] = { 'N', 'T', 'L', 'M', '\0' };
 
 static WCHAR NTLM_SecPkgInfoW_Comment[] = {
 	'N', 'T', 'L', 'M', ' ', 'S', 'e', 'c', 'u', 'r', 'i',
@@ -1256,6 +1258,6 @@ const SecPkgInfoW NTLM_SecPkgInfoW = {
 	1,                       /* wVersion */
 	0x000A,                  /* wRPCID */
 	0x00000B48,              /* cbMaxToken */
-	NTLM_SecPkgInfoW_Name,   /* Name */
+	S_NTLM_PACKAGE_NAME_W,   /* Name */
 	NTLM_SecPkgInfoW_Comment /* Comment */
 };
