@@ -97,9 +97,9 @@ const SecPkgInfoW NEGOTIATE_SecPkgInfoW = {
 	NEGOTIATE_SecPkgInfoW_Comment /* Comment */
 };
 
-static void negotiate_SetSubPackage(NEGOTIATE_CONTEXT* context, const TCHAR* name)
+static void negotiate_SetSubPackage(NEGOTIATE_CONTEXT* context, const CHAR* name)
 {
-	if (_tcsnccmp(name, KERBEROS_SSP_NAME, ARRAYSIZE(KERBEROS_SSP_NAME)) == 0)
+	if (strncmp(name, KERBEROS_SSP_NAME_A, ARRAYSIZE(KERBEROS_SSP_NAME_A)) == 0)
 	{
 		context->sspiA = &KERBEROS_SecurityFunctionTableA;
 		context->sspiW = &KERBEROS_SecurityFunctionTableW;
@@ -124,7 +124,7 @@ static NEGOTIATE_CONTEXT* negotiate_ContextNew(void)
 	context->NegotiateFlags = 0;
 	context->state = NEGOTIATE_STATE_INITIAL;
 	SecInvalidateHandle(&(context->SubContext));
-	negotiate_SetSubPackage(context, KERBEROS_SSP_NAME);
+	negotiate_SetSubPackage(context, KERBEROS_SSP_NAME_A);
 	return context;
 }
 
@@ -158,7 +158,7 @@ static SECURITY_STATUS SEC_ENTRY negotiate_InitializeSecurityContextW(
 	{
 		if (!pInput)
 		{
-			negotiate_SetSubPackage(context, KERBEROS_SSP_NAME);
+			negotiate_SetSubPackage(context, KERBEROS_SSP_NAME_A);
 		}
 
 		status = context->sspiW->InitializeSecurityContextW(
@@ -180,7 +180,7 @@ static SECURITY_STATUS SEC_ENTRY negotiate_InitializeSecurityContextW(
 		if (!pInput)
 		{
 			context->sspiA->DeleteSecurityContext(&(context->SubContext));
-			negotiate_SetSubPackage(context, NTLM_SSP_NAME);
+			negotiate_SetSubPackage(context, NTLM_SSP_NAME_A);
 		}
 
 		status = context->sspiW->InitializeSecurityContextW(
@@ -217,7 +217,7 @@ static SECURITY_STATUS SEC_ENTRY negotiate_InitializeSecurityContextA(
 	{
 		if (!pInput)
 		{
-			negotiate_SetSubPackage(context, KERBEROS_SSP_NAME);
+			negotiate_SetSubPackage(context, KERBEROS_SSP_NAME_A);
 		}
 
 		status = context->sspiA->InitializeSecurityContextA(
@@ -239,7 +239,7 @@ static SECURITY_STATUS SEC_ENTRY negotiate_InitializeSecurityContextA(
 		if (!pInput)
 		{
 			context->sspiA->DeleteSecurityContext(&(context->SubContext));
-			negotiate_SetSubPackage(context, NTLM_SSP_NAME);
+			negotiate_SetSubPackage(context, NTLM_SSP_NAME_A);
 		}
 
 		status = context->sspiA->InitializeSecurityContextA(
@@ -271,7 +271,8 @@ static SECURITY_STATUS SEC_ENTRY negotiate_AcceptSecurityContext(
 		sspi_SecureHandleSetUpperPointer(phNewContext, (void*)NEGO_SSP_NAME);
 	}
 
-	negotiate_SetSubPackage(context, NTLM_SSP_NAME); /* server-side Kerberos not yet implemented */
+	negotiate_SetSubPackage(context,
+	                        NTLM_SSP_NAME_A); /* server-side Kerberos not yet implemented */
 	status = context->sspiA->AcceptSecurityContext(
 	    phCredential, &(context->SubContext), pInput, fContextReq, TargetDataRep,
 	    &(context->SubContext), pOutput, pfContextAttr, ptsTimeStamp);
