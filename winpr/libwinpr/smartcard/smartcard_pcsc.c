@@ -2583,7 +2583,7 @@ fail:
 }
 #endif
 
-SCardApiFunctionTable PCSC_SCardApiFunctionTable = {
+static SCardApiFunctionTable PCSC_SCardApiFunctionTable = {
 	0, /* dwVersion */
 	0, /* dwFlags */
 
