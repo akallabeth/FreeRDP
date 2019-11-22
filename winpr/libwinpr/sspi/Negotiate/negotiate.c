@@ -28,15 +28,46 @@
 
 #include "negotiate.h"
 
+#include "../Kerberos/kerberos.h"
+
 #include "../sspi.h"
 #include "../log.h"
 #define TAG WINPR_TAG("negotiate")
 
+#define NTLM_OID "1.3.6.1.4.1.311.2.2.10"
+
+enum _NEGOTIATE_STATE
+{
+	NEGOTIATE_STATE_INITIAL,
+	NEGOTIATE_STATE_NEGOINIT,
+	NEGOTIATE_STATE_NEGORESP,
+	NEGOTIATE_STATE_FINAL
+};
+typedef enum _NEGOTIATE_STATE NEGOTIATE_STATE;
+
+struct _NEGOTIATE_CONTEXT
+{
+	NEGOTIATE_STATE state;
+	UINT32 NegotiateFlags;
+	PCtxtHandle auth_ctx;
+	SecBuffer NegoInitMessage;
+
+	CtxtHandle SubContext;
+
+	BOOL kerberos;
+	const SecurityFunctionTableA* sspiA;
+	const SecurityFunctionTableW* sspiW;
+};
+typedef struct _NEGOTIATE_CONTEXT NEGOTIATE_CONTEXT;
+
+static CHAR S_NEGOTIATE_PACKAGE_NAME_A[] = "Negotiate";
+static WCHAR S_NEGOTIATE_PACKAGE_NAME_W[] = { 'N', 'e', 'g', 'o', 't', 'i', 'a', 't', 'e', '\0' };
+
+const CHAR NEGOTIATE_PACKAGE_NAME_A[] = "Negotiate";
+const WCHAR NEGOTIATE_PACKAGE_NAME_W[] = { 'N', 'e', 'g', 'o', 't', 'i', 'a', 't', 'e', '\0' };
+
 extern const SecurityFunctionTableA NTLM_SecurityFunctionTableA;
 extern const SecurityFunctionTableW NTLM_SecurityFunctionTableW;
-
-extern const SecurityFunctionTableA KERBEROS_SecurityFunctionTableA;
-extern const SecurityFunctionTableW KERBEROS_SecurityFunctionTableW;
 
 #ifdef WITH_GSSAPI
 static BOOL ErrorInitContextKerberos = FALSE;
@@ -49,11 +80,9 @@ const SecPkgInfoA NEGOTIATE_SecPkgInfoA = {
 	1,                             /* wVersion */
 	0x0009,                        /* wRPCID */
 	0x00002FE0,                    /* cbMaxToken */
-	"Negotiate",                   /* Name */
+	S_NEGOTIATE_PACKAGE_NAME_A,    /* Name */
 	"Microsoft Package Negotiator" /* Comment */
 };
-
-static WCHAR NEGOTIATE_SecPkgInfoW_Name[] = { 'N', 'e', 'g', 'o', 't', 'i', 'a', 't', 'e', '\0' };
 
 static WCHAR NEGOTIATE_SecPkgInfoW_Comment[] = { 'M', 'i', 'c', 'r', 'o', 's', 'o', 'f', 't', ' ',
 	                                             'P', 'a', 'c', 'k', 'a', 'g', 'e', ' ', 'N', 'e',
@@ -64,7 +93,7 @@ const SecPkgInfoW NEGOTIATE_SecPkgInfoW = {
 	1,                            /* wVersion */
 	0x0009,                       /* wRPCID */
 	0x00002FE0,                   /* cbMaxToken */
-	NEGOTIATE_SecPkgInfoW_Name,   /* Name */
+	S_NEGOTIATE_PACKAGE_NAME_W,   /* Name */
 	NEGOTIATE_SecPkgInfoW_Comment /* Comment */
 };
 
@@ -72,14 +101,14 @@ static void negotiate_SetSubPackage(NEGOTIATE_CONTEXT* context, const TCHAR* nam
 {
 	if (_tcsnccmp(name, KERBEROS_SSP_NAME, ARRAYSIZE(KERBEROS_SSP_NAME)) == 0)
 	{
-		context->sspiA = (SecurityFunctionTableA*)&KERBEROS_SecurityFunctionTableA;
-		context->sspiW = (SecurityFunctionTableW*)&KERBEROS_SecurityFunctionTableW;
+		context->sspiA = &KERBEROS_SecurityFunctionTableA;
+		context->sspiW = &KERBEROS_SecurityFunctionTableW;
 		context->kerberos = TRUE;
 	}
 	else
 	{
-		context->sspiA = (SecurityFunctionTableA*)&NTLM_SecurityFunctionTableA;
-		context->sspiW = (SecurityFunctionTableW*)&NTLM_SecurityFunctionTableW;
+		context->sspiA = &NTLM_SecurityFunctionTableA;
+		context->sspiW = &NTLM_SecurityFunctionTableW;
 		context->kerberos = FALSE;
 	}
 }

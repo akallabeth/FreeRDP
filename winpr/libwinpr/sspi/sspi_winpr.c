@@ -34,6 +34,7 @@
 #include "sspi_winpr.h"
 
 #include "CredSSP/credssp.h"
+#include "Negotiate/negotiate.h"
 #include "Schannel/schannel.h"
 
 #include "../log.h"
@@ -50,11 +51,6 @@ extern const SecPkgInfoA KERBEROS_SecPkgInfoA;
 extern const SecPkgInfoW KERBEROS_SecPkgInfoW;
 extern const SecurityFunctionTableA KERBEROS_SecurityFunctionTableA;
 extern const SecurityFunctionTableW KERBEROS_SecurityFunctionTableW;
-
-extern const SecPkgInfoA NEGOTIATE_SecPkgInfoA;
-extern const SecPkgInfoW NEGOTIATE_SecPkgInfoW;
-extern const SecurityFunctionTableA NEGOTIATE_SecurityFunctionTableA;
-extern const SecurityFunctionTableW NEGOTIATE_SecurityFunctionTableW;
 
 static const SecPkgInfoA* SecPkgInfoA_LIST[] = { &NTLM_SecPkgInfoA, &KERBEROS_SecPkgInfoA,
 	                                             &NEGOTIATE_SecPkgInfoA, &CREDSSP_SecPkgInfoA,
@@ -84,19 +80,18 @@ typedef struct _SecurityFunctionTableW_NAME SecurityFunctionTableW_NAME;
 static const SecurityFunctionTableA_NAME SecurityFunctionTableA_NAME_LIST[] = {
 	{ "NTLM", &NTLM_SecurityFunctionTableA },
 	{ "Kerberos", &KERBEROS_SecurityFunctionTableA },
-	{ "Negotiate", &NEGOTIATE_SecurityFunctionTableA },
+	{ NEGOTIATE_PACKAGE_NAME_A, &NEGOTIATE_SecurityFunctionTableA },
 	{ CREDSSP_PACKAGE_NAME_A, &CREDSSP_SecurityFunctionTableA },
 	{ SCHANNEL_PACKAGE_NAME_A, &SCHANNEL_SecurityFunctionTableA }
 };
 
 static const WCHAR NTLM_NAME_W[] = { 'N', 'T', 'L', 'M', '\0' };
 static const WCHAR KERBEROS_NAME_W[] = { 'K', 'e', 'r', 'b', 'e', 'r', 'o', 's', '\0' };
-static const WCHAR NEGOTIATE_NAME_W[] = { 'N', 'e', 'g', 'o', 't', 'i', 'a', 't', 'e', '\0' };
 
 static const SecurityFunctionTableW_NAME SecurityFunctionTableW_NAME_LIST[] = {
 	{ NTLM_NAME_W, &NTLM_SecurityFunctionTableW },
 	{ KERBEROS_NAME_W, &KERBEROS_SecurityFunctionTableW },
-	{ NEGOTIATE_NAME_W, &NEGOTIATE_SecurityFunctionTableW },
+	{ NEGOTIATE_PACKAGE_NAME_W, &NEGOTIATE_SecurityFunctionTableW },
 	{ CREDSSP_PACKAGE_NAME_W, &CREDSSP_SecurityFunctionTableW },
 	{ SCHANNEL_PACKAGE_NAME_W, &SCHANNEL_SecurityFunctionTableW }
 };
