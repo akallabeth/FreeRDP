@@ -33,6 +33,8 @@
 
 #include "sspi_winpr.h"
 
+#include "CredSSP/credssp.h"
+
 #include "../log.h"
 #define TAG WINPR_TAG("sspi")
 
@@ -52,11 +54,6 @@ extern const SecPkgInfoA NEGOTIATE_SecPkgInfoA;
 extern const SecPkgInfoW NEGOTIATE_SecPkgInfoW;
 extern const SecurityFunctionTableA NEGOTIATE_SecurityFunctionTableA;
 extern const SecurityFunctionTableW NEGOTIATE_SecurityFunctionTableW;
-
-extern const SecPkgInfoA CREDSSP_SecPkgInfoA;
-extern const SecPkgInfoW CREDSSP_SecPkgInfoW;
-extern const SecurityFunctionTableA CREDSSP_SecurityFunctionTableA;
-extern const SecurityFunctionTableW CREDSSP_SecurityFunctionTableW;
 
 extern const SecPkgInfoA SCHANNEL_SecPkgInfoA;
 extern const SecPkgInfoW SCHANNEL_SecPkgInfoW;
@@ -92,21 +89,20 @@ static const SecurityFunctionTableA_NAME SecurityFunctionTableA_NAME_LIST[] = {
 	{ "NTLM", &NTLM_SecurityFunctionTableA },
 	{ "Kerberos", &KERBEROS_SecurityFunctionTableA },
 	{ "Negotiate", &NEGOTIATE_SecurityFunctionTableA },
-	{ "CREDSSP", &CREDSSP_SecurityFunctionTableA },
+	{ CREDSSP_PACKAGE_NAME_A, &CREDSSP_SecurityFunctionTableA },
 	{ "Schannel", &SCHANNEL_SecurityFunctionTableA }
 };
 
 static const WCHAR NTLM_NAME_W[] = { 'N', 'T', 'L', 'M', '\0' };
 static const WCHAR KERBEROS_NAME_W[] = { 'K', 'e', 'r', 'b', 'e', 'r', 'o', 's', '\0' };
 static const WCHAR NEGOTIATE_NAME_W[] = { 'N', 'e', 'g', 'o', 't', 'i', 'a', 't', 'e', '\0' };
-static const WCHAR CREDSSP_NAME_W[] = { 'C', 'r', 'e', 'd', 'S', 'S', 'P', '\0' };
 static const WCHAR SCHANNEL_NAME_W[] = { 'S', 'c', 'h', 'a', 'n', 'n', 'e', 'l', '\0' };
 
 static const SecurityFunctionTableW_NAME SecurityFunctionTableW_NAME_LIST[] = {
 	{ NTLM_NAME_W, &NTLM_SecurityFunctionTableW },
 	{ KERBEROS_NAME_W, &KERBEROS_SecurityFunctionTableW },
 	{ NEGOTIATE_NAME_W, &NEGOTIATE_SecurityFunctionTableW },
-	{ CREDSSP_NAME_W, &CREDSSP_SecurityFunctionTableW },
+	{ CREDSSP_PACKAGE_NAME_W, &CREDSSP_SecurityFunctionTableW },
 	{ SCHANNEL_NAME_W, &SCHANNEL_SecurityFunctionTableW }
 };
 
