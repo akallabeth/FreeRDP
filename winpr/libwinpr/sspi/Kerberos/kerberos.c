@@ -38,6 +38,7 @@
 #include "sspi_gss.h"
 
 #ifdef WITH_GSSAPI_HEIMDAL
+#include <krb5.h>
 #include <krb5-protos.h>
 #endif
 

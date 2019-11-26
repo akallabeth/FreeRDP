@@ -24,7 +24,7 @@ include(CheckTypeSize)
 
 # export GSS_ROOT_FLAVOUR to use pkg-config system under UNIX
 if(UNIX)
-  if(NOT "$ENV{GSS_ROOT_FLAVOUR} " STREQUAL " ")
+  if(NOT "$ENV{GSS_ROOT_FLAVOUR}" STREQUAL "")
     string(REGEX MATCH "^[M|m]it$" MIT_FLAVOUR "$ENV{GSS_ROOT_FLAVOUR}")
     if(NOT MIT_FLAVOUR)
       string(REGEX MATCH "^MIT$" MIT_FLAVOUR "$ENV{GSS_ROOT_FLAVOUR}")
@@ -39,8 +39,12 @@ if(UNIX)
       set(GSS_FLAVOUR "Heimdal")
     else()
       message(SEND_ERROR "Kerberos flavour unknown ($ENV{GSS_ROOT_FLAVOUR}). Choose MIT or Heimdal.")
+      set(GSS_FLAVOUR "Heimdal")
     endif()
+  else()
+      set(GSS_FLAVOUR "Heimdal")
   endif()
+  set(ENV{GSS_ROOT_FLAVOUR} ${GSS_FLAVOUR})
 endif()
 
 set(_GSS_ROOT_HINTS
@@ -50,42 +54,23 @@ set(_GSS_ROOT_HINTS
 
 # try to find library using system pkg-config if user did not specify root dir
 if(UNIX)
-  if("$ENV{GSS_ROOT_DIR} " STREQUAL " ")
     if(GSS_FLAVOUR)
-      find_package(PkgConfig QUIET)
+      find_package(PkgConfig QUIET REQUIRED)
       if(GSS_FLAVOUR STREQUAL "MIT")
-        pkg_search_module(_GSS_PKG ${_MIT_MODNAME})
+          pkg_search_module(_GSS_PKG REQUIRED ${_MIT_MODNAME})
       else()
-        pkg_search_module(_GSS_PKG ${_HEIMDAL_MODNAME})
+          pkg_search_module(_GSS_PKG REQUIRED ${_HEIMDAL_MODNAME})
       endif()
 
-      if("${_GSS_PKG_PREFIX} " STREQUAL " ")
-        if(NOT "$ENV{PKG_CONFIG_PATH} " STREQUAL " ")
-          list(APPEND _GSS_ROOT_HINTS "$ENV{PKG_CONFIG_PATH}")
-        else()
-          message(SEND_ERROR "pkg_search_module failed : try to set PKG_CONFIG_PATH to PREFIX_OF_KERBEROS/lib/pkgconfig")
-        endif()
-      else()
-	if($ENV{GSS_ROOT_FLAVOUR} STREQUAL "Heimdal")
-	  string(FIND "${_GSS_PKG_PREFIX}" "heimdal" PKG_HEIMDAL_PREFIX_POSITION)
-          if(PKG_HEIMDAL_PREFIX_POSITION STREQUAL "-1")
-	    message(WARNING "Try to set PKG_CONFIG_PATH to \"PREFIX_OF_KERBEROS/lib/pkgconfig\"")
-	  else()
-	    list(APPEND _GSS_ROOT_HINTS "${_GSS_PKG_PREFIX}")
-          endif()
-	else()
-	  list(APPEND _GSS_ROOT_HINTS "${_GSS_PKG_PREFIX}")
-	endif()
-      endif()
+      list(APPEND _GSS_ROOT_HINTS "${_GSS_PKG_INCLUDE_DIRS}")
     else()
-      message(WARNING "export GSS_ROOT_FLAVOUR to use pkg-config")
+      message(WARNING "set GSS_FLAVOUR to use pkg-config")
     endif()
-  endif()
 elseif(WIN32)
   list(APPEND _GSS_ROOT_HINTS "[HKEY_LOCAL_MACHINE\\SOFTWARE\\MIT\\Kerberos;InstallDir]")
 endif()
 
-if(NOT GSS_FOUND) # not found by pkg-config. Let's take more traditional approach.
+if(NOT _GSS_PKG_FOUND) # not found by pkg-config. Let's take more traditional approach.
   find_file(_GSS_CONFIGURE_SCRIPT
       NAMES
           "krb5-config"
@@ -212,7 +197,7 @@ if(NOT GSS_FOUND) # not found by pkg-config. Let's take more traditional approac
         if(_GSS_HAVE_MIT_HEADERS)
           set(GSS_FLAVOUR "MIT")
         else()
-          message(SEND_ERROR "Try to set the Kerberos flavour (GSS_ROOT_FLAVOUR)")
+          message(SEND_ERROR "Try to set the Kerberos flavour (GSS_FLAVOUR)")
         endif()
       elseif("$ENV{PKG_CONFIG_PATH} " STREQUAL " ")
 	message(WARNING "Try to set PKG_CONFIG_PATH to PREFIX_OF_KERBEROS/lib/pkgconfig")
@@ -364,6 +349,13 @@ if(NOT GSS_FOUND) # not found by pkg-config. Let's take more traditional approac
     endif()
 
   endif()
+
+  set(GSS_INCLUDE_DIR ${_GSS_INCLUDE_DIR})
+  set(GSS_LIBRARIES ${_GSS_LIBRARIES})
+  set(GSS_LINK_DIRECTORIES ${_GSS_LINK_DIRECTORIES})
+  set(GSS_LINKER_FLAGS ${_GSS_LINKER_FLAGS})
+  set(GSS_COMPILER_FLAGS ${_GSS_COMPILER_FLAGS})
+  set(GSS_VERSION ${_GSS_VERSION})
 else()
   if(_GSS_PKG_${_MIT_MODNAME}_VERSION)
     set(GSS_FLAVOUR "MIT")
@@ -372,14 +364,13 @@ else()
     set(GSS_FLAVOUR "Heimdal")
     set(_GSS_VERSION _GSS_PKG_${_HEIMDAL_MODNAME}_VERSION)
   endif()
+  set(GSS_INCLUDE_DIR ${_GSS_PKG_INCLUDE_DIRS})
+  set(GSS_LIBRARIES ${_GSS_PKG_LIBRARIES})
+  set(GSS_LINK_DIRECTORIES ${_GSS_PKG_LIBRARY_DIRS})
+  set(GSS_LINKER_FLAGS ${_GSS_PKG_LDFLAGS})
+  set(GSS_COMPILER_FLAGS ${_GSS_PKG_CFLAGS})
+  set(GSS_VERSION ${_GSS_VERSION})
 endif()
-
-set(GSS_INCLUDE_DIR ${_GSS_INCLUDE_DIR})
-set(GSS_LIBRARIES ${_GSS_LIBRARIES})
-set(GSS_LINK_DIRECTORIES ${_GSS_LINK_DIRECTORIES})
-set(GSS_LINKER_FLAGS ${_GSS_LINKER_FLAGS})
-set(GSS_COMPILER_FLAGS ${_GSS_COMPILER_FLAGS})
-set(GSS_VERSION ${_GSS_VERSION})
 
 if(GSS_FLAVOUR)
   if(NOT GSS_VERSION AND GSS_FLAVOUR STREQUAL "Heimdal")
@@ -410,7 +401,7 @@ endif()
 
 include(FindPackageHandleStandardArgs)
 
-set(_GSS_REQUIRED_VARS GSS_LIBRARIES GSS_FLAVOUR)
+set(_GSS_REQUIRED_VARS GSS_LIBRARIES GSS_FLAVOUR GSS_INCLUDE_DIR GSS_LINK_DIRECTORIES GSS_LINKER_FLAGS GSS_COMPILER_FLAGS GSS_VERSION)
 
 find_package_handle_standard_args(GSS
     REQUIRED_VARS
