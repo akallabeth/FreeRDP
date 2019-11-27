@@ -38,6 +38,7 @@
 #cmakedefine WITH_IPP
 #cmakedefine WITH_CUPS
 #cmakedefine WITH_NATIVE_SSPI
+#cmakedefine WITH_WINPR_SSPI
 #cmakedefine WITH_JPEG
 #cmakedefine WITH_WIN8
 #cmakedefine WITH_ICU

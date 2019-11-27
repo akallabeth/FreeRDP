@@ -56,6 +56,7 @@ else()
 	endif()
 endif()
 
+option(WITH_WINPR_SSPI "Use winpr SSPI modules" ON)
 if(WIN32 AND NOT UWP)
 	option(WITH_NATIVE_SSPI "Use native SSPI modules" ON)
 	option(WITH_WINMM "Use Windows Multimedia" ON)

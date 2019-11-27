@@ -28,9 +28,13 @@
 
 #include "negotiate.h"
 
-#include "../Kerberos/kerberos.h"
 #include "../NTLM/ntlm.h"
-
+#if defined(WITH_GSSAPI)
+#include "../Kerberos/kerberos.h"
+#define NEGO_DEFAULT_SSP KERBEROS_SSP_NAME_A
+#else
+#define NEGO_DEFAULT_SSP NTLM_SSP_NAME_A
+#endif
 #include "../sspi.h"
 #include "../log.h"
 #define TAG WINPR_TAG("negotiate")
@@ -86,8 +90,9 @@ const SecPkgInfoW NEGOTIATE_SecPkgInfoW = {
 	NEGOTIATE_SecPkgInfoW_Comment /* Comment */
 };
 
-static void negotiate_SetSubPackage(NEGOTIATE_CONTEXT* context, const CHAR* name)
+static BOOL negotiate_SetSubPackage(NEGOTIATE_CONTEXT* context, const CHAR* name)
 {
+#if defined(WITH_GSSAPI)
 	if (strncmp(name, KERBEROS_SSP_NAME_A, ARRAYSIZE(KERBEROS_SSP_NAME_A)) == 0)
 	{
 		context->sspiA = &KERBEROS_SecurityFunctionTableA;
@@ -95,11 +100,16 @@ static void negotiate_SetSubPackage(NEGOTIATE_CONTEXT* context, const CHAR* name
 		context->kerberos = TRUE;
 	}
 	else
+#endif
+	if (strncmp(name, NTLM_SSP_NAME_A, ARRAYSIZE(NTLM_SSP_NAME_A)) == 0)
 	{
 		context->sspiA = &NTLM_SecurityFunctionTableA;
 		context->sspiW = &NTLM_SecurityFunctionTableW;
 		context->kerberos = FALSE;
 	}
+	else
+		return FALSE;
+	return TRUE;
 }
 
 static NEGOTIATE_CONTEXT* negotiate_ContextNew(void)
@@ -113,7 +123,7 @@ static NEGOTIATE_CONTEXT* negotiate_ContextNew(void)
 	context->NegotiateFlags = 0;
 	context->state = NEGOTIATE_STATE_INITIAL;
 	SecInvalidateHandle(&(context->SubContext));
-	negotiate_SetSubPackage(context, KERBEROS_SSP_NAME_A);
+	negotiate_SetSubPackage(context, NEGO_DEFAULT_SSP);
 	return context;
 }
 
@@ -128,7 +138,7 @@ static SECURITY_STATUS SEC_ENTRY negotiate_InitializeSecurityContextW(
     PCtxtHandle phNewContext, PSecBufferDesc pOutput, PULONG pfContextAttr, PTimeStamp ptsExpiry)
 {
 	BOOL ntlm = TRUE;
-	SECURITY_STATUS status;
+	SECURITY_STATUS status = SEC_E_INTERNAL_ERROR;
 	NEGOTIATE_CONTEXT* context;
 	context = (NEGOTIATE_CONTEXT*)sspi_SecureHandleGetLowerPointer(phContext);
 

@@ -34,7 +34,9 @@
 #include "sspi_winpr.h"
 
 #include "CredSSP/credssp.h"
+#if defined(WITH_GSSAPI)
 #include "Kerberos/kerberos.h"
+#endif
 #include "Negotiate/negotiate.h"
 #include "NTLM/ntlm.h"
 #include "Schannel/schannel.h"
@@ -42,11 +44,17 @@
 #include "../log.h"
 #define TAG WINPR_TAG("sspi")
 
-static const SecPkgInfoA* SecPkgInfoA_LIST[] = { &NTLM_SecPkgInfoA, &KERBEROS_SecPkgInfoA,
+static const SecPkgInfoA* SecPkgInfoA_LIST[] = { &NTLM_SecPkgInfoA,
+												 #if defined(WITH_GSSAPI)
+												 &KERBEROS_SecPkgInfoA,
+#endif
 	                                             &NEGOTIATE_SecPkgInfoA, &CREDSSP_SecPkgInfoA,
 	                                             &SCHANNEL_SecPkgInfoA };
 
-static const SecPkgInfoW* SecPkgInfoW_LIST[] = { &NTLM_SecPkgInfoW, &KERBEROS_SecPkgInfoW,
+static const SecPkgInfoW* SecPkgInfoW_LIST[] = { &NTLM_SecPkgInfoW,
+												 #if defined(WITH_GSSAPI)
+												 &KERBEROS_SecPkgInfoW,
+#endif
 	                                             &NEGOTIATE_SecPkgInfoW, &CREDSSP_SecPkgInfoW,
 	                                             &SCHANNEL_SecPkgInfoW };
 
@@ -69,7 +77,9 @@ typedef struct _SecurityFunctionTableW_NAME SecurityFunctionTableW_NAME;
 
 static const SecurityFunctionTableA_NAME SecurityFunctionTableA_NAME_LIST[] = {
 	{ NTLM_SSP_NAME_A, &NTLM_SecurityFunctionTableA },
+#if defined(WITH_GSSAPI)
 	{ KERBEROS_SSP_NAME_A, &KERBEROS_SecurityFunctionTableA },
+#endif
 	{ NEGO_SSP_NAME_A, &NEGOTIATE_SecurityFunctionTableA },
 	{ CREDSSP_PACKAGE_NAME_A, &CREDSSP_SecurityFunctionTableA },
 	{ SCHANNEL_PACKAGE_NAME_A, &SCHANNEL_SecurityFunctionTableA }
@@ -77,7 +87,9 @@ static const SecurityFunctionTableA_NAME SecurityFunctionTableA_NAME_LIST[] = {
 
 static const SecurityFunctionTableW_NAME SecurityFunctionTableW_NAME_LIST[] = {
 	{ NTLM_SSP_NAME_W, &NTLM_SecurityFunctionTableW },
+#if defined(WITH_GSSAPI)
 	{ KERBEROS_SSP_NAME_W, &KERBEROS_SecurityFunctionTableW },
+#endif
 	{ NEGO_SSP_NAME_W, &NEGOTIATE_SecurityFunctionTableW },
 	{ CREDSSP_PACKAGE_NAME_W, &CREDSSP_SecurityFunctionTableW },
 	{ SCHANNEL_PACKAGE_NAME_W, &SCHANNEL_SecurityFunctionTableW }

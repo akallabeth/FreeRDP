@@ -83,6 +83,17 @@ BOOL ShouldUseNativeSspi(void)
 }
 #endif
 
+#if defined(WITH_WINPR_SSPI)
+BOOL InitializeSspiModule_WinPR(void)
+{
+	sspi_GlobalInit();
+
+	g_SspiW = winpr_InitSecurityInterfaceW();
+	g_SspiA = winpr_InitSecurityInterfaceA();
+	return g_SspiA && g_SspiW;
+}
+#endif
+
 #if defined(WITH_NATIVE_SSPI)
 BOOL InitializeSspiModule_Native(void)
 {
@@ -271,46 +282,33 @@ int sspi_CopyAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity, SEC_WINNT_AUTH_IDEN
 static BOOL CALLBACK InitializeSspiModuleInt(PINIT_ONCE once, PVOID param, PVOID* context)
 {
 	BOOL status = FALSE;
-#if defined(WITH_NATIVE_SSPI)
 	DWORD flags = 0;
 
 	if (param)
 		flags = *(DWORD*)param;
-#else
-	sspi_GlobalInit();
-#endif
 
 	g_Log = WLog_Get("com.winpr.sspi");
 #if defined(WITH_NATIVE_SSPI)
-
-	if (flags && (flags & SSPI_INTERFACE_NATIVE))
-	{
+	if (!status && ((flags & SSPI_INTERFACE_NATIVE) != 0))
 		status = InitializeSspiModule_Native();
-	}
-	else if (flags && (flags & SSPI_INTERFACE_WINPR))
-	{
-		/* TODO
-		g_SspiW = winpr_InitSecurityInterfaceW();
-		g_SspiA = winpr_InitSecurityInterfaceA();
-		status = TRUE;
-*/
-	}
-
-	if (!status && ShouldUseNativeSspi())
-	{
-		status = InitializeSspiModule_Native();
-	}
-
-#else
-
-	if (!status)
-	{
-		g_SspiW = winpr_InitSecurityInterfaceW();
-		g_SspiA = winpr_InitSecurityInterfaceA();
-	}
 #endif
 
-	return TRUE;
+#if defined(WITH_WINPR_SSPI)
+	if (!status && ((flags & SSPI_INTERFACE_WINPR) != 0))
+		status = InitializeSspiModule_WinPR();
+#endif
+
+#if defined(WITH_NATIVE_SSPI)
+	if (!status && ShouldUseNativeSspi())
+		status = InitializeSspiModule_Native();
+#endif
+
+#if defined(WITH_WINPR_SSPI)
+	if (!status)
+		status = InitializeSspiModule_WinPR();
+#endif
+
+	return status;
 }
 
 const char* GetSecurityStatusString(SECURITY_STATUS status)

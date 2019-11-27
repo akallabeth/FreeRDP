@@ -17,7 +17,7 @@
 
 set(MODULE_PREFIX "WINPR_SSPI")
 
-if (NOT WITH_NATIVE_SSPI)
+if (WITH_WINPR_SSPI)
 	set(${MODULE_PREFIX}_NTLM_SRCS
 		NTLM/ntlm_av_pairs.c
 		NTLM/ntlm_av_pairs.h
@@ -28,9 +28,11 @@ if (NOT WITH_NATIVE_SSPI)
 		NTLM/ntlm.c
 		NTLM/ntlm.h)
 
+if (WITH_GSSAPI)
 	set(${MODULE_PREFIX}_KERBEROS_SRCS
 		Kerberos/kerberos.c
 		Kerberos/kerberos.h)
+endif()
 
 	set(${MODULE_PREFIX}_NEGOTIATE_SRCS
 		Negotiate/negotiate.c
