@@ -40,11 +40,8 @@
 
 #define WINPR_KEY "Software\\" FREERDP_VENDOR_STRING "\\" FREERDP_PRODUCT_STRING "\\WinPR\\NTLM"
 
-static CHAR S_NTLM_PACKAGE_NAME_A[] = "NTLM";
-static WCHAR S_NTLM_PACKAGE_NAME_W[] = { 'N', 'T', 'L', 'M', '\0' };
-
-const CHAR NTLM_PACKAGE_NAME_A[] = "NTLM";
-const WCHAR NTLM_PACKAGE_NAME_W[] = { 'N', 'T', 'L', 'M', '\0' };
+static CHAR S_NTLM_PACKAGE_NAME_A[] = NTLM_SSP_NAME_A;
+static WCHAR S_NTLM_PACKAGE_NAME_W[] = NTLM_SSP_NAME_W;
 
 static int ntlm_SetContextWorkstation(NTLM_CONTEXT* context, char* Workstation)
 {

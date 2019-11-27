@@ -22,9 +22,6 @@
 
 #include <winpr/sspi.h>
 
-extern const CHAR NTLM_PACKAGE_NAME_A[];
-extern const WCHAR NTLM_PACKAGE_NAME_W[];
-
 extern const SecPkgInfoA NTLM_SecPkgInfoA;
 extern const SecPkgInfoW NTLM_SecPkgInfoW;
 extern const SecurityFunctionTableA NTLM_SecurityFunctionTableA;

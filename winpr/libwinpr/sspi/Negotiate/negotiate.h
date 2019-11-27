@@ -22,9 +22,6 @@
 
 #include <winpr/sspi.h>
 
-extern const CHAR NEGOTIATE_PACKAGE_NAME_A[];
-extern const WCHAR NEGOTIATE_PACKAGE_NAME_W[];
-
 extern const SecPkgInfoA NEGOTIATE_SecPkgInfoA;
 extern const SecPkgInfoW NEGOTIATE_SecPkgInfoW;
 extern const SecurityFunctionTableA NEGOTIATE_SecurityFunctionTableA;

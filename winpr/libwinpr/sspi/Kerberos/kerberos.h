@@ -23,9 +23,6 @@
 
 #include <winpr/sspi.h>
 
-extern const CHAR KERBEROS_PACKAGE_NAME_A[];
-extern const WCHAR KERBEROS_PACKAGE_NAME_W[];
-
 extern const SecPkgInfoA KERBEROS_SecPkgInfoA;
 extern const SecPkgInfoW KERBEROS_SecPkgInfoW;
 extern const SecurityFunctionTableA KERBEROS_SecurityFunctionTableA;

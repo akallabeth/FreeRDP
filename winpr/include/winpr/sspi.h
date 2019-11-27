@@ -98,9 +98,18 @@ typedef SecPkgInfoW* PSecPkgInfoW;
 #define KERBEROS_SSP_NAME_A "Kerberos"
 #define NEGO_SSP_NAME_A "Negotiate"
 
-#define NTLM_SSP_NAME_W L"NTLM"
-#define KERBEROS_SSP_NAME_W L"Kerberos"
-#define NEGO_SSP_NAME_W L"Negotiate"
+#define NTLM_SSP_NAME_W          \
+	{                            \
+		'N', 'T', 'L', 'M', '\0' \
+	}
+#define KERBEROS_SSP_NAME_W                          \
+	{                                                \
+		'K', 'e', 'r', 'b', 'e', 'r', 'o', 's', '\0' \
+	}
+#define NEGO_SSP_NAME_W                                   \
+	{                                                     \
+		'N', 'e', 'g', 'o', 't', 'i', 'a', 't', 'e', '\0' \
+	}
 
 #ifdef UNICODE
 #define NTLM_SSP_NAME NTLM_SSP_NAME_W

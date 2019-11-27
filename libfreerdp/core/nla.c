@@ -1936,7 +1936,8 @@ BOOL nla_send(rdpNla* nla)
 	/* [4] errorCode (INTEGER) */
 	if (error_code_length > 0)
 	{
-		WLog_DBG(TAG, "   ----->> error code");
+		WLog_DBG(TAG, "   ----->> error code %s 0x%08" PRIx32,
+		         GetSecurityStatusString(nla->errorCode), nla->errorCode);
 		ber_write_contextual_tag(s, 4, error_code_length, TRUE);
 		ber_write_integer(s, nla->errorCode);
 	}
@@ -2039,9 +2040,10 @@ static int nla_decode_ts_request(rdpNla* nla, wStream* s)
 	{
 		if (ber_read_contextual_tag(s, 4, &length, TRUE) != FALSE)
 		{
-			WLog_DBG(TAG, "   <<----- error code");
 			if (!ber_read_integer(s, &nla->errorCode))
 				goto fail;
+			WLog_DBG(TAG, "   <<----- error code %s 0x%08" PRIx32,
+			         GetSecurityStatusString(nla->errorCode), nla->errorCode);
 		}
 
 		if (nla->peerVersion >= 5)

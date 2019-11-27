@@ -326,7 +326,7 @@ if (CMAKE_GENERATOR MATCHES "Unix Makefile*")
 	endif()
 endif()
 
-if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
+if("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-parameter")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-macros -Wno-padded")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-c11-extensions -Wno-gnu")
@@ -342,7 +342,7 @@ if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
 endif()
 
 # Enable address sanitizer, where supported and when required
-if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang" OR CMAKE_COMPILER_IS_GNUCC)
+if("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang" OR CMAKE_COMPILER_IS_GNUCC)
 	set(CMAKE_REQUIRED_FLAGS_SAVED ${CMAKE_REQUIRED_FLAGS})
 
 	CHECK_C_COMPILER_FLAG ("-fno-omit-frame-pointer" fno-omit-frame-pointer)

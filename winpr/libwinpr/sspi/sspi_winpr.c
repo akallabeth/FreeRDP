@@ -68,17 +68,17 @@ struct _SecurityFunctionTableW_NAME
 typedef struct _SecurityFunctionTableW_NAME SecurityFunctionTableW_NAME;
 
 static const SecurityFunctionTableA_NAME SecurityFunctionTableA_NAME_LIST[] = {
-	{ NTLM_PACKAGE_NAME_A, &NTLM_SecurityFunctionTableA },
-	{ KERBEROS_PACKAGE_NAME_A, &KERBEROS_SecurityFunctionTableA },
-	{ NEGOTIATE_PACKAGE_NAME_A, &NEGOTIATE_SecurityFunctionTableA },
+	{ NTLM_SSP_NAME_A, &NTLM_SecurityFunctionTableA },
+	{ KERBEROS_SSP_NAME_A, &KERBEROS_SecurityFunctionTableA },
+	{ NEGO_SSP_NAME_A, &NEGOTIATE_SecurityFunctionTableA },
 	{ CREDSSP_PACKAGE_NAME_A, &CREDSSP_SecurityFunctionTableA },
 	{ SCHANNEL_PACKAGE_NAME_A, &SCHANNEL_SecurityFunctionTableA }
 };
 
 static const SecurityFunctionTableW_NAME SecurityFunctionTableW_NAME_LIST[] = {
-	{ NTLM_PACKAGE_NAME_W, &NTLM_SecurityFunctionTableW },
-	{ KERBEROS_PACKAGE_NAME_W, &KERBEROS_SecurityFunctionTableW },
-	{ NEGOTIATE_PACKAGE_NAME_W, &NEGOTIATE_SecurityFunctionTableW },
+	{ NTLM_SSP_NAME_W, &NTLM_SecurityFunctionTableW },
+	{ KERBEROS_SSP_NAME_W, &KERBEROS_SecurityFunctionTableW },
+	{ NEGO_SSP_NAME_W, &NEGOTIATE_SecurityFunctionTableW },
 	{ CREDSSP_PACKAGE_NAME_W, &CREDSSP_SecurityFunctionTableW },
 	{ SCHANNEL_PACKAGE_NAME_W, &SCHANNEL_SecurityFunctionTableW }
 };

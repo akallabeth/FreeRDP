@@ -29,8 +29,6 @@ set(${MODULE_PREFIX}_NTLM_SRCS
 	NTLM/ntlm_int.h)
 
 set(${MODULE_PREFIX}_KERBEROS_SRCS
-	Kerberos/sspi_gss.c
-	Kerberos/sspi_gss.h
 	Kerberos/kerberos.c
 	Kerberos/kerberos.h)
 
