@@ -535,35 +535,13 @@ char* winpr_strerror(DWORD dw, char* dmsg, size_t size)
 {
 #if defined(_WIN32)
 	DWORD rc;
-	DWORD nSize = 0;
 	DWORD dwFlags = 0;
-	LPTSTR msg = NULL;
-	BOOL alloc = FALSE;
-	dwFlags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-#ifdef FORMAT_MESSAGE_ALLOCATE_BUFFER
-	alloc = TRUE;
-	dwFlags |= FORMAT_MESSAGE_ALLOCATE_BUFFER;
-#else
-	nSize = (DWORD)(size * 2);
-	msg = (LPTSTR)calloc(nSize, sizeof(TCHAR));
-#endif
-	rc = FormatMessage(dwFlags, NULL, dw, 0, alloc ? (LPTSTR)&msg : msg, nSize, NULL);
 
-	if (rc)
-	{
-#if defined(UNICODE)
-		WideCharToMultiByte(CP_ACP, 0, msg, rc, dmsg, size - 1, NULL, NULL);
-#else  /* defined(UNICODE) */
-		memcpy(dmsg, msg, min(rc, size - 1));
-#endif /* defined(UNICODE) */
-		dmsg[min(rc, size - 1)] = 0;
-#ifdef FORMAT_MESSAGE_ALLOCATE_BUFFER
-		LocalFree(msg);
-#else
-		free(msg);
-#endif
-	}
-	else
+	dwFlags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_HMODULE;
+
+	rc = FormatMessageA(dwFlags, LoadLibraryA("NTDLL.DLL"), dw, 0, dmsg, size, NULL);
+
+	if (rc < 1)
 	{
 		_snprintf(dmsg, size, "FAILURE: 0x%08" PRIX32 "", GetLastError());
 	}

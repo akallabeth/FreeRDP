@@ -27,6 +27,8 @@
 
 #include <time.h>
 
+#include <winpr/debug.h>
+
 #include <freerdp/log.h>
 #include <freerdp/crypto/tls.h>
 #include <freerdp/build-config.h>
@@ -107,7 +109,7 @@ struct rdp_nla
 	rdpSettings* settings;
 	rdpTransport* transport;
 	UINT32 cbMaxToken;
-	TCHAR* packageName;
+	CHAR* packageName;
 	UINT32 version;
 	UINT32 peerVersion;
 	UINT32 errorCode;
@@ -1936,8 +1938,9 @@ BOOL nla_send(rdpNla* nla)
 	/* [4] errorCode (INTEGER) */
 	if (error_code_length > 0)
 	{
+		char buffer[1024];
 		WLog_DBG(TAG, "   ----->> error code %s 0x%08" PRIx32,
-		         GetSecurityStatusString(nla->errorCode), nla->errorCode);
+				 winpr_strerror(nla->errorCode, buffer, sizeof(buffer)), nla->errorCode);
 		ber_write_contextual_tag(s, 4, error_code_length, TRUE);
 		ber_write_integer(s, nla->errorCode);
 	}
@@ -2040,10 +2043,11 @@ static int nla_decode_ts_request(rdpNla* nla, wStream* s)
 	{
 		if (ber_read_contextual_tag(s, 4, &length, TRUE) != FALSE)
 		{
+			char buffer[1024];
 			if (!ber_read_integer(s, &nla->errorCode))
 				goto fail;
 			WLog_DBG(TAG, "   <<----- error code %s 0x%08" PRIx32,
-			         GetSecurityStatusString(nla->errorCode), nla->errorCode);
+					 winpr_strerror(nla->errorCode, buffer, sizeof(buffer)), nla->errorCode);
 		}
 
 		if (nla->peerVersion >= 5)
@@ -2427,4 +2431,11 @@ const char* nla_get_state_str(NLA_STATE state)
 		default:
 			return "UNKNOWN";
 	}
+}
+
+DWORD nla_get_error(rdpNla *nla)
+{
+	if (!nla)
+		return ERROR_INTERNAL_ERROR;
+	return nla->errorCode;
 }

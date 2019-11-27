@@ -42,11 +42,9 @@
 
 #include <winpr/windows.h>
 
-#ifdef WITH_GSSAPI
 #include <gssapi.h>
 #include <gssapi/gssapi_generic.h>
 #include <gssapi/gssapi_krb5.h>
-#endif
 
 #define RUN_WITH_LOG(status, fkt, ...)                        \
 	do                                                        \
