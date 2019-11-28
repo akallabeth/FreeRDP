@@ -159,7 +159,7 @@ fail:
 	return FALSE;
 }
 
-static BOOL log_recursion(LPCSTR file, LPCSTR fkt, int line)
+static BOOL log_recursion(LPCSTR file, LPCSTR fkt, DWORD line)
 {
 	BOOL status = FALSE;
 	char** msg = NULL;
@@ -182,7 +182,7 @@ static BOOL log_recursion(LPCSTR file, LPCSTR fkt, int line)
 	if (__android_log_print(ANDROID_LOG_FATAL, tag, "Recursion detected!!!") < 0)
 		goto out;
 
-	if (__android_log_print(ANDROID_LOG_FATAL, tag, "Check %s [%s:%d]", fkt, file, line) < 0)
+	if (__android_log_print(ANDROID_LOG_FATAL, tag, "Check %s [%s:%u]", fkt, file, line) < 0)
 		goto out;
 
 	for (i = 0; i < used; i++)
@@ -194,7 +194,7 @@ static BOOL log_recursion(LPCSTR file, LPCSTR fkt, int line)
 	if (fprintf(stderr, "[%s]: Recursion detected!\n", fkt) < 0)
 		goto out;
 
-	if (fprintf(stderr, "[%s]: Check %s:%d\n", fkt, file, line) < 0)
+	if (fprintf(stderr, "[%s]: Check %s:%u\n", fkt, file, line) < 0)
 		goto out;
 
 	for (i = 0; i < used; i++)
@@ -351,7 +351,7 @@ BOOL WLog_PrintMessageVA(wLog* log, DWORD type, DWORD level, DWORD line, const c
 
 			if (!strchr(message.FormatString, '%'))
 			{
-				message.TextString = (LPSTR)message.FormatString;
+				message.TextString = message.FormatString;
 				status = WLog_Write(log, &message);
 			}
 			else
@@ -385,7 +385,7 @@ BOOL WLog_PrintMessageVA(wLog* log, DWORD type, DWORD level, DWORD line, const c
 		case WLOG_MESSAGE_PACKET:
 			message.PacketData = va_arg(args, void*);
 			message.PacketLength = va_arg(args, int);
-			message.PacketFlags = va_arg(args, int);
+			message.PacketFlags = va_arg(args, unsigned int);
 			status = WLog_WritePacket(log, &message);
 			break;
 
@@ -478,21 +478,24 @@ BOOL WLog_AddStringLogFilters(LPCSTR filter)
 	DWORD pos;
 	DWORD size;
 	DWORD count;
-	LPSTR p;
+	LPCSTR pc;
+	LPSTR pv;
 	LPSTR filterStr;
 	LPSTR cp;
 	wLogFilter* tmp;
 
+	/* Required to initialize WLog */
+	WLog_GetRoot();
 	if (!filter)
 		return FALSE;
 
 	count = 1;
-	p = (LPSTR)filter;
+	pc = filter;
 
-	while ((p = strchr(p, ',')) != NULL)
+	while ((pc = strchr(pc, ',')) != NULL)
 	{
 		count++;
-		p++;
+		pc++;
 	}
 
 	pos = g_FilterCount;
@@ -508,15 +511,15 @@ BOOL WLog_AddStringLogFilters(LPCSTR filter)
 	if (!cp)
 		return FALSE;
 
-	p = cp;
+	pv = cp;
 	filterStr = cp;
 
 	do
 	{
-		p = strchr(p, ',');
+		pv = strchr(pv, ',');
 
-		if (p)
-			*p = '\0';
+		if (pv)
+			*pv = '\0';
 
 		if (pos < size)
 		{
@@ -529,12 +532,12 @@ BOOL WLog_AddStringLogFilters(LPCSTR filter)
 		else
 			break;
 
-		if (p)
+		if (pv)
 		{
-			filterStr = p + 1;
-			p++;
+			filterStr = pv + 1;
+			pv++;
 		}
-	} while (p != NULL);
+	} while (pv != NULL);
 
 	g_FilterCount = size;
 	free(cp);
@@ -614,24 +617,24 @@ int WLog_ParseLogLevel(LPCSTR level)
 
 BOOL WLog_ParseFilter(wLogFilter* filter, LPCSTR name)
 {
-	char* p;
+	const char* pc;
+	char* pv;
 	char* q;
-	int count;
+	DWORD count = 1;
 	LPSTR names;
 	int iLevel;
-	count = 1;
 
 	if (!name)
 		return FALSE;
 
-	p = (char*)name;
+	pc = name;
 
-	if (p)
+	if (pc)
 	{
-		while ((p = strchr(p, '.')) != NULL)
+		while ((pc = strchr(pc, '.')) != NULL)
 		{
 			count++;
-			p++;
+			pc++;
 		}
 	}
 
@@ -652,9 +655,9 @@ BOOL WLog_ParseFilter(wLogFilter* filter, LPCSTR name)
 
 	filter->Names[count] = NULL;
 	count = 0;
-	p = (char*)names;
-	filter->Names[count++] = p;
-	q = strrchr(p, ':');
+	pv = names;
+	filter->Names[count++] = pv;
+	q = strrchr(pv, ':');
 
 	if (!q)
 	{
@@ -680,13 +683,13 @@ BOOL WLog_ParseFilter(wLogFilter* filter, LPCSTR name)
 
 	filter->Level = (DWORD)iLevel;
 
-	while ((p = strchr(p, '.')) != NULL)
+	while ((pv = strchr(pv, '.')) != NULL)
 	{
-		if (count < (int)filter->NameCount)
-			filter->Names[count++] = p + 1;
+		if (count < filter->NameCount)
+			filter->Names[count++] = pv + 1;
 
-		*p = '\0';
-		p++;
+		*pv = '\0';
+		pv++;
 	}
 
 	return TRUE;
@@ -763,16 +766,17 @@ LONG WLog_GetFilterLogLevel(wLog* log)
 
 static BOOL WLog_ParseName(wLog* log, LPCSTR name)
 {
-	char* p;
-	int count;
+	const char* pc;
+	char* pv;
+	DWORD count;
 	LPSTR names;
 	count = 1;
-	p = (char*)name;
+	pc = name;
 
-	while ((p = strchr(p, '.')) != NULL)
+	while ((pc = strchr(pc, '.')) != NULL)
 	{
 		count++;
-		p++;
+		pc++;
 	}
 
 	names = _strdup(name);
@@ -791,16 +795,16 @@ static BOOL WLog_ParseName(wLog* log, LPCSTR name)
 
 	log->Names[count] = NULL;
 	count = 0;
-	p = (char*)names;
-	log->Names[count++] = p;
+	pv = names;
+	log->Names[count++] = pv;
 
-	while ((p = strchr(p, '.')) != NULL)
+	while ((pv = strchr(pv, '.')) != NULL)
 	{
-		if (count < (int)log->NameCount)
-			log->Names[count++] = p + 1;
+		if (count < log->NameCount)
+			log->Names[count++] = pv + 1;
 
-		*p = '\0';
-		p++;
+		*pv = '\0';
+		pv++;
 	}
 
 	return TRUE;

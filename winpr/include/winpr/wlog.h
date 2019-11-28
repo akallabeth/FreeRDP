@@ -73,7 +73,7 @@ extern "C"
 		LPSTR PrefixString;
 
 		LPCSTR FormatString;
-		LPSTR TextString;
+		LPCSTR TextString;
 
 		DWORD LineNumber;    /* __LINE__ */
 		LPCSTR FileName;     /* __FILE__ */
