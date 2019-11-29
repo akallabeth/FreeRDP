@@ -340,6 +340,10 @@ DWORD GetTimeZoneInformation(LPTIME_ZONE_INFORMATION lpTimeZoneInformation)
 	struct tm* local_time;
 	TIME_ZONE_ENTRY* dtz;
 	LPTIME_ZONE_INFORMATION tz = lpTimeZoneInformation;
+	/* Do not use 'L' for WCHAR as the size is 4 bytes on unix and 'u' is only supported with c11 */
+	const WCHAR cl[] = { 'C', 'l', 'i', 'e', 'n', 't', ' ', 'L', 'o',
+		                 'c', 'a', 'l', ' ', 'T', 'i', 'm', 'e', '\0' };
+
 	lpTimeZoneInformation->StandardBias = 0;
 	time(&t);
 	local_time = localtime(&t);
@@ -409,8 +413,8 @@ DWORD GetTimeZoneInformation(LPTIME_ZONE_INFORMATION lpTimeZoneInformation)
 	WLog_DBG(TAG, "tz not found, using computed bias %" PRId32 ".", tz->Bias);
 out_error:
 	free(dtz);
-	memcpy(tz->StandardName, L"Client Local Time", sizeof(tz->StandardName));
-	memcpy(tz->DaylightName, L"Client Local Time", sizeof(tz->DaylightName));
+	memcpy(tz->StandardName, cl, sizeof(tz->StandardName));
+	memcpy(tz->DaylightName, cl, sizeof(tz->DaylightName));
 	return 0; /* TIME_ZONE_ID_UNKNOWN */
 }
 
