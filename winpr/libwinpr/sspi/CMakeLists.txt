@@ -17,40 +17,52 @@
 
 set(MODULE_PREFIX "WINPR_SSPI")
 
-set(${MODULE_PREFIX}_NTLM_SRCS
-	NTLM/ntlm_av_pairs.c
-	NTLM/ntlm_av_pairs.h
-	NTLM/ntlm_compute.c
-	NTLM/ntlm_compute.h
-	NTLM/ntlm_message.c
-	NTLM/ntlm_message.h
-	NTLM/ntlm.c
-	NTLM/ntlm.h)
+if (WITH_GSSAPI)
+	set(GSSAPI_FEATURE_TYPE "REQUIRED")
+	set(GSSAPI_FEATURE_PURPOSE "auth")
+	set(GSSAPI_FEATURE_DESCRIPTION "add kerberos support")
 
-set(${MODULE_PREFIX}_KERBEROS_SRCS
-	Kerberos/kerberos.c
-	Kerberos/kerberos.h)
+	find_feature(GSSAPI ${GSSAPI_FEATURE_TYPE} ${GSSAPI_FEATURE_PURPOSE} ${GSSAPI_FEATURE_DESCRIPTION})
 
-set(${MODULE_PREFIX}_NEGOTIATE_SRCS
-	Negotiate/negotiate.c
-	Negotiate/negotiate.h)
+	add_definitions("-DWITH_GSSAPI=1")
 
-set(${MODULE_PREFIX}_SCHANNEL_SRCS
-	Schannel/schannel_openssl.c
-	Schannel/schannel_openssl.h
-	Schannel/schannel.c
-	Schannel/schannel.h)
+	set(${MODULE_PREFIX}_KERBEROS_SRCS
+		Kerberos/kerberos.c
+		Kerberos/kerberos.h)
+endif()
 
-set(${MODULE_PREFIX}_CREDSSP_SRCS
-	CredSSP/credssp.c
-	CredSSP/credssp.h)
+if (WITH_WINPR_SSPI)
+	set(${MODULE_PREFIX}_NTLM_SRCS
+		NTLM/ntlm_av_pairs.c
+		NTLM/ntlm_av_pairs.h
+		NTLM/ntlm_compute.c
+		NTLM/ntlm_compute.h
+		NTLM/ntlm_message.c
+		NTLM/ntlm_message.h
+		NTLM/ntlm.c
+		NTLM/ntlm.h)
 
+	set(${MODULE_PREFIX}_NEGOTIATE_SRCS
+		Negotiate/negotiate.c
+		Negotiate/negotiate.h)
+
+	set(${MODULE_PREFIX}_SCHANNEL_SRCS
+		Schannel/schannel_openssl.c
+		Schannel/schannel_openssl.h
+		Schannel/schannel.c
+		Schannel/schannel.h)
+
+	set(${MODULE_PREFIX}_CREDSSP_SRCS
+		CredSSP/credssp.c
+		CredSSP/credssp.h)
+
+	set(${MODULE_PREFIX}_SSPI_SRCS
+		sspi_winpr.c
+		sspi_winpr.h)
+endif()
+	
 set(${MODULE_PREFIX}_SRCS
-	sspi_winpr.c
-	sspi_winpr.h
 	sspi_export.c
-	sspi_gss.c
-	sspi_gss.h
 	sspi.c
 	sspi.h)
 
@@ -59,6 +71,7 @@ winpr_module_add(${${MODULE_PREFIX}_CREDSSP_SRCS}
 	${${MODULE_PREFIX}_KERBEROS_SRCS}
 	${${MODULE_PREFIX}_NEGOTIATE_SRCS}
 	${${MODULE_PREFIX}_SCHANNEL_SRCS}
+	${${MODULE_PREFIX}_SSPI_SRCS}
 	${${MODULE_PREFIX}_SRCS})
 
 if(OPENSSL_FOUND)
@@ -71,9 +84,10 @@ if(MBEDTLS_FOUND)
 	winpr_library_add_private(${MBEDTLS_LIBRARIES})
 endif()
 
-if(GSS_FOUND)
-	winpr_include_directory_add(${GSS_INCLUDE_DIR})
-	winpr_library_add_private(${GSS_LIBRARIES})
+if(GSSAPI_FOUND)
+	winpr_include_directory_add(${GSSAPI_INCLUDE_DIR})
+	winpr_link_directory_add(${GSSAPI_LINK_DIRECTORIES})
+	winpr_library_add_private(${GSSAPI_LIBRARIES})
 endif()
 
 if(WIN32)

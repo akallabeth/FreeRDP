@@ -1,16 +1,16 @@
 include(CMakeDependentOption)
 
 if((CMAKE_SYSTEM_PROCESSOR MATCHES "i386|i686|x86|AMD64") AND (CMAKE_SIZEOF_VOID_P EQUAL 4))
-	set(TARGET_ARCH "x86")
+    set(TARGET_ARCH "x86")
 elseif((CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64") AND (CMAKE_SIZEOF_VOID_P EQUAL 8))
-	set(TARGET_ARCH "x64")
+    set(TARGET_ARCH "x64")
 elseif((CMAKE_SYSTEM_PROCESSOR MATCHES "i386") AND (CMAKE_SIZEOF_VOID_P EQUAL 8) AND (APPLE))
-	# Mac is weird like that.
-	set(TARGET_ARCH "x64")
+    # Mac is weird like that.
+    set(TARGET_ARCH "x64")
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^arm*")
-	set(TARGET_ARCH "ARM")
+    set(TARGET_ARCH "ARM")
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "sparc")
-	set(TARGET_ARCH "sparc")
+    set(TARGET_ARCH "sparc")
 endif()
 
 option(WITH_MANPAGES "Generate manpages." ON)
@@ -18,48 +18,49 @@ option(WITH_PROFILER "Compile profiler." OFF)
 option(WITH_GPROF "Compile with GProf profiler." OFF)
 
 if((TARGET_ARCH MATCHES "x86|x64") AND (NOT DEFINED WITH_SSE2))
-	option(WITH_SSE2 "Enable SSE2 optimization." ON)
+    option(WITH_SSE2 "Enable SSE2 optimization." ON)
 else()
-	option(WITH_SSE2 "Enable SSE2 optimization." OFF)
+    option(WITH_SSE2 "Enable SSE2 optimization." OFF)
 endif()
 
 if(TARGET_ARCH MATCHES "ARM")
-	if (NOT DEFINED WITH_NEON)
-		option(WITH_NEON "Enable NEON optimization." ON)
-	else()
-		option(WITH_NEON "Enable NEON optimization." OFF)
-	endif()
+    if (NOT DEFINED WITH_NEON)
+        option(WITH_NEON "Enable NEON optimization." ON)
+    else()
+        option(WITH_NEON "Enable NEON optimization." OFF)
+    endif()
 else()
-	if(NOT APPLE)
-		option(WITH_IPP "Use Intel Performance Primitives." OFF)
-	endif()
+    if(NOT APPLE)
+        option(WITH_IPP "Use Intel Performance Primitives." OFF)
+    endif()
 endif()
 
 option(WITH_JPEG "Use JPEG decoding." OFF)
 
 if(CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	set(CMAKE_COMPILER_IS_CLANG 1)
+    set(CMAKE_COMPILER_IS_CLANG 1)
 endif()
 
 if(NOT WIN32)
-	CMAKE_DEPENDENT_OPTION(WITH_VALGRIND_MEMCHECK "Compile with valgrind helpers." OFF
-		"NOT WITH_SANITIZE_ADDRESS; NOT WITH_SANITIZE_MEMORY; NOT WITH_SANITIZE_THREAD" OFF)
-	CMAKE_DEPENDENT_OPTION(WITH_SANITIZE_ADDRESS "Compile with gcc/clang address sanitizer." OFF
-		"NOT WITH_VALGRIND_MEMCHECK; NOT WITH_SANITIZE_MEMORY; NOT WITH_SANITIZE_THREAD" OFF)
-	CMAKE_DEPENDENT_OPTION(WITH_SANITIZE_MEMORY "Compile with gcc/clang memory sanitizer." OFF
+    CMAKE_DEPENDENT_OPTION(WITH_VALGRIND_MEMCHECK "Compile with valgrind helpers." OFF
+        "NOT WITH_SANITIZE_ADDRESS; NOT WITH_SANITIZE_MEMORY; NOT WITH_SANITIZE_THREAD" OFF)
+    CMAKE_DEPENDENT_OPTION(WITH_SANITIZE_ADDRESS "Compile with gcc/clang address sanitizer." OFF
+        "NOT WITH_VALGRIND_MEMCHECK; NOT WITH_SANITIZE_MEMORY; NOT WITH_SANITIZE_THREAD" OFF)
+    CMAKE_DEPENDENT_OPTION(WITH_SANITIZE_MEMORY "Compile with gcc/clang memory sanitizer." OFF
         "NOT WITH_VALGRIND_MEMCHECK; NOT WITH_SANITIZE_ADDRESS; NOT WITH_SANITIZE_THREAD" OFF)
-	CMAKE_DEPENDENT_OPTION(WITH_SANITIZE_THREAD "Compile with gcc/clang thread sanitizer." OFF
-		"NOT WITH_VALGRIND_MEMCHECK; NOT WITH_SANITIZE_ADDRESS; NOT WITH_SANITIZE_MEMORY" OFF)
+    CMAKE_DEPENDENT_OPTION(WITH_SANITIZE_THREAD "Compile with gcc/clang thread sanitizer." OFF
+        "NOT WITH_VALGRIND_MEMCHECK; NOT WITH_SANITIZE_ADDRESS; NOT WITH_SANITIZE_MEMORY" OFF)
 else()
-	if(NOT UWP)
-		option(WITH_MEDIA_FOUNDATION "Enable H264 media foundation decoder." ON)
-	endif()
+    if(NOT UWP)
+        option(WITH_MEDIA_FOUNDATION "Enable H264 media foundation decoder." ON)
+    endif()
 endif()
 
+option(WITH_WINPR_SSPI "Use winpr SSPI modules" ON)
 if(WIN32 AND NOT UWP)
-	option(WITH_NATIVE_SSPI "Use native SSPI modules" ON)
-	option(WITH_WINMM "Use Windows Multimedia" ON)
-	option(WITH_WIN8 "Use Windows 8 libraries" OFF)
+    option(WITH_NATIVE_SSPI "Use native SSPI modules" ON)
+    option(WITH_WINMM "Use Windows Multimedia" ON)
+    option(WITH_WIN8 "Use Windows 8 libraries" OFF)
 endif()
 
 option(WITH_SMARTCARD_INSPECT "Enable SmartCard API Inspector" OFF)
@@ -82,12 +83,12 @@ option(WITH_CHANNELS "Build virtual channel plugins" ON)
 option(WITH_WINPR_TOOLS "Build WinPR helper binaries" ON)
 
 cmake_dependent_option(WITH_CLIENT_CHANNELS "Build virtual channel plugins" ON
-	"WITH_CLIENT_COMMON;WITH_CHANNELS" OFF)
+    "WITH_CLIENT_COMMON;WITH_CHANNELS" OFF)
 
 cmake_dependent_option(WITH_MACAUDIO "Enable OSX sound backend" ON "APPLE;NOT IOS" OFF)
 
 if(WITH_SERVER AND WITH_CHANNELS)
-	option(WITH_SERVER_CHANNELS "Build virtual channel plugins" ON)
+    option(WITH_SERVER_CHANNELS "Build virtual channel plugins" ON)
 endif()
 
 option(WITH_THIRD_PARTY "Build third-party components" OFF)
@@ -98,9 +99,9 @@ option(WITH_SERVER_INTERFACE "Build servers as a library with an interface" ON)
 option(WITH_DEBUG_ALL "Print all debug messages." OFF)
 
 if(WITH_DEBUG_ALL)
-	set(DEFAULT_DEBUG_OPTION "ON")
+    set(DEFAULT_DEBUG_OPTION "ON")
 else()
-	set(DEFAULT_DEBUG_OPTION "OFF")
+    set(DEFAULT_DEBUG_OPTION "OFF")
 endif()
 
 option(WITH_DEBUG_CERTIFICATE "Print certificate related debug messages." ${DEFAULT_DEBUG_OPTION})
@@ -153,10 +154,10 @@ option(WITH_CAIRO    "Use CAIRO image library for screen resizing" OFF)
 option(WITH_SWSCALE  "Use SWScale image library for screen resizing" OFF)
 
 if (ANDROID)
-	include(ConfigOptionsAndroid)
+    include(ConfigOptionsAndroid)
 endif(ANDROID)
 
 if (IOS)
-	include(ConfigOptionsiOS)
+    include(ConfigOptionsiOS)
 endif(IOS)
 
