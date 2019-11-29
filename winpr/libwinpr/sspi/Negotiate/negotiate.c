@@ -28,32 +28,57 @@
 
 #include "negotiate.h"
 
+#include "../NTLM/ntlm.h"
+#if defined(WITH_GSSAPI)
+#include "../Kerberos/kerberos.h"
+#define NEGO_DEFAULT_SSP KERBEROS_SSP_NAME_A
+#else
+#define NEGO_DEFAULT_SSP NTLM_SSP_NAME_A
+#endif
 #include "../sspi.h"
 #include "../log.h"
 #define TAG WINPR_TAG("negotiate")
 
-extern const SecurityFunctionTableA NTLM_SecurityFunctionTableA;
-extern const SecurityFunctionTableW NTLM_SecurityFunctionTableW;
+#define NTLM_OID "1.3.6.1.4.1.311.2.2.10"
 
-extern const SecurityFunctionTableA KERBEROS_SecurityFunctionTableA;
-extern const SecurityFunctionTableW KERBEROS_SecurityFunctionTableW;
+enum _NEGOTIATE_STATE
+{
+	NEGOTIATE_STATE_INITIAL,
+	NEGOTIATE_STATE_NEGOINIT,
+	NEGOTIATE_STATE_NEGORESP,
+	NEGOTIATE_STATE_FINAL
+};
+typedef enum _NEGOTIATE_STATE NEGOTIATE_STATE;
 
-#ifdef WITH_GSSAPI
-static BOOL ErrorInitContextKerberos = FALSE;
-#else
-static BOOL ErrorInitContextKerberos = TRUE;
-#endif
+struct _NEGOTIATE_CONTEXT
+{
+	NEGOTIATE_STATE state;
+	UINT32 NegotiateFlags;
+	PCtxtHandle auth_ctx;
+	SecBuffer NegoInitMessage;
+
+	CtxtHandle SubContext;
+
+	BOOL kerberos;
+	const SecurityFunctionTableA* sspiA;
+	const SecurityFunctionTableW* sspiW;
+};
+typedef struct _NEGOTIATE_CONTEXT NEGOTIATE_CONTEXT;
+
+const CHAR NEGOTIATE_PACKAGE_NAME_A[] = NEGO_SSP_NAME_A;
+const WCHAR NEGOTIATE_PACKAGE_NAME_W[] = { 'N', 'e', 'g', 'o', 't', 'i', 'a', 't', 'e', '\0' };
+
+static CHAR S_NEGOTIATE_PACKAGE_NAME_A[] = NEGO_SSP_NAME_A;
+static WCHAR S_NEGOTIATE_PACKAGE_NAME_W[] = { 'N', 'e', 'g', 'o', 't', 'i', 'a', 't', 'e', '\0' };
 
 const SecPkgInfoA NEGOTIATE_SecPkgInfoA = {
 	0x00083BB3,                    /* fCapabilities */
 	1,                             /* wVersion */
 	0x0009,                        /* wRPCID */
 	0x00002FE0,                    /* cbMaxToken */
-	"Negotiate",                   /* Name */
+	S_NEGOTIATE_PACKAGE_NAME_A,    /* Name */
 	"Microsoft Package Negotiator" /* Comment */
 };
-
-static WCHAR NEGOTIATE_SecPkgInfoW_Name[] = { 'N', 'e', 'g', 'o', 't', 'i', 'a', 't', 'e', '\0' };
 
 static WCHAR NEGOTIATE_SecPkgInfoW_Comment[] = { 'M', 'i', 'c', 'r', 'o', 's', 'o', 'f', 't', ' ',
 	                                             'P', 'a', 'c', 'k', 'a', 'g', 'e', ' ', 'N', 'e',
@@ -64,24 +89,30 @@ const SecPkgInfoW NEGOTIATE_SecPkgInfoW = {
 	1,                            /* wVersion */
 	0x0009,                       /* wRPCID */
 	0x00002FE0,                   /* cbMaxToken */
-	NEGOTIATE_SecPkgInfoW_Name,   /* Name */
+	S_NEGOTIATE_PACKAGE_NAME_W,   /* Name */
 	NEGOTIATE_SecPkgInfoW_Comment /* Comment */
 };
 
-static void negotiate_SetSubPackage(NEGOTIATE_CONTEXT* context, const TCHAR* name)
+static BOOL negotiate_SetSubPackage(NEGOTIATE_CONTEXT* context, const CHAR* name)
 {
-	if (_tcsnccmp(name, KERBEROS_SSP_NAME, ARRAYSIZE(KERBEROS_SSP_NAME)) == 0)
+#if defined(WITH_GSSAPI)
+	if (strncmp(name, KERBEROS_SSP_NAME_A, ARRAYSIZE(KERBEROS_SSP_NAME_A)) == 0)
 	{
-		context->sspiA = (SecurityFunctionTableA*)&KERBEROS_SecurityFunctionTableA;
-		context->sspiW = (SecurityFunctionTableW*)&KERBEROS_SecurityFunctionTableW;
+		context->sspiA = &KERBEROS_SecurityFunctionTableA;
+		context->sspiW = &KERBEROS_SecurityFunctionTableW;
 		context->kerberos = TRUE;
 	}
 	else
+#endif
+	    if (strncmp(name, NTLM_SSP_NAME_A, ARRAYSIZE(NTLM_SSP_NAME_A)) == 0)
 	{
-		context->sspiA = (SecurityFunctionTableA*)&NTLM_SecurityFunctionTableA;
-		context->sspiW = (SecurityFunctionTableW*)&NTLM_SecurityFunctionTableW;
+		context->sspiA = &NTLM_SecurityFunctionTableA;
+		context->sspiW = &NTLM_SecurityFunctionTableW;
 		context->kerberos = FALSE;
 	}
+	else
+		return FALSE;
+	return TRUE;
 }
 
 static NEGOTIATE_CONTEXT* negotiate_ContextNew(void)
@@ -95,7 +126,7 @@ static NEGOTIATE_CONTEXT* negotiate_ContextNew(void)
 	context->NegotiateFlags = 0;
 	context->state = NEGOTIATE_STATE_INITIAL;
 	SecInvalidateHandle(&(context->SubContext));
-	negotiate_SetSubPackage(context, KERBEROS_SSP_NAME);
+	negotiate_SetSubPackage(context, NEGO_DEFAULT_SSP);
 	return context;
 }
 
@@ -109,7 +140,8 @@ static SECURITY_STATUS SEC_ENTRY negotiate_InitializeSecurityContextW(
     ULONG Reserved1, ULONG TargetDataRep, PSecBufferDesc pInput, ULONG Reserved2,
     PCtxtHandle phNewContext, PSecBufferDesc pOutput, PULONG pfContextAttr, PTimeStamp ptsExpiry)
 {
-	SECURITY_STATUS status;
+	BOOL ntlm = TRUE;
+	SECURITY_STATUS status = SEC_E_INTERNAL_ERROR;
 	NEGOTIATE_CONTEXT* context;
 	context = (NEGOTIATE_CONTEXT*)sspi_SecureHandleGetLowerPointer(phContext);
 
@@ -125,11 +157,12 @@ static SECURITY_STATUS SEC_ENTRY negotiate_InitializeSecurityContextW(
 	}
 
 	/* if Kerberos has previously failed or WITH_GSSAPI is not defined, we use NTLM directly */
-	if (ErrorInitContextKerberos == FALSE)
+#if defined(WITH_GSSAPI)
 	{
 		if (!pInput)
 		{
-			negotiate_SetSubPackage(context, KERBEROS_SSP_NAME);
+			context->sspiW->DeleteSecurityContext(&(context->SubContext));
+			negotiate_SetSubPackage(context, KERBEROS_SSP_NAME_A);
 		}
 
 		status = context->sspiW->InitializeSecurityContextW(
@@ -140,18 +173,19 @@ static SECURITY_STATUS SEC_ENTRY negotiate_InitializeSecurityContextW(
 		if (status == SEC_E_NO_CREDENTIALS)
 		{
 			WLog_WARN(TAG, "No Kerberos credentials. Retry with NTLM");
-			ErrorInitContextKerberos = TRUE;
-			context->sspiA->DeleteSecurityContext(&(context->SubContext));
-			negotiate_ContextFree(context);
-			return status;
+			context->sspiW->DeleteSecurityContext(&(context->SubContext));
 		}
+		else
+			ntlm = FALSE;
 	}
-	else
+#endif
+
+	if (ntlm)
 	{
 		if (!pInput)
 		{
-			context->sspiA->DeleteSecurityContext(&(context->SubContext));
-			negotiate_SetSubPackage(context, NTLM_SSP_NAME);
+			context->sspiW->DeleteSecurityContext(&(context->SubContext));
+			negotiate_SetSubPackage(context, NTLM_SSP_NAME_A);
 		}
 
 		status = context->sspiW->InitializeSecurityContextW(
@@ -168,6 +202,7 @@ static SECURITY_STATUS SEC_ENTRY negotiate_InitializeSecurityContextA(
     ULONG Reserved1, ULONG TargetDataRep, PSecBufferDesc pInput, ULONG Reserved2,
     PCtxtHandle phNewContext, PSecBufferDesc pOutput, PULONG pfContextAttr, PTimeStamp ptsExpiry)
 {
+	BOOL ntlm = TRUE;
 	SECURITY_STATUS status;
 	NEGOTIATE_CONTEXT* context;
 	context = (NEGOTIATE_CONTEXT*)sspi_SecureHandleGetLowerPointer(phContext);
@@ -184,11 +219,11 @@ static SECURITY_STATUS SEC_ENTRY negotiate_InitializeSecurityContextA(
 	}
 
 	/* if Kerberos has previously failed or WITH_GSSAPI is not defined, we use NTLM directly */
-	if (ErrorInitContextKerberos == FALSE)
+#if defined(WITH_GSSAPI)
 	{
 		if (!pInput)
 		{
-			negotiate_SetSubPackage(context, KERBEROS_SSP_NAME);
+			negotiate_SetSubPackage(context, KERBEROS_SSP_NAME_A);
 		}
 
 		status = context->sspiA->InitializeSecurityContextA(
@@ -199,18 +234,19 @@ static SECURITY_STATUS SEC_ENTRY negotiate_InitializeSecurityContextA(
 		if (status == SEC_E_NO_CREDENTIALS)
 		{
 			WLog_WARN(TAG, "No Kerberos credentials. Retry with NTLM");
-			ErrorInitContextKerberos = TRUE;
 			context->sspiA->DeleteSecurityContext(&(context->SubContext));
-			negotiate_ContextFree(context);
-			return status;
 		}
+		else
+			ntlm = FALSE;
 	}
-	else
+#endif
+
+	if (ntlm)
 	{
 		if (!pInput)
 		{
 			context->sspiA->DeleteSecurityContext(&(context->SubContext));
-			negotiate_SetSubPackage(context, NTLM_SSP_NAME);
+			negotiate_SetSubPackage(context, NTLM_SSP_NAME_A);
 		}
 
 		status = context->sspiA->InitializeSecurityContextA(
@@ -242,7 +278,8 @@ static SECURITY_STATUS SEC_ENTRY negotiate_AcceptSecurityContext(
 		sspi_SecureHandleSetUpperPointer(phNewContext, (void*)NEGO_SSP_NAME);
 	}
 
-	negotiate_SetSubPackage(context, NTLM_SSP_NAME); /* server-side Kerberos not yet implemented */
+	negotiate_SetSubPackage(context,
+	                        NTLM_SSP_NAME_A); /* server-side Kerberos not yet implemented */
 	status = context->sspiA->AcceptSecurityContext(
 	    phCredential, &(context->SubContext), pInput, fContextReq, TargetDataRep,
 	    &(context->SubContext), pOutput, pfContextAttr, ptsTimeStamp);

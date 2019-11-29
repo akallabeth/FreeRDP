@@ -21,28 +21,13 @@
 #define WINPR_SSPI_SCHANNEL_PRIVATE_H
 
 #include <winpr/sspi.h>
-#include <winpr/schannel.h>
 
-#include "../sspi.h"
+extern const CHAR SCHANNEL_PACKAGE_NAME_A[];
+extern const WCHAR SCHANNEL_PACKAGE_NAME_W[];
 
-#include "schannel_openssl.h"
-
-struct _SCHANNEL_CREDENTIALS
-{
-	SCHANNEL_CRED cred;
-	ULONG fCredentialUse;
-};
-typedef struct _SCHANNEL_CREDENTIALS SCHANNEL_CREDENTIALS;
-
-struct _SCHANNEL_CONTEXT
-{
-	BOOL server;
-	SCHANNEL_CRED cred;
-	SCHANNEL_OPENSSL* openssl;
-};
-typedef struct _SCHANNEL_CONTEXT SCHANNEL_CONTEXT;
-
-SCHANNEL_CONTEXT* schannel_ContextNew(void);
-void schannel_ContextFree(SCHANNEL_CONTEXT* context);
+extern const SecPkgInfoA SCHANNEL_SecPkgInfoA;
+extern const SecPkgInfoW SCHANNEL_SecPkgInfoW;
+extern const SecurityFunctionTableA SCHANNEL_SecurityFunctionTableA;
+extern const SecurityFunctionTableW SCHANNEL_SecurityFunctionTableW;
 
 #endif /* WINPR_SSPI_SCHANNEL_PRIVATE_H */

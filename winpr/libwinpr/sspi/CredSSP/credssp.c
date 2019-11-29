@@ -28,7 +28,20 @@
 
 #include "../sspi.h"
 
-static const char* CREDSSP_PACKAGE_NAME = "CredSSP";
+struct _CREDSSP_CONTEXT
+{
+	BOOL server;
+};
+typedef struct _CREDSSP_CONTEXT CREDSSP_CONTEXT;
+
+static CREDSSP_CONTEXT* credssp_ContextNew(void);
+static void credssp_ContextFree(CREDSSP_CONTEXT* context);
+
+static CHAR S_CREDSSP_PACKAGE_NAME_A[] = "CredSSP";
+static WCHAR S_CREDSSP_PACKAGE_NAME_W[] = { 'C', 'r', 'e', 'd', 'S', 'S', 'P', '\0' };
+
+const CHAR CREDSSP_PACKAGE_NAME_A[] = "CredSSP";
+const WCHAR CREDSSP_PACKAGE_NAME_W[] = { 'C', 'r', 'e', 'd', 'S', 'S', 'P', '\0' };
 
 static SECURITY_STATUS SEC_ENTRY credssp_InitializeSecurityContextW(
     PCredHandle phCredential, PCtxtHandle phContext, SEC_WCHAR* pszTargetName, ULONG fContextReq,
@@ -63,7 +76,7 @@ static SECURITY_STATUS SEC_ENTRY credssp_InitializeSecurityContextA(
 		}
 
 		sspi_SecureHandleSetLowerPointer(phNewContext, context);
-		sspi_SecureHandleSetUpperPointer(phNewContext, (void*)CREDSSP_PACKAGE_NAME);
+		sspi_SecureHandleSetUpperPointer(phNewContext, S_CREDSSP_PACKAGE_NAME_A);
 	}
 
 	return SEC_E_OK;
@@ -97,7 +110,7 @@ static SECURITY_STATUS SEC_ENTRY credssp_QueryContextAttributes(PCtxtHandle phCo
 	return SEC_E_UNSUPPORTED_FUNCTION;
 }
 
-SECURITY_STATUS SEC_ENTRY credssp_AcquireCredentialsHandleW(
+static SECURITY_STATUS SEC_ENTRY credssp_AcquireCredentialsHandleW(
     SEC_WCHAR* pszPrincipal, SEC_WCHAR* pszPackage, ULONG fCredentialUse, void* pvLogonID,
     void* pAuthData, SEC_GET_KEY_FN pGetKeyFn, void* pvGetKeyArgument, PCredHandle phCredential,
     PTimeStamp ptsExpiry)
@@ -123,7 +136,7 @@ static SECURITY_STATUS SEC_ENTRY credssp_AcquireCredentialsHandleA(
 		identity = (SEC_WINNT_AUTH_IDENTITY*)pAuthData;
 		CopyMemory(&(credentials->identity), identity, sizeof(SEC_WINNT_AUTH_IDENTITY));
 		sspi_SecureHandleSetLowerPointer(phCredential, (void*)credentials);
-		sspi_SecureHandleSetUpperPointer(phCredential, (void*)CREDSSP_PACKAGE_NAME);
+		sspi_SecureHandleSetUpperPointer(phCredential, S_CREDSSP_PACKAGE_NAME_A);
 		return SEC_E_OK;
 	}
 
@@ -264,11 +277,9 @@ const SecPkgInfoA CREDSSP_SecPkgInfoA = {
 	1,                                    /* wVersion */
 	0xFFFF,                               /* wRPCID */
 	0x000090A8,                           /* cbMaxToken */
-	"CREDSSP",                            /* Name */
+	S_CREDSSP_PACKAGE_NAME_A,             /* Name */
 	"Microsoft CredSSP Security Provider" /* Comment */
 };
-
-static WCHAR CREDSSP_SecPkgInfoW_Name[] = { 'C', 'R', 'E', 'D', 'S', 'S', 'P', '\0' };
 
 static WCHAR CREDSSP_SecPkgInfoW_Comment[] = { 'M', 'i', 'c', 'r', 'o', 's', 'o', 'f', 't',
 	                                           ' ', 'C', 'r', 'e', 'd', 'S', 'S', 'P', ' ',
@@ -280,6 +291,6 @@ const SecPkgInfoW CREDSSP_SecPkgInfoW = {
 	1,                          /* wVersion */
 	0xFFFF,                     /* wRPCID */
 	0x000090A8,                 /* cbMaxToken */
-	CREDSSP_SecPkgInfoW_Name,   /* Name */
+	S_CREDSSP_PACKAGE_NAME_W,   /* Name */
 	CREDSSP_SecPkgInfoW_Comment /* Comment */
 };

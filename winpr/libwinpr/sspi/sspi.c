@@ -83,6 +83,17 @@ BOOL ShouldUseNativeSspi(void)
 }
 #endif
 
+#if defined(WITH_WINPR_SSPI)
+BOOL InitializeSspiModule_WinPR(void)
+{
+	sspi_GlobalInit();
+
+	g_SspiW = winpr_InitSecurityInterfaceW();
+	g_SspiA = winpr_InitSecurityInterfaceA();
+	return g_SspiA && g_SspiW;
+}
+#endif
+
 #if defined(WITH_NATIVE_SSPI)
 BOOL InitializeSspiModule_Native(void)
 {
@@ -111,45 +122,193 @@ BOOL InitializeSspiModule_Native(void)
 }
 #endif
 
+void* sspi_SecBufferAlloc(PSecBuffer SecBuffer, ULONG size)
+{
+	if (!SecBuffer)
+		return NULL;
+
+	SecBuffer->pvBuffer = calloc(1, size);
+
+	if (!SecBuffer->pvBuffer)
+		return NULL;
+
+	SecBuffer->cbBuffer = size;
+	return SecBuffer->pvBuffer;
+}
+
+void sspi_SecBufferFree(PSecBuffer SecBuffer)
+{
+	if (!SecBuffer)
+		return;
+
+	if (SecBuffer->pvBuffer)
+		memset(SecBuffer->pvBuffer, 0, SecBuffer->cbBuffer);
+
+	free(SecBuffer->pvBuffer);
+	SecBuffer->pvBuffer = NULL;
+	SecBuffer->cbBuffer = 0;
+}
+
+int sspi_SetAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity, const char* user, const char* domain,
+                         const char* password)
+{
+	int rc;
+	int unicodePasswordLenW;
+	LPWSTR unicodePassword = NULL;
+	unicodePasswordLenW = ConvertToUnicode(CP_UTF8, 0, password, -1, &unicodePassword, 0);
+
+	if (unicodePasswordLenW <= 0)
+		return -1;
+
+	rc = sspi_SetAuthIdentityWithUnicodePassword(identity, user, domain, unicodePassword,
+	                                             (ULONG)(unicodePasswordLenW - 1));
+	free(unicodePassword);
+	return rc;
+}
+
+int sspi_SetAuthIdentityWithUnicodePassword(SEC_WINNT_AUTH_IDENTITY* identity, const char* user,
+                                            const char* domain, LPWSTR password,
+                                            ULONG passwordLength)
+{
+	int status;
+	identity->Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
+	free(identity->User);
+	identity->User = (UINT16*)NULL;
+	identity->UserLength = 0;
+
+	if (user)
+	{
+		status = ConvertToUnicode(CP_UTF8, 0, user, -1, (LPWSTR*)&(identity->User), 0);
+
+		if (status <= 0)
+			return -1;
+
+		identity->UserLength = (ULONG)(status - 1);
+	}
+
+	free(identity->Domain);
+	identity->Domain = (UINT16*)NULL;
+	identity->DomainLength = 0;
+
+	if (domain)
+	{
+		status = ConvertToUnicode(CP_UTF8, 0, domain, -1, (LPWSTR*)&(identity->Domain), 0);
+
+		if (status <= 0)
+			return -1;
+
+		identity->DomainLength = (ULONG)(status - 1);
+	}
+
+	free(identity->Password);
+	identity->Password = (UINT16*)calloc(1, (passwordLength + 1) * sizeof(WCHAR));
+
+	if (!identity->Password)
+		return -1;
+
+	CopyMemory(identity->Password, password, passwordLength * sizeof(WCHAR));
+	identity->PasswordLength = passwordLength;
+	return 1;
+}
+
+int sspi_CopyAuthIdentity(SEC_WINNT_AUTH_IDENTITY* identity, SEC_WINNT_AUTH_IDENTITY* srcIdentity)
+{
+	int status;
+
+	if (srcIdentity->Flags & SEC_WINNT_AUTH_IDENTITY_ANSI)
+	{
+		status = sspi_SetAuthIdentity(identity, (char*)srcIdentity->User,
+		                              (char*)srcIdentity->Domain, (char*)srcIdentity->Password);
+
+		if (status <= 0)
+			return -1;
+
+		identity->Flags &= ~SEC_WINNT_AUTH_IDENTITY_ANSI;
+		identity->Flags |= SEC_WINNT_AUTH_IDENTITY_UNICODE;
+		return 1;
+	}
+
+	identity->Flags |= SEC_WINNT_AUTH_IDENTITY_UNICODE;
+	/* login/password authentication */
+	identity->User = identity->Domain = identity->Password = NULL;
+	identity->UserLength = srcIdentity->UserLength;
+
+	if (identity->UserLength > 0)
+	{
+		identity->User = (UINT16*)calloc((identity->UserLength + 1), sizeof(WCHAR));
+
+		if (!identity->User)
+			return -1;
+
+		CopyMemory(identity->User, srcIdentity->User, identity->UserLength * sizeof(WCHAR));
+		identity->User[identity->UserLength] = 0;
+	}
+
+	identity->DomainLength = srcIdentity->DomainLength;
+
+	if (identity->DomainLength > 0)
+	{
+		identity->Domain = (UINT16*)calloc((identity->DomainLength + 1), sizeof(WCHAR));
+
+		if (!identity->Domain)
+			return -1;
+
+		CopyMemory(identity->Domain, srcIdentity->Domain, identity->DomainLength * sizeof(WCHAR));
+		identity->Domain[identity->DomainLength] = 0;
+	}
+
+	identity->PasswordLength = srcIdentity->PasswordLength;
+
+	if (identity->PasswordLength > SSPI_CREDENTIALS_HASH_LENGTH_OFFSET)
+		identity->PasswordLength -= SSPI_CREDENTIALS_HASH_LENGTH_OFFSET;
+
+	if (srcIdentity->Password)
+	{
+		identity->Password = (UINT16*)calloc((identity->PasswordLength + 1), sizeof(WCHAR));
+
+		if (!identity->Password)
+			return -1;
+
+		CopyMemory(identity->Password, srcIdentity->Password,
+		           identity->PasswordLength * sizeof(WCHAR));
+		identity->Password[identity->PasswordLength] = 0;
+	}
+
+	identity->PasswordLength = srcIdentity->PasswordLength;
+	/* End of login/password authentication */
+	return 1;
+}
+
 static BOOL CALLBACK InitializeSspiModuleInt(PINIT_ONCE once, PVOID param, PVOID* context)
 {
 	BOOL status = FALSE;
-#if defined(WITH_NATIVE_SSPI)
 	DWORD flags = 0;
 
 	if (param)
 		flags = *(DWORD*)param;
 
-#endif
-	sspi_GlobalInit();
 	g_Log = WLog_Get("com.winpr.sspi");
 #if defined(WITH_NATIVE_SSPI)
-
-	if (flags && (flags & SSPI_INTERFACE_NATIVE))
-	{
+	if (!status && ((flags & SSPI_INTERFACE_NATIVE) != 0))
 		status = InitializeSspiModule_Native();
-	}
-	else if (flags && (flags & SSPI_INTERFACE_WINPR))
-	{
-		g_SspiW = winpr_InitSecurityInterfaceW();
-		g_SspiA = winpr_InitSecurityInterfaceA();
-		status = TRUE;
-	}
-
-	if (!status && ShouldUseNativeSspi())
-	{
-		status = InitializeSspiModule_Native();
-	}
-
 #endif
 
-	if (!status)
-	{
-		g_SspiW = winpr_InitSecurityInterfaceW();
-		g_SspiA = winpr_InitSecurityInterfaceA();
-	}
+#if defined(WITH_WINPR_SSPI)
+	if (!status && ((flags & SSPI_INTERFACE_WINPR) != 0))
+		status = InitializeSspiModule_WinPR();
+#endif
 
-	return TRUE;
+#if defined(WITH_NATIVE_SSPI)
+	if (!status && ShouldUseNativeSspi())
+		status = InitializeSspiModule_Native();
+#endif
+
+#if defined(WITH_WINPR_SSPI)
+	if (!status)
+		status = InitializeSspiModule_WinPR();
+#endif
+
+	return status;
 }
 
 const char* GetSecurityStatusString(SECURITY_STATUS status)
