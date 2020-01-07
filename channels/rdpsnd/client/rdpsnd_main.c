@@ -358,11 +358,8 @@ static BOOL rdpsnd_ensure_device_is_open(rdpsndPlugin* rdpsnd, UINT32 wFormatNo,
 		if (!rc)
 			return FALSE;
 
-		if (!supported)
-		{
-			if (!freerdp_dsp_context_reset(rdpsnd->dsp_context, format))
-				return FALSE;
-		}
+		if (!freerdp_dsp_context_reset(rdpsnd->dsp_context, &deviceFormat))
+			return FALSE;
 
 		rdpsnd->isOpen = TRUE;
 		rdpsnd->wCurrentFormatNo = wFormatNo;
@@ -460,8 +457,8 @@ static UINT rdpsnd_treat_wave(rdpsndPlugin* rdpsnd, wStream* s, size_t size)
 		else if (freerdp_dsp_decode(rdpsnd->dsp_context, format, data, size, pcmData))
 		{
 			Stream_SealLength(pcmData);
-			latency = IFCALLRESULT(0, rdpsnd->device->Play, rdpsnd->device, Stream_Buffer(pcmData),
-			                       Stream_Length(pcmData));
+			latency = IFCALLRESULT(0, rdpsnd->device->Play, rdpsnd->device, data,
+								   size);
 		}
 		else
 			status = ERROR_INTERNAL_ERROR;
@@ -624,7 +621,6 @@ static UINT rdpsnd_recv_pdu(rdpsndPlugin* rdpsnd, wStream* s)
 	}
 
 out:
-	Stream_Release(s);
 	return status;
 }
 
@@ -828,6 +824,9 @@ static UINT rdpsnd_process_connect(rdpsndPlugin* rdpsnd)
 #endif
 #if defined(WITH_MACAUDIO)
 		{ "mac", "default" },
+#endif
+#if defined(WITH_WASAPI)
+		{ "wasapi", "" },
 #endif
 #if defined(WITH_WINMM)
 		{ "winmm", "" },

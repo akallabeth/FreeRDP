@@ -48,7 +48,6 @@ struct rdpsnd_device_plugin
 	pcGetVolume GetVolume;
 	pcSetVolume SetVolume;
 	pcPlay Play;
-	pcStart Start;
 	pcClose Close;
 	pcFree Free;
 };

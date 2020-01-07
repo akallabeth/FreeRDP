@@ -142,7 +142,6 @@ UINT freerdp_rdpsnd_client_subsystem_entry(PFREERDP_RDPSND_DEVICE_ENTRY_POINTS p
 	fake->device.FormatSupported = rdpsnd_fake_format_supported;
 	fake->device.SetVolume = rdpsnd_fake_set_volume;
 	fake->device.Play = rdpsnd_fake_play;
-	fake->device.Start = rdpsnd_fake_start;
 	fake->device.Close = rdpsnd_fake_close;
 	fake->device.Free = rdpsnd_fake_free;
 	args = pEntryPoints->args;

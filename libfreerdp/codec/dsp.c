@@ -210,14 +210,13 @@ static BOOL freerdp_dsp_channel_mix(FREERDP_DSP_CONTEXT* context, const BYTE* sr
  */
 
 static BOOL freerdp_dsp_resample(FREERDP_DSP_CONTEXT* context, const BYTE* src, size_t size,
-                                 const AUDIO_FORMAT* srcFormat, const BYTE** data, size_t* length)
+                                 const AUDIO_FORMAT* srcFormat, wStream* out)
 {
 #if defined(WITH_SOXR)
 	soxr_error_t error;
 	size_t idone, odone;
 	size_t sframes, rframes;
 	size_t rsize;
-	size_t j;
 	size_t sbytes, rbytes;
 #endif
 	size_t srcBytesPerFrame, dstBytesPerFrame;
@@ -252,20 +251,18 @@ static BOOL freerdp_dsp_resample(FREERDP_DSP_CONTEXT* context, const BYTE* src, 
 	          srcFormat->nSamplesPerSec;
 	rsize = rframes * rbytes;
 
-	if (!Stream_EnsureCapacity(context->resample, rsize))
+	if (!Stream_EnsureCapacity(out, rsize))
 		return FALSE;
 
-	error = soxr_process(context->sox, src, sframes, &idone, Stream_Buffer(context->resample),
-	                     Stream_Capacity(context->resample) / rbytes, &odone);
-	Stream_SetLength(context->resample, odone * rbytes);
-	*data = Stream_Buffer(context->resample);
-	*length = Stream_Length(context->resample);
+	error = soxr_process(context->sox, src, sframes, &idone, Stream_Buffer(out),
+						 Stream_Capacity(out) / rbytes, &odone);
+	Stream_SetLength(out, odone * rbytes);
+
 	return (error == 0) ? TRUE : FALSE;
 #else
 	WINPR_UNUSED(src);
 	WINPR_UNUSED(size);
-	WINPR_UNUSED(data);
-	WINPR_UNUSED(length);
+	WINPR_UNUSED(out);
 	WLog_ERR(TAG, "Missing resample support, recompile -DWITH_SOXR=ON or -DWITH_DSP_FFMPEG=ON");
 	return FALSE;
 #endif
@@ -1131,27 +1128,32 @@ void freerdp_dsp_context_free(FREERDP_DSP_CONTEXT* context)
 }
 
 BOOL freerdp_dsp_encode(FREERDP_DSP_CONTEXT* context, const AUDIO_FORMAT* srcFormat,
-                        const BYTE* data, size_t length, wStream* out)
+						const BYTE* sdata, size_t slength, wStream* out)
 {
 #if defined(WITH_DSP_FFMPEG)
-	return freerdp_dsp_ffmpeg_encode(context, srcFormat, data, length, out);
+	return freerdp_dsp_ffmpeg_encode(context, srcFormat, sdata, slength, out);
 #else
 	const BYTE* resampleData;
 	size_t resampleLength;
 	AUDIO_FORMAT format;
+	const BYTE* data;
+	size_t length;
 
 	if (!context || !context->encoder || !srcFormat || !data || !out)
 		return FALSE;
 
 	format = *srcFormat;
 
-	if (!freerdp_dsp_channel_mix(context, data, length, srcFormat, &resampleData, &resampleLength))
+	if (!freerdp_dsp_channel_mix(context, sdata, slength, srcFormat, &resampleData, &resampleLength))
 		return FALSE;
 
 	format.nChannels = context->format.nChannels;
 
-	if (!freerdp_dsp_resample(context, resampleData, resampleLength, &format, &data, &length))
+	if (!freerdp_dsp_resample(context, resampleData, resampleLength, &format, context->resample))
 		return FALSE;
+
+	data = Stream_Buffer(context->resample);
+	length = Stream_Length(context->resample);
 
 	switch (context->format.wFormatTag)
 	{
@@ -1191,7 +1193,7 @@ BOOL freerdp_dsp_encode(FREERDP_DSP_CONTEXT* context, const AUDIO_FORMAT* srcFor
 #endif
 }
 
-BOOL freerdp_dsp_decode(FREERDP_DSP_CONTEXT* context, const AUDIO_FORMAT* srcFormat,
+static BOOL freerdp_dsp_decode_int(FREERDP_DSP_CONTEXT* context, const AUDIO_FORMAT* srcFormat,
                         const BYTE* data, size_t length, wStream* out)
 {
 #if defined(WITH_DSP_FFMPEG)
@@ -1203,10 +1205,9 @@ BOOL freerdp_dsp_decode(FREERDP_DSP_CONTEXT* context, const AUDIO_FORMAT* srcFor
 
 	switch (context->format.wFormatTag)
 	{
-		case WAVE_FORMAT_PCM:
+		case WAVE_FORMAT_PCM:			
 			if (!Stream_EnsureRemainingCapacity(out, length))
 				return FALSE;
-
 			Stream_Write(out, data, length);
 			return TRUE;
 
@@ -1236,6 +1237,27 @@ BOOL freerdp_dsp_decode(FREERDP_DSP_CONTEXT* context, const AUDIO_FORMAT* srcFor
 	}
 
 	return FALSE;
+#endif
+}
+
+BOOL freerdp_dsp_decode(FREERDP_DSP_CONTEXT* context, const AUDIO_FORMAT* srcFormat,
+							const BYTE* data, size_t length, wStream* out)
+{
+
+#if !defined(WITH_DSP_FFMPEG)
+	BOOL resample = srcFormat->nSamplesPerSec != context->format.nSamplesPerSec;
+	wStream* tmp = resample ? context->resample : out;
+	BOOL rc = freerdp_dsp_decode_int(context, srcFormat, data, length, tmp);
+	if (rc && resample)
+	{
+		AUDIO_FORMAT format = *srcFormat;
+		format.wFormatTag = WAVE_FORMAT_PCM;
+
+		rc = freerdp_dsp_resample(context, Stream_Buffer(context->resample), Stream_Length(context->resample), &format, out);
+	}
+	return rc;
+#else
+	return freerdp_dsp_decode_int(context, srcFormat, data, length, out);
 #endif
 }
 

@@ -967,6 +967,9 @@ UINT DVCPluginEntry(IDRDYNVC_ENTRY_POINTS* pEntryPoints)
 #if defined(WITH_OPENSLES)
 		{ "opensles", "default" },
 #endif
+#if defined(WITH_WASAPI)
+		{ "wasapi", "default" },
+#endif
 #if defined(WITH_WINMM)
 		{ "winmm", "default" },
 #endif

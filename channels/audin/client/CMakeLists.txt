@@ -54,7 +54,7 @@ if(WITH_WINMM)
 endif()
 
 if(WITH_WASAPI)
-	add_channel_client_subsystem(${MODULE_PREFIX} ${CHANNEL_NAME} "winmm" "")
+        add_channel_client_subsystem(${MODULE_PREFIX} ${CHANNEL_NAME} "wasapi" "")
 endif()
 
 if(WITH_MACAUDIO)

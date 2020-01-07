@@ -19,7 +19,7 @@
 define_channel_client_subsystem("audin" "wasapi" "")
 
 set(${MODULE_PREFIX}_SRCS
-	audin_wasapi.c)
+        audin_wasapi.cpp)
 
 include_directories(..)
 

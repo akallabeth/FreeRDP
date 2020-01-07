@@ -19,7 +19,7 @@
 define_channel_client_subsystem("rdpsnd" "wasapi" "")
 
 set(${MODULE_PREFIX}_SRCS
-	rdpsnd_wasapi.c)
+        rdpsnd_wasapi.cpp)
 
 include_directories(..)
 
@@ -27,6 +27,7 @@ add_channel_client_subsystem_library(${MODULE_PREFIX} ${MODULE_NAME} ${CHANNEL_N
 
 set(${MODULE_PREFIX}_LIBS ${${MODULE_PREFIX}_LIBS} winpr)
 set(${MODULE_PREFIX}_LIBS ${${MODULE_PREFIX}_LIBS} freerdp)
+set(${MODULE_PREFIX}_LIBS ${${MODULE_PREFIX}_LIBS} wmcodecdspuuid)
 
 target_link_libraries(${MODULE_NAME} ${${MODULE_PREFIX}_LIBS})
 
