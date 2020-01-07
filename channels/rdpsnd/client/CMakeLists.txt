@@ -53,6 +53,10 @@ if(WITH_WINMM)
 	add_channel_client_subsystem(${MODULE_PREFIX} ${CHANNEL_NAME} "winmm" "")
 endif()
 
+if(WITH_WASAPI)
+	add_channel_client_subsystem(${MODULE_PREFIX} ${CHANNEL_NAME} "wasapi" "")
+endif()
+
 if(WITH_OPENSLES)
 	add_channel_client_subsystem(${MODULE_PREFIX} ${CHANNEL_NAME} "opensles" "")
 endif()
