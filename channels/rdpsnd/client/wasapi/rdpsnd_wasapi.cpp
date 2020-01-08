@@ -156,11 +156,12 @@ static BOOL rdpsnd_wasapi_default_format(rdpsndDevicePlugin* device, AUDIO_FORMA
 	defaultFormat->data = NULL;
 	defaultFormat->cbSize = 0;
 	defaultFormat->nChannels = 2;
-	defaultFormat->wFormatTag = WAVE_FORMAT_PCM;
-	defaultFormat->nBlockAlign = 8;
+	defaultFormat->wFormatTag = WAVE_FORMAT_PCM;	
 	defaultFormat->nSamplesPerSec = 48000;
 	defaultFormat->wBitsPerSample = 16;
-	defaultFormat->nAvgBytesPerSec = 176000;
+
+	defaultFormat->nBlockAlign = defaultFormat->nChannels * defaultFormat->wBitsPerSample / 8;
+	defaultFormat->nAvgBytesPerSec = defaultFormat->nSamplesPerSec * defaultFormat->nBlockAlign;
 	return TRUE;
 }
 
