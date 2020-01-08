@@ -344,9 +344,14 @@ static BOOL rdpsnd_ensure_device_is_open(rdpsndPlugin* rdpsnd, UINT32 wFormatNo,
 
 		if (!supported)
 		{
-			deviceFormat.wFormatTag = WAVE_FORMAT_PCM;
-			deviceFormat.wBitsPerSample = 16;
-			deviceFormat.cbSize = 0;
+			if (!IFCALLRESULT(FALSE, rdpsnd->device->DefaultFormat, rdpsnd->device, &deviceFormat))
+			{
+				deviceFormat.wFormatTag = WAVE_FORMAT_PCM;
+				deviceFormat.nChannels = 2;
+				deviceFormat.wBitsPerSample = 16;
+				deviceFormat.nSamplesPerSec = 44100;
+				deviceFormat.cbSize = 0;
+			}
 		}
 
 		WLog_Print(rdpsnd->log, WLOG_DEBUG, "Opening device with format %s [backend %s]",

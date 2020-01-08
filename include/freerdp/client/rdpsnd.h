@@ -38,6 +38,7 @@ typedef UINT (*pcPlay)(rdpsndDevicePlugin* device, const BYTE* data, size_t size
 typedef void (*pcStart)(rdpsndDevicePlugin* device);
 typedef void (*pcClose)(rdpsndDevicePlugin* device);
 typedef void (*pcFree)(rdpsndDevicePlugin* device);
+typedef BOOL (*pcDefaultFormat)(rdpsndDevicePlugin* device, AUDIO_FORMAT* defaultFormat);
 
 struct rdpsnd_device_plugin
 {
@@ -50,6 +51,7 @@ struct rdpsnd_device_plugin
 	pcPlay Play;
 	pcClose Close;
 	pcFree Free;
+	pcDefaultFormat DefaultFormat;
 };
 
 #define RDPSND_DEVICE_EXPORT_FUNC_NAME "freerdp_rdpsnd_client_subsystem_entry"

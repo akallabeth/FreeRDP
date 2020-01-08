@@ -147,6 +147,23 @@ static void rdpsnd_wasapi_free(rdpsndDevicePlugin* device)
 	}
 }
 
+static BOOL rdpsnd_wasapi_default_format(rdpsndDevicePlugin* device, AUDIO_FORMAT* defaultFormat)
+{
+	rdpsndWasapiPlugin* wasapi = (rdpsndWasapiPlugin*)device;
+	if (!wasapi || !defaultFormat)
+		return FALSE;
+
+	defaultFormat->data = NULL;
+	defaultFormat->cbSize = 0;
+	defaultFormat->nChannels = 2;
+	defaultFormat->wFormatTag = WAVE_FORMAT_PCM;
+	defaultFormat->nBlockAlign = 8;
+	defaultFormat->nSamplesPerSec = 48000;
+	defaultFormat->wBitsPerSample = 16;
+	defaultFormat->nAvgBytesPerSec = 176000;
+	return TRUE;
+}
+
 static BOOL rdpsnd_wasapi_format_supported(rdpsndDevicePlugin* device, const AUDIO_FORMAT* format)
 {
 	WAVEFORMATEX out;
@@ -394,8 +411,8 @@ static BOOL freerdp_rdpsnd_open_device(rdpsndWasapiPlugin* wasapi)
 	if (!check_call_success("pAudioClient->GetDevicePeriod()", hr))
 		goto fail;
 	hr = wasapi->pAudioClient->Initialize(
-		AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM,// | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY | AUDCLNT_STREAMFLAGS_RATEADJUST,
-		minDuration, minDuration,
+		AUDCLNT_SHAREMODE_SHARED, 0,
+		defaultDuration, 0,
 		wasapi->pwfx,
 		NULL);
 	if (!check_call_success("pAudioClient->Initialize()", hr))
@@ -403,8 +420,9 @@ static BOOL freerdp_rdpsnd_open_device(rdpsndWasapiPlugin* wasapi)
 	hr = wasapi->pAudioClient->GetService(
 		lIID_IAudioRenderClient,
 		(void**)&wasapi->pRenderClient);
-	if (!check_call_success("pAudioClient->GetService()", hr))
+	if (!check_call_success("pAudioClient->GetService(IID_IAudioRenderClient)", hr))
 		goto fail;
+
 	return TRUE;
 
 	fail:
@@ -440,6 +458,7 @@ UINT freerdp_rdpsnd_client_subsystem_entry(PFREERDP_RDPSND_DEVICE_ENTRY_POINTS p
 	wasapi->device.Play = rdpsnd_wasapi_play;
 	wasapi->device.Close = rdpsnd_wasapi_close;
 	wasapi->device.Free = rdpsnd_wasapi_free;
+	wasapi->device.DefaultFormat = rdpsnd_wasapi_default_format;
 	wasapi->log = WLog_Get(TAG);
 
 	if (!rdpsnd_wasapi_parse_addin_args(wasapi, pEntryPoints->args))
