@@ -486,10 +486,10 @@ static void udevman_free(IUDEVMAN* idevman)
 	if (!udevman)
 		return;
 
+	udevman_unregister_all_udevices(idevman);
 	udevman->running = FALSE;
 	WaitForSingleObject(udevman->thread, INFINITE);
 
-	udevman_unregister_all_udevices(idevman);
 	CloseHandle(udevman->devman_loading);
 	CloseHandle(udevman->thread);
 	libusb_exit(udevman->context);
@@ -819,8 +819,85 @@ static BOOL poll_libusb_events(UDEVMAN* udevman)
 	return rc > 0;
 }
 
+static BOOL compare_devices(libusb_device* cur, libusb_device* old)
+{
+	{
+		uint8_t cbus = libusb_get_bus_number(cur);
+		uint8_t obus = libusb_get_bus_number(old);
+		if (cbus != obus)
+			return FALSE;
+	}
+	{
+		uint8_t cport = libusb_get_port_number(cur);
+		uint8_t oport = libusb_get_port_number(old);
+		if (cport != oport)
+			return FALSE;
+	}
+	{
+		uint8_t caddr = libusb_get_device_address(cur);
+		uint8_t oaddr = libusb_get_device_address(old);
+		if (caddr != oaddr)
+			return FALSE;
+	}
+	{
+		struct libusb_device_descriptor cdesc, odesc;
+		int rc = libusb_get_device_descriptor(cur, &cdesc);
+		if (rc != LIBUSB_SUCCESS)
+			return FALSE;
+		rc = libusb_get_device_descriptor(old, &odesc);
+		if (rc != LIBUSB_SUCCESS)
+			return FALSE;
+
+		if (memcmp(&cdesc, &odesc, sizeof(cdesc)) != 0)
+			return FALSE;
+	}
+	return TRUE;
+}
+
+static BOOL contains_device(libusb_device* cur, libusb_device** oldList, size_t oldSize)
+{
+	size_t x;
+	for (x = 0; x < oldSize; x++)
+	{
+		libusb_device* old = oldList[x];
+
+		if (compare_devices(cur, old))
+			return TRUE;
+	}
+	return FALSE;
+}
+
+static void handle_hotplug(UDEVMAN* udevman, libusb_device*** devicelist, size_t* devicecount)
+{
+	libusb_device** newList;
+	libusb_device** oldList = *devicelist;
+	size_t newSize, x;
+	size_t oldSize = *devicecount;
+
+	newSize = libusb_get_device_list(udevman->context, &newList);
+	for (x = 0; x < oldSize; x++)
+	{
+		libusb_device* cur = oldList[x];
+		if (!contains_device(cur, newList, newSize))
+			hotplug_callback(udevman->context, cur, LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, udevman);
+	}
+
+	for (x = 0; x < newSize; x++)
+	{
+		libusb_device* cur = newList[x];
+		if (!contains_device(cur, oldList, oldSize))
+			hotplug_callback(udevman->context, cur, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED, udevman);
+	}
+
+	libusb_free_device_list(oldList, 1);
+	*devicelist = newList;
+	*devicecount = newSize;
+}
+
 static DWORD poll_thread(LPVOID lpThreadParameter)
 {
+	size_t devicecount = 0;
+	libusb_device** devicelist = NULL;
 	libusb_hotplug_callback_handle handle;
 	UDEVMAN* udevman = (UDEVMAN*)lpThreadParameter;
 	BOOL hasHotplug = libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG);
@@ -837,16 +914,21 @@ static DWORD poll_thread(LPVOID lpThreadParameter)
 			udevman->running = FALSE;
 	}
 	else
-		WLog_WARN(TAG, "Platform does not support libusb hotplug. USB devices plugged in later "
-		               "will not be detected.");
+		devicecount = libusb_get_device_list(udevman->context, &devicelist);
 
 	while (udevman->running)
 	{
 		poll_libusb_events(udevman);
+		if (!hasHotplug)
+		{
+			handle_hotplug(udevman, &devicelist, &devicecount);
+		}
 	}
 
 	if (hasHotplug)
 		libusb_hotplug_deregister_callback(udevman->context, handle);
+	else
+		libusb_free_device_list(devicelist, TRUE);
 
 	/* Process remaining usb events */
 	while (poll_libusb_events(udevman))
