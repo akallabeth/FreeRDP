@@ -257,8 +257,10 @@ static LONG smartcard_ndr_write_state(wStream* s, const ReaderState_Return* data
 		const ReaderState_Return* reader;
 		const BYTE* data;
 	} cnv;
+	ReaderState_Return tmp = *data;
+	memset(&tmp.rgbAtr[32], 0, 4);
 
-	cnv.reader = data;
+	cnv.reader = &tmp;
 	return smartcard_ndr_write(s, cnv.data, size, sizeof(ReaderState_Return), type);
 }
 
