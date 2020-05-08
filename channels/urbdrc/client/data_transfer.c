@@ -23,11 +23,26 @@
 #include <string.h>
 
 #include <winpr/sysinfo.h>
+#include <winpr/print.h>
 
 #include <urbdrc_helpers.h>
 
 #include "urbdrc_types.h"
 #include "data_transfer.h"
+
+static void dump(wStream* s, ...)
+{
+	const DWORD level = WLOG_INFO;
+	wLog* log = WLog_Get(TAG);
+	va_list args;
+
+	WLog_Print(log, level, "-------------------- start -------------------");
+	va_start(args, s);
+	WLog_PrintVA(log, level, args);
+	va_end(args);
+	winpr_HexLogDump(log, level, Stream_Buffer(s), Stream_Capacity(s));
+	WLog_Print(log, level, "-------------------- end   -------------------");
+}
 
 static void usb_process_get_port_status(IUDEVICE* pdev, wStream* out)
 {
@@ -85,6 +100,7 @@ static UINT urb_write_completion(IUDEVICE* pdev, URBDRC_CHANNEL_CALLBACK* callba
 	Stream_Write_UINT32(out, OutputBufferSize); /** OutputBufferSize */
 	Stream_Seek(out, OutputBufferSize);
 
+	dump(out, "%s", __FUNCTION__);
 	if (!noAck)
 		return stream_write_and_free(callback->plugin, callback->channel, out);
 	else
@@ -688,6 +704,7 @@ static void urb_bulk_transfer_cb(IUDEVICE* pdev, URBDRC_CHANNEL_CALLBACK* callba
                                  UINT32 NumberOfPackets, UINT32 status, UINT32 StartFrame,
                                  UINT32 ErrorCount, UINT32 OutputBufferSize)
 {
+	dump(out, "%s", __FUNCTION__);
 	if (!pdev->isChannelClosed(pdev))
 		urb_write_completion(pdev, callback, noAck, out, InterfaceId, MessageId, RequestId, status,
 		                     OutputBufferSize);
@@ -714,6 +731,7 @@ static UINT urb_bulk_or_interrupt_transfer(IUDEVICE* pdev, URBDRC_CHANNEL_CALLBA
 	Stream_Read_UINT32(s, TransferFlags); /** TransferFlags */
 	Stream_Read_UINT32(s, OutputBufferSize);
 	EndpointAddress = (PipeHandle & 0x000000ff);
+	dump(s, "%s", __FUNCTION__);
 	/**  process TS_URB_BULK_OR_INTERRUPT_TRANSFER */
 	return pdev->bulk_or_interrupt_transfer(pdev, callback, MessageId, RequestId, EndpointAddress,
 	                                        TransferFlags, noAck, OutputBufferSize,
