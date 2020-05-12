@@ -51,6 +51,18 @@
 #include "data_transfer.h"
 #include "searchman.h"
 
+#include <winpr/print.h>
+
+#define write_out(channel, size, data) write_out_((channel), (size), (data), __FUNCTION__, __FILE__, __LINE__)
+static UINT write_out_(IWTSVirtualChannel* channel, size_t size, const void* data, const char* fkt, const char* file, int line)
+{
+    WLog_INFO(TAG, "-------------- response [%s] -------------", fkt);
+    winpr_HexDump(TAG, WLOG_INFO, data, size);
+    WLog_INFO(TAG, "------------------------------------------");
+
+    return channel->Write(channel, size, data, NULL);
+}
+
 static int func_hardware_id_format(IUDEVICE* pdev, char(*HardwareIds)[DEVICE_HARDWARE_ID_SIZE])
 {
 	char str[DEVICE_HARDWARE_ID_SIZE];
@@ -245,7 +257,7 @@ static UINT urbdrc_process_capability_request(URBDRC_CHANNEL_CALLBACK* callback,
 	data_write_UINT32(out_data + 4, MessageId); /* message id */
 	data_write_UINT32(out_data + 8, Version); /* usb protocol version */
 	data_write_UINT32(out_data + 12, 0x00000000); /* HRESULT */
-	ret = callback->channel->Write(callback->channel, out_size, (BYTE*) out_data, NULL);
+    ret = write_out(callback->channel, out_size, out_data);
 	zfree(out_data);
 	return ret;
 }
@@ -282,7 +294,7 @@ static UINT urbdrc_process_channel_create(URBDRC_CHANNEL_CALLBACK* callback, cha
 	data_write_UINT32(out_data + 12, MajorVersion);
 	data_write_UINT32(out_data + 16, MinorVersion);
 	data_write_UINT32(out_data + 20, Capabilities); /* capabilities version */
-	ret = callback->channel->Write(callback->channel, out_size, (BYTE*)out_data, NULL);
+    ret = write_out(callback->channel, out_size, out_data);
 	zfree(out_data);
 	return ret;
 }
@@ -293,8 +305,7 @@ static int urdbrc_send_virtual_channel_add(IWTSVirtualChannel* channel, UINT32 M
 	UINT32 InterfaceId;
 	char* out_data;
 	WLog_VRB(TAG, "");
-	assert(NULL != channel);
-	assert(NULL != channel->Write);
+    assert(NULL != channel);
 	InterfaceId = ((STREAM_ID_PROXY << 30) | CLIENT_DEVICE_SINK);
 	out_size = 12;
 	out_data = (char*) malloc(out_size);
@@ -302,7 +313,7 @@ static int urdbrc_send_virtual_channel_add(IWTSVirtualChannel* channel, UINT32 M
 	data_write_UINT32(out_data + 0, InterfaceId); /* interface */
 	data_write_UINT32(out_data + 4, MessageId); /* message id */
 	data_write_UINT32(out_data + 8, ADD_VIRTUAL_CHANNEL); /* function id */
-	channel->Write(channel, out_size, (BYTE*) out_data, NULL);
+    write_out(channel, out_size, out_data);
 	zfree(out_data);
 	return 0;
 }
@@ -411,7 +422,7 @@ static UINT urdbrc_send_usb_device_add(URBDRC_CHANNEL_CALLBACK* callback, IUDEVI
 	data_write_UINT32(out_data + out_offset + 24,
 	                  0x50); /* NoAckIsochWriteJitterBufferSizeInMs, >=10 or <=512 */
 	out_offset += 28;
-	ret = callback->channel->Write(callback->channel, out_offset, (BYTE*)out_data, NULL);
+    ret = write_out(callback->channel, out_offset, out_data);
 	zfree(out_data);
 	return ret;
 }
@@ -1003,7 +1014,7 @@ static void* urbdrc_search_usb_device(void* arg)
 
 							if (!pdev->isSigToEnd(pdev))
 							{
-								dvc_channel->Write(dvc_channel, 0, NULL, NULL);
+                                write_out(dvc_channel, 0, NULL);
 								pdev->SigToEnd(pdev);
 							}
 
