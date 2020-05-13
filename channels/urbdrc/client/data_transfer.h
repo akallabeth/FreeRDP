@@ -30,6 +30,8 @@
 	(TRANSFER_CTX(__USBI_TRANSFER_TO_LIBUSB_TRANSFER(transfer)))
 
 void *urbdrc_process_udev_data_transfer(void* arg);
+#define write_out(channel, size, data) write_out_((channel), (size), (data), __FUNCTION__, __FILE__, __LINE__)
+UINT write_out_(IWTSVirtualChannel* channel, size_t size, const void* data, const char* fkt, const char* file, int line);
 
 #endif /* FREERDP_CHANNEL_URBDRC_CLIENT_DATA_TRANSFER_H */
 

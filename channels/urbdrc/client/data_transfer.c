@@ -106,7 +106,7 @@ static int func_check_isochronous_fds(IUDEVICE* pdev)
 
 			if (pdev && !pdev->isSigToEnd(pdev))
 			{
-				callback->channel->Write(callback->channel, size_temp, data_temp, NULL);
+                write_out(callback->channel, size_temp, data_temp);
 				zfree(data_temp);
 			}
 		}
@@ -149,7 +149,7 @@ static int urbdrc_process_register_request_callback(URBDRC_CHANNEL_CALLBACK* cal
 			 *  need some time(default 3s) to check the driver or delete
 			 *  it */
 			sleep(3);
-			callback->channel->Write(callback->channel, 0, NULL, NULL);
+            write_out(callback->channel, 0, NULL);
 			pdev->SigToEnd(pdev);
 		}
 	}
@@ -307,7 +307,7 @@ static int urbdrc_process_io_control(URBDRC_CHANNEL_CALLBACK* callback, BYTE* da
 	}
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 
 	zfree(out_data);
 	zfree(OutputBuffer);
@@ -354,7 +354,7 @@ static int urbdrc_process_internal_io_control(URBDRC_CHANNEL_CALLBACK* callback,
 	data_write_UINT32(out_data + 28, frames); /** OutputBuffer */
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 
 	zfree(out_data);
 
@@ -417,8 +417,8 @@ static int urbdrc_process_query_device_text(URBDRC_CHANNEL_CALLBACK* callback, B
 
 	data_write_UINT32(out_data + out_offset, 0); /** HResult */
 
-	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+	if (!pdev->isSigToEnd(pdev))        
+        write_out(callback->channel, out_size, out_data);
 
 	zfree(out_data);
 
@@ -525,7 +525,7 @@ static int urb_select_configuration(URBDRC_CHANNEL_CALLBACK* callback, BYTE* dat
 	data_write_UINT32(out_data + offset + 4, 0);	/** OutputBufferSize */
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 	zfree(out_data);
 	return 0;
 }
@@ -598,7 +598,7 @@ static int urb_select_interface(URBDRC_CHANNEL_CALLBACK* callback, BYTE* data, U
 	data_write_UINT32(out_data + out_offset + 4, OutputBufferSize);	/** OutputBufferSize */
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 
 	zfree(out_data);
 
@@ -710,7 +710,7 @@ static int urb_control_transfer(URBDRC_CHANNEL_CALLBACK* callback, BYTE* data,
 	data_write_UINT32(out_data + 32, OutputBufferSize);	/** OutputBufferSize */
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 
 	zfree(out_data);
 
@@ -795,7 +795,7 @@ static int urb_bulk_or_interrupt_transfer(URBDRC_CHANNEL_CALLBACK* callback, BYT
 	data_write_UINT32(out_data + 32, OutputBufferSize);	/** OutputBufferSize */
 
 	if (pdev && !pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 
 	zfree(out_data);
 
@@ -959,7 +959,7 @@ static int urb_isoch_transfer(URBDRC_CHANNEL_CALLBACK * callback, BYTE * data,
 	}
 #else
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(channel, out_size, out_data, NULL);
 	zfree(out_data);
 #endif
 
@@ -1056,7 +1056,7 @@ static int urb_control_descriptor_request(URBDRC_CHANNEL_CALLBACK* callback,
 	data_write_UINT32(out_data + 32, OutputBufferSize);	/** OutputBufferSize */
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 
 	zfree(out_data);
 	return 0;
@@ -1146,7 +1146,7 @@ static int urb_control_get_status_request(URBDRC_CHANNEL_CALLBACK * callback, BY
 	data_write_UINT32(out_data + 32, OutputBufferSize);	/** OutputBufferSize */
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 
 	zfree(out_data);
 
@@ -1254,7 +1254,7 @@ static int urb_control_vendor_or_class_request(URBDRC_CHANNEL_CALLBACK * callbac
 	data_write_UINT32(out_data + 32, OutputBufferSize);	/** OutputBufferSize */
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 
 	zfree(out_data);
 	return 0;
@@ -1352,7 +1352,7 @@ static int urb_os_feature_descriptor_request(URBDRC_CHANNEL_CALLBACK * callback,
 	data_write_UINT32(out_data + 32, OutputBufferSize);	/** OutputBufferSize */
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 
 	zfree(out_data);
 
@@ -1446,7 +1446,7 @@ static int urb_pipe_request(URBDRC_CHANNEL_CALLBACK * callback, BYTE * data,
 	data_write_UINT32(out_data + 32, 0);	/** OutputBufferSize */
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 	zfree(out_data);
 
 	return 0;
@@ -1503,7 +1503,7 @@ static int urb_get_current_frame_number(URBDRC_CHANNEL_CALLBACK* callback,
 	data_write_UINT32(out_data + 36, 0);	/** OutputBufferSize */
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 	zfree(out_data);
 	return 0;
 }
@@ -1585,7 +1585,7 @@ static int urb_control_get_configuration_request(URBDRC_CHANNEL_CALLBACK* callba
 	data_write_UINT32(out_data + 32, OutputBufferSize);	/** OutputBufferSize */
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 	zfree(out_data);
 	return 0;
 }
@@ -1662,7 +1662,7 @@ static int urb_control_get_interface_request(URBDRC_CHANNEL_CALLBACK* callback,
 	data_write_UINT32(out_data + 32, OutputBufferSize);	/** OutputBufferSize */
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 	zfree(out_data);
 	return 0;
 }
@@ -1767,7 +1767,7 @@ static int urb_control_feature_request(URBDRC_CHANNEL_CALLBACK * callback, BYTE 
 
 
 	if (!pdev->isSigToEnd(pdev))
-		callback->channel->Write(callback->channel, out_size, out_data, NULL);
+        write_out(callback->channel, out_size, out_data);
 	zfree(out_data);
 	return 0;
 }

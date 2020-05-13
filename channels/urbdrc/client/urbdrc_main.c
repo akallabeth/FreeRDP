@@ -53,8 +53,7 @@
 
 #include <winpr/print.h>
 
-#define write_out(channel, size, data) write_out_((channel), (size), (data), __FUNCTION__, __FILE__, __LINE__)
-static UINT write_out_(IWTSVirtualChannel* channel, size_t size, const void* data, const char* fkt, const char* file, int line)
+UINT write_out_(IWTSVirtualChannel* channel, size_t size, const void* data, const char* fkt, const char* file, int line)
 {
     WLog_INFO(TAG, "-------------- response [%s] -------------", fkt);
     winpr_HexDump(TAG, WLOG_INFO, data, size);
@@ -748,7 +747,7 @@ static void* urbdrc_search_usb_device(void* arg)
 
 						if (!pdev->isSigToEnd(pdev))
 						{
-							dvc_channel->Write(dvc_channel, 0, NULL, NULL);
+                            write_out(dvc_channel, 0, NULL);
 							pdev->SigToEnd(pdev);
 						}
 
