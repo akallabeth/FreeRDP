@@ -803,6 +803,18 @@ static BOOL poll_libusb_events(UDEVMAN* udevman)
 {
 	int rc = LIBUSB_SUCCESS;
 	struct timeval tv = { 0, 500 };
+
+#if 1
+	rc = libusb_handle_events_timeout_completed(udevman->context, &tv, NULL);
+	switch (rc)
+	{
+		case LIBUSB_SUCCESS:
+		case LIBUSB_ERROR_TIMEOUT:
+			return TRUE;
+		default:
+			return FALSE;
+	}
+#else
 	if (libusb_try_lock_events(udevman->context))
 	{
 		if (libusb_event_handling_ok(udevman->context))
@@ -826,6 +838,7 @@ static BOOL poll_libusb_events(UDEVMAN* udevman)
 	}
 
 	return rc > 0;
+#endif
 }
 
 static DWORD poll_thread(LPVOID lpThreadParameter)
