@@ -76,22 +76,24 @@ static void tpdu_write_header(wStream* s, UINT16 length, BYTE code);
 
 BOOL tpdu_read_header(wStream* s, BYTE* code, BYTE* li, UINT16 tpktlength)
 {
+	UINT16 hlen;
 	if (Stream_GetRemainingLength(s) < 3)
 		return FALSE;
 
-	Stream_Read_UINT8(s, *li);   /* LI */
+	Stream_Read_UINT8(s, hlen);  /* LI */
 	Stream_Read_UINT8(s, *code); /* Code */
 
-	if (*li + 4 > tpktlength)
+	*li = hlen;
+	if (hlen + 4 > tpktlength)
 	{
-		WLog_ERR(TAG, "tpdu length %" PRIu16 " > tpkt header length %" PRIu16, li, tpktlength);
+		WLog_ERR(TAG, "tpdu length %" PRIu16 " > tpkt header length %" PRIu16, hlen, tpktlength);
 		return FALSE;
 	}
 
 	if (*code == X224_TPDU_DATA)
 	{
 		/* EOT (1 byte) */
-		Stream_Seek(s, 1);
+		return Stream_SafeSeek(s, 1);
 	}
 	else
 	{
@@ -100,8 +102,6 @@ BOOL tpdu_read_header(wStream* s, BYTE* code, BYTE* li, UINT16 tpktlength)
 		/* Class 0 (1 byte) */
 		return Stream_SafeSeek(s, 5);
 	}
-
-	return TRUE;
 }
 
 /**
