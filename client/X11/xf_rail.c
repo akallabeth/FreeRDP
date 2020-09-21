@@ -675,7 +675,7 @@ static BOOL xf_rail_window_icon(rdpContext* context, const WINDOW_ORDER_INFO* or
 		return FALSE;
 	}
 
-	replaceIcon = !!(orderInfo->fieldFlags & WINDOW_ORDER_STATE_NEW);
+	replaceIcon = !(orderInfo->fieldFlags & WINDOW_ORDER_STATE_NEW);
 	xf_rail_set_window_icon(xfc, railWindow, icon, replaceIcon);
 	return TRUE;
 }
@@ -702,7 +702,7 @@ static BOOL xf_rail_window_cached_icon(rdpContext* context, const WINDOW_ORDER_I
 		return FALSE;
 	}
 
-	replaceIcon = !!(orderInfo->fieldFlags & WINDOW_ORDER_STATE_NEW);
+	replaceIcon = !(orderInfo->fieldFlags & WINDOW_ORDER_STATE_NEW);
 	xf_rail_set_window_icon(xfc, railWindow, icon, replaceIcon);
 	return TRUE;
 }
