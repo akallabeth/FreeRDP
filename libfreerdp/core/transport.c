@@ -447,16 +447,25 @@ BOOL transport_connect(rdpTransport* transport, const char* hostname, UINT16 por
 			sockfd = freerdp_tcp_connect(context, settings, hostname, port, timeout);
 
 		if (sockfd < 0)
+		{
+			freerdp_set_last_error_if_not(context, FREERDP_ERROR_CONNECT_FAILED);
 			return FALSE;
+		}
 
 		if (!transport_attach(transport, sockfd))
+		{
+			freerdp_set_last_error_if_not(context, FREERDP_ERROR_CONNECT_FAILED);
 			return FALSE;
+		}
 
 		if (isProxyConnection)
 		{
 			if (!proxy_connect(settings, transport->frontBio, proxyUsername, proxyPassword,
 			                   hostname, port))
+			{
+				freerdp_set_last_error_if_not(context, FREERDP_ERROR_CONNECT_FAILED);
 				return FALSE;
+			}
 		}
 
 		status = TRUE;
@@ -550,6 +559,7 @@ static void transport_bio_error_log(rdpTransport* transport, LPCSTR biofunc, BIO
 	saveerrno = errno;
 	level = WLOG_ERROR;
 
+	freerdp_set_last_error_if_not(transport->context, FREERDP_ERROR_CONNECT_FAILED);
 	if (level < WLog_GetLogLevel(transport->log))
 		return;
 
@@ -600,6 +610,8 @@ static SSIZE_T transport_read_layer(rdpTransport* transport, BYTE* data, size_t 
 		{
 			if (!transport->frontBio || !BIO_should_retry(transport->frontBio))
 			{
+				freerdp_set_last_error_if_not(transport->context,
+				                              FREERDP_ERROR_CONNECT_TRANSPORT_FAILED);
 				/* something unexpected happened, let's close */
 				if (!transport->frontBio)
 				{
@@ -609,8 +621,6 @@ static SSIZE_T transport_read_layer(rdpTransport* transport, BYTE* data, size_t 
 
 				WLog_ERR_BIO(transport, "BIO_read", transport->frontBio);
 				transport->layer = TRANSPORT_LAYER_CLOSED;
-				freerdp_set_last_error_if_not(transport->context,
-				                              FREERDP_ERROR_CONNECT_TRANSPORT_FAILED);
 				return -1;
 			}
 
@@ -918,6 +928,8 @@ static int transport_default_write(rdpTransport* transport, wStream* s)
 			if (!BIO_should_retry(transport->frontBio))
 			{
 				WLog_ERR_BIO(transport, "BIO_should_retry", transport->frontBio);
+				freerdp_set_last_error_if_not(transport->context,
+				                              FREERDP_ERROR_CONNECT_TRANSPORT_FAILED);
 				goto out_cleanup;
 			}
 
