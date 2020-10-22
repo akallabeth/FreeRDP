@@ -105,6 +105,9 @@ static BOOL avc_yuv_to_rgb(H264_CONTEXT* h264, const RECTANGLE_16* regionRects,
 	const BYTE* pYUVPoint[3];
 	primitives_t* prims = primitives_get();
 
+	if (nDstStep == 0)
+		nDstStep = GetBytesPerPixel(DstFormat) * nDstWidth;
+
 	for (x = 0; x < numRegionRects; x++)
 	{
 		const RECTANGLE_16* rect = &(regionRects[x]);
@@ -167,7 +170,7 @@ static BOOL avc_yuv_to_rgb(H264_CONTEXT* h264, const RECTANGLE_16* regionRects,
 
 INT32 avc420_decompress(H264_CONTEXT* h264, const BYTE* pSrcData, UINT32 SrcSize, BYTE* pDstData,
                         DWORD DstFormat, UINT32 nDstStep, UINT32 nDstWidth, UINT32 nDstHeight,
-                        RECTANGLE_16* regionRects, UINT32 numRegionRects)
+                        const RECTANGLE_16* regionRects, UINT32 numRegionRects)
 {
 	int status;
 
@@ -401,9 +404,9 @@ static double avg(UINT64* count, double old, double size)
 }
 #endif
 
-INT32 avc444_decompress(H264_CONTEXT* h264, BYTE op, RECTANGLE_16* regionRects,
+INT32 avc444_decompress(H264_CONTEXT* h264, BYTE op, const RECTANGLE_16* regionRects,
                         UINT32 numRegionRects, const BYTE* pSrcData, UINT32 SrcSize,
-                        RECTANGLE_16* auxRegionRects, UINT32 numAuxRegionRect,
+                        const RECTANGLE_16* auxRegionRects, UINT32 numAuxRegionRect,
                         const BYTE* pAuxSrcData, UINT32 AuxSrcSize, BYTE* pDstData, DWORD DstFormat,
                         UINT32 nDstStep, UINT32 nDstWidth, UINT32 nDstHeight, UINT32 codecId)
 {
@@ -563,33 +566,41 @@ BOOL h264_context_reset(H264_CONTEXT* h264, UINT32 width, UINT32 height)
 
 	h264->width = width;
 	h264->height = height;
+	yuv_context_reset(h264->yuv, width, height);
+
 	return TRUE;
 }
 
 H264_CONTEXT* h264_context_new(BOOL Compressor)
 {
-	H264_CONTEXT* h264;
-	h264 = (H264_CONTEXT*)calloc(1, sizeof(H264_CONTEXT));
+	H264_CONTEXT* h264 = (H264_CONTEXT*)calloc(1, sizeof(H264_CONTEXT));
+	if (!h264)
+		return NULL;
 
-	if (h264)
+	h264->Compressor = Compressor;
+	if (Compressor)
 	{
-		h264->Compressor = Compressor;
+		const UINT32 bitrate = 1000000;
+		const UINT32 framerate = 30;
 
-		if (Compressor)
-		{
-			/* Default compressor settings, may be changed by caller */
-			h264->BitRate = 1000000;
-			h264->FrameRate = 30;
-		}
-
-		if (!h264_context_init(h264))
-		{
-			free(h264);
-			return NULL;
-		}
+		/* Default compressor settings, may be changed by caller */
+		if (!h264_set_option(h264, FREERDP_ENCODER_OPTION_BITRATE, &bitrate) ||
+		    !h264_set_option(h264, FREERDP_ENCODER_OPTION_FRAME_RATE, &framerate))
+			goto fail;
 	}
 
+	if (!h264_context_init(h264))
+		goto fail;
+
+	h264->yuv = yuv_context_new(Compressor);
+	if (!h264->yuv)
+		goto fail;
+
 	return h264;
+
+fail:
+	h264_context_free(h264);
+	return NULL;
 }
 
 void h264_context_free(H264_CONTEXT* h264)
@@ -601,6 +612,23 @@ void h264_context_free(H264_CONTEXT* h264)
 		_aligned_free(h264->pYUV444Data[1]);
 		_aligned_free(h264->pYUV444Data[2]);
 		_aligned_free(h264->lumaData);
+		yuv_context_free(h264->yuv);
 		free(h264);
 	}
+}
+
+BOOL h264_set_option(H264_CONTEXT* h264, FREERDP_H264_ENCODER_OPTION option, const void* arg)
+{
+	BOOL rc = FALSE;
+	if (h264 && h264->subsystem && h264->subsystem->SetOption)
+		rc = h264->subsystem->SetOption(h264, option, arg);
+	return rc;
+}
+
+BOOL h264_get_option(H264_CONTEXT* h264, FREERDP_H264_ENCODER_OPTION option, void* arg)
+{
+	BOOL rc = FALSE;
+	if (h264 && h264->subsystem && h264->subsystem->GetOption)
+		rc = h264->subsystem->GetOption(h264, option, arg);
+	return rc;
 }

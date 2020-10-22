@@ -28,6 +28,8 @@
 #include <libavcodec/avcodec.h>
 #include <libavutil/opt.h>
 
+#include "h264.h"
+
 #ifdef WITH_VAAPI
 #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55, 9, 0)
 #include <libavutil/hwcontext.h>
@@ -89,6 +91,106 @@ struct _H264_CONTEXT_LIBAVCODEC
 };
 typedef struct _H264_CONTEXT_LIBAVCODEC H264_CONTEXT_LIBAVCODEC;
 
+static BOOL set_int(H264_CONTEXT_LIBAVCODEC* sys, const char* what, const void* arg)
+{
+	UINT32* uval = (UINT32*)arg;
+
+	if (!sys || !what || !arg || !sys->codecEncoderContext)
+		return FALSE;
+
+	return av_opt_set_int(sys->codecEncoderContext->priv_data, what, *uval,
+	                      AV_OPT_SEARCH_CHILDREN) == 0;
+}
+
+static BOOL libavcodec_set_option(H264_CONTEXT* h264, FREERDP_H264_ENCODER_OPTION option,
+                                  const void* arg)
+{
+	const UINT32* uval = (const UINT32*)arg;
+	H264_CONTEXT_LIBAVCODEC* sys;
+	if (!h264 || !arg)
+		return FALSE;
+
+	sys = (H264_CONTEXT_LIBAVCODEC*)h264->pSystemData;
+	if (!sys)
+		return FALSE;
+
+	switch (option)
+	{
+		case FREERDP_ENCODER_OPTION_RATECONTROL:
+			h264->RateControlMode = *uval;
+			// TODO: Apply
+			return TRUE;
+		case FREERDP_ENCODER_OPTION_QP:
+			return set_int(sys, "qp", arg);
+		case FREERDP_ENCODER_OPTION_FRAME_RATE: /* uint32_t */
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(56, 13, 100)
+			sys->codecEncoderContext->framerate = (AVRational){ *uval, 1 };
+#endif
+			sys->codecEncoderContext->time_base = (AVRational){ 1, *uval };
+			return TRUE;
+		case FREERDP_ENCODER_OPTION_BITRATE: /* uint32_t */
+			return set_int(sys, "b", arg);
+		case FREERDP_ENCODER_OPTION_MAX_BITRATE: /* uint32_t */
+			return set_int(sys, "maxrate", arg);
+		case FREERDP_ENCODER_OPTION_NUMBER_REF: /* uint32_t */
+			return set_int(sys, "frames", arg);
+		default:
+			return FALSE;
+	}
+}
+
+static BOOL get_int(H264_CONTEXT_LIBAVCODEC* sys, const char* what, void* arg)
+{
+	int64_t val;
+	UINT32* uval = (UINT32*)arg;
+	BOOL rc;
+
+	if (!sys || !what || !arg || !sys->codecEncoderContext)
+		return FALSE;
+
+	rc = av_opt_get_int(sys->codecEncoderContext->priv_data, what, AV_OPT_SEARCH_CHILDREN, &val) ==
+	     0;
+	*uval = val;
+	return rc;
+}
+
+static BOOL libavcodec_get_option(H264_CONTEXT* h264, FREERDP_H264_ENCODER_OPTION option, void* arg)
+{
+	uint32_t* uval = (uint32_t*)arg;
+	H264_CONTEXT_LIBAVCODEC* sys;
+	if (!h264 || !arg)
+		return FALSE;
+
+	sys = (H264_CONTEXT_LIBAVCODEC*)h264->pSystemData;
+	if (!sys)
+		return FALSE;
+
+	switch (option)
+	{
+		case FREERDP_ENCODER_OPTION_RATECONTROL:
+			*uval = h264->RateControlMode;
+			return TRUE;
+		case FREERDP_ENCODER_OPTION_QP:
+			return get_int(sys, "qp", arg);
+		case FREERDP_ENCODER_OPTION_BITRATE:
+			*uval = sys->codecEncoderContext->bit_rate;
+			return TRUE;
+		case FREERDP_ENCODER_OPTION_FRAME_RATE:
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(56, 13, 100)
+			*uval = sys->codecEncoderContext->framerate.num;
+#else
+			*uval = sys->codecEncoderContext->time_base.den;
+#endif
+			return TRUE;
+		case FREERDP_ENCODER_OPTION_MAX_BITRATE:
+			return get_int(sys, "maxrate", arg);
+		case FREERDP_ENCODER_OPTION_NUMBER_REF:
+			return get_int(sys, "frames", arg);
+		default:
+			return FALSE;
+	}
+}
+
 static void libavcodec_destroy_encoder(H264_CONTEXT* h264)
 {
 	H264_CONTEXT_LIBAVCODEC* sys;
@@ -114,6 +216,7 @@ static void libavcodec_destroy_encoder(H264_CONTEXT* h264)
 
 static BOOL libavcodec_create_encoder(H264_CONTEXT* h264)
 {
+	UINT32 val;
 	BOOL recreate = FALSE;
 	H264_CONTEXT_LIBAVCODEC* sys;
 
@@ -150,11 +253,15 @@ static BOOL libavcodec_create_encoder(H264_CONTEXT* h264)
 	switch (h264->RateControlMode)
 	{
 		case H264_RATECONTROL_VBR:
-			sys->codecEncoderContext->bit_rate = h264->BitRate;
+			val = 1000000;
+			if (!libavcodec_set_option(h264, FREERDP_ENCODER_OPTION_BITRATE, &val))
+				goto EXCEPTION;
 			break;
 
 		case H264_RATECONTROL_CQP:
-			/* TODO: sys->codecEncoderContext-> = h264->QP; */
+			val = 0;
+			if (!libavcodec_set_option(h264, FREERDP_ENCODER_OPTION_QP, &val))
+				goto EXCEPTION;
 			break;
 
 		default:
@@ -164,15 +271,14 @@ static BOOL libavcodec_create_encoder(H264_CONTEXT* h264)
 	sys->codecEncoderContext->width = h264->width;
 	sys->codecEncoderContext->height = h264->height;
 	sys->codecEncoderContext->delay = 0;
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(56, 13, 100)
-	sys->codecEncoderContext->framerate = (AVRational){ h264->FrameRate, 1 };
-#endif
-	sys->codecEncoderContext->time_base = (AVRational){ 1, h264->FrameRate };
 	av_opt_set(sys->codecEncoderContext, "preset", "medium", AV_OPT_SEARCH_CHILDREN);
 	av_opt_set(sys->codecEncoderContext, "tune", "zerolatency", AV_OPT_SEARCH_CHILDREN);
 	sys->codecEncoderContext->flags |= AV_CODEC_FLAG_LOOP_FILTER;
 	sys->codecEncoderContext->pix_fmt = AV_PIX_FMT_YUV420P;
 
+	val = 30;
+	if (!libavcodec_set_option(h264, FREERDP_ENCODER_OPTION_FRAME_RATE, &val))
+		goto EXCEPTION;
 	if (avcodec_open2(sys->codecEncoderContext, sys->codecEncoder, NULL) < 0)
 		goto EXCEPTION;
 
@@ -603,5 +709,7 @@ EXCEPTION:
 	return FALSE;
 }
 
-H264_CONTEXT_SUBSYSTEM g_Subsystem_libavcodec = { "libavcodec", libavcodec_init, libavcodec_uninit,
-	                                              libavcodec_decompress, libavcodec_compress };
+H264_CONTEXT_SUBSYSTEM g_Subsystem_libavcodec = { "libavcodec",         libavcodec_init,
+	                                              libavcodec_uninit,    libavcodec_decompress,
+	                                              libavcodec_compress,  libavcodec_set_option,
+	                                              libavcodec_get_option };

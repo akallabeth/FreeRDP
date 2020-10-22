@@ -851,7 +851,8 @@ static BOOL shadow_client_send_surface_gfx(rdpShadowClient* client, const BYTE* 
 		regionRect.top = cmd.top;
 		regionRect.right = cmd.right;
 		regionRect.bottom = cmd.bottom;
-		quantQualityVal.qp = encoder->h264->QP;
+		if (!h264_get_option(encoder->h264, FREERDP_ENCODER_OPTION_BITRATE, &quantQualityVal.qp))
+			return FALSE;
 		quantQualityVal.r = 0;
 		quantQualityVal.p = 0;
 		quantQualityVal.qualityVal = 100 - quantQualityVal.qp;
@@ -898,7 +899,8 @@ static BOOL shadow_client_send_surface_gfx(rdpShadowClient* client, const BYTE* 
 		regionRect.top = cmd.top;
 		regionRect.right = cmd.right;
 		regionRect.bottom = cmd.bottom;
-		quantQualityVal.qp = encoder->h264->QP;
+		if (!h264_get_option(encoder->h264, FREERDP_ENCODER_OPTION_QP, &quantQualityVal.qp))
+			return FALSE;
 		quantQualityVal.r = 0;
 		quantQualityVal.p = 0;
 		quantQualityVal.qualityVal = 100 - quantQualityVal.qp;

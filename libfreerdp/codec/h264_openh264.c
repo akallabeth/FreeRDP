@@ -26,6 +26,7 @@
 #include <freerdp/codec/h264.h>
 #include <winpr/library.h>
 
+#include "h264.h"
 #include "wels/codec_def.h"
 #include "wels/codec_api.h"
 #include "wels/codec_ver.h"
@@ -71,6 +72,106 @@ static void openh264_trace_callback(H264_CONTEXT* h264, int level, const char* m
 {
 	if (h264)
 		WLog_Print(h264->log, WLOG_TRACE, "%d - %s", level, message);
+}
+
+static BOOL openh264_set_option(H264_CONTEXT* h264, FREERDP_H264_ENCODER_OPTION option,
+                                const void* args)
+{
+	const UINT32* uval = (const UINT32*)args;
+	H264_CONTEXT_OPENH264* sys;
+
+	if (!h264 || !args)
+		return FALSE;
+	sys = (H264_CONTEXT_OPENH264*)h264->pSystemData;
+	if (!sys)
+		return FALSE;
+	switch (option)
+	{
+		case FREERDP_ENCODER_OPTION_RATECONTROL:
+		{
+			switch (*uval)
+			{
+				case H264_RATECONTROL_VBR:
+				case H264_RATECONTROL_CQP:
+					h264->RateControlMode = *uval;
+					return TRUE;
+				default:
+					return FALSE;
+			}
+		}
+		case FREERDP_ENCODER_OPTION_QP:
+			sys->EncParamExt.sSpatialLayers[0].iDLayerQp = (int)*uval;
+			return (*sys->pEncoder)
+			           ->SetOption(sys->pEncoder, ENCODER_OPTION_SVC_ENCODE_PARAM_EXT,
+			                       &sys->EncParamExt) == 0;
+
+		case FREERDP_ENCODER_OPTION_FRAME_RATE:
+		{
+			float framerate = *uval;
+			sys->EncParamExt.fMaxFrameRate = framerate;
+			return (*sys->pEncoder)
+			           ->SetOption(sys->pEncoder, ENCODER_OPTION_FRAME_RATE, &framerate) == 0;
+		}
+		case FREERDP_ENCODER_OPTION_BITRATE:
+		{
+			SBitrateInfo info = { 0 };
+			info.iLayer = SPATIAL_LAYER_ALL;
+			info.iBitrate = (int)*uval;
+			sys->EncParamExt.iTargetBitrate = info.iBitrate;
+			return (*sys->pEncoder)->SetOption(sys->pEncoder, ENCODER_OPTION_BITRATE, &info) == 0;
+		}
+		case FREERDP_ENCODER_OPTION_MAX_BITRATE:
+		{
+			SBitrateInfo info = { 0 };
+			info.iLayer = SPATIAL_LAYER_ALL;
+			info.iBitrate = (int)*uval;
+			sys->EncParamExt.iMaxBitrate = info.iBitrate;
+			return (*sys->pEncoder)->SetOption(sys->pEncoder, ENCODER_OPTION_MAX_BITRATE, &info) ==
+			       0;
+		}
+		case FREERDP_ENCODER_OPTION_NUMBER_REF:
+		{
+			int32_t ref = (int32_t)*uval;
+			return (*sys->pEncoder)->SetOption(sys->pEncoder, ENCODER_OPTION_NUMBER_REF, &ref) == 0;
+		}
+		default:
+			return FALSE;
+	}
+}
+
+static BOOL openh264_get_option(H264_CONTEXT* h264, FREERDP_H264_ENCODER_OPTION option, void* arg)
+{
+	UINT32* uval = (UINT32*)arg;
+	H264_CONTEXT_OPENH264* sys;
+	if (!h264 || !arg)
+		return FALSE;
+
+	sys = (H264_CONTEXT_OPENH264*)h264->pSystemData;
+	if (!sys)
+		return FALSE;
+
+	switch (option)
+	{
+		case FREERDP_ENCODER_OPTION_RATECONTROL:
+			*uval = h264->RateControlMode;
+			return TRUE;
+		case FREERDP_ENCODER_OPTION_QP:
+			*uval = sys->EncParamExt.sSpatialLayers[0].iDLayerQp;
+			return TRUE;
+		case FREERDP_ENCODER_OPTION_BITRATE:
+			*uval = sys->EncParamExt.iTargetBitrate;
+			return TRUE;
+		case FREERDP_ENCODER_OPTION_FRAME_RATE:
+			*uval = sys->EncParamExt.fMaxFrameRate;
+			return TRUE;
+		case FREERDP_ENCODER_OPTION_MAX_BITRATE:
+			*uval = sys->EncParamExt.iMaxBitrate;
+			return TRUE;
+		case FREERDP_ENCODER_OPTION_NUMBER_REF:
+			return (*sys->pEncoder)->GetOption(sys->pEncoder, ENCODER_OPTION_NUMBER_REF, arg) == 0;
+		default:
+			return FALSE;
+	}
 }
 
 static int openh264_decompress(H264_CONTEXT* h264, const BYTE* pSrcData, UINT32 SrcSize)
@@ -155,9 +256,8 @@ static int openh264_compress(H264_CONTEXT* h264, const BYTE** pYUVData, const UI
 {
 	int i, j;
 	int status;
-	SFrameBSInfo info;
-	SSourcePicture pic;
-	SBitrateInfo bitrate;
+	SFrameBSInfo info = { 0 };
+	SSourcePicture pic = { 0 };
 	H264_CONTEXT_OPENH264* sys;
 	sys = &((H264_CONTEXT_OPENH264*)h264->pSystemData)[0];
 
@@ -170,8 +270,7 @@ static int openh264_compress(H264_CONTEXT* h264, const BYTE** pYUVData, const UI
 	if ((h264->width > INT_MAX) || (h264->height > INT_MAX))
 		return -1;
 
-	if ((h264->FrameRate > INT_MAX) || (h264->NumberOfThreads > INT_MAX) ||
-	    (h264->BitRate > INT_MAX) || (h264->QP > INT_MAX))
+	if ((h264->NumberOfThreads > INT_MAX))
 		return -1;
 
 	if ((sys->EncParamExt.iPicWidth != (int)h264->width) ||
@@ -189,14 +288,11 @@ static int openh264_compress(H264_CONTEXT* h264, const BYTE** pYUVData, const UI
 		sys->EncParamExt.iUsageType = SCREEN_CONTENT_REAL_TIME;
 		sys->EncParamExt.iPicWidth = (int)h264->width;
 		sys->EncParamExt.iPicHeight = (int)h264->height;
-		sys->EncParamExt.fMaxFrameRate = (int)h264->FrameRate;
-		sys->EncParamExt.iMaxBitrate = UNSPECIFIED_BIT_RATE;
 		sys->EncParamExt.bEnableDenoise = 0;
 		sys->EncParamExt.bEnableLongTermReference = 0;
 		sys->EncParamExt.bEnableFrameSkip = 0;
 		sys->EncParamExt.iSpatialLayerNum = 1;
 		sys->EncParamExt.iMultipleThreadIdc = (int)h264->NumberOfThreads;
-		sys->EncParamExt.sSpatialLayers[0].fFrameRate = h264->FrameRate;
 		sys->EncParamExt.sSpatialLayers[0].iVideoWidth = sys->EncParamExt.iPicWidth;
 		sys->EncParamExt.sSpatialLayers[0].iVideoHeight = sys->EncParamExt.iPicHeight;
 		sys->EncParamExt.sSpatialLayers[0].iMaxSpatialBitrate = sys->EncParamExt.iMaxBitrate;
@@ -205,14 +301,12 @@ static int openh264_compress(H264_CONTEXT* h264, const BYTE** pYUVData, const UI
 		{
 			case H264_RATECONTROL_VBR:
 				sys->EncParamExt.iRCMode = RC_BITRATE_MODE;
-				sys->EncParamExt.iTargetBitrate = (int)h264->BitRate;
 				sys->EncParamExt.sSpatialLayers[0].iSpatialBitrate =
 				    sys->EncParamExt.iTargetBitrate;
 				break;
 
 			case H264_RATECONTROL_CQP:
 				sys->EncParamExt.iRCMode = RC_OFF_MODE;
-				sys->EncParamExt.sSpatialLayers[0].iDLayerQp = (int)h264->QP;
 				break;
 		}
 
@@ -247,64 +341,8 @@ static int openh264_compress(H264_CONTEXT* h264, const BYTE** pYUVData, const UI
 	}
 	else
 	{
-		switch (h264->RateControlMode)
-		{
-			case H264_RATECONTROL_VBR:
-				if (sys->EncParamExt.iTargetBitrate != (int)h264->BitRate)
-				{
-					sys->EncParamExt.iTargetBitrate = (int)h264->BitRate;
-					bitrate.iLayer = SPATIAL_LAYER_ALL;
-					bitrate.iBitrate = (int)h264->BitRate;
-					status = (*sys->pEncoder)
-					             ->SetOption(sys->pEncoder, ENCODER_OPTION_BITRATE, &bitrate);
-
-					if (status < 0)
-					{
-						WLog_Print(h264->log, WLOG_ERROR,
-						           "Failed to set encoder bitrate (status=%d)", status);
-						return status;
-					}
-				}
-
-				if (sys->EncParamExt.fMaxFrameRate != (int)h264->FrameRate)
-				{
-					sys->EncParamExt.fMaxFrameRate = (int)h264->FrameRate;
-					status = (*sys->pEncoder)
-					             ->SetOption(sys->pEncoder, ENCODER_OPTION_FRAME_RATE,
-					                         &sys->EncParamExt.fMaxFrameRate);
-
-					if (status < 0)
-					{
-						WLog_Print(h264->log, WLOG_ERROR,
-						           "Failed to set encoder framerate (status=%d)", status);
-						return status;
-					}
-				}
-
-				break;
-
-			case H264_RATECONTROL_CQP:
-				if (sys->EncParamExt.sSpatialLayers[0].iDLayerQp != (int)h264->QP)
-				{
-					sys->EncParamExt.sSpatialLayers[0].iDLayerQp = (int)h264->QP;
-					status = (*sys->pEncoder)
-					             ->SetOption(sys->pEncoder, ENCODER_OPTION_SVC_ENCODE_PARAM_EXT,
-					                         &sys->EncParamExt);
-
-					if (status < 0)
-					{
-						WLog_Print(h264->log, WLOG_ERROR,
-						           "Failed to set encoder parameters (status=%d)", status);
-						return status;
-					}
-				}
-
-				break;
-		}
 	}
 
-	memset(&info, 0, sizeof(SFrameBSInfo));
-	memset(&pic, 0, sizeof(SSourcePicture));
 	pic.iPicWidth = (int)h264->width;
 	pic.iPicHeight = (int)h264->height;
 	pic.iColorFormat = videoFormatI420;
@@ -481,6 +519,7 @@ static BOOL openh264_init(H264_CONTEXT* h264)
 
 		if (h264->Compressor)
 		{
+			const UINT32 bitrate = UNSPECIFIED_BIT_RATE;
 			sysContexts->WelsCreateSVCEncoder(&sys->pEncoder);
 
 			if (!sys->pEncoder)
@@ -488,6 +527,9 @@ static BOOL openh264_init(H264_CONTEXT* h264)
 				WLog_Print(h264->log, WLOG_ERROR, "Failed to create OpenH264 encoder");
 				goto EXCEPTION;
 			}
+
+			if (!openh264_set_option(h264, FREERDP_ENCODER_OPTION_BITRATE, &bitrate))
+				goto EXCEPTION;
 		}
 		else
 		{
@@ -575,5 +617,7 @@ EXCEPTION:
 	return FALSE;
 }
 
-H264_CONTEXT_SUBSYSTEM g_Subsystem_OpenH264 = { "OpenH264", openh264_init, openh264_uninit,
-	                                            openh264_decompress, openh264_compress };
+H264_CONTEXT_SUBSYSTEM g_Subsystem_OpenH264 = { "OpenH264",         openh264_init,
+	                                            openh264_uninit,    openh264_decompress,
+	                                            openh264_compress,  openh264_set_option,
+	                                            openh264_get_option };

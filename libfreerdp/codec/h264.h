@@ -23,6 +23,34 @@
 
 #include <freerdp/api.h>
 #include <freerdp/codec/h264.h>
+#include <freerdp/codec/yuv.h>
+
+struct _H264_CONTEXT
+{
+	BOOL Compressor;
+
+	UINT32 width;
+	UINT32 height;
+
+	H264_RATECONTROL_MODE RateControlMode;
+	UINT32 NumberOfThreads;
+
+	UINT32 iStride[3];
+	BYTE* pYUVData[3];
+
+	UINT32 iYUV444Size[3];
+	UINT32 iYUV444Stride[3];
+	BYTE* pYUV444Data[3];
+
+	UINT32 numSystemData;
+	void* pSystemData;
+	H264_CONTEXT_SUBSYSTEM* subsystem;
+
+	YUV_CONTEXT* yuv;
+
+	void* lumaData;
+	wLog* log;
+};
 
 FREERDP_LOCAL BOOL avc420_ensure_buffer(H264_CONTEXT* h264, UINT32 stride, UINT32 width,
                                         UINT32 height);

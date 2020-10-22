@@ -31,8 +31,8 @@ struct _YUV_PROCESS_WORK_PARAM
 };
 typedef struct _YUV_PROCESS_WORK_PARAM YUV_PROCESS_WORK_PARAM;
 
-static void CALLBACK yuv_process_work_callback(PTP_CALLBACK_INSTANCE instance, void* context,
-                                               PTP_WORK work)
+static void CALLBACK yuv420_process_work_callback(PTP_CALLBACK_INSTANCE instance, void* context,
+                                                  PTP_WORK work)
 {
 	prim_size_t roi;
 	YUV_PROCESS_WORK_PARAM* param = (YUV_PROCESS_WORK_PARAM*)context;
@@ -41,6 +41,22 @@ static void CALLBACK yuv_process_work_callback(PTP_CALLBACK_INSTANCE instance, v
 	roi.width = param->context->width;
 	roi.height = param->height;
 	if (prims->YUV420ToRGB_8u_P3AC4R(param->pYUVData, param->iStride, param->dest, param->nDstStep,
+	                                 param->DstFormat, &roi) != PRIMITIVES_SUCCESS)
+	{
+		WLog_ERR(TAG, "error when decoding lines");
+	}
+}
+
+static void CALLBACK yuv444_process_work_callback(PTP_CALLBACK_INSTANCE instance, void* context,
+                                                  PTP_WORK work)
+{
+	prim_size_t roi;
+	YUV_PROCESS_WORK_PARAM* param = (YUV_PROCESS_WORK_PARAM*)context;
+	primitives_t* prims = primitives_get();
+
+	roi.width = param->context->width;
+	roi.height = param->height;
+	if (prims->YUV444ToRGB_8u_P3AC4R(param->pYUVData, param->iStride, param->dest, param->nDstStep,
 	                                 param->DstFormat, &roi) != PRIMITIVES_SUCCESS)
 	{
 		WLog_ERR(TAG, "error when decoding lines");
@@ -100,24 +116,14 @@ void yuv_context_free(YUV_CONTEXT* context)
 	free(context);
 }
 
-BOOL yuv_context_decode(YUV_CONTEXT* context, const BYTE* pYUVData[3], UINT32 iStride[3],
-                        DWORD DstFormat, BYTE* dest, UINT32 nDstStep)
+static BOOL pool_decode(YUV_CONTEXT* context, PTP_WORK_CALLBACK cb, const BYTE* pYUVData[3],
+                        UINT32 iStride[3], UINT32 DstFormat, BYTE* dest, UINT32 nDstStep)
 {
 	UINT32 y, nobjects, i;
 	PTP_WORK* work_objects = NULL;
 	YUV_PROCESS_WORK_PARAM* params;
 	UINT32 waitCount = 0;
 	BOOL ret = TRUE;
-	primitives_t* prims = primitives_get();
-
-	if (!context->useThreads || (primitives_flags(prims) & PRIM_FLAGS_HAVE_EXTGPU))
-	{
-		prim_size_t roi;
-		roi.width = context->width;
-		roi.height = context->height;
-		return prims->YUV420ToRGB_8u_P3AC4R(pYUVData, iStride, dest, nDstStep, DstFormat, &roi) ==
-		       PRIMITIVES_SUCCESS;
-	}
 
 	/* case where we use threads */
 	nobjects = (context->height + context->heightStep - 1) / context->heightStep;
@@ -154,8 +160,7 @@ BOOL yuv_context_decode(YUV_CONTEXT* context, const BYTE* pYUVData[3], UINT32 iS
 		else
 			params[i].height = context->height % context->heightStep;
 
-		work_objects[i] = CreateThreadpoolWork(yuv_process_work_callback, (void*)&params[i],
-		                                       &context->ThreadPoolEnv);
+		work_objects[i] = CreateThreadpoolWork(cb, (void*)&params[i], &context->ThreadPoolEnv);
 		if (!work_objects[i])
 		{
 			ret = FALSE;
@@ -172,6 +177,41 @@ BOOL yuv_context_decode(YUV_CONTEXT* context, const BYTE* pYUVData[3], UINT32 iS
 
 	free(work_objects);
 	free(params);
+	return TRUE;
+}
 
-	return ret;
+BOOL yuv444_context_decode(YUV_CONTEXT* context, const BYTE* pYUVData[3], UINT32 iStride[3],
+                           DWORD DstFormat, BYTE* dest, UINT32 nDstStep)
+{
+	primitives_t* prims = primitives_get();
+
+	if (!context->useThreads || (primitives_flags(prims) & PRIM_FLAGS_HAVE_EXTGPU))
+	{
+		prim_size_t roi;
+		roi.width = context->width;
+		roi.height = context->height;
+		return prims->YUV420ToRGB_8u_P3AC4R(pYUVData, iStride, dest, nDstStep, DstFormat, &roi) ==
+		       PRIMITIVES_SUCCESS;
+	}
+
+	return pool_decode(context, yuv444_process_work_callback, pYUVData, iStride, DstFormat, dest,
+	                   nDstStep);
+}
+
+BOOL yuv420_context_decode(YUV_CONTEXT* context, const BYTE* pYUVData[3], UINT32 iStride[3],
+                           DWORD DstFormat, BYTE* dest, UINT32 nDstStep)
+{
+	primitives_t* prims = primitives_get();
+
+	if (!context->useThreads || (primitives_flags(prims) & PRIM_FLAGS_HAVE_EXTGPU))
+	{
+		prim_size_t roi;
+		roi.width = context->width;
+		roi.height = context->height;
+		return prims->YUV420ToRGB_8u_P3AC4R(pYUVData, iStride, dest, nDstStep, DstFormat, &roi) ==
+		       PRIMITIVES_SUCCESS;
+	}
+
+	return pool_decode(context, yuv420_process_work_callback, pYUVData, iStride, DstFormat, dest,
+	                   nDstStep);
 }

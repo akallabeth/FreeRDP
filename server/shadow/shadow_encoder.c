@@ -241,10 +241,15 @@ static int shadow_encoder_init_h264(rdpShadowEncoder* encoder)
 	if (!h264_context_reset(encoder->h264, encoder->width, encoder->height))
 		goto fail;
 
-	encoder->h264->RateControlMode = encoder->server->h264RateControlMode;
-	encoder->h264->BitRate = encoder->server->h264BitRate;
-	encoder->h264->FrameRate = encoder->server->h264FrameRate;
-	encoder->h264->QP = encoder->server->h264QP;
+	if (!h264_set_option(encoder->h264, FREERDP_ENCODER_OPTION_RATECONTROL,
+	                     &encoder->server->h264RateControlMode) ||
+	    !h264_set_option(encoder->h264, FREERDP_ENCODER_OPTION_BITRATE,
+	                     &encoder->server->h264BitRate) ||
+	    !h264_set_option(encoder->h264, FREERDP_ENCODER_OPTION_FRAME_RATE,
+	                     &encoder->server->h264FrameRate) ||
+	    !h264_set_option(encoder->h264, FREERDP_ENCODER_OPTION_QP, &encoder->server->h264QP))
+		goto fail;
+
 	encoder->codecs |= FREERDP_CODEC_AVC420 | FREERDP_CODEC_AVC444;
 	return 1;
 fail:

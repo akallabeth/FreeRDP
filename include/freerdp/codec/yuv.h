@@ -32,9 +32,12 @@ extern "C"
 {
 #endif
 
-	FREERDP_API BOOL yuv_context_decode(YUV_CONTEXT* context, const BYTE* pYUVData[3],
-	                                    UINT32 iStride[3], DWORD DstFormat, BYTE* dest,
-	                                    UINT32 nDstStep);
+	FREERDP_API BOOL yuv420_context_decode(YUV_CONTEXT* context, const BYTE* pYUVData[3],
+	                                       UINT32 iStride[3], DWORD DstFormat, BYTE* dest,
+	                                       UINT32 nDstStep);
+	FREERDP_API BOOL yuv444_context_decode(YUV_CONTEXT* context, const BYTE* pYUVData[3],
+	                                       UINT32 iStride[3], DWORD DstFormat, BYTE* dest,
+	                                       UINT32 nDstStep);
 
 	FREERDP_API void yuv_context_reset(YUV_CONTEXT* context, UINT32 width, UINT32 height);
 
