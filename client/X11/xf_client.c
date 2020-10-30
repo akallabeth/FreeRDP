@@ -259,10 +259,11 @@ static BOOL xf_desktop_resize(rdpContext* context)
 	if (xfc->primary)
 	{
 		BOOL same = (xfc->primary == xfc->drawing) ? TRUE : FALSE;
-		XFreePixmap(xfc->display, xfc->primary);
+		wrap_XFreePixmap(xfc, xfc->display, xfc->primary);
 
-		if (!(xfc->primary = XCreatePixmap(xfc->display, xfc->drawable, settings->DesktopWidth,
-		                                   settings->DesktopHeight, xfc->depth)))
+		if (!(xfc->primary =
+		          wrap_XCreatePixmap(xfc, xfc->display, xfc->drawable, settings->DesktopWidth,
+		                             settings->DesktopHeight, xfc->depth)))
 			return FALSE;
 
 		if (same)
@@ -334,7 +335,7 @@ static BOOL xf_sw_end_paint(rdpContext* context)
 				return TRUE;
 
 			xf_lock_x11(xfc);
-			XPutImage(xfc->display, xfc->primary, xfc->gc, xfc->image, x, y, x, y, w, h);
+			wrap_XPutImage(xfc, xfc->display, xfc->primary, xfc->gc, xfc->image, x, y, x, y, w, h);
 			xf_draw_screen(xfc, x, y, w, h);
 			xf_unlock_x11(xfc);
 		}
@@ -351,7 +352,8 @@ static BOOL xf_sw_end_paint(rdpContext* context)
 				y = cinvalid[i].y;
 				w = cinvalid[i].w;
 				h = cinvalid[i].h;
-				XPutImage(xfc->display, xfc->primary, xfc->gc, xfc->image, x, y, x, y, w, h);
+				wrap_XPutImage(xfc, xfc->display, xfc->primary, xfc->gc, xfc->image, x, y, x, y, w,
+				               h);
 				xf_draw_screen(xfc, x, y, w, h);
 			}
 
@@ -388,12 +390,13 @@ static BOOL xf_sw_desktop_resize(rdpContext* context)
 	if (xfc->image)
 	{
 		xfc->image->data = NULL;
-		XDestroyImage(xfc->image);
+		wrap_XDestroyImage(xfc, xfc->image);
 	}
 
-	if (!(xfc->image = XCreateImage(xfc->display, xfc->visual, xfc->depth, ZPixmap, 0,
-	                                (char*)gdi->primary_buffer, gdi->width, gdi->height,
-	                                xfc->scanline_pad, gdi->stride)))
+	xfc->image =
+	    wrap_XCreateImage(xfc, xfc->display, xfc->visual, xfc->depth, (char*)gdi->primary_buffer,
+	                      gdi->width, gdi->height, xfc->scanline_pad, gdi->stride);
+	if (!xfc->image)
 	{
 		goto out;
 	}
@@ -629,13 +632,13 @@ BOOL xf_create_window(xfContext* xfc)
 		xfc->gc = XCreateGC(xfc->display, xfc->drawable, GCGraphicsExposures, &gcv);
 
 	if (!xfc->primary)
-		xfc->primary = XCreatePixmap(xfc->display, xfc->drawable, settings->DesktopWidth,
-		                             settings->DesktopHeight, xfc->depth);
+		xfc->primary = wrap_XCreatePixmap(xfc, xfc->display, xfc->drawable, settings->DesktopWidth,
+		                                  settings->DesktopHeight, xfc->depth);
 
 	xfc->drawing = xfc->primary;
 
 	if (!xfc->bitmap_mono)
-		xfc->bitmap_mono = XCreatePixmap(xfc->display, xfc->drawable, 8, 8, 1);
+		xfc->bitmap_mono = wrap_XCreatePixmap(xfc, xfc->display, xfc->drawable, 8, 8, 1);
 
 	if (!xfc->gc_mono)
 		xfc->gc_mono = XCreateGC(xfc->display, xfc->bitmap_mono, GCGraphicsExposures, &gcv);
@@ -650,9 +653,9 @@ BOOL xf_create_window(xfContext* xfc)
 	if (!xfc->image)
 	{
 		rdpGdi* gdi = xfc->context.gdi;
-		xfc->image = XCreateImage(xfc->display, xfc->visual, xfc->depth, ZPixmap, 0,
-		                          (char*)gdi->primary_buffer, settings->DesktopWidth,
-		                          settings->DesktopHeight, xfc->scanline_pad, gdi->stride);
+		xfc->image = wrap_XCreateImage(xfc, xfc->display, xfc->visual, xfc->depth,
+		                               (char*)gdi->primary_buffer, settings->DesktopWidth,
+		                               settings->DesktopHeight, xfc->scanline_pad, gdi->stride);
 		xfc->image->byte_order = LSBFirst;
 		xfc->image->bitmap_bit_order = LSBFirst;
 	}
@@ -685,13 +688,13 @@ static void xf_window_free(xfContext* xfc)
 	if (xfc->image)
 	{
 		xfc->image->data = NULL;
-		XDestroyImage(xfc->image);
+		wrap_XDestroyImage(xfc, xfc->image);
 		xfc->image = NULL;
 	}
 
 	if (xfc->bitmap_mono)
 	{
-		XFreePixmap(xfc->display, xfc->bitmap_mono);
+		wrap_XFreePixmap(xfc, xfc->display, xfc->bitmap_mono);
 		xfc->bitmap_mono = 0;
 	}
 
@@ -703,7 +706,7 @@ static void xf_window_free(xfContext* xfc)
 
 	if (xfc->primary)
 	{
-		XFreePixmap(xfc->display, xfc->primary);
+		wrap_XFreePixmap(xfc, xfc->display, xfc->primary);
 		xfc->primary = 0;
 	}
 
@@ -1823,6 +1826,18 @@ static Atom get_supported_atom(xfContext* xfc, const char* atomName)
 
 	return None;
 }
+
+static void* shm_info_clone(void* val)
+{
+	XShmSegmentInfo* info = calloc(1, sizeof(XShmSegmentInfo));
+	if (!info)
+		return FALSE;
+	*info = *(XShmSegmentInfo*)val;
+	return info;
+}
+
+static void xfreerdp_client_free(freerdp* instance, rdpContext* context);
+
 static BOOL xfreerdp_client_new(freerdp* instance, rdpContext* context)
 {
 	xfContext* xfc = (xfContext*)instance->context;
@@ -1864,7 +1879,7 @@ static BOOL xfreerdp_client_new(freerdp* instance, rdpContext* context)
 	{
 		WLog_ERR(TAG, "failed to open display: %s", XDisplayName(NULL));
 		WLog_ERR(TAG, "Please check that the $DISPLAY environment variable is properly set.");
-		goto fail_open_display;
+		goto fail;
 	}
 
 	xfc->mutex = CreateMutex(NULL, FALSE, NULL);
@@ -1872,7 +1887,7 @@ static BOOL xfreerdp_client_new(freerdp* instance, rdpContext* context)
 	if (!xfc->mutex)
 	{
 		WLog_ERR(TAG, "Could not create mutex!");
-		goto fail_create_mutex;
+		goto fail;
 	}
 
 	xfc->xfds = ConnectionNumber(xfc->display);
@@ -1947,7 +1962,7 @@ static BOOL xfreerdp_client_new(freerdp* instance, rdpContext* context)
 	if (!xfc->x11event)
 	{
 		WLog_ERR(TAG, "Could not create xfds event");
-		goto fail_xfds_event;
+		goto fail;
 	}
 
 	xfc->colormap = DefaultColormap(xfc->display, xfc->screen_number);
@@ -1964,26 +1979,29 @@ static BOOL xfreerdp_client_new(freerdp* instance, rdpContext* context)
 	if (!xf_get_pixmap_info(xfc))
 	{
 		WLog_ERR(TAG, "Failed to get pixmap info");
-		goto fail_pixmap_info;
+		goto fail;
 	}
 
 	xfc->vscreen.monitors = calloc(16, sizeof(MONITOR_INFO));
 
 	if (!xfc->vscreen.monitors)
-		goto fail_vscreen_monitors;
+		goto fail;
+
+#if defined(WITH_XSHM)
+	xfc->useShm = XShmQueryExtension(xfc->display);
+	if (xfc->useShm)
+	{
+		xfc->shmMap = HashTable_New(FALSE);
+		if (!xfc->shmMap)
+			goto fail;
+		xfc->shmMap->valueClone = shm_info_clone;
+		xfc->shmMap->valueFree = free;
+	}
+#endif
 
 	return TRUE;
-fail_vscreen_monitors:
-fail_pixmap_info:
-	CloseHandle(xfc->x11event);
-	xfc->x11event = NULL;
-fail_xfds_event:
-	CloseHandle(xfc->mutex);
-	xfc->mutex = NULL;
-fail_create_mutex:
-	XCloseDisplay(xfc->display);
-	xfc->display = NULL;
-fail_open_display:
+fail:
+	xfreerdp_client_free(instance, context);
 	return FALSE;
 }
 
@@ -2025,6 +2043,9 @@ static void xfreerdp_client_free(freerdp* instance, rdpContext* context)
 	}
 
 	free(xfc->supportedAtoms);
+#if defined(WITH_XSHM)
+	HashTable_Free(xfc->shmMap);
+#endif
 }
 
 int RdpClientEntry(RDP_CLIENT_ENTRY_POINTS* pEntryPoints)
@@ -2039,4 +2060,111 @@ int RdpClientEntry(RDP_CLIENT_ENTRY_POINTS* pEntryPoints)
 	pEntryPoints->ClientStart = xfreerdp_client_start;
 	pEntryPoints->ClientStop = xfreerdp_client_stop;
 	return 0;
+}
+
+static BOOL attach(Display* display, XShmSegmentInfo* shminfo, size_t size)
+{
+	if (!shminfo)
+		return FALSE;
+	shminfo->shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | 0777);
+	if (shminfo->shmid < 0)
+		return FALSE;
+	shminfo->shmaddr = shmat(shminfo->shmid, 0, 0);
+	if (shminfo->shmaddr == (void*)-1)
+		return FALSE;
+
+	shminfo->readOnly = False;
+	if (!XShmAttach(display, shminfo))
+	{
+		shmdt(shminfo->shmaddr);
+		return FALSE;
+	}
+	XSync(display, True);
+	return TRUE;
+}
+XImage* wrap_XCreateImage(xfContext* xfc, Display* display, Visual* visual, unsigned int depth,
+                          char* data, unsigned int width, unsigned int height, int bitmap_pad,
+                          int bytes_per_line)
+{
+#if defined(WITH_XSHM)
+	if (xfc->useShm)
+	{
+		XShmSegmentInfo shminfo = { 0 };
+		XImage* img =
+		    XShmCreateImage(display, visual, depth, ZPixmap, NULL, &shminfo, width, height);
+		if (!img)
+			return NULL;
+		if (!attach(display, &shminfo, img->bytes_per_line * img->height))
+		{
+			wrap_XDestroyImage(xfc, img);
+			return NULL;
+		}
+		img->data = shminfo.shmaddr;
+		memcpy(img->data, data, img->bytes_per_line * img->height);
+		HashTable_Add(xfc->shmMap, img, &shminfo);
+		return img;
+	}
+#endif
+	return XCreateImage(display, visual, depth, ZPixmap, 0, data, width, height, bitmap_pad,
+	                    bytes_per_line);
+}
+
+Pixmap wrap_XCreatePixmap(xfContext* xfc, Display* display, Drawable d, unsigned int width,
+                          unsigned int height, unsigned int depth)
+{
+#if defined(WITH_XSHM)
+	if (xfc->useShm && FALSE)
+	{
+		XShmSegmentInfo shminfo;
+
+		if (!attach(display, &shminfo, width * height * 4))
+			return 0;
+		return XShmCreatePixmap(display, d, shminfo.shmaddr, &shminfo, width, height, depth);
+	}
+#endif
+	return XCreatePixmap(display, d, width, height, depth);
+}
+
+Bool wrap_XPutImage(xfContext* xfc, Display* display, Drawable d, GC gc, XImage* image, int src_x,
+                    int src_y, int dest_x, int dest_y, unsigned int width, int height)
+{
+#if defined(WITH_XSHM)
+	if (xfc->useShm)
+	{
+		XShmSegmentInfo* info = HashTable_GetItemValue(xfc->shmMap, image);
+		if (!info)
+			return False;
+		if (!XShmAttach(display, info))
+			return False;
+		XSync(display, False);
+		return XShmPutImage(display, d, gc, image, src_x, src_y, dest_x, dest_y, width, height,
+		                    False);
+	}
+#endif
+	return XPutImage(display, d, gc, image, src_x, src_y, dest_x, dest_y, width, height);
+}
+
+int wrap_XFreePixmap(xfContext* xfc, Display* display, Pixmap pixmap)
+{
+	return XFreePixmap(display, pixmap);
+}
+
+int wrap_XDestroyImage(xfContext* xfc, XImage* ximage)
+{
+	int rc = XDestroyImage(ximage);
+#if defined(WITH_XSHM)
+	if (xfc->useShm)
+	{
+		XShmSegmentInfo* info = HashTable_GetItemValue(xfc->shmMap, ximage);
+		if (info)
+		{
+			XShmDetach(xfc->display, info);
+			XSync(xfc->display, False);
+			shmdt(info->shmaddr);
+			shmctl(info->shmid, IPC_RMID, NULL);
+		}
+		HashTable_Remove(xfc->shmMap, ximage);
+	}
+#endif
+	return rc;
 }

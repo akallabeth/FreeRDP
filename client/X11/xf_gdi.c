@@ -226,7 +226,7 @@ static Pixmap xf_brush_new(xfContext* xfc, UINT32 width, UINT32 height, UINT32 b
 	rdpGdi* gdi;
 	UINT32 brushFormat;
 	gdi = xfc->context.gdi;
-	bitmap = XCreatePixmap(xfc->display, xfc->drawable, width, height, xfc->depth);
+	bitmap = wrap_XCreatePixmap(xfc, xfc->display, xfc->drawable, width, height, xfc->depth);
 
 	if (data)
 	{
@@ -234,14 +234,14 @@ static Pixmap xf_brush_new(xfContext* xfc, UINT32 width, UINT32 height, UINT32 b
 		cdata = (BYTE*)_aligned_malloc(width * height * 4, 16);
 		freerdp_image_copy(cdata, gdi->dstFormat, 0, 0, 0, width, height, data, brushFormat, 0, 0,
 		                   0, &xfc->context.gdi->palette, FREERDP_FLIP_NONE);
-		image = XCreateImage(xfc->display, xfc->visual, xfc->depth, ZPixmap, 0, (char*)cdata, width,
-		                     height, xfc->scanline_pad, 0);
+		image = wrap_XCreateImage(xfc, xfc->display, xfc->visual, xfc->depth, (char*)cdata, width,
+		                          height, xfc->scanline_pad, 0);
 		image->byte_order = LSBFirst;
 		image->bitmap_bit_order = LSBFirst;
 		gc = XCreateGC(xfc->display, xfc->drawable, 0, NULL);
-		XPutImage(xfc->display, bitmap, gc, image, 0, 0, 0, 0, width, height);
+		wrap_XPutImage(xfc, xfc->display, bitmap, gc, image, 0, 0, 0, 0, width, height);
 		image->data = NULL;
-		XDestroyImage(image);
+		wrap_XDestroyImage(xfc, image);
 
 		if (cdata != data)
 			_aligned_free(cdata);
@@ -258,14 +258,14 @@ static Pixmap xf_mono_bitmap_new(xfContext* xfc, int width, int height, const BY
 	XImage* image;
 	Pixmap bitmap;
 	scanline = (width + 7) / 8;
-	bitmap = XCreatePixmap(xfc->display, xfc->drawable, width, height, 1);
-	image = XCreateImage(xfc->display, xfc->visual, 1, ZPixmap, 0, (char*)data, width, height, 8,
-	                     scanline);
+	bitmap = wrap_XCreatePixmap(xfc, xfc->display, xfc->drawable, width, height, 1);
+	image = wrap_XCreateImage(xfc, xfc->display, xfc->visual, 1, (char*)data, width, height, 8,
+	                          scanline);
 	image->byte_order = LSBFirst;
 	image->bitmap_bit_order = LSBFirst;
-	XPutImage(xfc->display, bitmap, xfc->gc_mono, image, 0, 0, 0, 0, width, height);
+	wrap_XPutImage(xfc, xfc->display, bitmap, xfc->gc_mono, image, 0, 0, 0, 0, width, height);
 	image->data = NULL;
-	XDestroyImage(image);
+	wrap_XDestroyImage(xfc, image);
 	return bitmap;
 }
 
@@ -356,7 +356,7 @@ static BOOL xf_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt)
 			XSetTSOrigin(xfc->display, xfc->gc, brush->x, brush->y);
 			XFillRectangle(xfc->display, xfc->drawing, xfc->gc, patblt->nLeftRect, patblt->nTopRect,
 			               patblt->nWidth, patblt->nHeight);
-			XFreePixmap(xfc->display, pattern);
+			wrap_XFreePixmap(xfc, xfc->display, pattern);
 		}
 		break;
 
@@ -375,7 +375,7 @@ static BOOL xf_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt)
 				XFillRectangle(xfc->display, xfc->drawing, xfc->gc, patblt->nLeftRect,
 				               patblt->nTopRect, patblt->nWidth, patblt->nHeight);
 				XSetTile(xfc->display, xfc->gc, xfc->primary);
-				XFreePixmap(xfc->display, pattern);
+				wrap_XFreePixmap(xfc, xfc->display, pattern);
 			}
 			else
 			{
@@ -387,7 +387,7 @@ static BOOL xf_gdi_patblt(rdpContext* context, PATBLT_ORDER* patblt)
 				XSetTSOrigin(xfc->display, xfc->gc, brush->x, brush->y);
 				XFillRectangle(xfc->display, xfc->drawing, xfc->gc, patblt->nLeftRect,
 				               patblt->nTopRect, patblt->nWidth, patblt->nHeight);
-				XFreePixmap(xfc->display, pattern);
+				wrap_XFreePixmap(xfc, xfc->display, pattern);
 			}
 
 			break;
@@ -716,7 +716,7 @@ static BOOL xf_gdi_mem3blt(rdpContext* context, MEM3BLT_ORDER* mem3blt)
 	XSetTSOrigin(xfc->display, xfc->gc, 0, 0);
 
 	if (pattern != 0)
-		XFreePixmap(xfc->display, pattern);
+		wrap_XFreePixmap(xfc, xfc->display, pattern);
 
 fail:
 	XSetFunction(xfc->display, xfc->gc, GXcopy);
@@ -873,7 +873,7 @@ static BOOL xf_gdi_polygon_cb(rdpContext* context, POLYGON_CB_ORDER* polygon_cb)
 		             CoordModePrevious);
 		XSetFillStyle(xfc->display, xfc->gc, FillSolid);
 		XSetTSOrigin(xfc->display, xfc->gc, 0, 0);
-		XFreePixmap(xfc->display, pattern);
+		wrap_XFreePixmap(xfc, xfc->display, pattern);
 
 		if (xfc->drawing == xfc->primary)
 		{
@@ -1001,17 +1001,19 @@ static BOOL xf_gdi_update_screen(xfContext* xfc, const BYTE* pSrcData, UINT32 sc
 		UINT32 width = rects[i].right - rects[i].left;
 		UINT32 height = rects[i].bottom - rects[i].top;
 		const BYTE* src = pSrcData + top * scanline + bpp * left;
-		image = XCreateImage(xfc->display, xfc->visual, xfc->depth, ZPixmap, 0, (char*)src, width,
-		                     height, xfc->scanline_pad, scanline);
+
+		image = wrap_XCreateImage(xfc, xfc->display, xfc->visual, xfc->depth, (char*)src, width,
+		                          height, xfc->scanline_pad, scanline);
 
 		if (!image)
 			break;
 
 		image->byte_order = LSBFirst;
 		image->bitmap_bit_order = LSBFirst;
-		XPutImage(xfc->display, xfc->primary, xfc->gc, image, 0, 0, left, top, width, height);
+		wrap_XPutImage(xfc, xfc->display, xfc->primary, xfc->gc, image, 0, 0, left, top, width,
+		               height);
 		image->data = NULL;
-		XDestroyImage(image);
+		wrap_XDestroyImage(xfc, image);
 		ret = xf_gdi_surface_update_frame(xfc, left, top, width, height);
 	}
 

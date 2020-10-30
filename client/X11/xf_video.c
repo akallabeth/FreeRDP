@@ -45,8 +45,8 @@ static VideoSurface* xfVideoCreateSurface(VideoClientContext* video, BYTE* data,
 	ret->base.y = y;
 	ret->base.w = width;
 	ret->base.h = height;
-	ret->image = XCreateImage(xfc->display, xfc->visual, xfc->depth, ZPixmap, 0, (char*)data, width,
-	                          height, 8, width * 4);
+	ret->image = wrap_XCreateImage(xfc, xfc->display, xfc->visual, xfc->depth, (char*)data, width,
+	                               height, 8, width * 4);
 
 	if (!ret->image)
 	{
@@ -66,15 +66,15 @@ static BOOL xfVideoShowSurface(VideoClientContext* video, VideoSurface* surface)
 
 	if (xfc->context.settings->SmartSizing || xfc->context.settings->MultiTouchGestures)
 	{
-		XPutImage(xfc->display, xfc->primary, xfc->gc, xfSurface->image, 0, 0, surface->x,
-		          surface->y, surface->w, surface->h);
+		wrap_XPutImage(xfc, xfc->display, xfc->primary, xfc->gc, xfSurface->image, 0, 0, surface->x,
+		               surface->y, surface->w, surface->h);
 		xf_draw_screen(xfc, surface->x, surface->y, surface->w, surface->h);
 	}
 	else
 #endif
 	{
-		XPutImage(xfc->display, xfc->drawable, xfc->gc, xfSurface->image, 0, 0, surface->x,
-		          surface->y, surface->w, surface->h);
+		wrap_XPutImage(xfc, xfc->display, xfc->drawable, xfc->gc, xfSurface->image, 0, 0,
+		               surface->x, surface->y, surface->w, surface->h);
 	}
 
 	return TRUE;

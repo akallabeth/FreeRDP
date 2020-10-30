@@ -1064,8 +1064,8 @@ void xf_UpdateWindowArea(xfContext* xfc, xfAppWindow* appWindow, int x, int y, i
 
 	if (xfc->context.settings->SoftwareGdi)
 	{
-		XPutImage(xfc->display, xfc->primary, appWindow->gc, xfc->image, ax, ay, ax, ay, width,
-		          height);
+		wrap_XPutImage(xfc, xfc->display, xfc->primary, appWindow->gc, xfc->image, ax, ay, ax, ay,
+		               width, height);
 	}
 
 	XCopyArea(xfc->display, xfc->primary, appWindow->handle, appWindow->gc, ax, ay, width, height,

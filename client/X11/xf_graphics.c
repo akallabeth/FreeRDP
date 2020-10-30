@@ -112,8 +112,8 @@ static BOOL xf_Bitmap_New(rdpContext* context, rdpBitmap* bitmap)
 	gdi = context->gdi;
 	xf_lock_x11(xfc);
 	depth = GetBitsPerPixel(bitmap->format);
-	xbitmap->pixmap =
-	    XCreatePixmap(xfc->display, xfc->drawable, bitmap->width, bitmap->height, xfc->depth);
+	xbitmap->pixmap = wrap_XCreatePixmap(xfc, xfc->display, xfc->drawable, bitmap->width,
+	                                     bitmap->height, xfc->depth);
 
 	if (!xbitmap->pixmap)
 		goto unlock;
@@ -141,16 +141,16 @@ static BOOL xf_Bitmap_New(rdpContext* context, rdpBitmap* bitmap)
 		}
 
 		xbitmap->image =
-		    XCreateImage(xfc->display, xfc->visual, xfc->depth, ZPixmap, 0, (char*)bitmap->data,
-		                 bitmap->width, bitmap->height, xfc->scanline_pad, 0);
+		    wrap_XCreateImage(xfc, xfc->display, xfc->visual, xfc->depth, (char*)bitmap->data,
+		                      bitmap->width, bitmap->height, xfc->scanline_pad, 0);
 
 		if (!xbitmap->image)
 			goto unlock;
 
 		xbitmap->image->byte_order = LSBFirst;
 		xbitmap->image->bitmap_bit_order = LSBFirst;
-		XPutImage(xfc->display, xbitmap->pixmap, xfc->gc, xbitmap->image, 0, 0, 0, 0, bitmap->width,
-		          bitmap->height);
+		wrap_XPutImage(xfc, xfc->display, xbitmap->pixmap, xfc->gc, xbitmap->image, 0, 0, 0, 0,
+		               bitmap->width, bitmap->height);
 	}
 
 	rc = TRUE;
@@ -171,14 +171,14 @@ static void xf_Bitmap_Free(rdpContext* context, rdpBitmap* bitmap)
 
 	if (xbitmap->pixmap != 0)
 	{
-		XFreePixmap(xfc->display, xbitmap->pixmap);
+		wrap_XFreePixmap(xfc, xfc->display, xbitmap->pixmap);
 		xbitmap->pixmap = 0;
 	}
 
 	if (xbitmap->image)
 	{
 		xbitmap->image->data = NULL;
-		XDestroyImage(xbitmap->image);
+		wrap_XDestroyImage(xfc, xbitmap->image);
 		xbitmap->image = NULL;
 	}
 
@@ -201,8 +201,8 @@ static BOOL xf_Bitmap_Paint(rdpContext* context, rdpBitmap* bitmap)
 	height = bitmap->bottom - bitmap->top + 1;
 	xf_lock_x11(xfc);
 	XSetFunction(xfc->display, xfc->gc, GXcopy);
-	XPutImage(xfc->display, xfc->primary, xfc->gc, xbitmap->image, 0, 0, bitmap->left, bitmap->top,
-	          width, height);
+	wrap_XPutImage(xfc, xfc->display, xfc->primary, xfc->gc, xbitmap->image, 0, 0, bitmap->left,
+	               bitmap->top, width, height);
 	ret = gdi_InvalidateRegion(xfc->hdc, bitmap->left, bitmap->top, width, height);
 	xf_unlock_x11(xfc);
 	return ret;
@@ -521,16 +521,16 @@ static BOOL xf_Glyph_New(rdpContext* context, const rdpGlyph* glyph)
 	xfContext* xfc = (xfContext*)context;
 	xf_lock_x11(xfc);
 	scanline = (glyph->cx + 7) / 8;
-	xf_glyph->pixmap = XCreatePixmap(xfc->display, xfc->drawing, glyph->cx, glyph->cy, 1);
-	image = XCreateImage(xfc->display, xfc->visual, 1, ZPixmap, 0, (char*)glyph->aj, glyph->cx,
-	                     glyph->cy, 8, scanline);
+	xf_glyph->pixmap = wrap_XCreatePixmap(xfc, xfc->display, xfc->drawing, glyph->cx, glyph->cy, 1);
+	image = wrap_XCreateImage(xfc, xfc->display, xfc->visual, 1, (char*)glyph->aj, glyph->cx,
+	                          glyph->cy, 8, scanline);
 	image->byte_order = MSBFirst;
 	image->bitmap_bit_order = MSBFirst;
 	XInitImage(image);
-	XPutImage(xfc->display, xf_glyph->pixmap, xfc->gc_mono, image, 0, 0, 0, 0, glyph->cx,
-	          glyph->cy);
+	wrap_XPutImage(xfc, xfc->display, xf_glyph->pixmap, xfc->gc_mono, image, 0, 0, 0, 0, glyph->cx,
+	               glyph->cy);
 	image->data = NULL;
-	XDestroyImage(image);
+	wrap_XDestroyImage(xfc, image);
 	xf_unlock_x11(xfc);
 	return TRUE;
 }
@@ -541,7 +541,7 @@ static void xf_Glyph_Free(rdpContext* context, rdpGlyph* glyph)
 	xf_lock_x11(xfc);
 
 	if (((xfGlyph*)glyph)->pixmap != 0)
-		XFreePixmap(xfc->display, ((xfGlyph*)glyph)->pixmap);
+		wrap_XFreePixmap(xfc, xfc->display, ((xfGlyph*)glyph)->pixmap);
 
 	xf_unlock_x11(xfc);
 	free(glyph->aj);

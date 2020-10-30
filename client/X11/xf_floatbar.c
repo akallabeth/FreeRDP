@@ -354,7 +354,8 @@ static void xf_floatbar_event_expose(xfFloatbar* floatbar)
 	Display* display = floatbar->xfc->display;
 
 	/* create the pixmap that we'll use for shaping the window */
-	pmap = XCreatePixmap(display, floatbar->handle, floatbar->width, floatbar->height, 1);
+	pmap = wrap_XCreatePixmap(floatbar->xfc, display, floatbar->handle, floatbar->width,
+	                          floatbar->height, 1);
 	gc = XCreateGC(display, floatbar->handle, 0, 0);
 	shape_gc = XCreateGC(display, pmap, 0, 0);
 	/* points for drawing the floatbar */
@@ -506,7 +507,7 @@ static void xf_floatbar_button_event_expose(xfFloatbar* floatbar, Window window)
 	XSetBackground(xfc->display, gc, xf_floatbar_get_color(floatbar, FLOATBAR_COLOR_FOREGROUND));
 	XCopyPlane(xfc->display, pattern, button->handle, gc, 0, 0, FLOATBAR_BUTTON_WIDTH,
 	           FLOATBAR_BUTTON_WIDTH, 0, 0, 1);
-	XFreePixmap(xfc->display, pattern);
+	wrap_XFreePixmap(xfc, xfc->display, pattern);
 	XFreeGC(xfc->display, gc);
 }
 

@@ -32,6 +32,13 @@ typedef struct xf_context xfContext;
 #include <X11/Xcursor/Xcursor.h>
 #endif
 
+#if defined(WITH_XSHM)
+#include <X11/Xlib.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <X11/extensions/XShm.h>
+#endif
+
 #include <freerdp/api.h>
 
 #include "xf_window.h"
@@ -268,6 +275,10 @@ struct xf_context
 	button_map button_map[NUM_BUTTONS_MAPPED];
 	BYTE savedMaximizedState;
 	UINT32 locked;
+#if defined(WITH_XSHM)
+	BOOL useShm;
+	wHashTable* shmMap;
+#endif
 };
 
 BOOL xf_create_window(xfContext* xfc);
@@ -332,6 +343,20 @@ BOOL xf_picture_transform_required(xfContext* xfc);
 	xf_draw_screen_((_xfc), (_x), (_y), (_w), (_h), __FUNCTION__, __FILE__, __LINE__)
 void xf_draw_screen_(xfContext* xfc, int x, int y, int w, int h, const char* fkt, const char* file,
                      int line);
+
+XImage* wrap_XCreateImage(xfContext* xfc, Display* display, Visual* visual, unsigned int depth,
+                          char* data, unsigned int width, unsigned int height, int bitmap_pad,
+                          int bytes_per_line);
+
+Bool wrap_XPutImage(xfContext* xfc, Display* display, Drawable d, GC gc, XImage* image, int src_x,
+                    int src_y, int dest_x, int dest_y, unsigned int width, int height);
+
+Pixmap wrap_XCreatePixmap(xfContext* xfc, Display* display, Drawable d, unsigned int width,
+                          unsigned int height, unsigned int depth);
+
+int wrap_XFreePixmap(xfContext* xfc, Display* display, Pixmap pixmap);
+
+int wrap_XDestroyImage(xfContext* xfc, XImage* ximage);
 
 FREERDP_API DWORD xf_exit_code_from_disconnect_reason(DWORD reason);
 
