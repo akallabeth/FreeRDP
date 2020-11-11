@@ -126,15 +126,18 @@ HttpContext* http_context_new(void)
 
 BOOL http_context_set_method(HttpContext* context, const char* Method)
 {
-	if (!context || !Method)
+	if (!context)
 		return FALSE;
 
 	free(context->Method);
-	context->Method = _strdup(Method);
+	context->Method = NULL;
+	if (Method)
+	{
+		context->Method = _strdup(Method);
 
-	if (!context->Method)
-		return FALSE;
-
+		if (!context->Method)
+			return FALSE;
+	}
 	return TRUE;
 }
 
@@ -148,124 +151,153 @@ const char* http_context_get_uri(HttpContext* context)
 
 BOOL http_context_set_uri(HttpContext* context, const char* URI)
 {
-	if (!context || !URI)
+	if (!context)
 		return FALSE;
 
 	free(context->URI);
-	context->URI = _strdup(URI);
+	context->URI = NULL;
+	if (URI)
+	{
+		context->URI = _strdup(URI);
 
-	if (!context->URI)
-		return FALSE;
-
+		if (!context->URI)
+			return FALSE;
+	}
 	return TRUE;
 }
 
 BOOL http_context_set_user_agent(HttpContext* context, const char* UserAgent)
 {
-	if (!context || !UserAgent)
+	if (!context)
 		return FALSE;
 
 	free(context->UserAgent);
-	context->UserAgent = _strdup(UserAgent);
+	context->UserAgent = NULL;
+	if (UserAgent)
+	{
+		context->UserAgent = _strdup(UserAgent);
 
-	if (!context->UserAgent)
-		return FALSE;
-
+		if (!context->UserAgent)
+			return FALSE;
+	}
 	return TRUE;
 }
 
 BOOL http_context_set_host(HttpContext* context, const char* Host)
 {
-	if (!context || !Host)
+	if (!context)
 		return FALSE;
 
 	free(context->Host);
-	context->Host = _strdup(Host);
+	context->Host = NULL;
+	if (Host)
+	{
+		context->Host = _strdup(Host);
 
-	if (!context->Host)
-		return FALSE;
-
+		if (!context->Host)
+			return FALSE;
+	}
 	return TRUE;
 }
 
 BOOL http_context_set_accept(HttpContext* context, const char* Accept)
 {
-	if (!context || !Accept)
+	if (!context)
 		return FALSE;
 
 	free(context->Accept);
-	context->Accept = _strdup(Accept);
+	context->Accept = NULL;
+	if (Accept)
+	{
+		context->Accept = _strdup(Accept);
 
-	if (!context->Accept)
-		return FALSE;
-
+		if (!context->Accept)
+			return FALSE;
+	}
 	return TRUE;
 }
 
 BOOL http_context_set_cache_control(HttpContext* context, const char* CacheControl)
 {
-	if (!context || !CacheControl)
+	if (!context)
 		return FALSE;
 
 	free(context->CacheControl);
-	context->CacheControl = _strdup(CacheControl);
+	context->CacheControl = NULL;
+	if (CacheControl)
+	{
+		context->CacheControl = _strdup(CacheControl);
 
-	if (!context->CacheControl)
-		return FALSE;
-
+		if (!context->CacheControl)
+			return FALSE;
+	}
 	return TRUE;
 }
 
 BOOL http_context_set_connection(HttpContext* context, const char* Connection)
 {
-	if (!context || !Connection)
+	if (!context)
 		return FALSE;
 
 	free(context->Connection);
-	context->Connection = _strdup(Connection);
+	context->Connection = NULL;
+	if (Connection)
+	{
+		context->Connection = _strdup(Connection);
 
-	if (!context->Connection)
-		return FALSE;
-
+		if (!context->Connection)
+			return FALSE;
+	}
 	return TRUE;
 }
 
 BOOL http_context_set_pragma(HttpContext* context, const char* Pragma)
 {
-	if (!context || !Pragma)
+	if (!context)
 		return FALSE;
 
 	free(context->Pragma);
-	context->Pragma = _strdup(Pragma);
+	context->Pragma = NULL;
+	if (Pragma)
+	{
+		context->Pragma = _strdup(Pragma);
 
-	if (!context->Pragma)
-		return FALSE;
-
+		if (!context->Pragma)
+			return FALSE;
+	}
 	return TRUE;
 }
 
 BOOL http_context_set_rdg_connection_id(HttpContext* context, const char* RdgConnectionId)
 {
-	if (!context || !RdgConnectionId)
+	if (!context)
 		return FALSE;
 
 	free(context->RdgConnectionId);
-	context->RdgConnectionId = _strdup(RdgConnectionId);
+	context->RdgConnectionId = NULL;
+	if (RdgConnectionId)
+	{
+		context->RdgConnectionId = _strdup(RdgConnectionId);
 
-	if (!context->RdgConnectionId)
-		return FALSE;
-
+		if (!context->RdgConnectionId)
+			return FALSE;
+	}
 	return TRUE;
 }
 
 BOOL http_context_set_rdg_auth_scheme(HttpContext* context, const char* RdgAuthScheme)
 {
-	if (!context || !RdgAuthScheme)
+	if (!context)
 		return FALSE;
 
 	free(context->RdgAuthScheme);
-	context->RdgAuthScheme = _strdup(RdgAuthScheme);
-	return context->RdgAuthScheme != NULL;
+	context->RdgAuthScheme = NULL;
+	if (RdgAuthScheme)
+	{
+		context->RdgAuthScheme = _strdup(RdgAuthScheme);
+		return context->RdgAuthScheme != NULL;
+	}
+	return TRUE;
 }
 
 void http_context_free(HttpContext* context)
@@ -288,71 +320,86 @@ void http_context_free(HttpContext* context)
 
 BOOL http_request_set_method(HttpRequest* request, const char* Method)
 {
-	if (!request || !Method)
+	if (!request)
 		return FALSE;
 
 	free(request->Method);
-	request->Method = _strdup(Method);
+	request->Method = NULL;
+	if (Method)
+	{
+		request->Method = _strdup(Method);
 
-	if (!request->Method)
-		return FALSE;
-
+		if (!request->Method)
+			return FALSE;
+	}
 	return TRUE;
 }
 
 BOOL http_request_set_uri(HttpRequest* request, const char* URI)
 {
-	if (!request || !URI)
+	if (!request)
 		return FALSE;
 
 	free(request->URI);
-	request->URI = _strdup(URI);
-
-	if (!request->URI)
-		return FALSE;
+	request->URI = NULL;
+	if (URI)
+	{
+		request->URI = _strdup(URI);
+		if (!request->URI)
+			return FALSE;
+	}
 
 	return TRUE;
 }
 
 BOOL http_request_set_auth_scheme(HttpRequest* request, const char* AuthScheme)
 {
-	if (!request || !AuthScheme)
+	if (!request)
 		return FALSE;
 
 	free(request->AuthScheme);
-	request->AuthScheme = _strdup(AuthScheme);
+	request->AuthScheme = NULL;
+	if (AuthScheme)
+	{
+		request->AuthScheme = _strdup(AuthScheme);
 
-	if (!request->AuthScheme)
-		return FALSE;
-
+		if (!request->AuthScheme)
+			return FALSE;
+	}
 	return TRUE;
 }
 
 BOOL http_request_set_auth_param(HttpRequest* request, const char* AuthParam)
 {
-	if (!request || !AuthParam)
+	if (!request)
 		return FALSE;
 
 	free(request->AuthParam);
-	request->AuthParam = _strdup(AuthParam);
+	request->AuthParam = NULL;
+	if (AuthParam)
+	{
+		request->AuthParam = _strdup(AuthParam);
 
-	if (!request->AuthParam)
-		return FALSE;
-
+		if (!request->AuthParam)
+			return FALSE;
+	}
 	return TRUE;
 }
 
 BOOL http_request_set_transfer_encoding(HttpRequest* request, const char* TransferEncoding)
 {
-	if (!request || !TransferEncoding)
+	if (!request)
 		return FALSE;
 
 	free(request->TransferEncoding);
-	request->TransferEncoding = _strdup(TransferEncoding);
+	request->TransferEncoding = NULL;
+	if (TransferEncoding)
+	{
+		request->TransferEncoding = _strdup(TransferEncoding);
 
-	if (!request->TransferEncoding)
-		return FALSE;
-
+		if (!request->TransferEncoding)
+			return FALSE;
+	}
 	return TRUE;
 }
 
