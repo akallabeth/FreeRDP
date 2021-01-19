@@ -111,74 +111,105 @@ static BOOL nsc_decode(NSC_CONTEXT* context)
 	return TRUE;
 }
 
-static BOOL nsc_rle_decode(BYTE* in, BYTE* out, UINT32 outSize, UINT32 originalSize)
+/* [MS-RDPNSC] 2.2.2.2.1 NSCodec RLE RunSegment */
+static BOOL nsc_rle_run_segment_decode(const BYTE** in, BYTE** out, UINT32* inSize, UINT32* outSize)
 {
-	UINT32 left = originalSize;
+	UINT32 dstSize = *outSize;
+	UINT32 srcSize = *inSize;
+	const BYTE* src = *in;
+	BYTE* dst = *out;
+	BYTE runValue, runConfirm;
 
-	while (left > 4)
+	BOOL literalSegment;
+
+	if (srcSize < 1)
+		return FALSE;
+	srcSize--;
+	runValue = *src++;
+
+	if (srcSize < 1)
+		literalSegment = TRUE;
+	else
 	{
-		const BYTE value = *in++;
-		UINT32 len = 0;
-
-		if (left == 5)
+		runConfirm = *src;
+		literalSegment = runValue != runConfirm;
+		if (!literalSegment)
 		{
-			if (outSize < 1)
-				return FALSE;
-
-			outSize--;
-			*out++ = value;
-			left--;
+			srcSize--;
+			src++;
 		}
-		else if (value == *in)
+	}
+	if (literalSegment)
+	{
+		if (dstSize < 1)
+			return FALSE;
+		dstSize -= 1;
+		*dst++ = runValue;
+	}
+	else
+	{
+		UINT32 runLengthFactor1, runLength;
+		if (srcSize < 1)
+			return FALSE;
+		srcSize--;
+		runLengthFactor1 = *src++;
+		if (runLengthFactor1 == 0xFF)
 		{
-			in++;
+			UINT32 runLengthFactor2;
 
-			if (*in < 0xFF)
-			{
-				len = (UINT32)*in++;
-				len += 2;
-			}
-			else
-			{
-				in++;
-				len = ((UINT32)(*in++));
-				len |= ((UINT32)(*in++)) << 8U;
-				len |= ((UINT32)(*in++)) << 16U;
-				len |= ((UINT32)(*in++)) << 24U;
-			}
-
-			if (outSize < len)
+			if (srcSize < 4)
 				return FALSE;
+			srcSize -= 4;
+			runLengthFactor2 = ((UINT32)(*src++));
+			runLengthFactor2 |= ((UINT32)(*src++)) << 8U;
+			runLengthFactor2 |= ((UINT32)(*src++)) << 16U;
+			runLengthFactor2 |= ((UINT32)(*src++)) << 24U;
 
-			outSize -= len;
-			FillMemory(out, len, value);
-			out += len;
-			left -= len;
+			runLength = runLengthFactor2;
 		}
 		else
 		{
-			if (outSize < 1)
-				return FALSE;
-
-			outSize--;
-			*out++ = value;
-			left--;
+			runLength = runLengthFactor1 + 2;
 		}
+
+		if (dstSize < runLength)
+			return FALSE;
+		dstSize -= runLength;
+		memset(dst, runValue, runLength);
+		dst += runLength;
+	}
+	*in = src;
+	*out = dst;
+	*outSize = dstSize;
+	*inSize = srcSize;
+	return TRUE;
+}
+
+/* [MS-RDPNSC] 2.2.2.1 NSCodec RLE Segments */
+static BOOL nsc_rle_segments_decode(const BYTE* in, BYTE* out, UINT32 inSize, UINT32 outSize)
+{
+	UINT32 x;
+	UINT32 rleInSize = inSize - 4;
+	UINT32 rleOutSize = outSize - 4;
+
+	if ((inSize < 4) || (outSize < 4))
+		return FALSE;
+	while ((rleInSize > 0) && (rleOutSize > 0))
+	{
+		if (!nsc_rle_run_segment_decode(&in, &out, &rleInSize, &rleOutSize))
+			return FALSE;
 	}
 
-	if ((outSize < 4) || (left < 4))
-		return FALSE;
+	for (x = 0; x < 4; x++)
+		*out++ = *in++;
 
-	memcpy(out, in, 4);
 	return TRUE;
 }
 
 static BOOL nsc_rle_decompress_data(NSC_CONTEXT* context)
 {
 	UINT16 i;
-	BYTE* rle;
-	UINT32 planeSize;
-	UINT32 originalSize;
+	const BYTE* rle;
 
 	if (!context)
 		return FALSE;
@@ -187,29 +218,32 @@ static BOOL nsc_rle_decompress_data(NSC_CONTEXT* context)
 
 	for (i = 0; i < 4; i++)
 	{
-		originalSize = context->OrgByteCount[i];
-		planeSize = context->PlaneByteCount[i];
+		const UINT32 planeBufferLength = context->priv->PlaneBuffersLength;
+		const UINT32 originalSize = context->OrgByteCount[i];
+		const UINT32 planeSize = context->PlaneByteCount[i];
+		BYTE* plane = context->priv->PlaneBuffers[i];
 
 		if (planeSize == 0)
 		{
-			if (context->priv->PlaneBuffersLength < originalSize)
+			if (planeBufferLength < originalSize)
 				return FALSE;
 
-			FillMemory(context->priv->PlaneBuffers[i], originalSize, 0xFF);
+			FillMemory(plane, originalSize, 0xFF);
 		}
 		else if (planeSize < originalSize)
 		{
-			if (!nsc_rle_decode(rle, context->priv->PlaneBuffers[i],
-			                    context->priv->PlaneBuffersLength, originalSize))
+			if (!nsc_rle_segments_decode(rle, plane, planeSize, originalSize))
 				return FALSE;
 		}
-		else
+		else if (planeSize == originalSize)
 		{
-			if (context->priv->PlaneBuffersLength < originalSize)
+			if (planeBufferLength < originalSize)
 				return FALSE;
 
-			CopyMemory(context->priv->PlaneBuffers[i], rle, originalSize);
+			CopyMemory(plane, rle, originalSize);
 		}
+		else
+			return FALSE;
 
 		rle += planeSize;
 	}
@@ -415,7 +449,7 @@ BOOL nsc_process_message(NSC_CONTEXT* context, UINT16 bpp, UINT32 width, UINT32 
                          UINT32 nHeight, UINT32 flip)
 {
 	wStream* s;
-	BOOL ret;
+	BOOL ret = FALSE;
 	if (!context || !data || !pDstData)
 		return FALSE;
 
@@ -457,35 +491,30 @@ BOOL nsc_process_message(NSC_CONTEXT* context, UINT16 bpp, UINT32 width, UINT32 
 	context->width = width;
 	context->height = height;
 	ret = nsc_context_initialize(context, s);
-	Stream_Free(s, FALSE);
 
 	if (!ret)
-		return FALSE;
+		goto fail;
 
 	/* RLE decode */
-	{
-		BOOL rc;
-		PROFILER_ENTER(context->priv->prof_nsc_rle_decompress_data)
-		rc = nsc_rle_decompress_data(context);
-		PROFILER_EXIT(context->priv->prof_nsc_rle_decompress_data)
+	PROFILER_ENTER(context->priv->prof_nsc_rle_decompress_data)
+	ret = nsc_rle_decompress_data(context);
+	PROFILER_EXIT(context->priv->prof_nsc_rle_decompress_data)
 
-		if (!rc)
-			return FALSE;
-	}
+	if (!ret)
+		goto fail;
+
 	/* Colorloss recover, Chroma supersample and AYCoCg to ARGB Conversion in one step */
-	{
-		BOOL rc;
-		PROFILER_ENTER(context->priv->prof_nsc_decode)
-		rc = context->decode(context);
-		PROFILER_EXIT(context->priv->prof_nsc_decode)
+	PROFILER_ENTER(context->priv->prof_nsc_decode)
+	ret = context->decode(context);
+	PROFILER_EXIT(context->priv->prof_nsc_decode)
 
-		if (!rc)
-			return FALSE;
-	}
+	if (!ret)
+		goto fail;
 
-	if (!freerdp_image_copy(pDstData, DstFormat, nDstStride, nXDst, nYDst, width, height,
-	                        context->BitmapData, PIXEL_FORMAT_BGRA32, 0, 0, 0, NULL, flip))
-		return FALSE;
+	ret = freerdp_image_copy(pDstData, DstFormat, nDstStride, nXDst, nYDst, width, height,
+	                         context->BitmapData, PIXEL_FORMAT_BGRA32, 0, 0, 0, NULL, flip);
 
-	return TRUE;
+fail:
+	Stream_Free(s, FALSE);
+	return ret;
 }
