@@ -111,6 +111,8 @@ BOOL freerdp_client_codecs_prepare(rdpCodecs* codecs, UINT32 flags, UINT32 width
 			return FALSE;
 #endif
 		}
+		else if (h264_context_set_options(codecs->h264, codecs->context->settings))
+			return FALSE;
 	}
 #endif
 

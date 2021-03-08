@@ -77,6 +77,7 @@ struct _VIDEO_PLUGIN
 
 	VideoClientContext* context;
 	BOOL initialized;
+	rdpContext* rdpContext;
 };
 typedef struct _VIDEO_PLUGIN VIDEO_PLUGIN;
 
@@ -196,8 +197,9 @@ error_frames:
 	return NULL;
 }
 
-static PresentationContext* PresentationContext_new(VideoClientContext* video, BYTE PresentationId,
-                                                    UINT32 x, UINT32 y, UINT32 width, UINT32 height)
+static PresentationContext* PresentationContext_new(rdpContext* context, VideoClientContext* video,
+                                                    BYTE PresentationId, UINT32 x, UINT32 y,
+                                                    UINT32 width, UINT32 height)
 {
 	size_t s;
 	VideoClientContextPriv* priv = video->priv;
@@ -219,6 +221,7 @@ static PresentationContext* PresentationContext_new(VideoClientContext* video, B
 		WLog_ERR(TAG, "unable to create a h264 context");
 		goto fail;
 	}
+	h264_context_set_options(ret->h264, context->settings);
 	h264_context_reset(ret->h264, width, height);
 
 	ret->currentSample = Stream_New(NULL, 4096);
@@ -367,7 +370,8 @@ static BOOL video_onMappedGeometryClear(MAPPED_GEOMETRY* geometry)
 	return TRUE;
 }
 
-static UINT video_PresentationRequest(VideoClientContext* video, TSMM_PRESENTATION_REQUEST* req)
+static UINT video_PresentationRequest(rdpContext* context, VideoClientContext* video,
+                                      const TSMM_PRESENTATION_REQUEST* req)
 {
 	VideoClientContextPriv* priv = video->priv;
 	PresentationContext* presentation;
@@ -415,7 +419,7 @@ static UINT video_PresentationRequest(VideoClientContext* video, TSMM_PRESENTATI
 
 		WLog_DBG(TAG, "creating presentation 0x%x", req->PresentationId);
 		presentation = PresentationContext_new(
-		    video, req->PresentationId, geom->topLevelLeft + geom->left,
+		    context, video, req->PresentationId, geom->topLevelLeft + geom->left,
 		    geom->topLevelTop + geom->top, req->SourceWidth, req->SourceHeight);
 		if (!presentation)
 		{
@@ -459,9 +463,10 @@ static UINT video_PresentationRequest(VideoClientContext* video, TSMM_PRESENTATI
 	return ret;
 }
 
-static UINT video_read_tsmm_presentation_req(VideoClientContext* context, wStream* s)
+static UINT video_read_tsmm_presentation_req(rdpContext* rdpCtx, VideoClientContext* context,
+                                             wStream* s)
 {
-	TSMM_PRESENTATION_REQUEST req;
+	TSMM_PRESENTATION_REQUEST req = { 0 };
 
 	if (Stream_GetRemainingLength(s) < 60)
 	{
@@ -503,7 +508,7 @@ static UINT video_read_tsmm_presentation_req(VideoClientContext* context, wStrea
 	         req.SourceHeight, req.ScaledWidth, req.ScaledHeight, req.hnsTimestampOffset,
 	         req.GeometryMappingId);
 
-	return video_PresentationRequest(context, &req);
+	return video_PresentationRequest(rdpCtx, context, &req);
 }
 
 /**
@@ -536,7 +541,7 @@ static UINT video_control_on_data_received(IWTSVirtualChannelCallback* pChannelC
 	switch (packetType)
 	{
 		case TSMM_PACKET_TYPE_PRESENTATION_REQUEST:
-			ret = video_read_tsmm_presentation_req(context, s);
+			ret = video_read_tsmm_presentation_req(video->rdpContext, context, s);
 			break;
 		default:
 			WLog_ERR(TAG, "not expecting packet type %" PRIu32 "", packetType);
@@ -1134,8 +1139,11 @@ UINT DVCPluginEntry(IDRDYNVC_ENTRY_POINTS* pEntryPoints)
 
 		videoPlugin->wtsPlugin.pInterface = (void*)videoContext;
 		videoPlugin->context = videoContext;
+		videoPlugin->rdpContext =
+		    ((freerdp*)((rdpSettings*)pEntryPoints->GetRdpSettings(pEntryPoints))->instance)
+		        ->context;
 
-		error = pEntryPoints->RegisterPlugin(pEntryPoints, "video", (IWTSPlugin*)videoPlugin);
+		error = pEntryPoints->RegisterPlugin(pEntryPoints, "video", &videoPlugin->wtsPlugin);
 	}
 	else
 	{

@@ -726,6 +726,7 @@ typedef struct _RDPDR_PARALLEL RDPDR_PARALLEL;
 #define FreeRDP_CredentialsFromStdin (1604)
 #define FreeRDP_UnmapButtons (1605)
 #define FreeRDP_OldLicenseBehaviour (1606)
+#define FreeRDP_GdiOptions (1607)
 #define FreeRDP_ComputerName (1664)
 #define FreeRDP_ConnectionFile (1728)
 #define FreeRDP_AssistanceFile (1729)
@@ -1213,7 +1214,8 @@ struct rdp_settings
 	ALIGN64 BOOL CredentialsFromStdin; /* 1604 */
 	ALIGN64 BOOL UnmapButtons;         /* 1605 */
 	ALIGN64 BOOL OldLicenseBehaviour;  /* 1606 */
-	UINT64 padding1664[1664 - 1607];   /* 1607 */
+	ALIGN64 char* GdiOptions;          /* 1607 */
+	UINT64 padding1664[1664 - 1608];   /* 1608 */
 
 	/* Names */
 	ALIGN64 char* ComputerName;      /* 1664 */

@@ -603,6 +603,9 @@ static BOOL h264_context_init(H264_CONTEXT* h264)
 	if (!h264)
 		return FALSE;
 
+	if (h264->subsystem)
+		return TRUE;
+
 	h264->log = WLog_Get(TAG);
 
 	if (!h264->log)
@@ -691,4 +694,15 @@ void h264_context_free(H264_CONTEXT* h264)
 		yuv_context_free(h264->yuv);
 		free(h264);
 	}
+}
+
+BOOL h264_context_set_options(H264_CONTEXT* h264, const rdpSettings* settings)
+{
+	if (!h264 || !settings)
+		return FALSE;
+	h264->settings = settings;
+	if (h264->subsystem)
+		h264->subsystem->Uninit(h264);
+	h264->subsystem = NULL;
+	return h264_context_init(h264);
 }

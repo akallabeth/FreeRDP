@@ -70,6 +70,7 @@ struct _H264_CONTEXT
 
 	void* lumaData;
 	wLog* log;
+	const rdpSettings* settings;
 };
 #ifdef __cplusplus
 extern "C"
@@ -114,6 +115,7 @@ extern "C"
 	FREERDP_API BOOL h264_context_reset(H264_CONTEXT* h264, UINT32 width, UINT32 height);
 
 	FREERDP_API H264_CONTEXT* h264_context_new(BOOL Compressor);
+	FREERDP_API BOOL h264_context_set_options(H264_CONTEXT* h264, const rdpSettings* settings);
 	FREERDP_API void h264_context_free(H264_CONTEXT* h264);
 
 #ifdef __cplusplus

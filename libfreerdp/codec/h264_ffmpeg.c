@@ -23,6 +23,8 @@
 #endif
 
 #include <winpr/wlog.h>
+#include <winpr/cmdline.h>
+
 #include <freerdp/log.h>
 #include <freerdp/codec/h264.h>
 #include <libavcodec/avcodec.h>
@@ -537,8 +539,37 @@ static BOOL libavcodec_init(H264_CONTEXT* h264)
 
 		if (!sys->hwctx)
 		{
-			int ret =
-			    av_hwdevice_ctx_create(&sys->hwctx, AV_HWDEVICE_TYPE_VAAPI, VAAPI_DEVICE, NULL, 0);
+			int ret;
+			char** p;
+			size_t count, x;
+			AVDictionary* av_opts = NULL;
+			const char* options = freerdp_settings_get_string(h264->settings, FreeRDP_GdiOptions);
+			const char* vaapi_device = VAAPI_DEVICE;
+			const char* vaapi_type = NULL;
+
+			p = CommandLineParseCommaSeparatedValues(options, &count);
+			for (x = 0; x < count; x++)
+			{
+				const char* cur = p[x];
+				if (_strnicmp(cur, "vaapi-device:", 13) == 0)
+					vaapi_device = strchr(cur, ':') + 1;
+				else if (_strnicmp(cur, "vaapi-type:", 11) == 0)
+					vaapi_type = strchr(cur, ':') + 1;
+			}
+
+			if (vaapi_type && (av_dict_set(&av_opts, "connection_type", vaapi_type, 0) < 0))
+			{
+				WLog_Print(h264->log, WLOG_WARN, "Could not specify VAAPI connection type");
+			}
+
+			ret = av_hwdevice_ctx_create(&sys->hwctx, AV_HWDEVICE_TYPE_VAAPI, vaapi_device, av_opts,
+			                             0);
+
+			if (av_opts)
+			{
+				av_dict_free(&av_opts);
+			}
+			free(p);
 
 			if (ret < 0)
 			{

@@ -333,6 +333,7 @@ static const size_t string_list_indices[] = {
 	FreeRDP_GatewayHostname,
 	FreeRDP_GatewayPassword,
 	FreeRDP_GatewayUsername,
+	FreeRDP_GdiOptions,
 	FreeRDP_HomePath,
 	FreeRDP_ImeFileName,
 	FreeRDP_KerberosKdc,

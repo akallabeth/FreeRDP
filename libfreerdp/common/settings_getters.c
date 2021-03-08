@@ -2261,6 +2261,9 @@ const char* freerdp_settings_get_string(const rdpSettings* settings, size_t id)
 		case FreeRDP_GatewayUsername:
 			return settings->GatewayUsername;
 
+		case FreeRDP_GdiOptions:
+			return settings->GdiOptions;
+
 		case FreeRDP_HomePath:
 			return settings->HomePath;
 
@@ -2562,6 +2565,12 @@ BOOL freerdp_settings_set_string_(rdpSettings* settings, size_t id, const char* 
 				free(settings->GatewayUsername);
 			settings->GatewayUsername = (val ? strndup(val, len) : NULL);
 			return (!val || settings->GatewayUsername != NULL);
+
+		case FreeRDP_GdiOptions:
+			if (cleanup)
+				free(settings->GdiOptions);
+			settings->GdiOptions = (val ? strndup(val, len) : NULL);
+			return (!val || settings->GdiOptions != NULL);
 
 		case FreeRDP_HomePath:
 			if (cleanup)

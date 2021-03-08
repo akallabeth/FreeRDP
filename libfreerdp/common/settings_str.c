@@ -324,6 +324,7 @@ static const struct settings_str_entry settings_map[] = {
 	{ FreeRDP_GatewayHostname, 7, "FreeRDP_GatewayHostname" },
 	{ FreeRDP_GatewayPassword, 7, "FreeRDP_GatewayPassword" },
 	{ FreeRDP_GatewayUsername, 7, "FreeRDP_GatewayUsername" },
+	{ FreeRDP_GdiOptions, 7, "FreeRDP_GdiOptions" },
 	{ FreeRDP_HomePath, 7, "FreeRDP_HomePath" },
 	{ FreeRDP_ImeFileName, 7, "FreeRDP_ImeFileName" },
 	{ FreeRDP_KerberosKdc, 7, "FreeRDP_KerberosKdc" },

@@ -2512,10 +2512,28 @@ int freerdp_client_settings_parse_command_line_arguments(rdpSettings* settings, 
 		}
 		CommandLineSwitchCase(arg, "gdi")
 		{
-			if (_stricmp(arg->Value, "sw") == 0)
-				settings->SoftwareGdi = TRUE;
-			else if (_stricmp(arg->Value, "hw") == 0)
-				settings->SoftwareGdi = FALSE;
+			BOOL success = TRUE;
+			char** p;
+			size_t count, x;
+			p = CommandLineParseCommaSeparatedValues(arg->Value, &count);
+			for (x = 0; x < count; x++)
+			{
+				const char* cur = p[x];
+				if (_strnicmp(cur, "sw", 3) == 0)
+				{
+					if (!freerdp_settings_set_bool(settings, FreeRDP_SoftwareGdi, TRUE))
+						success = FALSE;
+				}
+				else if (_strnicmp(cur, "hw", 3) == 0)
+				{
+					if (!freerdp_settings_set_bool(settings, FreeRDP_SoftwareGdi, FALSE))
+						success = FALSE;
+				}
+			}
+			free(p);
+
+			if (!success || !freerdp_settings_set_string(settings, FreeRDP_GdiOptions, arg->Value))
+				return COMMAND_LINE_ERROR_UNEXPECTED_VALUE;
 		}
 		CommandLineSwitchCase(arg, "gfx")
 		{
