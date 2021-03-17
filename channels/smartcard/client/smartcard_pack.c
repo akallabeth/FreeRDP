@@ -2825,12 +2825,20 @@ LONG smartcard_pack_get_attrib_return(SMARTCARD_DEVICE* smartcard, wStream* s,
 	if (cbAttrCallLen < cbAttrLen)
 		cbAttrLen = cbAttrCallLen;
 	Stream_Write_UINT32(s, cbAttrLen); /* cbAttrLen (4 bytes) */
-	if (!smartcard_ndr_pointer_write(s, &index, cbAttrLen))
-		return SCARD_E_NO_MEMORY;
+	if (ret->pbAttr)
+	{
+		if (!smartcard_ndr_pointer_write(s, &index, cbAttrLen))
+			return SCARD_E_NO_MEMORY;
 
-	status = smartcard_ndr_write(s, ret->pbAttr, cbAttrLen, 1, NDR_PTR_SIMPLE);
-	if (status != SCARD_S_SUCCESS)
-		return status;
+		status = smartcard_ndr_write(s, ret->pbAttr, cbAttrLen, 1, NDR_PTR_SIMPLE);
+		if (status != SCARD_S_SUCCESS)
+			return status;
+	}
+	else
+	{
+		if (!smartcard_ndr_pointer_write(s, &index, 0))
+			return SCARD_E_NO_MEMORY;
+	}
 	return ret->ReturnCode;
 }
 
