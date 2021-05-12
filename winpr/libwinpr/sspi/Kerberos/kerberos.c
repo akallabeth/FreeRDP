@@ -261,6 +261,16 @@ static SECURITY_STATUS SEC_ENTRY kerberos_AcquireCredentialsHandleW(
     void* pAuthData, SEC_GET_KEY_FN pGetKeyFn, void* pvGetKeyArgument, PCredHandle phCredential,
     PTimeStamp ptsExpiry)
 {
+	WINPR_UNUSED(pszPrincipal);
+	WINPR_UNUSED(pszPackage);
+	WINPR_UNUSED(fCredentialUse);
+	WINPR_UNUSED(pvLogonID);
+	WINPR_UNUSED(pAuthData);
+	WINPR_UNUSED(pGetKeyFn);
+	WINPR_UNUSED(pvGetKeyArgument);
+	WINPR_UNUSED(phCredential);
+	WINPR_UNUSED(ptsExpiry);
+	WLog_WARN(TAG, "[%s] NOT IMPLEMENTED", __FUNCTION__);
 	return SEC_E_UNSUPPORTED_FUNCTION;
 }
 
@@ -269,6 +279,16 @@ static SECURITY_STATUS SEC_ENTRY kerberos_AcquireCredentialsHandleA(
     void* pAuthData, SEC_GET_KEY_FN pGetKeyFn, void* pvGetKeyArgument, PCredHandle phCredential,
     PTimeStamp ptsExpiry)
 {
+	WINPR_UNUSED(pszPrincipal);
+	WINPR_UNUSED(pszPackage);
+	WINPR_UNUSED(fCredentialUse);
+	WINPR_UNUSED(pvLogonID);
+	WINPR_UNUSED(pAuthData);
+	WINPR_UNUSED(pGetKeyFn);
+	WINPR_UNUSED(pvGetKeyArgument);
+	WINPR_UNUSED(phCredential);
+	WINPR_UNUSED(ptsExpiry);
+	WLog_WARN(TAG, "[%s] NOT IMPLEMENTED", __FUNCTION__);
 	return SEC_E_UNSUPPORTED_FUNCTION;
 }
 
@@ -297,6 +317,7 @@ static SECURITY_STATUS SEC_ENTRY kerberos_QueryCredentialsAttributesW(PCredHandl
 		return SEC_E_OK;
 	}
 
+	WINPR_UNUSED(pBuffer);
 	WLog_ERR(TAG, "[%s]: TODO: Implement ulAttribute=%08" PRIx32, __FUNCTION__, ulAttribute);
 	return SEC_E_UNSUPPORTED_FUNCTION;
 }
@@ -313,6 +334,19 @@ static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextW(
     ULONG Reserved1, ULONG TargetDataRep, PSecBufferDesc pInput, ULONG Reserved2,
     PCtxtHandle phNewContext, PSecBufferDesc pOutput, ULONG* pfContextAttr, PTimeStamp ptsExpiry)
 {
+	WINPR_UNUSED(phCredential);
+	WINPR_UNUSED(phContext);
+	WINPR_UNUSED(pszTargetName);
+	WINPR_UNUSED(fContextReq);
+	WINPR_UNUSED(Reserved1);
+	WINPR_UNUSED(TargetDataRep);
+	WINPR_UNUSED(pInput);
+	WINPR_UNUSED(Reserved2);
+	WINPR_UNUSED(phNewContext);
+	WINPR_UNUSED(pOutput);
+	WINPR_UNUSED(pfContextAttr);
+	WINPR_UNUSED(ptsExpiry);
+
 	WLog_ERR(TAG, "[%s]: TODO: Implement", __FUNCTION__);
 	return SEC_E_UNSUPPORTED_FUNCTION;
 }
@@ -339,11 +373,8 @@ static gss_name_t kerberos_get_service_name(const SEC_CHAR* ServicePrincipalName
 	major_status =
 	    gss_import_name(&minor_status, &name_buffer, GSS_C_NT_HOSTBASED_SERVICE, &target_name);
 
-	if (GSS_ERROR(major_status))
-	{
-		WLog_ERR(TAG, "error: gss_import_name failed");
+	if (failure("gss_import_name", major_status, minor_status))
 		return NULL;
-	}
 
 	return target_name;
 }
@@ -353,8 +384,9 @@ static BOOL kerberos_SetContextServicePrincipalNameA(KRB_CONTEXT* context,
 {
 	if (context->target_name)
 	{
-		OM_uint32 minor_status;
-		gss_release_name(&minor_status, &context->target_name);
+		OM_uint32 minor, major;
+		major = gss_release_name(&minor, &context->target_name);
+		failure("gss_release_name", major, minor);
 		context->target_name = NULL;
 	}
 	if (ServicePrincipalName)
@@ -369,17 +401,18 @@ static BOOL kerberos_TestGetCredentials(const SEC_CHAR* targetName)
 {
 	OM_uint32 minStat;
 	gss_cred_id_t cred;
-	OM_uint32 majStat;
-	OM_uint32 ignored;
+	OM_uint32 majStat, major, minor;
 	gss_name_t serviceName = kerberos_get_service_name(targetName);
 	if (!serviceName)
 		return FALSE;
 
 	majStat = gss_acquire_cred(&minStat, serviceName, GSS_C_INDEFINITE, GSS_C_NO_OID_SET,
 	                           GSS_C_INITIATE, &cred, NULL, NULL);
-
-	gss_release_name(&ignored, &serviceName);
-	gss_release_cred(&ignored, &cred);
+	failure("gss_acquire_cred", majStat, minStat);
+	major = gss_release_name(&minor, &serviceName);
+	failure("gss_release_name", major, minor);
+	major = gss_release_cred(&minor, &cred);
+	failure("gss_release_cred", major, minor);
 
 	if (majStat != GSS_S_COMPLETE)
 	{
@@ -393,19 +426,23 @@ static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextA(
     ULONG Reserved1, ULONG TargetDataRep, PSecBufferDesc pInput, ULONG Reserved2,
     PCtxtHandle phNewContext, PSecBufferDesc pOutput, ULONG* pfContextAttr, PTimeStamp ptsExpiry)
 {
-	KRB_CONTEXT* context;
+	KRB_CONTEXT* context = (KRB_CONTEXT*)sspi_SecureHandleGetLowerPointer(phContext);
 	SSPI_CREDENTIALS* credentials;
 	PSecBuffer input_buffer = NULL;
 	PSecBuffer output_buffer = NULL;
 	gss_buffer_desc input_tok = { 0 };
 	gss_buffer_desc output_tok = { 0 };
 	gss_OID actual_mech;
-	gss_OID desired_mech;
+	gss_OID desired_mech = SSPI_GSS_C_SPNEGO_KRB5;
 	UINT32 actual_services;
-	input_tok.length = 0;
-	output_tok.length = 0;
-	desired_mech = SSPI_GSS_C_SPNEGO_KRB5;
-	context = (KRB_CONTEXT*)sspi_SecureHandleGetLowerPointer(phContext);
+
+	WINPR_UNUSED(Reserved1);
+	WINPR_UNUSED(Reserved2);
+
+	WINPR_UNUSED(fContextReq);
+	WINPR_UNUSED(TargetDataRep);
+	WINPR_UNUSED(pfContextAttr);
+	WINPR_UNUSED(ptsExpiry);
 
 	if (!context)
 	{
@@ -435,7 +472,7 @@ static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextA(
 		    GSS_C_NO_CHANNEL_BINDINGS, &input_tok, &actual_mech, &output_tok, &actual_services,
 		    &(context->actual_time));
 
-		if (GSS_ERROR(context->major_status))
+		if (failure("gss_init_sec_context", context->major_status, context->minor_status))
 		{
 			/* GSSAPI failed because we do not have credentials */
 			if (context->major_status & GSS_S_NO_CRED)
@@ -446,6 +483,7 @@ static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextA(
 		{
 			if (output_tok.length != 0)
 			{
+				OM_uint32 major, minor;
 				if (!pOutput)
 					return SEC_E_INVALID_TOKEN;
 
@@ -462,7 +500,9 @@ static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextA(
 
 				CopyMemory(output_buffer->pvBuffer, output_tok.value, output_tok.length);
 				output_buffer->cbBuffer = output_tok.length;
-				gss_release_buffer(&(context->minor_status), &output_tok);
+				major = gss_release_buffer(&minor, &output_tok);
+				failure("gss_release_name", major, minor);
+
 				return SEC_I_CONTINUE_NEEDED;
 			}
 		}
@@ -485,7 +525,7 @@ static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextA(
 		    GSS_C_NO_CHANNEL_BINDINGS, &input_tok, &actual_mech, &output_tok, &actual_services,
 		    &(context->actual_time));
 
-		if (GSS_ERROR(context->major_status))
+		if (failure("gss_init_sec_context", context->major_status, context->minor_status))
 			return SEC_E_INTERNAL_ERROR;
 
 		if (output_tok.length == 0)
@@ -519,6 +559,11 @@ static SECURITY_STATUS SEC_ENTRY kerberos_DeleteSecurityContext(PCtxtHandle phCo
 static SECURITY_STATUS SEC_ENTRY kerberos_QueryContextAttributesW(PCtxtHandle phContext,
                                                                   ULONG ulAttribute, void* pBuffer)
 {
+	WINPR_UNUSED(phContext);
+	WINPR_UNUSED(ulAttribute);
+	WINPR_UNUSED(pBuffer);
+
+	WLog_WARN(TAG, "[%s] UNIMPLEMENTED", __FUNCTION__);
 	return SEC_E_UNSUPPORTED_FUNCTION;
 }
 
@@ -554,10 +599,9 @@ static SECURITY_STATUS SEC_ENTRY kerberos_EncryptMessage(PCtxtHandle phContext, 
                                                          PSecBufferDesc pMessage,
                                                          ULONG MessageSeqNo)
 {
-	int index;
+	ULONG index;
 	int conf_state;
-	UINT32 major_status;
-	UINT32 minor_status;
+	OM_uint32 major, minor;
 	KRB_CONTEXT* context;
 	gss_buffer_desc input;
 	gss_buffer_desc output;
@@ -567,7 +611,7 @@ static SECURITY_STATUS SEC_ENTRY kerberos_EncryptMessage(PCtxtHandle phContext, 
 	if (!context)
 		return SEC_E_INVALID_HANDLE;
 
-	for (index = 0; index < (int)pMessage->cBuffers; index++)
+	for (index = 0; index < pMessage->cBuffers; index++)
 	{
 		if (pMessage->pBuffers[index].BufferType == SECBUFFER_DATA)
 			data_buffer = &pMessage->pBuffers[index];
@@ -578,21 +622,23 @@ static SECURITY_STATUS SEC_ENTRY kerberos_EncryptMessage(PCtxtHandle phContext, 
 
 	input.value = data_buffer->pvBuffer;
 	input.length = data_buffer->cbBuffer;
-	major_status = gss_wrap(&minor_status, context->gss_ctx, TRUE, GSS_C_QOP_DEFAULT, &input,
-	                        &conf_state, &output);
+	major =
+	    gss_wrap(&minor, context->gss_ctx, TRUE, GSS_C_QOP_DEFAULT, &input, &conf_state, &output);
 
-	if (GSS_ERROR(major_status))
+	if (failure("gss_wrap", major, minor))
 		return SEC_E_INTERNAL_ERROR;
 
 	if (conf_state == 0)
 	{
 		WLog_ERR(TAG, "error: gss_wrap confidentiality was not applied");
-		gss_release_buffer(&minor_status, &output);
+		major = gss_release_buffer(&minor, &output);
+		failure("gss_release_buffer", major, minor);
 		return SEC_E_INTERNAL_ERROR;
 	}
 
 	CopyMemory(data_buffer->pvBuffer, output.value, output.length);
-	gss_release_buffer(&minor_status, &output);
+	major = gss_release_buffer(&minor, &output);
+	failure("gss_release_buffer", major, minor);
 	return SEC_E_OK;
 }
 
@@ -600,20 +646,23 @@ static SECURITY_STATUS SEC_ENTRY kerberos_DecryptMessage(PCtxtHandle phContext,
                                                          PSecBufferDesc pMessage,
                                                          ULONG MessageSeqNo, ULONG* pfQOP)
 {
-	int index;
+	ULONG index;
 	int conf_state;
-	UINT32 major_status;
-	UINT32 minor_status;
+	OM_uint32 major, minor;
 	KRB_CONTEXT* context;
 	gss_buffer_desc input_data;
 	gss_buffer_desc output;
 	PSecBuffer data_buffer_to_unwrap = NULL;
+
+	WINPR_UNUSED(MessageSeqNo);
+	WINPR_UNUSED(pfQOP);
+
 	context = (KRB_CONTEXT*)sspi_SecureHandleGetLowerPointer(phContext);
 
 	if (!context)
 		return SEC_E_INVALID_HANDLE;
 
-	for (index = 0; index < (int)pMessage->cBuffers; index++)
+	for (index = 0; index < pMessage->cBuffers; index++)
 	{
 		if (pMessage->pBuffers[index].BufferType == SECBUFFER_DATA)
 			data_buffer_to_unwrap = &pMessage->pBuffers[index];
@@ -625,27 +674,33 @@ static SECURITY_STATUS SEC_ENTRY kerberos_DecryptMessage(PCtxtHandle phContext,
 	/* unwrap encrypted TLS key AND its signature */
 	input_data.value = data_buffer_to_unwrap->pvBuffer;
 	input_data.length = data_buffer_to_unwrap->cbBuffer;
-	major_status =
-	    gss_unwrap(&minor_status, context->gss_ctx, &input_data, &output, &conf_state, NULL);
+	major = gss_unwrap(&minor, context->gss_ctx, &input_data, &output, &conf_state, NULL);
 
-	if (GSS_ERROR(major_status))
+	if (failure("gss_unwrap", major, minor))
 		return SEC_E_INTERNAL_ERROR;
 
 	if (conf_state == 0)
 	{
 		WLog_ERR(TAG, "error: gss_unwrap confidentiality was not applied");
-		gss_release_buffer(&minor_status, &output);
+		major = gss_release_buffer(&minor, &output);
+		failure("gss_release_buffer", major, minor);
 		return SEC_E_INTERNAL_ERROR;
 	}
 
 	CopyMemory(data_buffer_to_unwrap->pvBuffer, output.value, output.length);
-	gss_release_buffer(&minor_status, &output);
+	major = gss_release_buffer(&minor, &output);
+	failure("gss_release_buffer", major, minor);
 	return SEC_E_OK;
 }
 
 static SECURITY_STATUS SEC_ENTRY kerberos_MakeSignature(PCtxtHandle phContext, ULONG fQOP,
                                                         PSecBufferDesc pMessage, ULONG MessageSeqNo)
 {
+	WINPR_UNUSED(phContext);
+	WINPR_UNUSED(pMessage);
+	WINPR_UNUSED(MessageSeqNo);
+	WINPR_UNUSED(fQOP);
+	WLog_WARN(TAG, "[%s] NOT SUPPORTED", __FUNCTION__);
 	return SEC_E_UNSUPPORTED_FUNCTION;
 }
 
@@ -653,6 +708,11 @@ static SECURITY_STATUS SEC_ENTRY kerberos_VerifySignature(PCtxtHandle phContext,
                                                           PSecBufferDesc pMessage,
                                                           ULONG MessageSeqNo, ULONG* pfQOP)
 {
+	WINPR_UNUSED(phContext);
+	WINPR_UNUSED(pMessage);
+	WINPR_UNUSED(MessageSeqNo);
+	WINPR_UNUSED(pfQOP);
+	WLog_WARN(TAG, "[%s] NOT SUPPORTED", __FUNCTION__);
 	return SEC_E_UNSUPPORTED_FUNCTION;
 }
 
