@@ -180,7 +180,7 @@ static char* alloc_printf(const char* fmt, ...)
 	char* str = NULL;
 	va_list ap;
 	va_start(ap, fmt);
-	rc = vsnprintf_s(NULL, 0, fmt, ap);
+	rc = vsnprintf(NULL, 0, fmt, ap);
 	va_end(ap);
 	if (rc <= 0)
 		return NULL;
@@ -189,7 +189,7 @@ static char* alloc_printf(const char* fmt, ...)
 		return NULL;
 
 	va_start(ap, fmt);
-	rc = vsnprintf_s(str, rc + 1, fmt, ap);
+	rc = vsnprintf(str, rc + 1, fmt, ap);
 	if (rc < 0)
 	{
 		free(str);
