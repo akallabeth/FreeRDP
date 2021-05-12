@@ -204,7 +204,7 @@ static char* alloc_printf(const char* fmt, ...)
 static BOOL failure_(const char* file, const char* fkt, size_t line, const char* what,
                      uint32_t major_status, uint32_t minor_status)
 {
-	static wLog* _log = WLog_Get(TAG);
+	wLog* _log = WLog_Get(TAG);
 	if (GSS_ERROR(major_status))
 	{
 		if (WLog_IsLevelActive(_log, WLOG_ERROR))
