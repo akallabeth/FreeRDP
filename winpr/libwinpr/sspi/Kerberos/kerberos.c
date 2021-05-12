@@ -199,16 +199,26 @@ static char* alloc_printf(const char* fmt, ...)
 	return str;
 }
 
-static bool failure(const char* what, uint32_t major_status, uint32_t minor_status)
+#define failure(what, major, minor) \
+	failure_(__FILE__, __FUNCTION__, __LINE__, (what), (major), (minor))
+static bool failure_(const char* file, const char* fkt, size_t line, const char* what,
+                     uint32_t major_status, uint32_t minor_status)
 {
+	static wLog* _log = WLog_Get(TAG);
 	if (GSS_ERROR(major_status))
 	{
-		WLog_ERR(TAG, "[%s] failed with [%s|%s|%s] [0x%08" PRIu32 "] [minor=0x%08" PRIu32, what,
-		         calling_error_2_str(major_status), routine_error_2_str(major_status),
-		         supplementary_info_2_str(major_status), major_status, minor_status);
+		if (WLog_IsLevelActive(_log, WLOG_ERROR))
+			WLog_PrintMessage(_log, WLOG_MESSAGE_TEXT, WLOG_ERROR, line, file, fkt,
+			                  "[%s] failed with [%s|%s|%s] [0x%08" PRIu32 "] [minor=0x%08" PRIu32,
+			                  what, calling_error_2_str(major_status),
+			                  routine_error_2_str(major_status),
+			                  supplementary_info_2_str(major_status), major_status, minor_status);
 		return true;
 	}
-	WLog_DBG(TAG, "[%s] succeeded", what);
+	if (WLog_IsLevelActive(_log, WLOG_DEBUG))
+		WLog_PrintMessage(_log, WLOG_MESSAGE_TEXT, WLOG_DEBUG, line, file, fkt, "[%s] succeeded",
+		                  what);
+
 	return false;
 }
 
@@ -229,7 +239,7 @@ static KRB_CONTEXT* kerberos_ContextNew(void)
 
 static void kerberos_ContextFree(KRB_CONTEXT* context)
 {
-	UINT32 minor_status;
+	UINT32 minor_status, major_status;
 
 	if (!context)
 		return;
@@ -238,7 +248,8 @@ static void kerberos_ContextFree(KRB_CONTEXT* context)
 
 	if (context->gss_ctx)
 	{
-		gss_delete_sec_context(&minor_status, &context->gss_ctx, GSS_C_NO_BUFFER);
+		major_status = gss_delete_sec_context(&minor_status, &context->gss_ctx, GSS_C_NO_BUFFER);
+		failure("gss_delete_sec_context", major_status, minor_status);
 		context->gss_ctx = GSS_C_NO_CONTEXT;
 	}
 
