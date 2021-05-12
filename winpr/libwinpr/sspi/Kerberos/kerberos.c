@@ -201,7 +201,7 @@ static char* alloc_printf(const char* fmt, ...)
 
 #define failure(what, major, minor) \
 	failure_(__FILE__, __FUNCTION__, __LINE__, (what), (major), (minor))
-static bool failure_(const char* file, const char* fkt, size_t line, const char* what,
+static BOOL failure_(const char* file, const char* fkt, size_t line, const char* what,
                      uint32_t major_status, uint32_t minor_status)
 {
 	static wLog* _log = WLog_Get(TAG);
@@ -213,13 +213,13 @@ static bool failure_(const char* file, const char* fkt, size_t line, const char*
 			                  what, calling_error_2_str(major_status),
 			                  routine_error_2_str(major_status),
 			                  supplementary_info_2_str(major_status), major_status, minor_status);
-		return true;
+		return TRUE;
 	}
 	if (WLog_IsLevelActive(_log, WLOG_DEBUG))
 		WLog_PrintMessage(_log, WLOG_MESSAGE_TEXT, WLOG_DEBUG, line, file, fkt, "[%s] succeeded",
 		                  what);
 
-	return false;
+	return FALSE;
 }
 
 static KRB_CONTEXT* kerberos_ContextNew(void)
