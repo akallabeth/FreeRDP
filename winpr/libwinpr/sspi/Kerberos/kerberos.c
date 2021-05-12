@@ -89,6 +89,129 @@ static gss_OID SSPI_GSS_C_SPNEGO_KRB5 = &g_SSPI_GSS_C_SPNEGO_KRB5;
 static BOOL kerberos_SetContextServicePrincipalNameA(KRB_CONTEXT* context,
                                                      SEC_CHAR* ServicePrincipalName);
 
+static const char* calling_error_2_str(OM_uint32 error)
+{
+	switch (error & 0xFF000000)
+	{
+		case 0:
+			return "";
+		case GSS_S_CALL_INACCESSIBLE_READ:
+			return "GSS_S_CALL_INACCESSIBLE_READ";
+		case GSS_S_CALL_INACCESSIBLE_WRITE:
+			return "GSS_S_CALL_INACCESSIBLE_WRITE";
+		case GSS_S_CALL_BAD_STRUCTURE:
+			return "GSS_S_CALL_BAD_STRUCTURE";
+		default:
+			return "GSS_UNKNOWN_CALLING_ERROR";
+	}
+}
+
+static const char* routine_error_2_str(OM_uint32 error)
+{
+	switch (error & 0xFF0000)
+	{
+		case 0:
+			return "";
+		case GSS_S_BAD_MECH:
+			return "GSS_S_BAD_MECH";
+		case GSS_S_BAD_NAME:
+			return "GSS_S_BAD_NAME";
+		case GSS_S_BAD_NAMETYPE:
+			return "GSS_S_BAD_NAMETYPE";
+		case GSS_S_BAD_BINDINGS:
+			return "GSS_S_BAD_BINDINGS";
+		case GSS_S_BAD_STATUS:
+			return "GSS_S_BAD_STATUS";
+		case GSS_S_BAD_SIG:
+			return "GSS_S_BAD_SIG";
+		case GSS_S_NO_CRED:
+			return "GSS_S_NO_CRED";
+		case GSS_S_NO_CONTEXT:
+			return "GSS_S_NO_CONTEXT";
+		case GSS_S_DEFECTIVE_TOKEN:
+			return "GSS_S_DEFECTIVE_TOKEN";
+		case GSS_S_DEFECTIVE_CREDENTIAL:
+			return "GSS_S_DEFECTIVE_CREDENTIAL";
+		case GSS_S_CREDENTIALS_EXPIRED:
+			return "GSS_S_CREDENTIALS_EXPIRED";
+		case GSS_S_CONTEXT_EXPIRED:
+			return "GSS_S_CONTEXT_EXPIRED";
+		case GSS_S_FAILURE:
+			return "GSS_S_FAILURE";
+		case GSS_S_BAD_QOP:
+			return "GSS_S_BAD_QOP";
+		case GSS_S_UNAUTHORIZED:
+			return "GSS_S_UNAUTHORIZED";
+		case GSS_S_UNAVAILABLE:
+			return "GSS_S_UNAVAILABLE";
+		case GSS_S_DUPLICATE_ELEMENT:
+			return "GSS_S_DUPLICATE_ELEMENT";
+		case GSS_S_NAME_NOT_MN:
+			return "GSS_S_NAME_NOT_MN";
+		default:
+			return "GSS_UNKNOWN_ROUTINE_ERROR";
+	}
+}
+
+static const char* supplementary_info_2_str(OM_uint32 error)
+{
+	switch (error & 0xFFFF)
+	{
+		case 0:
+			return "";
+		case GSS_S_CONTINUE_NEEDED:
+			return "GSS_S_CONTINUE_NEEDED";
+		case GSS_S_DUPLICATE_TOKEN:
+			return "GSS_S_DUPLICATE_TOKEN";
+		case GSS_S_OLD_TOKEN:
+			return "GSS_S_OLD_TOKEN";
+		case GSS_S_UNSEQ_TOKEN:
+			return "GSS_S_UNSEQ_TOKEN";
+		case GSS_S_GAP_TOKEN:
+			return "GSS_S_GAP_TOKEN";
+		default:
+			return "GSS_UNKNOWN_SUPPLIMENTARY_INFO";
+	}
+}
+
+static char* alloc_printf(const char* fmt, ...)
+{
+	int rc;
+	char* str = NULL;
+	va_list ap;
+	va_start(ap, fmt);
+	rc = vsnprintf_s(NULL, 0, fmt, ap);
+	va_end(ap);
+	if (rc <= 0)
+		return NULL;
+	str = (char*)calloc(rc + 2, sizeof(char));
+	if (!str)
+		return NULL;
+
+	va_start(ap, fmt);
+	rc = vsnprintf_s(str, rc + 1, fmt, ap);
+	if (rc < 0)
+	{
+		free(str);
+		return NULL;
+	}
+	va_end(ap);
+	return str;
+}
+
+static bool failure(const char* what, uint32_t major_status, uint32_t minor_status)
+{
+	if (GSS_ERROR(major_status))
+	{
+		WLog_ERR(TAG, "[%s] failed with [%s|%s|%s] [0x%08" PRIu32 "] [minor=0x%08" PRIu32, what,
+		         calling_error_2_str(major_status), routine_error_2_str(major_status),
+		         supplementary_info_2_str(major_status), major_status, minor_status);
+		return true;
+	}
+	WLog_DBG(TAG, "[%s] succeeded", what);
+	return false;
+}
+
 static KRB_CONTEXT* kerberos_ContextNew(void)
 {
 	KRB_CONTEXT* context;
@@ -189,27 +312,21 @@ static gss_name_t kerberos_get_service_name(const SEC_CHAR* ServicePrincipalName
 	UINT32 major_status;
 	UINT32 minor_status;
 	gss_name_t target_name;
-	char* gss_name = NULL;
 	gss_buffer_desc name_buffer;
 
 	if (!ServicePrincipalName)
 		return NULL;
 
 	/* GSSAPI expects a SPN of type <service>@FQDN, let's construct it */
-	gss_name = _strdup(ServicePrincipalName);
-
-	if (!gss_name)
+	p = strchr(ServicePrincipalName, '/');
+	if (!p)
 		return NULL;
+	p++;
 
-	p = strchr(gss_name, '/');
-
-	if (p)
-		*p = '@';
-	name_buffer.value = gss_name;
-	name_buffer.length = strlen(gss_name) + 1;
+	name_buffer.value = p;
+	name_buffer.length = strlen(p) + 1;
 	major_status =
 	    gss_import_name(&minor_status, &name_buffer, GSS_C_NT_HOSTBASED_SERVICE, &target_name);
-	free(gss_name);
 
 	if (GSS_ERROR(major_status))
 	{
