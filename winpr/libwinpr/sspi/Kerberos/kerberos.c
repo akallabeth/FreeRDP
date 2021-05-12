@@ -222,6 +222,20 @@ static BOOL failure_(const char* file, const char* fkt, size_t line, const char*
 	return FALSE;
 }
 
+static void wrap_gss_release_buffer(gss_buffer_t buffer)
+{
+	OM_uint32 major, minor;
+	major = gss_release_buffer(&minor, buffer);
+	failure("gss_release_buffer", major, minor);
+}
+
+static void wrap_gss_release_name(gss_name_t* buffer)
+{
+	OM_uint32 major, minor;
+	major = gss_release_name(&minor, buffer);
+	failure("gss_release_name", major, minor);
+}
+
 static KRB_CONTEXT* kerberos_ContextNew(void)
 {
 	KRB_CONTEXT* context;
@@ -237,6 +251,25 @@ static KRB_CONTEXT* kerberos_ContextNew(void)
 	return context;
 }
 
+static void kerberos_release_context_creds(KRB_CONTEXT* context)
+{
+	if (context && (context->cred != GSS_C_NO_CREDENTIAL))
+	{
+		OM_uint32 major, minor;
+		major = gss_release_cred(&minor, &context->cred);
+		failure("gss_release_cred", major, minor);
+		context->cred = GSS_C_NO_CREDENTIAL;
+	}
+}
+
+static void kerberos_release_target_name(KRB_CONTEXT* context)
+{
+	if (context && context->target_name)
+	{
+		wrap_gss_release_name(&context->target_name);
+	}
+}
+
 static void kerberos_ContextFree(KRB_CONTEXT* context)
 {
 	UINT32 minor_status, major_status;
@@ -246,6 +279,7 @@ static void kerberos_ContextFree(KRB_CONTEXT* context)
 
 	kerberos_SetContextServicePrincipalNameA(context, NULL);
 
+	kerberos_release_context_creds(context);
 	if (context->gss_ctx)
 	{
 		major_status = gss_delete_sec_context(&minor_status, &context->gss_ctx, GSS_C_NO_BUFFER);
@@ -351,13 +385,28 @@ static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextW(
 	return SEC_E_UNSUPPORTED_FUNCTION;
 }
 
+static gss_name_t kerberos_name_from(const char* name, const gss_OID oid)
+{
+	OM_uint32 major, minor;
+	gss_name_t target_name;
+	gss_buffer_desc name_buffer;
+
+	if (!name)
+		return NULL;
+
+	name_buffer.value = name;
+	name_buffer.length = strlen(name) + 1;
+	major = gss_import_name(&minor, &name_buffer, oid, &target_name);
+
+	if (failure("gss_import_name", major, minor))
+		return NULL;
+
+	return target_name;
+}
+
 static gss_name_t kerberos_get_service_name(const SEC_CHAR* ServicePrincipalName)
 {
 	char* p;
-	UINT32 major_status;
-	UINT32 minor_status;
-	gss_name_t target_name;
-	gss_buffer_desc name_buffer;
 
 	if (!ServicePrincipalName)
 		return NULL;
@@ -368,27 +417,13 @@ static gss_name_t kerberos_get_service_name(const SEC_CHAR* ServicePrincipalName
 		return NULL;
 	p++;
 
-	name_buffer.value = p;
-	name_buffer.length = strlen(p) + 1;
-	major_status =
-	    gss_import_name(&minor_status, &name_buffer, GSS_C_NT_HOSTBASED_SERVICE, &target_name);
-
-	if (failure("gss_import_name", major_status, minor_status))
-		return NULL;
-
-	return target_name;
+	return kerberos_name_from(p, GSS_C_NT_HOSTBASED_SERVICE);
 }
 
 static BOOL kerberos_SetContextServicePrincipalNameA(KRB_CONTEXT* context,
                                                      SEC_CHAR* ServicePrincipalName)
 {
-	if (context->target_name)
-	{
-		OM_uint32 minor, major;
-		major = gss_release_name(&minor, &context->target_name);
-		failure("gss_release_name", major, minor);
-		context->target_name = NULL;
-	}
+	kerberos_release_target_name(context);
 	if (ServicePrincipalName)
 	{
 		gss_name_t targetName = kerberos_get_service_name(ServicePrincipalName);
@@ -397,28 +432,58 @@ static BOOL kerberos_SetContextServicePrincipalNameA(KRB_CONTEXT* context,
 	return context->target_name != NULL;
 }
 
-static BOOL kerberos_TestGetCredentials(const SEC_CHAR* targetName)
+static gss_name_t kerberos_identity_to_name(const SEC_WINNT_AUTH_IDENTITY* identity,
+                                            gss_name_t target)
 {
-	OM_uint32 minStat;
-	gss_cred_id_t cred;
-	OM_uint32 majStat, major, minor;
-	gss_name_t serviceName = kerberos_get_service_name(targetName);
-	if (!serviceName)
+	OM_uint32 major, minor;
+	gss_buffer_desc output = { 0 };
+	gss_name_t name = NULL;
+	char* str = NULL;
+	char* user = NULL;
+	char* domain = NULL;
+
+	if (ConvertFromUnicode(CP_UTF8, 0, identity->User, identity->UserLength, &user, 0, NULL,
+	                       NULL) <= 0)
+		goto fail;
+	if (ConvertFromUnicode(CP_UTF8, 0, identity->Domain, identity->DomainLength, &domain, 0, NULL,
+	                       NULL) < 0)
+		goto fail;
+
+	major = gss_display_name(&minor, target, &output, NULL);
+	failure("gss_display_name", minor, major);
+
+	if (domain)
+		str = alloc_printf("%s@%s", user, domain);
+	else
+		str = alloc_printf("%s@%s", user, output.value);
+	name = kerberos_name_from(str, GSS_C_NT_USER_NAME);
+fail:
+	free(user);
+	free(domain);
+	free(str);
+	return name;
+}
+
+static BOOL kerberos_CredentialsToGSSCred(KRB_CONTEXT* context, const SSPI_CREDENTIALS* credentials)
+{
+	OM_uint32 major, minor;
+	gss_name_t name;
+	if (!context)
+		return FALSE;
+	context->credentials = credentials;
+
+	kerberos_release_context_creds(context);
+	if (!credentials)
+		return TRUE;
+
+	name = kerberos_identity_to_name(&credentials->identity, context->target_name);
+	if (!name)
 		return FALSE;
 
-	majStat = gss_acquire_cred(&minStat, serviceName, GSS_C_INDEFINITE, GSS_C_NO_OID_SET,
-	                           GSS_C_INITIATE, &cred, NULL, NULL);
-	failure("gss_acquire_cred", majStat, minStat);
-	major = gss_release_name(&minor, &serviceName);
-	failure("gss_release_name", major, minor);
-	major = gss_release_cred(&minor, &cred);
-	failure("gss_release_cred", major, minor);
-
-	if (majStat != GSS_S_COMPLETE)
-	{
-		return FALSE;
-	}
-	return TRUE;
+	major = gss_acquire_cred(&minor, name, GSS_C_INDEFINITE, GSS_C_NO_OID_SET, GSS_C_INITIATE,
+	                         &context->cred, NULL, NULL);
+	wrap_gss_release_name(&name);
+	return !failure("gss_acquire_cred", major, minor);
 }
 
 static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextA(
@@ -454,7 +519,8 @@ static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextA(
 		credentials = (SSPI_CREDENTIALS*)sspi_SecureHandleGetLowerPointer(phCredential);
 		context->credentials = credentials;
 
-		if (!kerberos_SetContextServicePrincipalNameA(context, pszTargetName))
+		if (!kerberos_SetContextServicePrincipalNameA(context, pszTargetName) ||
+		    !kerberos_CredentialsToGSSCred(context, credentials))
 		{
 			kerberos_ContextFree(context);
 			return SEC_E_INTERNAL_ERROR;
@@ -500,8 +566,7 @@ static SECURITY_STATUS SEC_ENTRY kerberos_InitializeSecurityContextA(
 
 				CopyMemory(output_buffer->pvBuffer, output_tok.value, output_tok.length);
 				output_buffer->cbBuffer = output_tok.length;
-				major = gss_release_buffer(&minor, &output_tok);
-				failure("gss_release_name", major, minor);
+				wrap_gss_release_buffer(&output_tok);
 
 				return SEC_I_CONTINUE_NEEDED;
 			}
@@ -631,14 +696,12 @@ static SECURITY_STATUS SEC_ENTRY kerberos_EncryptMessage(PCtxtHandle phContext, 
 	if (conf_state == 0)
 	{
 		WLog_ERR(TAG, "error: gss_wrap confidentiality was not applied");
-		major = gss_release_buffer(&minor, &output);
-		failure("gss_release_buffer", major, minor);
+		wrap_gss_release_buffer(&output);
 		return SEC_E_INTERNAL_ERROR;
 	}
 
 	CopyMemory(data_buffer->pvBuffer, output.value, output.length);
-	major = gss_release_buffer(&minor, &output);
-	failure("gss_release_buffer", major, minor);
+	wrap_gss_release_buffer(&output);
 	return SEC_E_OK;
 }
 
@@ -682,14 +745,12 @@ static SECURITY_STATUS SEC_ENTRY kerberos_DecryptMessage(PCtxtHandle phContext,
 	if (conf_state == 0)
 	{
 		WLog_ERR(TAG, "error: gss_unwrap confidentiality was not applied");
-		major = gss_release_buffer(&minor, &output);
-		failure("gss_release_buffer", major, minor);
+		wrap_gss_release_buffer(&output);
 		return SEC_E_INTERNAL_ERROR;
 	}
 
 	CopyMemory(data_buffer_to_unwrap->pvBuffer, output.value, output.length);
-	major = gss_release_buffer(&minor, &output);
-	failure("gss_release_buffer", major, minor);
+	wrap_gss_release_buffer(&output);
 	return SEC_E_OK;
 }
 
