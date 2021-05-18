@@ -34,13 +34,7 @@ class FreerdpConan(ConanFile):
         pass
 
     def source(self):
-        # This small hack might be useful to guarantee proper /MT /MD linkage
-        # in MSVC if the packaged project doesn't have variables to set it
-        # properly
-        tools.replace_in_file("CMakeLists.txt", "PROJECT(FreeRDP)",
-                              '''PROJECT(FreeRDP)
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()''')
+        pass
 
     def generate(self):
         cmake = CMakeToolchain(self)
