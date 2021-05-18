@@ -36,14 +36,7 @@ class FreerdpConan(ConanFile):
     def source(self):
         pass
 
-    def generate(self):
-        cmake = CMakeToolchain(self)
-        cmake.generate()
-
-        deps = CMakeDeps(self)
-        deps.generate()
-
-    def build(self):
+    def _configure_cmake(self):
         cmake = CMake(self)
         cmake.verbose = True
         cmake.cmake_generator='Ninja'
@@ -64,11 +57,22 @@ class FreerdpConan(ConanFile):
             cmake.definitions['BUILD_SHARED_LIBS'] = 'OFF'
 
         cmake.configure()
+        return cmake
+
+    def generate(self):
+        cmake = CMakeToolchain(self)
+        cmake.generate()
+
+        deps = CMakeDeps(self)
+        deps.generate()
+
+    def build(self):
+        cmake = self._configure_cmake()
         cmake.build()
         cmake.test()
 
     def package(self):
-        cmake = CMake(self)
+        cmake = self._configure_cmake()
         cmake.install()
 
     def package_info(self):
