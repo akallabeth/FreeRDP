@@ -965,7 +965,7 @@ static BOOL shadow_client_send_surface_gfx(rdpShadowClient* client, const BYTE* 
 			return FALSE;
 		}
 	}
-	else
+	else if (settings->GfxProgressive || settings->GfxProgressiveV2)
 	{
 		BYTE* dst = NULL;
 		UINT32 dstSize = 0;
@@ -1008,6 +1008,80 @@ static BOOL shadow_client_send_surface_gfx(rdpShadowClient* client, const BYTE* 
 			IFCALLRET(client->rdpgfx->SurfaceFrameCommand, error, client->rdpgfx, &cmd, &cmdstart,
 			          &cmdend);
 		}
+		free(dst);
+
+		if (error)
+		{
+			WLog_ERR(TAG, "SurfaceFrameCommand failed with error %" PRIu32 "", error);
+			return FALSE;
+		}
+	}
+	else if (0)
+	{
+		BYTE* dst = NULL;
+		UINT32 dstSize = 0;
+
+		if (shadow_encoder_prepare(encoder, FREERDP_CODEC_PLANAR) < 0)
+		{
+			WLog_ERR(TAG, "Failed to prepare encoder FREERDP_CODEC_AVC420");
+			return FALSE;
+		}
+
+		WINPR_ASSERT(cmd.left <= UINT16_MAX);
+		WINPR_ASSERT(cmd.top <= UINT16_MAX);
+		WINPR_ASSERT(cmd.right <= UINT16_MAX);
+		WINPR_ASSERT(cmd.bottom <= UINT16_MAX);
+		dst = freerdp_bitmap_compress_planar(encoder->planar, pSrcData, cmd.format, nWidth, nHeight,
+		                                     nSrcStep, NULL, &dstSize);
+		if (!dst)
+		{
+			WLog_ERR(TAG, "freerdp_bitmap_compress_planar failed");
+			return FALSE;
+		}
+
+		cmd.codecId = RDPGFX_CODECID_PLANAR;
+		cmd.length = dstSize;
+		cmd.data = dst;
+
+		IFCALLRET(client->rdpgfx->SurfaceFrameCommand, error, client->rdpgfx, &cmd, &cmdstart,
+		          &cmdend);
+		free(dst);
+
+		if (error)
+		{
+			WLog_ERR(TAG, "SurfaceFrameCommand failed with error %" PRIu32 "", error);
+			return FALSE;
+		}
+	}
+	else if (0)
+	{
+		int rc;
+		BYTE* dst = NULL;
+		UINT32 dstSize = 0;
+
+		if (shadow_encoder_prepare(encoder, FREERDP_CODEC_CLEARCODEC) < 0)
+		{
+			WLog_ERR(TAG, "Failed to prepare encoder FREERDP_CODEC_AVC420");
+			return FALSE;
+		}
+
+		WINPR_ASSERT(cmd.left <= UINT16_MAX);
+		WINPR_ASSERT(cmd.top <= UINT16_MAX);
+		WINPR_ASSERT(cmd.right <= UINT16_MAX);
+		WINPR_ASSERT(cmd.bottom <= UINT16_MAX);
+		rc = clear_compress(encoder->clear, pSrcData, nHeight * nSrcStep, &dst, &dstSize);
+		if (!dst)
+		{
+			WLog_ERR(TAG, "freerdp_bitmap_compress_planar failed");
+			return FALSE;
+		}
+
+		cmd.codecId = RDPGFX_CODECID_CLEARCODEC;
+		cmd.length = dstSize;
+		cmd.data = dst;
+
+		IFCALLRET(client->rdpgfx->SurfaceFrameCommand, error, client->rdpgfx, &cmd, &cmdstart,
+		          &cmdend);
 		free(dst);
 
 		if (error)

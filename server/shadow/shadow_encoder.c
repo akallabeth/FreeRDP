@@ -274,6 +274,26 @@ fail:
 	return -1;
 }
 
+static int shadow_encoder_init_clear(rdpShadowEncoder* encoder)
+{
+	WINPR_ASSERT(encoder);
+
+	if (!encoder->clear)
+		encoder->clear = clear_context_new(TRUE);
+
+	if (!encoder->clear)
+		goto fail;
+
+	if (!clear_context_reset(encoder->clear))
+		goto fail;
+
+	encoder->codecs |= FREERDP_CODEC_CLEARCODEC;
+	return 1;
+fail:
+	clear_context_free(encoder->clear);
+	return -1;
+}
+
 static int shadow_encoder_init(rdpShadowEncoder* encoder)
 {
 	encoder->width = encoder->server->screen->width;
@@ -353,6 +373,20 @@ static int shadow_encoder_uninit_progressive(rdpShadowEncoder* encoder)
 	return 1;
 }
 
+static int shadow_encoder_uninit_clear(rdpShadowEncoder* encoder)
+{
+	WINPR_ASSERT(encoder);
+
+	if (encoder->clear)
+	{
+		clear_context_free(encoder->clear);
+		encoder->clear = NULL;
+	}
+
+	encoder->codecs &= (UINT32) ~(FREERDP_CODEC_CLEARCODEC);
+	return 1;
+}
+
 static int shadow_encoder_uninit_h264(rdpShadowEncoder* encoder)
 {
 	if (encoder->h264)
@@ -398,6 +432,11 @@ static int shadow_encoder_uninit(rdpShadowEncoder* encoder)
 	if (encoder->codecs & FREERDP_CODEC_PROGRESSIVE)
 	{
 		shadow_encoder_uninit_progressive(encoder);
+	}
+
+	if (encoder->codecs & FREERDP_CODEC_CLEARCODEC)
+	{
+		shadow_encoder_uninit_clear(encoder);
 	}
 
 	if (encoder->codecs & (FREERDP_CODEC_AVC420 | FREERDP_CODEC_AVC444))
@@ -481,6 +520,15 @@ int shadow_encoder_prepare(rdpShadowEncoder* encoder, UINT32 codecs)
 	{
 		WLog_DBG(TAG, "initializing progressive encoder");
 		status = shadow_encoder_init_progressive(encoder);
+
+		if (status < 0)
+			return -1;
+	}
+
+	if ((codecs & FREERDP_CODEC_CLEARCODEC) && !(encoder->codecs & FREERDP_CODEC_CLEARCODEC))
+	{
+		WLog_DBG(TAG, "initializing clearcodec encoder");
+		status = shadow_encoder_init_clear(encoder);
 
 		if (status < 0)
 			return -1;
