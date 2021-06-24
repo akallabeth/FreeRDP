@@ -965,6 +965,57 @@ static BOOL shadow_client_send_surface_gfx(rdpShadowClient* client, const BYTE* 
 			return FALSE;
 		}
 	}
+	else
+	{
+		BYTE* dst = NULL;
+		UINT32 dstSize = 0;
+		INT32 rc;
+		RECTANGLE_16 regionRect;
+		REGION16 region;
+
+		if (shadow_encoder_prepare(encoder, FREERDP_CODEC_PROGRESSIVE) < 0)
+		{
+			WLog_ERR(TAG, "Failed to prepare encoder FREERDP_CODEC_AVC420");
+			return FALSE;
+		}
+
+		WINPR_ASSERT(cmd.left <= UINT16_MAX);
+		WINPR_ASSERT(cmd.top <= UINT16_MAX);
+		WINPR_ASSERT(cmd.right <= UINT16_MAX);
+		WINPR_ASSERT(cmd.bottom <= UINT16_MAX);
+		regionRect.left = (UINT16)cmd.left;
+		regionRect.top = (UINT16)cmd.top;
+		regionRect.right = (UINT16)cmd.right;
+		regionRect.bottom = (UINT16)cmd.bottom;
+		region16_init(&region);
+		region16_union_rect(&region, &region, &regionRect);
+		rc = progressive_compress(encoder->progressive, pSrcData, nHeight * nSrcStep, cmd.format,
+		                          nWidth, nHeight, nSrcStep, &region, &dst, &dstSize);
+		region16_uninit(&region);
+		if (rc < 0)
+		{
+			WLog_ERR(TAG, "avc420_compress failed");
+			return FALSE;
+		}
+
+		/* rc > 0 means new data */
+		if (rc >= 0)
+		{
+			cmd.codecId = RDPGFX_CODECID_CAPROGRESSIVE;
+			cmd.length = dstSize;
+			cmd.data = dst;
+
+			IFCALLRET(client->rdpgfx->SurfaceFrameCommand, error, client->rdpgfx, &cmd, &cmdstart,
+			          &cmdend);
+		}
+		free(dst);
+
+		if (error)
+		{
+			WLog_ERR(TAG, "SurfaceFrameCommand failed with error %" PRIu32 "", error);
+			return FALSE;
+		}
+	}
 
 	return TRUE;
 }
@@ -1442,7 +1493,7 @@ static BOOL shadow_client_send_surface_update(rdpShadowClient* client, SHADOW_GF
 	// WLog_INFO(TAG, "shadow_client_send_surface_update: x: %d y: %d width: %d height: %d right: %d
 	// bottom: %d", 	nXSrc, nYSrc, nWidth, nHeight, nXSrc + nWidth, nYSrc + nHeight);
 
-	if (settings->SupportGraphicsPipeline && settings->GfxH264 && pStatus->gfxOpened)
+	if (settings->SupportGraphicsPipeline && pStatus->gfxOpened)
 	{
 		/* GFX/h264 always full screen encoded */
 		nWidth = settings->DesktopWidth;

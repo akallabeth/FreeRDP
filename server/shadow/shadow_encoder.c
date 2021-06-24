@@ -20,6 +20,8 @@
 #include "config.h"
 #endif
 
+#include <winpr/assert.h>
+
 #include "shadow.h"
 
 #include "shadow_encoder.h"
@@ -252,6 +254,26 @@ fail:
 	return -1;
 }
 
+static int shadow_encoder_init_progressive(rdpShadowEncoder* encoder)
+{
+	WINPR_ASSERT(encoder);
+
+	if (!encoder->progressive)
+		encoder->progressive = progressive_context_new(TRUE);
+
+	if (!encoder->progressive)
+		goto fail;
+
+	if (!progressive_context_reset(encoder->progressive))
+		goto fail;
+
+	encoder->codecs |= FREERDP_CODEC_PROGRESSIVE;
+	return 1;
+fail:
+	progressive_context_free(encoder->progressive);
+	return -1;
+}
+
 static int shadow_encoder_init(rdpShadowEncoder* encoder)
 {
 	encoder->width = encoder->server->screen->width;
@@ -317,6 +339,20 @@ static int shadow_encoder_uninit_interleaved(rdpShadowEncoder* encoder)
 	return 1;
 }
 
+static int shadow_encoder_uninit_progressive(rdpShadowEncoder* encoder)
+{
+	WINPR_ASSERT(encoder);
+
+	if (encoder->progressive)
+	{
+		progressive_context_free(encoder->progressive);
+		encoder->progressive = NULL;
+	}
+
+	encoder->codecs &= (UINT32) ~(FREERDP_CODEC_PROGRESSIVE);
+	return 1;
+}
+
 static int shadow_encoder_uninit_h264(rdpShadowEncoder* encoder)
 {
 	if (encoder->h264)
@@ -357,6 +393,11 @@ static int shadow_encoder_uninit(rdpShadowEncoder* encoder)
 	if (encoder->codecs & FREERDP_CODEC_INTERLEAVED)
 	{
 		shadow_encoder_uninit_interleaved(encoder);
+	}
+
+	if (encoder->codecs & FREERDP_CODEC_PROGRESSIVE)
+	{
+		shadow_encoder_uninit_progressive(encoder);
 	}
 
 	if (encoder->codecs & (FREERDP_CODEC_AVC420 | FREERDP_CODEC_AVC444))
@@ -431,6 +472,15 @@ int shadow_encoder_prepare(rdpShadowEncoder* encoder, UINT32 codecs)
 	{
 		WLog_DBG(TAG, "initializing interleaved bitmap encoder");
 		status = shadow_encoder_init_interleaved(encoder);
+
+		if (status < 0)
+			return -1;
+	}
+
+	if ((codecs & FREERDP_CODEC_PROGRESSIVE) && !(encoder->codecs & FREERDP_CODEC_PROGRESSIVE))
+	{
+		WLog_DBG(TAG, "initializing progressive encoder");
+		status = shadow_encoder_init_progressive(encoder);
 
 		if (status < 0)
 			return -1;
