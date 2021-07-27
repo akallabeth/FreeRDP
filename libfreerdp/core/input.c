@@ -32,6 +32,26 @@
 
 #define TAG FREERDP_TAG("core")
 
+#if defined(WITH_DEBUG_INPUT)
+static void debug_input(const char* file, const char* function, size_t line, const char* fmt, ...)
+{
+	char buffer[8192] = { 0 };
+	va_list ap;
+
+	va_start(ap, fmt);
+	wvsnprintfx(buffer, sizeof(buffer), fmt, ap);
+	va_end(ap);
+
+	WLog_DBG(TAG, "[%s:%" PRIuz "]: %s", function, line, buffer);
+}
+#define INPUT_DEBUG(fmt, ...) debug_input(__FILE__, __FUNCTION__, __LINE__, fmt, ##__VA_ARGS__)
+#else
+#define INPUT_DEBUG(fmt, ...) \
+	do                        \
+	{                         \
+	} while (0)
+#endif
+
 /* Input Events */
 #define INPUT_EVENT_SYNC 0x0000
 #define INPUT_EVENT_SCANCODE 0x0004
@@ -673,6 +693,7 @@ BOOL freerdp_input_send_synchronize_event(rdpInput* input, UINT32 flags)
 	if (!input)
 		return FALSE;
 
+	INPUT_DEBUG("flags=0x%04" PRIx16, flags);
 	return IFCALLRESULT(TRUE, input->SynchronizeEvent, input, flags);
 }
 
@@ -681,6 +702,7 @@ BOOL freerdp_input_send_keyboard_event(rdpInput* input, UINT16 flags, UINT16 cod
 	if (!input)
 		return FALSE;
 
+	INPUT_DEBUG("flags=0x%04" PRIx16 ", code=0x%04" PRIx16, flags, code);
 	return IFCALLRESULT(TRUE, input->KeyboardEvent, input, flags, code);
 }
 
@@ -698,6 +720,7 @@ BOOL freerdp_input_send_unicode_keyboard_event(rdpInput* input, UINT16 flags, UI
 	if (!input)
 		return FALSE;
 
+	INPUT_DEBUG("flags=0x%04" PRIx16 ", code=0x%04" PRIx16, flags, code);
 	return IFCALLRESULT(TRUE, input->UnicodeKeyboardEvent, input, flags, code);
 }
 
@@ -706,6 +729,7 @@ BOOL freerdp_input_send_mouse_event(rdpInput* input, UINT16 flags, UINT16 x, UIN
 	if (!input)
 		return FALSE;
 
+	INPUT_DEBUG("flags=0x%04" PRIx16 ", pos=%" PRIu16 "x%" PRIu16, flags, x, y);
 	return IFCALLRESULT(TRUE, input->MouseEvent, input, flags, x, y);
 }
 
@@ -714,6 +738,7 @@ BOOL freerdp_input_send_extended_mouse_event(rdpInput* input, UINT16 flags, UINT
 	if (!input)
 		return FALSE;
 
+	INPUT_DEBUG("flags=0x%04" PRIx16 ", pos=%" PRIu16 "x%" PRIu16, flags, x, y);
 	return IFCALLRESULT(TRUE, input->ExtendedMouseEvent, input, flags, x, y);
 }
 
@@ -722,6 +747,7 @@ BOOL freerdp_input_send_focus_in_event(rdpInput* input, UINT16 toggleStates)
 	if (!input)
 		return FALSE;
 
+	INPUT_DEBUG("toggleStates=0x%04" PRIx16, toggleStates);
 	return IFCALLRESULT(TRUE, input->FocusInEvent, input, toggleStates);
 }
 
@@ -730,6 +756,7 @@ BOOL freerdp_input_send_keyboard_pause_event(rdpInput* input)
 	if (!input)
 		return FALSE;
 
+	INPUT_DEBUG("");
 	return IFCALLRESULT(TRUE, input->KeyboardPauseEvent, input);
 }
 

@@ -21,6 +21,11 @@ set(MODULE_PREFIX "FREERDP")
 # CMake modules includes
 include(FindCairo)
 
+option(WITH_DEBUG_INPUT "[DANGEROUS] Print all mouse/keyboard/synchronize events to log." OFF)
+if (WITH_DEBUG_INPUT)
+	add_definitions(-DWITH_DEBUG_INPUT)
+endif()
+
 # Create imported targets for Intel IPP libraries
 
 if(IPP_FOUND)
