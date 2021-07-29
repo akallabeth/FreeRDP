@@ -23,6 +23,7 @@
 
 #include <winpr/print.h>
 #include <winpr/bitstream.h>
+#include <winpr/assert.h>
 #include "../trio/trio.h"
 
 static const char* BYTE_BIT_STRINGS_LSB[256] = {
@@ -104,6 +105,9 @@ void BitDump(const char* tag, UINT32 level, const BYTE* buffer, UINT32 length, U
 	char pbuffer[64 * 8 + 1];
 	size_t pos = 0;
 	strs = (flags & BITDUMP_MSB_FIRST) ? BYTE_BIT_STRINGS_MSB : BYTE_BIT_STRINGS_LSB;
+
+	WINPR_ASSERT(tag);
+	WINPR_ASSERT(buffer || (length == 0));
 
 	for (i = 0; i < length; i += 8)
 	{
@@ -262,6 +266,9 @@ void BitStream_Write_Bits(wBitStream* bs, UINT32 bits, UINT32 nbits)
 
 void BitStream_Attach(wBitStream* bs, const BYTE* buffer, UINT32 capacity)
 {
+	WINPR_ASSERT(bs);
+	WINPR_ASSERT(buffer || (capacity == 0));
+
 	bs->position = 0;
 	bs->buffer = buffer;
 	bs->offset = 0;
@@ -271,7 +278,13 @@ void BitStream_Attach(wBitStream* bs, const BYTE* buffer, UINT32 capacity)
 	bs->length = bs->capacity * 8;
 }
 
-wBitStream* BitStream_New()
+void BitStream_Detach(wBitStream* bs)
+{
+	WINPR_ASSERT(bs);
+	memset(bs, 0, sizeof(wBitStream));
+}
+
+wBitStream* BitStream_New(void)
 {
 	wBitStream* bs = NULL;
 	bs = (wBitStream*)calloc(1, sizeof(wBitStream));
