@@ -25,13 +25,6 @@
 
 #include <freerdp/codec/bulk.h>
 
-#define ZGFX_SEGMENTED_SINGLE 0xE0
-#define ZGFX_SEGMENTED_MULTIPART 0xE1
-
-#define ZGFX_PACKET_COMPR_TYPE_RDP8 0x04
-
-#define ZGFX_SEGMENTED_MAXSIZE 65535
-
 typedef struct _ZGFX_CONTEXT ZGFX_CONTEXT;
 
 #ifdef __cplusplus

@@ -103,7 +103,7 @@ static UINT rdpgfx_server_packet_send(RdpgfxServerContext* context, wStream* s)
 	/* Allocate new stream with enough capacity. Additional overhead is
 	 * descriptor (1 bytes) + segmentCount (2 bytes) + uncompressedSize (4 bytes)
 	 * + segmentCount * size (4 bytes) */
-	fs = Stream_New(NULL, SrcSize + 7 + (SrcSize / ZGFX_SEGMENTED_MAXSIZE + 1) * 4);
+	fs = Stream_New(NULL, SrcSize + 7 + SrcSize * 4);
 
 	if (!fs)
 	{
