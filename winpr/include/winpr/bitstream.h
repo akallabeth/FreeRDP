@@ -172,6 +172,7 @@ extern "C"
 	                       UINT32 flags);
 	WINPR_API UINT32 ReverseBits32(UINT32 bits, UINT32 nbits);
 
+	WINPR_API BOOL BitStream_Compare(wBitStream* bs, const BYTE* buffer, UINT32 bits);
 	WINPR_API void BitStream_Attach(wBitStream* bs, const BYTE* buffer, UINT32 capacity);
 	WINPR_API void BitStream_Detach(wBitStream* bs);
 

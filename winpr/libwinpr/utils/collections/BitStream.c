@@ -264,6 +264,25 @@ void BitStream_Write_Bits(wBitStream* bs, UINT32 bits, UINT32 nbits)
 
 #endif
 
+BOOL BitStream_Compare(wBitStream* bs, const BYTE* buffer, UINT32 bits)
+{
+	size_t blen = bits / 8;
+	size_t brem = bits % 8;
+	WINPR_ASSERT(bs);
+	WINPR_ASSERT(buffer);
+	WINPR_ASSERT(bits > 0);
+	if (BitStream_GetRemainingLength(bs) < bits)
+		return FALSE;
+	if (blen > 0)
+	{
+		if (memcmp(bs->pointer, buffer, blen) != 0)
+			return FALSE;
+	}
+
+	// TODO
+	return TRUE;
+}
+
 void BitStream_Attach(wBitStream* bs, const BYTE* buffer, UINT32 capacity)
 {
 	WINPR_ASSERT(bs);
