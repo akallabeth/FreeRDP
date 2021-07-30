@@ -47,6 +47,16 @@ if((CMAKE_SYSTEM_NAME MATCHES "WindowsStore") AND (CMAKE_SYSTEM_VERSION MATCHES 
 	set(CMAKE_WINDOWS_VERSION "WIN10")
 endif()
 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.9.0")
+    cmake_policy(SET CMP0069 NEW)
+	include(CheckIPOSupported)
+	check_ipo_supported(RESULT result OUTPUT output)
+	if (result)
+		message("CMake LTO supported")
+		set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+	endif()
+endif()
+
 # Check for cmake compatibility (enable/disable features)
 include(CheckCmakeCompat)
 
