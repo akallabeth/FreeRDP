@@ -79,7 +79,8 @@ struct _ZGFX_CONTEXT
 	UINT32 HistoryIndex;
 	UINT32 HistoryBufferSize;
 
-	wBitStream* bs;
+	wBitStream* bs_in;
+	wBitStream* bs_out;
 };
 
 static const ZGFX_TOKEN ZGFX_TOKEN_TABLE[] = {
@@ -483,28 +484,208 @@ static size_t zgfx_token_match(const ZGFX_TOKEN* token, wBitStream* bs)
 
 	WINPR_ASSERT(token);
 	WINPR_ASSERT(bs);
-
-	if (!BitStream_Compare(bs, token->valueBits))
-		return 0;
-
+	/*
+	    if (!BitStream_Compare(bs, token->valueBits))
+	        return 0;
+	*/
 	return token->valueBits;
+}
+
+static BYTE match_length_bits(size_t length)
+{
+	WINPR_ASSERT(length >= 3);
+	WINPR_ASSERT(length <= 65536);
+
+	if (length == 3)
+		return 0;
+	else if ((length >= 4) && (length <= 7))
+		return 2;
+	else if (length <= 15)
+		return 3;
+	else if (length <= 31)
+		return 4;
+	else if (length <= 63)
+		return 5;
+	else if (length <= 127)
+		return 6;
+	else if (length <= 255)
+		return 7;
+	else if (length <= 511)
+		return 8;
+	else if (length <= 1023)
+		return 9;
+	else if (length <= 2047)
+		return 10;
+	else if (length <= 4095)
+		return 11;
+	else if (length <= 8191)
+		return 12;
+	else if (length <= 16383)
+		return 13;
+	else if (length <= 32767)
+		return 14;
+	else if (length <= 65535)
+		return 15;
+	else
+		return 0xff;
+}
+
+static BYTE prefix_match(size_t length)
+{
+	if ((length >= 1) && (length <= 31))
+		return 17;
+	else if (length <= 159)
+		return 18;
+	else if (length <= 671)
+		return 19;
+	else if (length <= 1695)
+		return 20;
+	else if (length <= 5791)
+		return 21;
+	else if (length <= 22175)
+		return 44;
+	else if (length <= 54943)
+		return 45;
+	else if (length <= 317087)
+		return 92;
+	else if (length <= 1365663)
+		return 93;
+	else if (length <= 2414239)
+		return 188;
+	else if (length <= 2500000)
+		return 189;
+	else
+		return 0;
+}
+
+static BOOL prefix_reserved(wBitStream* bs, BYTE value)
+{
+	WINPR_ASSERT(bs);
+	switch (value)
+	{
+		case 0x00:
+			BitStream_Write_Bits(bs, 24, 5);
+			return TRUE;
+		case 0x01:
+			BitStream_Write_Bits(bs, 25, 5);
+			return TRUE;
+		case 0x02:
+			BitStream_Write_Bits(bs, 52, 6);
+			return TRUE;
+		case 0x03:
+			BitStream_Write_Bits(bs, 53, 6);
+			return TRUE;
+		case 0xFF:
+			BitStream_Write_Bits(bs, 54, 6);
+			return TRUE;
+		case 0x04:
+			BitStream_Write_Bits(bs, 110, 7);
+			return TRUE;
+		case 0x05:
+			BitStream_Write_Bits(bs, 111, 7);
+			return TRUE;
+		case 0x06:
+			BitStream_Write_Bits(bs, 112, 7);
+			return TRUE;
+		case 0x07:
+			BitStream_Write_Bits(bs, 113, 7);
+			return TRUE;
+		case 0x08:
+			BitStream_Write_Bits(bs, 114, 7);
+			return TRUE;
+		case 0x09:
+			BitStream_Write_Bits(bs, 115, 7);
+			return TRUE;
+		case 0x0a:
+			BitStream_Write_Bits(bs, 116, 7);
+			return TRUE;
+		case 0x0b:
+			BitStream_Write_Bits(bs, 117, 7);
+			return TRUE;
+		case 0x3a:
+			BitStream_Write_Bits(bs, 118, 7);
+			return TRUE;
+		case 0x3b:
+			BitStream_Write_Bits(bs, 119, 7);
+			return TRUE;
+		case 0x3c:
+			BitStream_Write_Bits(bs, 120, 7);
+			return TRUE;
+		case 0x3d:
+			BitStream_Write_Bits(bs, 121, 7);
+			return TRUE;
+		case 0x3e:
+			BitStream_Write_Bits(bs, 122, 7);
+			return TRUE;
+		case 0x3f:
+			BitStream_Write_Bits(bs, 123, 7);
+			return TRUE;
+		case 0x40:
+			BitStream_Write_Bits(bs, 124, 7);
+			return TRUE;
+		case 0x80:
+			BitStream_Write_Bits(bs, 125, 7);
+			return TRUE;
+		case 0x0c:
+			BitStream_Write_Bits(bs, 252, 8);
+			return TRUE;
+		case 0x38:
+			BitStream_Write_Bits(bs, 253, 8);
+			return TRUE;
+		case 0x39:
+			BitStream_Write_Bits(bs, 254, 8);
+			return TRUE;
+		case 0x66:
+			BitStream_Write_Bits(bs, 255, 8);
+			return TRUE;
+		default:
+			return 0;
+	}
+}
+
+static BOOL write_nine_bit_encoding(wBitStream* bs, BYTE byte)
+{
+	WINPR_ASSERT(bs);
+
+	/* First check if the 9bit representation of the byte is reserved.
+	 * if it is, return the escaped version. */
+	if (prefix_reserved(bs, byte))
+		return TRUE;
+
+	// TODO: detect match
+	BitStream_Write_Bits(bs, 0, 1);
+	BitStream_Write_Bits(bs, byte, 8);
+	return TRUE;
 }
 
 static BOOL zgfx_compress_segment_output(ZGFX_CONTEXT* zgfx, wStream* s, const BYTE* pSrcData,
                                          UINT32 SrcSize)
 {
+	size_t length, filler;
 	WINPR_ASSERT(zgfx);
-	WINPR_ASSERT(zgfx->bs);
+	WINPR_ASSERT(zgfx->bs_in);
+	WINPR_ASSERT(zgfx->bs_out);
 	WINPR_ASSERT(s);
 	WINPR_ASSERT(pSrcData);
 	WINPR_ASSERT(SrcSize > 0);
 	WINPR_ASSERT(SrcSize <= ZGFX_SEGMENTED_MAXSIZE);
 
-	BitStream_Attach(zgfx->bs, pSrcData, SrcSize);
+	/* Ensure our output buffer can hold the input data.
+	 * Since LZ77 compression sometimes results in larger data
+	 * use twice the input size as the maximum overhead is bound
+	 * to less than that. */
+	if (!Stream_EnsureRemainingCapacity(s, 2 * SrcSize))
+		return FALSE;
 
-	while (bits > 0)
+	BitStream_Attach(zgfx->bs_in, pSrcData, SrcSize);
+	BitStream_Attach(zgfx->bs_out, Stream_Pointer(s), Stream_GetRemainingCapacity(s));
+
+	length = BitStream_GetRemainingLength(zgfx->bs_in);
+	while (length > 0)
 	{
+		UINT32 accumulator;
 		size_t opIndex;
+
 		/*
 		struct _ZGFX_TOKEN
 		{
@@ -523,18 +704,69 @@ static BOOL zgfx_compress_segment_output(ZGFX_CONTEXT* zgfx, wStream* s, const B
 			const ZGFX_TOKEN* token = &ZGFX_TOKEN_TABLE[opIndex];
 			WINPR_ASSERT(token->prefixLength > 0);
 
-			size_t match = zgfx_token_match(token, zgfx->bs);
-			if (match > 0)
-			{
-				bits -= match;
-			}
-			else
-			{
-			}
 		}
+
+		BitStream_Fetch(zgfx->bs_in);
+		accumulator = BitStream_Accumulator(zgfx->bs_in);
+		if (length >= 32)
+		{
+			if (!write_nine_bit_encoding(zgfx->bs_out, accumulator >> 24))
+				return FALSE;
+			if (!write_nine_bit_encoding(zgfx->bs_out, accumulator >> 16))
+				return FALSE;
+			if (!write_nine_bit_encoding(zgfx->bs_out, accumulator >> 8))
+				return FALSE;
+			if (!write_nine_bit_encoding(zgfx->bs_out, accumulator))
+				return FALSE;
+			BitStream_Shift(zgfx->bs_in, 32);
+		}
+		else if (length >= 24)
+		{
+			if (!write_nine_bit_encoding(zgfx->bs_out, accumulator >> 16))
+				return FALSE;
+			if (!write_nine_bit_encoding(zgfx->bs_out, accumulator >> 8))
+				return FALSE;
+			if (!write_nine_bit_encoding(zgfx->bs_out, accumulator))
+				return FALSE;
+			BitStream_Shift(zgfx->bs_in, 24);
+		}
+		else if (length >= 16)
+		{
+			if (!write_nine_bit_encoding(zgfx->bs_out, accumulator >> 8))
+				return FALSE;
+			if (!write_nine_bit_encoding(zgfx->bs_out, accumulator))
+				return FALSE;
+			BitStream_Shift(zgfx->bs_in, 16);
+		}
+		else if (length >= 8)
+		{
+			if (!write_nine_bit_encoding(zgfx->bs_out, accumulator))
+				return FALSE;
+			BitStream_Shift(zgfx->bs_in, 8);
+		}
+		else
+		{
+			accumulator <<= 8 - length;
+			if (!write_nine_bit_encoding(zgfx->bs_out, accumulator))
+				return FALSE;
+			BitStream_Shift(zgfx->bs_in, length);
+		}
+
+		length = BitStream_GetRemainingLength(zgfx->bs_in);
 	}
 
-	BitStream_Detach(zgfx->bs);
+	/* Fill up bitstream to next byte boundary,
+	 * followed by a byte with the amount of fillerbits
+	 */
+	length = BitStream_Position(zgfx->bs_out);
+	filler = length % 8;
+	if (filler > 0)
+		filler = 8 - filler;
+	BitStream_Write_Bits(zgfx->bs_out, 0, filler);
+	BitStream_Write_Bits(zgfx->bs_out, filler, 8);
+	length += filler;
+
+	Stream_Seek(s, (length / 8) + 1);
 
 	return TRUE;
 }
@@ -683,8 +915,11 @@ ZGFX_CONTEXT* zgfx_context_new(BOOL Compressor)
 		zgfx->HistoryBufferSize = sizeof(zgfx->HistoryBuffer);
 		if (zgfx->Compressor)
 		{
-			zgfx->bs = BitStream_New();
-			if (!zgfx->bs)
+			zgfx->bs_in = BitStream_New();
+			if (!zgfx->bs_in)
+				goto fail;
+			zgfx->bs_out = BitStream_New();
+			if (!zgfx->bs_out)
 				goto fail;
 		}
 		zgfx_context_reset(zgfx, FALSE);
@@ -699,7 +934,10 @@ fail:
 void zgfx_context_free(ZGFX_CONTEXT* zgfx)
 {
 	if (zgfx)
-		BitStream_Free(zgfx->bs);
+	{
+		BitStream_Free(zgfx->bs_in);
+		BitStream_Free(zgfx->bs_out);
+	}
 
 	free(zgfx);
 }

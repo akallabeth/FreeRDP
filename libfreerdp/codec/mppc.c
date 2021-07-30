@@ -129,9 +129,9 @@ int mppc_decompress(MPPC_CONTEXT* mppc, BYTE* pSrcData, UINT32 SrcSize, BYTE** p
 		return 1;
 	}
 
-	while ((bs->length - bs->position) >= 8)
+	while (BitStream_GetRemainingLength(bs) >= 8)
 	{
-		accumulator = bs->accumulator;
+		accumulator = BitStream_Accumulator(bs);
 
 		/**
 		 * Literal Encoding
@@ -254,7 +254,7 @@ int mppc_decompress(MPPC_CONTEXT* mppc, BYTE* pSrcData, UINT32 SrcSize, BYTE** p
 		/**
 		 * LengthOfMatch Encoding
 		 */
-		accumulator = bs->accumulator;
+		accumulator = BitStream_Accumulator(bs);
 
 		if ((accumulator & 0x80000000) == 0x00000000)
 		{
@@ -497,7 +497,7 @@ int mppc_compress(MPPC_CONTEXT* mppc, BYTE* pSrcData, UINT32 SrcSize, BYTE** ppD
 		    (&MatchPtr[1] > mppc->HistoryPtr) || (MatchPtr == HistoryBuffer) ||
 		    (MatchPtr == (HistoryPtr - 1)) || (MatchPtr == HistoryPtr))
 		{
-			if (((bs->position / 8) + 2) > (DstSize - 1))
+			if (((BitStream_Position(bs) / 8) + 2) > (DstSize - 1))
 			{
 				mppc_context_reset(mppc, TRUE);
 				*pFlags |= PACKET_FLUSHED;
@@ -546,7 +546,7 @@ int mppc_compress(MPPC_CONTEXT* mppc, BYTE* pSrcData, UINT32 SrcSize, BYTE** ppD
 
 			/* Encode CopyOffset */
 
-			if (((bs->position / 8) + 7) > (DstSize - 1))
+			if (((BitStream_Position(bs) / 8) + 7) > (DstSize - 1))
 			{
 				mppc_context_reset(mppc, TRUE);
 				*pFlags |= PACKET_FLUSHED;
@@ -706,7 +706,7 @@ int mppc_compress(MPPC_CONTEXT* mppc, BYTE* pSrcData, UINT32 SrcSize, BYTE** ppD
 
 	while (pSrcPtr <= pSrcEnd)
 	{
-		if (((bs->position / 8) + 2) > (DstSize - 1))
+		if (((BitStream_Position(bs) / 8) + 2) > (DstSize - 1))
 		{
 			mppc_context_reset(mppc, TRUE);
 			*pFlags |= PACKET_FLUSHED;
@@ -746,7 +746,7 @@ int mppc_compress(MPPC_CONTEXT* mppc, BYTE* pSrcData, UINT32 SrcSize, BYTE** ppD
 	if (PacketFlushed)
 		*pFlags |= PACKET_FLUSHED;
 
-	*pDstSize = ((bs->position + 7) / 8);
+	*pDstSize = ((BitStream_Position(bs) + 7) / 8);
 	mppc->HistoryPtr = HistoryPtr;
 	mppc->HistoryOffset = HistoryPtr - HistoryBuffer;
 	return 1;

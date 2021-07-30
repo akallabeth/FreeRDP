@@ -1062,7 +1062,7 @@ static INLINE INT16 progressive_rfx_srl_read(RFX_PROGRESSIVE_UPGRADE_STATE* stat
 	if (!state->mode)
 	{
 		/* zero encoding */
-		bit = (bs->accumulator & 0x80000000) ? 1 : 0;
+		bit = (BitStream_Accumulator(bs) & 0x80000000) ? 1 : 0;
 		BitStream_Shift(bs, 1);
 
 		if (!bit)
@@ -1085,8 +1085,8 @@ static INLINE INT16 progressive_rfx_srl_read(RFX_PROGRESSIVE_UPGRADE_STATE* stat
 
 			if (k)
 			{
-				bs->mask = ((1 << k) - 1);
-				state->nz = ((bs->accumulator >> (32 - k)) & bs->mask);
+				BitStream_SetMask(bs, ((1 << k) - 1));
+				state->nz = ((BitStream_Accumulator(bs) >> (32 - k)) & BitStream_Mask(bs));
 				BitStream_Shift(bs, k);
 			}
 
@@ -1101,7 +1101,7 @@ static INLINE INT16 progressive_rfx_srl_read(RFX_PROGRESSIVE_UPGRADE_STATE* stat
 	state->mode = 0; /* zero encoding is next */
 	/* unary encoding */
 	/* read sign bit */
-	sign = (bs->accumulator & 0x80000000) ? 1 : 0;
+	sign = (BitStream_Accumulator(bs) & 0x80000000) ? 1 : 0;
 	BitStream_Shift(bs, 1);
 
 	if (state->kp < 6)
@@ -1117,7 +1117,7 @@ static INLINE INT16 progressive_rfx_srl_read(RFX_PROGRESSIVE_UPGRADE_STATE* stat
 
 	while (mag < max)
 	{
-		bit = (bs->accumulator & 0x80000000) ? 1 : 0;
+		bit = (BitStream_Accumulator(bs) & 0x80000000) ? 1 : 0;
 		BitStream_Shift(bs, 1);
 
 		if (bit)
@@ -1140,12 +1140,12 @@ static INLINE int progressive_rfx_upgrade_state_finish(RFX_PROGRESSIVE_UPGRADE_S
 	srl = state->srl;
 	raw = state->raw;
 	/* Read trailing bits from RAW/SRL bit streams */
-	pad = (raw->position % 8) ? (8 - (raw->position % 8)) : 0;
+	pad = (BitStream_Position(raw) % 8) ? (8 - (BitStream_Position(raw) % 8)) : 0;
 
 	if (pad)
 		BitStream_Shift(raw, pad);
 
-	pad = (srl->position % 8) ? (8 - (srl->position % 8)) : 0;
+	pad = (BitStream_Position(srl) % 8) ? (8 - (BitStream_Position(srl) % 8)) : 0;
 
 	if (pad)
 		BitStream_Shift(srl, pad);
@@ -1173,8 +1173,8 @@ static INLINE int progressive_rfx_upgrade_block(RFX_PROGRESSIVE_UPGRADE_STATE* s
 	{
 		for (index = 0; index < length; index++)
 		{
-			raw->mask = ((1 << numBits) - 1);
-			input = (INT16)((raw->accumulator >> (32 - numBits)) & raw->mask);
+			BitStream_SetMask(raw, ((1 << numBits) - 1));
+			input = (INT16)((BitStream_Accumulator(raw) >> (32 - numBits)) & BitStream_Mask(raw));
 			BitStream_Shift(raw, numBits);
 			buffer[index] += (input << shift);
 		}
@@ -1187,15 +1187,15 @@ static INLINE int progressive_rfx_upgrade_block(RFX_PROGRESSIVE_UPGRADE_STATE* s
 		if (sign[index] > 0)
 		{
 			/* sign > 0, read from raw */
-			raw->mask = ((1 << numBits) - 1);
-			input = (INT16)((raw->accumulator >> (32 - numBits)) & raw->mask);
+			BitStream_SetMask(raw, ((1 << numBits) - 1));
+			input = (INT16)((BitStream_Accumulator(raw) >> (32 - numBits)) & BitStream_Mask(raw));
 			BitStream_Shift(raw, numBits);
 		}
 		else if (sign[index] < 0)
 		{
 			/* sign < 0, read from raw */
-			raw->mask = ((1 << numBits) - 1);
-			input = (INT16)((raw->accumulator >> (32 - numBits)) & raw->mask);
+			BitStream_SetMask(raw, ((1 << numBits) - 1));
+			input = (INT16)((BitStream_Accumulator(raw) >> (32 - numBits)) & BitStream_Mask(raw));
 			BitStream_Shift(raw, numBits);
 			input *= -1;
 		}
@@ -1280,8 +1280,8 @@ static INLINE int progressive_rfx_upgrade_component(
 	rc = progressive_rfx_upgrade_state_finish(&state);
 	if (rc < 0)
 		return rc;
-	aRawLen = (state.raw->position + 7) / 8;
-	aSrlLen = (state.srl->position + 7) / 8;
+	aRawLen = (BitStream_Position(state.raw) + 7) / 8;
+	aSrlLen = (BitStream_Position(state.srl) + 7) / 8;
 
 	if ((aRawLen != rawLen) || (aSrlLen != srlLen))
 	{
@@ -1297,9 +1297,10 @@ static INLINE int progressive_rfx_upgrade_component(
 		WLog_Print(progressive->log, WLOG_INFO,
 		           "RAW: %" PRIu32 "/%" PRIu32 " %d%% (%" PRIu32 "/%" PRIu32 ":%" PRIu32
 		           ")\tSRL: %" PRIu32 "/%" PRIu32 " %d%% (%" PRIu32 "/%" PRIu32 ":%" PRIu32 ")",
-		           aRawLen, rawLen, pRawLen, state.raw->position, rawLen * 8,
-		           (rawLen * 8) - state.raw->position, aSrlLen, srlLen, pSrlLen,
-		           state.srl->position, srlLen * 8, (srlLen * 8) - state.srl->position);
+		           aRawLen, rawLen, pRawLen, BitStream_Position(state.raw), rawLen * 8,
+		           (rawLen * 8) - BitStream_Position(state.raw), aSrlLen, srlLen, pSrlLen,
+		           BitStream_Position(state.srl), srlLen * 8,
+		           (srlLen * 8) - BitStream_Position(state.srl));
 		return -1;
 	}
 

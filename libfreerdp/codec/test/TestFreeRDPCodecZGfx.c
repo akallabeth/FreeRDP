@@ -255,10 +255,10 @@ int TestFreeRDPCodecZGfx(int argc, char* argv[])
 	for (x = 0; x < ARRAYSIZE(flags); x++)
 	{
 		UINT32 flag = flags[x];
-
-		if (test_ZGfxCompressFox(flag) < 0)
-			return -1;
-
+		/*
+		        if (test_ZGfxCompressFox(flag) < 0)
+		            return -1;
+		*/
 		if (test_ZGfxDecompressFoxSingle(flag) < 0)
 			return -1;
 

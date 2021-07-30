@@ -185,7 +185,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 
 			/* count number of leading 0s */
 
-			cnt = lzcnt_s(bs->accumulator);
+			cnt = lzcnt_s(BitStream_Accumulator(bs));
 
 			nbits = BitStream_GetRemainingLength(bs);
 
@@ -198,7 +198,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 			{
 				BitStream_Shift32(bs);
 
-				cnt = lzcnt_s(bs->accumulator);
+				cnt = lzcnt_s(BitStream_Accumulator(bs));
 
 				nbits = BitStream_GetRemainingLength(bs);
 
@@ -234,8 +234,8 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 			if (BitStream_GetRemainingLength(bs) < k)
 				break;
 
-			bs->mask = ((1 << k) - 1);
-			run += ((bs->accumulator >> (32 - k)) & bs->mask);
+			BitStream_SetMask(bs, ((1 << k) - 1));
+			run += ((BitStream_Accumulator(bs) >> (32 - k)) & BitStream_Mask(bs));
 			BitStream_Shift(bs, k);
 
 			/* read sign bit */
@@ -243,12 +243,12 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 			if (BitStream_GetRemainingLength(bs) < 1)
 				break;
 
-			sign = (bs->accumulator & 0x80000000) ? 1 : 0;
+			sign = (BitStream_Accumulator(bs) & 0x80000000) ? 1 : 0;
 			BitStream_Shift(bs, 1);
 
 			/* count number of leading 1s */
 
-			cnt = lzcnt_s(~(bs->accumulator));
+			cnt = lzcnt_s(~(BitStream_Accumulator(bs)));
 
 			nbits = BitStream_GetRemainingLength(bs);
 
@@ -261,7 +261,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 			{
 				BitStream_Shift32(bs);
 
-				cnt = lzcnt_s(~(bs->accumulator));
+				cnt = lzcnt_s(~(BitStream_Accumulator(bs)));
 
 				nbits = BitStream_GetRemainingLength(bs);
 
@@ -283,9 +283,9 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 			if (BitStream_GetRemainingLength(bs) < kr)
 				break;
 
-			bs->mask = ((1 << kr) - 1);
+			BitStream_SetMask(bs, ((1 << kr) - 1));
 			if (kr > 0)
-				code = (UINT16)((bs->accumulator >> (32 - kr)) & bs->mask);
+				code = (UINT16)((BitStream_Accumulator(bs) >> (32 - kr)) & BitStream_Mask(bs));
 			else
 				code = 0;
 			BitStream_Shift(bs, kr);
@@ -359,7 +359,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 
 			/* count number of leading 1s */
 
-			cnt = lzcnt_s(~(bs->accumulator));
+			cnt = lzcnt_s(~(BitStream_Accumulator(bs)));
 
 			nbits = BitStream_GetRemainingLength(bs);
 
@@ -372,7 +372,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 			{
 				BitStream_Shift32(bs);
 
-				cnt = lzcnt_s(~(bs->accumulator));
+				cnt = lzcnt_s(~(BitStream_Accumulator(bs)));
 
 				nbits = BitStream_GetRemainingLength(bs);
 
@@ -394,9 +394,9 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 			if (BitStream_GetRemainingLength(bs) < kr)
 				break;
 
-			bs->mask = ((1 << kr) - 1);
+			BitStream_SetMask(bs, ((1 << kr) - 1));
 			if (kr > 0)
-				code = (UINT16)((bs->accumulator >> (32 - kr)) & bs->mask);
+				code = (UINT16)((BitStream_Accumulator(bs) >> (32 - kr)) & BitStream_Mask(bs));
 			else
 				code = 0;
 			BitStream_Shift(bs, kr);
@@ -484,9 +484,9 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 				if (BitStream_GetRemainingLength(bs) < nIdx)
 					break;
 
-				bs->mask = ((1 << nIdx) - 1);
+				BitStream_SetMask(bs, ((1 << nIdx) - 1));
 				if (nIdx > 0)
-					val1 = ((bs->accumulator >> (32 - nIdx)) & bs->mask);
+					val1 = ((BitStream_Accumulator(bs) >> (32 - nIdx)) & BitStream_Mask(bs));
 				else
 					val1 = 0;
 				BitStream_Shift(bs, nIdx);
