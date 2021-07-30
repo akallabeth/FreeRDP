@@ -41,6 +41,14 @@
  * Maximum expansion of a segment (when compressed size exceeds uncompressed): 1000 bytes
  * Minimum match length: 3 bytes
  */
+#define ZGFX_SEGMENTED_SINGLE 0xE0
+#define ZGFX_SEGMENTED_MULTIPART 0xE1
+
+#define ZGFX_PACKET_COMPR_TYPE_RDP8 0x04
+
+#define ZGFX_SEGMENTED_MAXSIZE 65535
+
+#define CompressionTypeMask 0x0F
 
 struct _ZGFX_TOKEN
 {
@@ -452,6 +460,79 @@ fail:
 	return status;
 }
 
+static size_t zgfx_token_match(const ZGFX_TOKEN* token, const BYTE* src, size_t SrcSize,
+                               size_t bit_offset)
+{
+	size_t len;
+	size_t pos = 0;
+	size_t bit_size = SrcSize * 8 - bit_offset;
+	WINPR_ASSERT(token);
+	WINPR_ASSERT(src);
+	WINPR_ASSERT(SrcSize > 0);
+	len = token->valueBits;
+	while (len > 8)
+	{
+		BYTE val = (*src++ << bit_offset);
+		SrcSize--;
+		if ((SrcSize == 0) && (bit_offset > 0))
+			return 0;
+		val |= ((*src >> bit_offset) & 0xFF);
+
+		if ((token->valueBase & val) != token->valueBase)
+			return 0;
+
+		pos += 8;
+		bit_size -= 8;
+	}
+
+	if (bit_size > 0)
+	{
+		BYTE val = (*src++ << bit_offset);
+		if ((token->valueBase & val) != token->valueBase)
+			return 0;
+	}
+
+	return token->valueBits;
+}
+
+static BOOL zgfx_compress_segment_output(ZGFX_CONTEXT* zgfx, wStream* s, const BYTE* pSrcData,
+                                         UINT32 SrcSize)
+{
+	size_t bits = 8u * SrcSize;
+	const BYTE* src = pSrcData;
+	while (bits > 0)
+	{
+		size_t opIndex;
+		/*
+		struct _ZGFX_TOKEN
+		{
+		    UINT32 prefixLength;
+		    UINT32 prefixCode;
+		    UINT32 valueBits;
+		    UINT32 tokenType;
+		    UINT32 valueBase;
+		};
+		*/
+
+		// Scan the token table, considering more bits as needed,
+		// until the resulting token is found.
+		for (opIndex = 0; opIndex < ARRAYSIZE(ZGFX_TOKEN_TABLE); opIndex++)
+		{
+			const ZGFX_TOKEN* token = &ZGFX_TOKEN_TABLE[opIndex];
+			size_t match = zgfx_token_match(token, src, SrcSize, bits % 8);
+			if (match > 0)
+			{
+				bits -= match;
+			}
+			else
+			{
+			}
+		}
+	}
+
+	return TRUE;
+}
+
 static BOOL zgfx_compress_segment(ZGFX_CONTEXT* zgfx, wStream* s, const BYTE* pSrcData,
                                   UINT32 SrcSize, UINT32* pFlags)
 {
@@ -464,8 +545,14 @@ static BOOL zgfx_compress_segment(ZGFX_CONTEXT* zgfx, wStream* s, const BYTE* pS
 
 	(*pFlags) |= ZGFX_PACKET_COMPR_TYPE_RDP8; /* RDP 8.0 compression format */
 	Stream_Write_UINT8(s, (*pFlags));         /* header (1 byte) */
-	Stream_Write(s, pSrcData, SrcSize);
-	return TRUE;
+	if (((*pFlags) & PACKET_COMPRESSED) == 0)
+	{
+		/* Uncompressed data */
+		Stream_Write(s, pSrcData, SrcSize);
+		return TRUE;
+	}
+	else
+		return zgfx_compress_segment_output(zgfx, s, pSrcData, SrcSize);
 }
 
 int zgfx_compress_to_stream(ZGFX_CONTEXT* zgfx, wStream* sDst, const BYTE* pUncompressed,

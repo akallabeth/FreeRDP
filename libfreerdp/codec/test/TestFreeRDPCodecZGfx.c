@@ -23,11 +23,10 @@ static const BYTE TEST_FOX_DATA_MULTIPART[] =
     "\x00\x00\x24\x39\x08\x0E\x91\xF8\xD8\x61\x3D\x1E\x44\x06\x43\x79"
     "\x9C\x02";
 
-static int test_ZGfxCompressFox(void)
+static int test_ZGfxCompressFox(UINT32 Flags)
 {
 	int rc = -1;
 	int status;
-	UINT32 Flags;
 	BYTE* pSrcData = NULL;
 	UINT32 SrcSize;
 	UINT32 DstSize;
@@ -41,7 +40,6 @@ static int test_ZGfxCompressFox(void)
 
 	SrcSize = sizeof(TEST_FOX_DATA) - 1;
 	pSrcData = (BYTE*)TEST_FOX_DATA;
-	Flags = 0;
 	expectedSize = sizeof(TEST_FOX_DATA_SINGLE) - 1;
 	status = zgfx_compress(zgfx, pSrcData, SrcSize, &pDstData, &DstSize, &Flags);
 
@@ -75,11 +73,10 @@ fail:
 	return rc;
 }
 
-static int test_ZGfxDecompressFoxSingle(void)
+static int test_ZGfxDecompressFoxSingle(UINT32 Flags)
 {
 	int rc = -1;
 	int status;
-	UINT32 Flags;
 	BYTE* pSrcData;
 	UINT32 SrcSize;
 	UINT32 DstSize;
@@ -93,7 +90,6 @@ static int test_ZGfxDecompressFoxSingle(void)
 
 	SrcSize = sizeof(TEST_FOX_DATA_SINGLE) - 1;
 	pSrcData = (BYTE*)TEST_FOX_DATA_SINGLE;
-	Flags = 0;
 	expectedSize = sizeof(TEST_FOX_DATA) - 1;
 	status = zgfx_decompress(zgfx, pSrcData, SrcSize, &pDstData, &DstSize, Flags);
 
@@ -127,11 +123,10 @@ fail:
 	return rc;
 }
 
-static int test_ZGfxDecompressFoxMultipart(void)
+static int test_ZGfxDecompressFoxMultipart(UINT32 Flags)
 {
 	int rc = -1;
 	int status;
-	UINT32 Flags;
 	BYTE* pSrcData;
 	UINT32 SrcSize;
 	UINT32 DstSize;
@@ -145,7 +140,6 @@ static int test_ZGfxDecompressFoxMultipart(void)
 
 	SrcSize = sizeof(TEST_FOX_DATA_MULTIPART) - 1;
 	pSrcData = (BYTE*)TEST_FOX_DATA_MULTIPART;
-	Flags = 0;
 	expectedSize = sizeof(TEST_FOX_DATA) - 1;
 	status = zgfx_decompress(zgfx, pSrcData, SrcSize, &pDstData, &DstSize, Flags);
 
@@ -179,11 +173,11 @@ fail:
 	return rc;
 }
 
-static int test_ZGfxCompressConsistent(void)
+static int test_ZGfxCompressConsistent(UINT32 Flags)
 {
 	int rc = -1;
 	int status;
-	UINT32 Flags;
+
 	BYTE* pSrcData;
 	UINT32 SrcSize;
 	UINT32 DstSize;
@@ -203,7 +197,6 @@ static int test_ZGfxCompressConsistent(void)
 	/* Compress */
 	expectedSize = SrcSize = sizeof(BigBuffer);
 	pSrcData = (BYTE*)BigBuffer;
-	Flags = 0;
 	status = zgfx_compress(zgfx, pSrcData, SrcSize, &pDstData2, &DstSize2, &Flags);
 
 	if (status < 0)
@@ -254,20 +247,27 @@ fail:
 
 int TestFreeRDPCodecZGfx(int argc, char* argv[])
 {
+	UINT32 flags[] = { 0, PACKET_COMPRESSED };
+	size_t x;
 	WINPR_UNUSED(argc);
 	WINPR_UNUSED(argv);
 
-	if (test_ZGfxCompressFox() < 0)
-		return -1;
+	for (x = 0; x < ARRAYSIZE(flags); x++)
+	{
+		UINT32 flag = flags[x];
 
-	if (test_ZGfxDecompressFoxSingle() < 0)
-		return -1;
+		if (test_ZGfxCompressFox(flag) < 0)
+			return -1;
 
-	if (test_ZGfxDecompressFoxMultipart() < 0)
-		return -1;
+		if (test_ZGfxDecompressFoxSingle(flag) < 0)
+			return -1;
 
-	if (test_ZGfxCompressConsistent() < 0)
-		return -1;
+		if (test_ZGfxDecompressFoxMultipart(flag) < 0)
+			return -1;
+
+		if (test_ZGfxCompressConsistent(flag) < 0)
+			return -1;
+	}
 
 	return 0;
 }

@@ -76,6 +76,16 @@ extern "C"
 #define GATEWAY_MESSAGE_CONSENT 1
 #define GATEWAY_MESSAGE_SERVICE 2
 
+	typedef enum
+	{
+		AUTH_NLA,
+		AUTH_TLS,
+		AUTH_RDP,
+		GW_AUTH_HTTP,
+		GW_AUTH_RDG,
+		GW_AUTH_RPC
+	} rdp_auth_reason;
+
 	typedef BOOL (*pContextNew)(freerdp* instance, rdpContext* context);
 	typedef void (*pContextFree)(freerdp* instance, rdpContext* context);
 
@@ -84,6 +94,8 @@ extern "C"
 	typedef void (*pPostDisconnect)(freerdp* instance);
 	typedef BOOL (*pAuthenticate)(freerdp* instance, char** username, char** password,
 	                              char** domain);
+	typedef BOOL (*pAuthenticateEx)(freerdp* instance, char** username, char** password,
+	                                char** domain, rdp_auth_reason reason);
 
 	/** @brief Callback used if user interaction is required to accept
 	 *         an unknown certificate.
@@ -429,7 +441,15 @@ fingerprint. DEPRECATED: Use VerifyChangedCertificateEx */
 		    VerifyChangedCertificateEx; /**< (offset 67)
 		                         Callback for changed certificate validation.
 		                         Used when a certificate differs from stored fingerprint. */
-		UINT64 paddingE[80 - 68];       /* 68 */
+		ALIGN64 pAuthenticateEx AuthenticateEx;        /**< (offset 68)
+		                                        Callback for authentication.
+		                                        It is used to get the username/password. The reason
+		                                        argument tells why it was called.  */
+		ALIGN64 pAuthenticateEx GatewayAuthenticateEx; /**< (offset 69)
+		                                 Callback for gateway authentication.
+		                                 It is used to get the username/password. The reason
+		                                 argument tells why it was called. */
+		UINT64 paddingE[80 - 70];                      /* 70 */
 	};
 
 	struct rdp_channel_handles
