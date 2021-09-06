@@ -21,6 +21,7 @@
 #define FREERDP_LOCALE_KEYBOARD_RDP_SCANCODE_H
 
 #include <winpr/input.h>
+#include <freerdp/api.h>
 
 /* @msdn{cc240584} says:
  * "... (a scancode is an 8-bit value specifying a key location on the keyboard).
@@ -234,4 +235,14 @@
 #define RDP_SCANCODE_LAUNCH_APP1 MAKE_RDP_SCANCODE(0x6E, TRUE) /* VK_LAUNCH_APP1 */
 #define RDP_SCANCODE_LAUNCH_APP2 MAKE_RDP_SCANCODE(0x6F, TRUE) /* VK_LAUNCH_APP2 */
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+	FREERDP_API const char* freerdp_scancode_to_string(DWORD scancode);
+
+#ifdef __cplusplus
+}
+#endif
 #endif /* FREERDP_LOCALE_KEYBOARD_RDP_SCANCODE_H */
