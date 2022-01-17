@@ -79,16 +79,8 @@ void tf_OnChannelConnectedEventHandler(void* context, ChannelConnectedEventArgs*
 
 	WINPR_ASSERT(tf);
 	WINPR_ASSERT(e);
-	if (strcmp(e->name, RDPEI_DVC_CHANNEL_NAME) == 0)
-	{
-		tf->rdpei = (RdpeiClientContext*)e->pInterface;
-	}
-	else if (strcmp(e->name, RDPGFX_DVC_CHANNEL_NAME) == 0)
-	{
-		RdpgfxClientContext* gfx = (RdpgfxClientContext*)e->pInterface;
-		gdi_graphics_pipeline_init(tf->context.gdi, gfx);
-	}
-	else if (strcmp(e->name, RAIL_SVC_CHANNEL_NAME) == 0)
+
+	if (strcmp(e->name, RAIL_SVC_CHANNEL_NAME) == 0)
 	{
 	}
 	else if (strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) == 0)
@@ -101,6 +93,8 @@ void tf_OnChannelConnectedEventHandler(void* context, ChannelConnectedEventArgs*
 	{
 		tf_encomsp_init(tf, (EncomspClientContext*)e->pInterface);
 	}
+	else
+		freerdp_client_OnChannelConnectedEventHandler(context, e);
 }
 
 void tf_OnChannelDisconnectedEventHandler(void* context, ChannelDisconnectedEventArgs* e)
@@ -109,15 +103,8 @@ void tf_OnChannelDisconnectedEventHandler(void* context, ChannelDisconnectedEven
 
 	WINPR_ASSERT(tf);
 	WINPR_ASSERT(e);
-	if (strcmp(e->name, RDPEI_DVC_CHANNEL_NAME) == 0)
-	{
-		tf->rdpei = NULL;
-	}
-	else if (strcmp(e->name, RDPGFX_DVC_CHANNEL_NAME) == 0)
-	{
-		gdi_graphics_pipeline_uninit(tf->context.gdi, (RdpgfxClientContext*)e->pInterface);
-	}
-	else if (strcmp(e->name, RAIL_SVC_CHANNEL_NAME) == 0)
+
+	if (strcmp(e->name, RAIL_SVC_CHANNEL_NAME) == 0)
 	{
 	}
 	else if (strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) == 0)
@@ -130,4 +117,6 @@ void tf_OnChannelDisconnectedEventHandler(void* context, ChannelDisconnectedEven
 	{
 		tf_encomsp_uninit(tf, (EncomspClientContext*)e->pInterface);
 	}
+	else
+		freerdp_client_OnChannelDisconnectedEventHandler(context, e);
 }
