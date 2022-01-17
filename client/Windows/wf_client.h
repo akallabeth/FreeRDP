@@ -78,7 +78,8 @@ extern "C"
 
 	struct wf_context
 	{
-		rdpClientContext common;
+		rdpContext context;
+		HANDLE thread;
 
 		int offset_x;
 		int offset_y;
