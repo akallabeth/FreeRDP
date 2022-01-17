@@ -124,7 +124,7 @@ extern "C"
 
 	FREERDP_API void
 	freerdp_client_OnChannelConnectedEventHandler(void* context,
-	                                              const ChannelConnectedEventArgs* e);
+												  const ChannelConnectedEventArgs* e);
 	FREERDP_API void
 	freerdp_client_OnChannelDisconnectedEventHandler(void* context,
 	                                                 const ChannelDisconnectedEventArgs* e);

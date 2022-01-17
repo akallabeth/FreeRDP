@@ -762,7 +762,6 @@ BOOL wf_scale_blt(wfContext* wfc, HDC hdc, int x, int y, int w, int h, HDC hdcSr
 static BOOL wf_scale_mouse_pos(wfContext* wfc, UINT16* x, UINT16* y)
 {
 	int ww, wh, dw, dh;
-	rdpContext* context;
 	rdpSettings* settings;
 
 	if (!wfc || !x || !y)
