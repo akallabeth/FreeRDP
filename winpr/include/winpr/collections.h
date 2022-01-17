@@ -27,6 +27,7 @@
 
 #include <winpr/winpr.h>
 #include <winpr/wtypes.h>
+#include <winpr/assert.h>
 
 #include <winpr/crt.h>
 #include <winpr/synch.h>
@@ -516,7 +517,8 @@ extern "C"
 #define DEFINE_EVENT_RAISE(_name)                                                                 \
 	static INLINE int PubSub_On##_name(wPubSub* pubSub, void* context, const _name##EventArgs* e) \
 	{                                                                                             \
-		return PubSub_OnEvent(pubSub, #_name, context, (const wEventArgs*)e);                     \
+		WINPR_ASSERT(e);                                                                          \
+		return PubSub_OnEvent(pubSub, #_name, context, &e->e);                                    \
 	}
 
 #define DEFINE_EVENT_SUBSCRIBE(_name)                                              \
