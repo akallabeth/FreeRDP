@@ -513,10 +513,10 @@ extern "C"
 #define DEFINE_EVENT_HANDLER(_name) \
 	typedef void (*p##_name##EventHandler)(void* context, const _name##EventArgs* e)
 
-#define DEFINE_EVENT_RAISE(_name)                                                           \
-	static INLINE int PubSub_On##_name(wPubSub* pubSub, void* context, _name##EventArgs* e) \
-	{                                                                                       \
-		return PubSub_OnEvent(pubSub, #_name, context, (wEventArgs*)e);                     \
+#define DEFINE_EVENT_RAISE(_name)                                                                 \
+	static INLINE int PubSub_On##_name(wPubSub* pubSub, void* context, const _name##EventArgs* e) \
+	{                                                                                             \
+		return PubSub_OnEvent(pubSub, #_name, context, (wEventArgs*)e);                           \
 	}
 
 #define DEFINE_EVENT_SUBSCRIBE(_name)                                              \
