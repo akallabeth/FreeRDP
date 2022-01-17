@@ -1035,10 +1035,9 @@ BOOL freerdp_client_send_wheel_event(rdpClientContext* cctx, UINT16 mflags)
 		cctx->ainput->AInputSendInputEvent(cctx->ainput, flags, x, y);
 	}
 	else
-#else
-	freerdp_input_send_mouse_event(cctx->context.input, mflags, 0, 0);
 #endif
-		return TRUE;
+		freerdp_input_send_mouse_event(cctx->context.input, mflags, 0, 0);
+	    return TRUE;
 }
 
 #if defined(CHANNEL_AINPUT_CLIENT)
@@ -1087,13 +1086,12 @@ BOOL freerdp_client_send_button_event(rdpClientContext* cctx, UINT16 mflags, UIN
 			ainput_send_diff_event(cctx, flags, x, y);
 		}
 		else
-#else
+#endif
 	    {
 			WINPR_ASSERT(x <= UINT16_MAX);
 			WINPR_ASSERT(y <= UINT16_MAX);
 			freerdp_input_send_mouse_event(cctx->context.input, mflags, (UINT16)x, (UINT16)y);
 		}
-#endif
 		    return TRUE;
 }
 
@@ -1119,11 +1117,10 @@ BOOL freerdp_client_send_extended_button_event(rdpClientContext* cctx, UINT16 mf
 			ainput_send_diff_event(cctx, flags, x, y);
 		}
 		else
-#else
-	    freerdp_input_send_extended_mouse_event(cctx->context.input, mflags, x, y);
 #endif
+		    freerdp_input_send_extended_mouse_event(cctx->context.input, mflags, x, y);
 
-		    return TRUE;
+	        return TRUE;
 }
 
 int freerdp_client_common_stop(rdpContext* context)
