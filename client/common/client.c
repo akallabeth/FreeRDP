@@ -1011,6 +1011,7 @@ BOOL freerdp_client_send_wheel_event(rdpClientContext* cctx, UINT16 mflags)
 {
 	WINPR_ASSERT(cctx);
 
+#if defined(CHANNEL_AINPUT_CLIENT)
 	if (cctx->ainput)
 	{
 		UINT64 flags = 0;
@@ -1034,10 +1035,13 @@ BOOL freerdp_client_send_wheel_event(rdpClientContext* cctx, UINT16 mflags)
 		cctx->ainput->AInputSendInputEvent(cctx->ainput, flags, x, y);
 	}
 	else
-		freerdp_input_send_mouse_event(cctx->context.input, mflags, 0, 0);
-	return TRUE;
+#else
+	freerdp_input_send_mouse_event(cctx->context.input, mflags, 0, 0);
+#endif
+		return TRUE;
 }
 
+#if defined(CHANNEL_AINPUT_CLIENT)
 static INLINE BOOL ainput_send_diff_event(rdpClientContext* cctx, UINT64 flags, INT32 x, INT32 y)
 {
 	UINT rc;
@@ -1056,15 +1060,16 @@ static INLINE BOOL ainput_send_diff_event(rdpClientContext* cctx, UINT64 flags, 
 
 	return rc == CHANNEL_RC_OK;
 }
+#endif
 
 BOOL freerdp_client_send_button_event(rdpClientContext* cctx, UINT16 mflags, UINT16 x, UINT16 y)
 {
-	{
 		WINPR_ASSERT(cctx);
 		WINPR_ASSERT(x >= 0);
 		WINPR_ASSERT(y >= 0);
 
-		if (cctx->ainput)
+#if defined(CHANNEL_AINPUT_CLIENT)
+	    if (cctx->ainput)
 		{
 			UINT64 flags = 0;
 
@@ -1082,22 +1087,23 @@ BOOL freerdp_client_send_button_event(rdpClientContext* cctx, UINT16 mflags, UIN
 			ainput_send_diff_event(cctx, flags, x, y);
 		}
 		else
-		{
+#else
+	    {
 			WINPR_ASSERT(x <= UINT16_MAX);
 			WINPR_ASSERT(y <= UINT16_MAX);
 			freerdp_input_send_mouse_event(cctx->context.input, mflags, (UINT16)x, (UINT16)y);
 		}
-		return TRUE;
-	}
+#endif
+		    return TRUE;
 }
 
 BOOL freerdp_client_send_extended_button_event(rdpClientContext* cctx, UINT16 mflags, UINT16 x,
                                                UINT16 y)
 {
-	{
 		WINPR_ASSERT(cctx);
 
-		if (cctx->ainput)
+#if defined(CHANNEL_AINPUT_CLIENT)
+	    if (cctx->ainput)
 		{
 			UINT64 flags = 0;
 
@@ -1113,9 +1119,11 @@ BOOL freerdp_client_send_extended_button_event(rdpClientContext* cctx, UINT16 mf
 			ainput_send_diff_event(cctx, flags, x, y);
 		}
 		else
-			freerdp_input_send_extended_mouse_event(cctx->context.input, mflags, x, y);
-		return TRUE;
-	}
+#else
+	    freerdp_input_send_extended_mouse_event(cctx->context.input, mflags, x, y);
+#endif
+
+		    return TRUE;
 }
 
 int freerdp_client_common_stop(rdpContext* context)
