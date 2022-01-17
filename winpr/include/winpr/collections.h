@@ -492,7 +492,7 @@ extern "C"
 	};
 	typedef struct _wEventArgs wEventArgs;
 
-	typedef void (*pEventHandler)(void* context, wEventArgs* e);
+	typedef void (*pEventHandler)(void* context, const wEventArgs* e);
 
 #define MAX_EVENT_HANDLERS 32
 

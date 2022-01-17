@@ -27,6 +27,8 @@
 #include <freerdp/api.h>
 #include <freerdp/freerdp.h>
 
+#include <freerdp/event.h>
+
 #if defined(CHANNEL_AINPUT_CLIENT)
 #include <freerdp/client/ainput.h>
 #endif

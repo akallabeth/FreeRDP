@@ -20,6 +20,8 @@
 #include "config.h"
 #endif
 
+#include <winpr/assert.h>
+
 #include "wf_channels.h"
 
 #include "wf_rail.h"
@@ -31,10 +33,15 @@
 #include <freerdp/log.h>
 #define TAG CLIENT_TAG("windows")
 
-void wf_OnChannelConnectedEventHandler(void* context, ChannelConnectedEventArgs* e)
+void wf_OnChannelConnectedEventHandler(void* context, const ChannelConnectedEventArgs* e)
 {
 	wfContext* wfc = (wfContext*)context;
-	rdpSettings* settings = wfc->context.settings;
+	rdpSettings* settings;
+
+	WINPR_ASSERT(wfc);
+
+	settings = wfc->common.context.settings;
+	WINPR_ASSERT(settings);
 
 	if (strcmp(e->name, RAIL_SVC_CHANNEL_NAME) == 0)
 	{
@@ -55,10 +62,15 @@ void wf_OnChannelConnectedEventHandler(void* context, ChannelConnectedEventArgs*
 		freerdp_client_OnChannelConnectedEventHandler(context, e);
 }
 
-void wf_OnChannelDisconnectedEventHandler(void* context, ChannelDisconnectedEventArgs* e)
+void wf_OnChannelDisconnectedEventHandler(void* context, const ChannelDisconnectedEventArgs* e)
 {
 	wfContext* wfc = (wfContext*)context;
-	rdpSettings* settings = wfc->context.settings;
+	rdpSettings* settings;
+
+	WINPR_ASSERT(wfc);
+
+	settings = wfc->common.context.settings;
+	WINPR_ASSERT(settings);
 
 	if (strcmp(e->name, RAIL_SVC_CHANNEL_NAME) == 0)
 	{
