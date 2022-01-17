@@ -511,7 +511,7 @@ extern "C"
 	((wEventArgs*)_event_args)->Sender = _sender
 
 #define DEFINE_EVENT_HANDLER(_name) \
-	typedef void (*p##_name##EventHandler)(void* context, _name##EventArgs* e)
+	typedef void (*p##_name##EventHandler)(void* context, const _name##EventArgs* e)
 
 #define DEFINE_EVENT_RAISE(_name)                                                           \
 	static INLINE int PubSub_On##_name(wPubSub* pubSub, void* context, _name##EventArgs* e) \

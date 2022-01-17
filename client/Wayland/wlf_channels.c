@@ -95,7 +95,7 @@ static void wlf_encomsp_uninit(wlfContext* wlf, EncomspClientContext* encomsp)
 		wlf->encomsp = NULL;
 }
 
-void wlf_OnChannelConnectedEventHandler(void* context, ChannelConnectedEventArgs* e)
+void wlf_OnChannelConnectedEventHandler(void* context, const ChannelConnectedEventArgs* e)
 {
 	wlfContext* wlf = (wlfContext*)context;
 
@@ -121,7 +121,7 @@ void wlf_OnChannelConnectedEventHandler(void* context, ChannelConnectedEventArgs
 		freerdp_client_OnChannelConnectedEventHandler(context, e);
 }
 
-void wlf_OnChannelDisconnectedEventHandler(void* context, ChannelDisconnectedEventArgs* e)
+void wlf_OnChannelDisconnectedEventHandler(void* context, const ChannelDisconnectedEventArgs* e)
 {
 	wlfContext* wlf = (wlfContext*)context;
 

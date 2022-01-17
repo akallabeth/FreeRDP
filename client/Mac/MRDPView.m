@@ -813,7 +813,7 @@ DWORD fixKeyCode(DWORD keyCode, unichar keyChar, enum APPLE_KEYBOARD_TYPE type)
 	mfc->client_width = width;
 }
 
-void mac_OnChannelConnectedEventHandler(void *context, ChannelConnectedEventArgs *e)
+static void mac_OnChannelConnectedEventHandler(void *context, const ChannelConnectedEventArgs *e)
 {
 	mfContext *mfc = (mfContext *)context;
 	rdpSettings *settings = mfc->context.settings;
@@ -829,7 +829,8 @@ void mac_OnChannelConnectedEventHandler(void *context, ChannelConnectedEventArgs
 		freerdp_client_OnChannelConnectedEventHandler(context, e);
 }
 
-void mac_OnChannelDisconnectedEventHandler(void *context, ChannelDisconnectedEventArgs *e)
+static void mac_OnChannelDisconnectedEventHandler(void *context,
+                                                  const ChannelDisconnectedEventArgs *e)
 {
 	mfContext *mfc = (mfContext *)context;
 	rdpSettings *settings = mfc->context.settings;
