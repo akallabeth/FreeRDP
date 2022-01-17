@@ -70,7 +70,7 @@ static void android_OnChannelConnectedEventHandler(void* context,
 	}
 
 	afc = (androidContext*)context;
-	settings = afc->rdpCtx.settings;
+	settings = afc->common.context.settings;
 
 	if (strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) == 0)
 	{
@@ -93,7 +93,7 @@ static void android_OnChannelDisconnectedEventHandler(void* context,
 	}
 
 	afc = (androidContext*)context;
-	settings = afc->rdpCtx.settings;
+	settings = afc->common.context.settings;
 
 	if (strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) == 0)
 	{
@@ -132,7 +132,7 @@ static BOOL android_end_paint(rdpContext* context)
 	if (!gdi || !gdi->primary || !gdi->primary->hdc)
 		return FALSE;
 
-	hwnd = ctx->rdpCtx.gdi->primary->hdc->hwnd;
+	hwnd = ctx->common.context.gdi->primary->hdc->hwnd;
 
 	if (!hwnd)
 		return FALSE;
