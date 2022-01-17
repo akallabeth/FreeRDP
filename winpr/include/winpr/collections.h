@@ -516,7 +516,7 @@ extern "C"
 #define DEFINE_EVENT_RAISE(_name)                                                                 \
 	static INLINE int PubSub_On##_name(wPubSub* pubSub, void* context, const _name##EventArgs* e) \
 	{                                                                                             \
-		return PubSub_OnEvent(pubSub, #_name, context, (const wEventArgs*)e);                           \
+		return PubSub_OnEvent(pubSub, #_name, context, (const wEventArgs*)e);                     \
 	}
 
 #define DEFINE_EVENT_SUBSCRIBE(_name)                                              \
@@ -563,7 +563,7 @@ extern "C"
 	                                 pEventHandler EventHandler);
 
 	WINPR_API int PubSub_OnEvent(wPubSub* pubSub, const char* EventName, void* context,
-								 const wEventArgs* e);
+	                             const wEventArgs* e);
 
 	WINPR_API wPubSub* PubSub_New(BOOL synchronized);
 	WINPR_API void PubSub_Free(wPubSub* pubSub);

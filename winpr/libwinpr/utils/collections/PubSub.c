@@ -170,7 +170,7 @@ int PubSub_Unsubscribe(wPubSub* pubSub, const char* EventName, pEventHandler Eve
 	return status;
 }
 
-int PubSub_OnEvent(wPubSub* pubSub, const char* EventName, void* context, wEventArgs* e)
+int PubSub_OnEvent(wPubSub* pubSub, const char* EventName, void* context, const wEventArgs* e)
 {
 	size_t index;
 	wEventType* event;
