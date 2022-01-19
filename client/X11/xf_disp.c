@@ -193,7 +193,7 @@ static BOOL xf_disp_check_context(void* context, xfContext** ppXfc, xfDispContex
 	return TRUE;
 }
 
-static void xf_disp_OnActivated(void* context, ActivatedEventArgs* e)
+static void xf_disp_OnActivated(void* context, const ActivatedEventArgs* e)
 {
 	xfContext* xfc;
 	xfDispContext* xfDisp;
