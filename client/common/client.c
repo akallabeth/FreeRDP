@@ -1118,7 +1118,7 @@ BOOL freerdp_client_send_button_event(rdpClientContext* cctx, BOOL relative, UIN
 		{
 			cctx->lastX += x;
 			cctx->lastY += y;
-			WLog_WARN(TAG, "Relative mouse input but channel % not available, sending absolute!",
+			WLog_WARN(TAG, "Relative mouse input but channel %s not available, sending absolute!",
 			          AINPUT_DVC_CHANNEL_NAME);
 		}
 		else
@@ -1163,7 +1163,7 @@ BOOL freerdp_client_send_extended_button_event(rdpClientContext* cctx, BOOL rela
 		{
 			cctx->lastX += x;
 			cctx->lastY += y;
-			WLog_WARN(TAG, "Relative mouse input but channel % not available, sending absolute!",
+			WLog_WARN(TAG, "Relative mouse input but channel %s not available, sending absolute!",
 			          AINPUT_DVC_CHANNEL_NAME);
 		}
 		else
