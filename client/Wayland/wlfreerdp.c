@@ -773,34 +773,41 @@ BOOL wlf_copy_image(const void* src, size_t srcStride, size_t srcWidth, size_t s
 BOOL wlf_scale_coordinates(rdpContext* context, UINT32* px, UINT32* py, BOOL fromLocalToRDP)
 {
 	wlfContext* wlf = (wlfContext*)context;
-	rdpGdi* gdi;
 	UwacSize geometry;
-	double sx, sy;
+	double sx = 0.0, sy = 0.0;
+	UINT32 x, y;
 
 	if (!context || !px || !py || !context->gdi)
 		return FALSE;
 
-	if (!context->settings->SmartSizing)
-		return TRUE;
+	x = *px;
+	y = *py;
 
-	gdi = context->gdi;
-
-	if (UwacWindowGetDrawingBufferGeometry(wlf->window, &geometry, NULL) != UWAC_SUCCESS)
-		return FALSE;
-
-	sx = geometry.width / (double)gdi->width;
-	sy = geometry.height / (double)gdi->height;
-
-	if (!fromLocalToRDP)
+	if (context->settings->SmartSizing)
 	{
-		*px *= sx;
-		*py *= sy;
-	}
-	else
-	{
-		*px /= sx;
-		*py /= sy;
-	}
+		rdpGdi* gdi = context->gdi;
+		WINPR_ASSERT(gdi);
 
+		if (UwacWindowGetDrawingBufferGeometry(wlf->window, &geometry, NULL) != UWAC_SUCCESS)
+			return FALSE;
+
+		sx = geometry.width / (double)gdi->width;
+		sy = geometry.height / (double)gdi->height;
+
+		if (!fromLocalToRDP)
+		{
+			*px *= sx;
+			*py *= sy;
+		}
+		else
+		{
+			*px /= sx;
+			*py /= sy;
+		}
+	}
+	WLog_INFO(TAG,
+	          "[%s] SmartSizing=%d, in pos=%" PRIu32 "x%" PRIu32 ", out pos=%" PRIu32 "x%" PRIu32
+	          ", [%lfx%lf]",
+	          __FUNCTION__, context->settings->SmartSizing, x, y, *px, *py, sx, sy);
 	return TRUE;
 }

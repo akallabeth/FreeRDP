@@ -715,10 +715,14 @@ BOOL freerdp_input_send_unicode_keyboard_event(rdpInput* input, UINT16 flags, UI
 
 BOOL freerdp_input_send_mouse_event(rdpInput* input, UINT16 flags, UINT16 x, UINT16 y)
 {
+	BOOL suspended;
 	if (!input || !input->context)
 		return FALSE;
 
-	if (freerdp_settings_get_bool(input->context->settings, FreeRDP_SuspendInput))
+	suspended = freerdp_settings_get_bool(input->context->settings, FreeRDP_SuspendInput);
+	WLog_INFO(TAG, "[%s] suspended=%d, flags=0x%04" PRIx16 ", x=%" PRIu16 "x%" PRIu16, __FUNCTION__,
+	          suspended, flags, x, y);
+	if (suspended)
 		return TRUE;
 
 	return IFCALLRESULT(TRUE, input->MouseEvent, input, flags, x, y);
