@@ -786,6 +786,7 @@ static void pointer_handle_motion(void* data, struct wl_pointer* pointer, uint32
 	double sx_d = wl_fixed_to_double(sx_w);
 	double sy_d = wl_fixed_to_double(sy_w);
 
+	fprintf(stderr, "%s: %dx%d [%lfx%lf]\n", __func__, sx_i, sy_i, sx_d, sy_d);
 	if (!window || (sx_i < 0) || (sy_i < 0))
 		return;
 
@@ -1166,6 +1167,7 @@ UwacReturnCode UwacSeatSetMouseCursor(UwacSeat* seat, const void* data, size_t l
 	seat->pointer_size = 0;
 
 	/* There is a cursor provided */
+	fprintf(stderr, "%s: %zux%zu, width=%zux%zu\n", __func__, hot_x, hot_y, width, height);
 	if ((data != NULL) && (length != 0))
 	{
 		seat->pointer_image = xzalloc(sizeof(struct wl_cursor_image));
