@@ -705,7 +705,7 @@ static BOOL nla_client_setup_identity(rdpNla* nla)
 			identityEx->Length = sizeof(*identityEx);
 			identityEx->User = (BYTE*)marshalledCredentials;
 			identityEx->UserLength = strlen(marshalledCredentials);
-			if (!(identityEx->Password = (BYTE*)strdup(settings->SmartcardPin)))
+			if (!(identityEx->Password = (BYTE*)_strdup(settings->SmartcardPin)))
 				return FALSE;
 			identityEx->PasswordLength = strlen(settings->SmartcardPin);
 			identityEx->Domain = NULL;
@@ -985,7 +985,7 @@ static BOOL nla_setup_kerberos(rdpNla* nla)
 
 	if (settings->KerberosCache)
 	{
-		kerbSettings->cache = strdup(settings->KerberosCache);
+		kerbSettings->cache = _strdup(settings->KerberosCache);
 		if (!kerbSettings->cache)
 		{
 			WLog_ERR(TAG, "unable to copy cache name");
@@ -995,7 +995,7 @@ static BOOL nla_setup_kerberos(rdpNla* nla)
 
 	if (settings->KerberosArmor)
 	{
-		kerbSettings->armorCache = strdup(settings->KerberosArmor);
+		kerbSettings->armorCache = _strdup(settings->KerberosArmor);
 		if (!kerbSettings->armorCache)
 		{
 			WLog_ERR(TAG, "unable to copy armorCache");
