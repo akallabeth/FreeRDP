@@ -29,9 +29,6 @@
 #include <time.h>
 #include <ctype.h>
 
-#ifdef WITH_GSSAPI
-#include <krb5/krb5.h>
-#endif
 #include <winpr/debug.h>
 
 #include <freerdp/log.h>
