@@ -74,10 +74,12 @@ static void openh264_trace_callback(H264_CONTEXT* h264, int level, const char* m
 		WLog_Print(h264->log, WLOG_TRACE, "%d - %s", level, message);
 }
 
+#define DUMP_H264_DATA
+
 static int openh264_decompress(H264_CONTEXT* h264, const BYTE* pSrcData, UINT32 SrcSize)
 {
 	DECODING_STATE state;
-	SBufferInfo sBufferInfo;
+	SBufferInfo sBufferInfo = { 0 };
 	SSysMEMBuffer* pSystemBuffer;
 	H264_CONTEXT_OPENH264* sys = (H264_CONTEXT_OPENH264*)h264->pSystemData;
 	UINT32* iStride = h264->iStride;
@@ -92,7 +94,17 @@ static int openh264_decompress(H264_CONTEXT* h264, const BYTE* pSrcData, UINT32 
 	pYUVData[0] = NULL;
 	pYUVData[1] = NULL;
 	pYUVData[2] = NULL;
-	ZeroMemory(&sBufferInfo, sizeof(sBufferInfo));
+
+#ifdef DUMP_H264_DATA
+	{
+		FILE* fp = fopen("/tmp/freerdp-raw.dump", "a");
+		if (fp)
+		{
+			fwrite(pSrcData, 1, SrcSize, fp);
+			fclose(fp);
+		}
+	}
+#endif
 	state =
 	    (*sys->pDecoder)->DecodeFrame2(sys->pDecoder, pSrcData, SrcSize, pYUVData, &sBufferInfo);
 
@@ -120,6 +132,48 @@ static int openh264_decompress(H264_CONTEXT* h264, const BYTE* pSrcData, UINT32 
 	iStride[0] = pSystemBuffer->iStride[0];
 	iStride[1] = pSystemBuffer->iStride[1];
 	iStride[2] = pSystemBuffer->iStride[1];
+
+#ifdef DUMP_H264_DATA
+	{
+		char buffer[8192] = { 0 };
+		static UINT64 frame = 0;
+
+		_snprintf(buffer, sizeof(buffer), "/tmp/freerdp_y_frame_%08u.raw", frame);
+		FILE* fp = fopen(buffer, "w");
+		if (fp)
+		{
+			size_t x;
+			for (x = 0; x < pSystemBuffer->iHeight; x++)
+				fwrite(pYUVData[0] + x * pSystemBuffer->iStride[0], 1, pSystemBuffer->iStride[0],
+				       fp);
+			fclose(fp);
+		}
+
+		_snprintf(buffer, sizeof(buffer), "/tmp/freerdp_u_frame_%08u.raw", frame);
+		fp = fopen(buffer, "w");
+		if (fp)
+		{
+			size_t x;
+			for (x = 0; x < pSystemBuffer->iHeight; x++)
+				fwrite(pYUVData[1] + x * pSystemBuffer->iStride[1], 1, pSystemBuffer->iStride[1],
+				       fp);
+			fclose(fp);
+		}
+
+		_snprintf(buffer, sizeof(buffer), "/tmp/freerdp_v_frame_%08u.raw", frame);
+		fp = fopen(buffer, "w");
+		if (fp)
+		{
+			size_t x;
+			for (x = 0; x < pSystemBuffer->iHeight; x++)
+				fwrite(pYUVData[2] + x * pSystemBuffer->iStride[1], 1, pSystemBuffer->iStride[1],
+				       fp);
+			fclose(fp);
+		}
+		frame++;
+	}
+
+#endif
 
 	if (sBufferInfo.iBufferStatus != 1)
 	{
