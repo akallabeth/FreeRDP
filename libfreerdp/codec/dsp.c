@@ -30,6 +30,12 @@
 #include <freerdp/log.h>
 #include <freerdp/codec/dsp.h>
 
+#include "dsp.h"
+
+#if defined(WITH_FDK_AAC)
+#include "dsp_fdk_aac.h"
+#endif
+
 #if !defined(WITH_DSP_FFMPEG)
 #if defined(WITH_GSM)
 #include <gsm/gsm.h>
@@ -84,14 +90,9 @@ typedef union
 
 struct S_FREERDP_DSP_CONTEXT
 {
-	BOOL encoder;
+	FREERDP_DSP_COMMON_CONTEXT common;
 
 	ADPCM adpcm;
-	AUDIO_FORMAT format;
-
-	wStream* channelmix;
-	wStream* resample;
-	wStream* buffer;
 
 #if defined(WITH_GSM)
 	gsm gsm;
@@ -1244,6 +1245,18 @@ BOOL freerdp_dsp_encode(FREERDP_DSP_CONTEXT* WINPR_RESTRICT context,
                         const AUDIO_FORMAT* WINPR_RESTRICT srcFormat,
                         const BYTE* WINPR_RESTRICT data, size_t length, wStream* WINPR_RESTRICT out)
 {
+#if defined(WITH_FDK_AAC)
+	FREERDP_DSP_COMMON_CONTEXT* ctx = context;
+	WINPR_ASSERT(ctx);
+	switch (ctx->format.wFormatTag)
+	{
+		case WAVE_FORMAT_AAC_MS:
+			return fdk_aac_dsp_encode(ctx, srcFormat, data, length, out);
+		default:
+			break;
+	}
+#endif
+
 #if defined(WITH_DSP_FFMPEG)
 	return freerdp_dsp_ffmpeg_encode(context, srcFormat, data, length, out);
 #else
@@ -1310,6 +1323,18 @@ BOOL freerdp_dsp_decode(FREERDP_DSP_CONTEXT* WINPR_RESTRICT context,
                         const AUDIO_FORMAT* WINPR_RESTRICT srcFormat,
                         const BYTE* WINPR_RESTRICT data, size_t length, wStream* WINPR_RESTRICT out)
 {
+#if defined(WITH_FDK_AAC)
+	FREERDP_DSP_COMMON_CONTEXT* ctx = context;
+	WINPR_ASSERT(ctx);
+	switch (ctx->format.wFormatTag)
+	{
+		case WAVE_FORMAT_AAC_MS:
+			return fdk_aac_dsp_decode(ctx, srcFormat, data, length, out);
+		default:
+			break;
+	}
+#endif
+
 #if defined(WITH_DSP_FFMPEG)
 	return freerdp_dsp_ffmpeg_decode(context, srcFormat, data, length, out);
 #else
@@ -1361,6 +1386,17 @@ BOOL freerdp_dsp_decode(FREERDP_DSP_CONTEXT* WINPR_RESTRICT context,
 
 BOOL freerdp_dsp_supports_format(const AUDIO_FORMAT* WINPR_RESTRICT format, BOOL encode)
 {
+#if defined(WITH_FDK_AAC)
+	switch (format->wFormatTag)
+	{
+		case WAVE_FORMAT_AAC_MS:
+			return TRUE;
+		default:
+			break;
+	}
+
+#endif
+
 #if defined(WITH_DSP_FFMPEG)
 	return freerdp_dsp_ffmpeg_supports_format(format, encode);
 #else
@@ -1428,6 +1464,13 @@ BOOL freerdp_dsp_context_reset(FREERDP_DSP_CONTEXT* WINPR_RESTRICT context,
                                const AUDIO_FORMAT* WINPR_RESTRICT targetFormat,
                                UINT32 FramesPerPacket)
 {
+#if defined(WITH_FDK_AAC)
+	FREERDP_DSP_COMMON_CONTEXT* ctx = context;
+	fdk_aac_dsp_uninit(ctx);
+	if (!fdk_aac_dsp_init(ctx))
+		return FALSE;
+#endif
+
 #if defined(WITH_DSP_FFMPEG)
 	return freerdp_dsp_ffmpeg_context_reset(context, targetFormat);
 #else
