@@ -345,8 +345,33 @@ int fdk_aac_dsp_impl_decode_read(void* handle, void* dst, size_t dstSize,
 	return 1;
 }
 
-int fdk_aac_dsp_impl_config(void* handle, int encoder, const unsigned char* data, size_t size,
-                            void (*log)(const char* fmt, ...))
+static unsigned get_channelmode(unsigned channels)
+{
+	switch (channels)
+	{
+		case 1:
+			return MODE_1;
+		case 2:
+			return MODE_2;
+		case 3:
+			return MODE_1_2;
+		case 4:
+			return MODE_1_2_1;
+		case 5:
+			return MODE_1_2_2;
+		case 6:
+			return MODE_1_2_2_1;
+		case 7:
+			return MODE_1_2_2_2_1;
+		case 8:
+			return MODE_7_1_BACK;
+
+		default:
+			return MODE_2;
+	}
+}
+int fdk_aac_dsp_impl_config(void* handle, int encoder, unsigned samplerate, unsigned channels,
+                            unsigned bytes_per_second, void (*log)(const char* fmt, ...))
 {
 	assert(handle);
 	assert(log);
@@ -360,27 +385,13 @@ int fdk_aac_dsp_impl_config(void* handle, int encoder, const unsigned char* data
 			UINT value;
 		};
 
-		const struct t_param_pair params[] = { { AACENC_AOT, 0 },
-			                                   { AACENC_BITRATE, 0 },
-			                                   { AACENC_BITRATEMODE, 0 },
-			                                   { AACENC_SAMPLERATE, 0 },
-			                                   { AACENC_SBR_MODE, 0 },
-			                                   { AACENC_GRANULE_LENGTH, 0 },
-			                                   { AACENC_CHANNELMODE, 0 },
-			                                   { AACENC_CHANNELORDER, 0 },
-			                                   { AACENC_SBR_RATIO, 0 },
-			                                   { AACENC_AFTERBURNER, 0 },
-			                                   { AACENC_BANDWIDTH, 0 },
-			                                   { AACENC_PEAK_BITRATE, 0 },
+		const struct t_param_pair params[] = { { AACENC_AOT, 2 },
+			                                   { AACENC_SAMPLERATE, samplerate },
+			                                   { AACENC_CHANNELMODE, get_channelmode(channels) },
+			                                   { AACENC_CHANNELORDER, 1 },
+			                                   { AACENC_BITRATE, bytes_per_second * 8 },
 			                                   { AACENC_TRANSMUX, 0 },
-			                                   { AACENC_HEADER_PERIOD, 0 },
-			                                   { AACENC_SIGNALING_MODE, 0 },
-			                                   { AACENC_TPSUBFRAMES, 0 },
-			                                   { AACENC_AUDIOMUXVER, 0 },
-			                                   { AACENC_PROTECTION, 0 },
-			                                   { AACENC_ANCILLARY_BITRATE, 0 },
-			                                   { AACENC_METADATA_MODE, 0 },
-			                                   { AACENC_CONTROL_STATE, 0 } };
+			                                   { AACENC_AFTERBURNER, 1 } };
 		HANDLE_AACENCODER self = (HANDLE_AACENCODER)handle;
 
 		for (x = 0; x < sizeof(params) / sizeof(params[0]); x++)
@@ -390,14 +401,21 @@ int fdk_aac_dsp_impl_config(void* handle, int encoder, const unsigned char* data
 			AACENC_ERROR err = aacEncoder_SetParam(self, param->param, param->value);
 			if (err != AACENC_OK)
 			{
-				log("aacEncoder_SetParam [%s] failed with %s", aac_enc_param_str(param->param),
-				    enc_err_str(err));
+				log("aacEncoder_SetParam(%s, %d) failed with %s", aac_enc_param_str(param->param),
+				    param->value, enc_err_str(err));
 				return -1;
 			}
 		}
 
+		AACENC_ERROR err = aacEncEncode(self, NULL, NULL, NULL, NULL);
+		if (err != AACENC_OK)
+		{
+			log("aacEncEncode failed with %s", enc_err_str(err));
+			return -1;
+		}
+
 		AACENC_InfoStruct info = { 0 };
-		AACENC_ERROR err = aacEncInfo(self, &info);
+		err = aacEncInfo(self, &info);
 		if (err != AACENC_OK)
 		{
 			log("aacEncInfo failed with %s", enc_err_str(err));
@@ -411,12 +429,11 @@ int fdk_aac_dsp_impl_config(void* handle, int encoder, const unsigned char* data
 		AAC_DECODER_ERROR err;
 		HANDLE_AACDECODER self = (HANDLE_AACDECODER)handle;
 
+		UCHAR data[] = { 0x01, 0x02 };
 		UCHAR* conf[] = { data };
-
-		UINT conf_len = size;
+		UINT conf_len = 2;
 
 		assert(handle);
-		assert(data || (size == 0));
 
 		err = aacDecoder_ConfigRaw(self, conf, &conf_len);
 		if (err != AAC_DEC_OK)
