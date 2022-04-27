@@ -68,17 +68,24 @@ BOOL fdk_aac_dsp_encode(FREERDP_DSP_COMMON_CONTEXT* context, const AUDIO_FORMAT*
 		context->fdkSetup = TRUE;
 	}
 
-	const size_t expect =
-	    fdk_aac_dsp_impl_stream_info(context->fdkAacInstance, context->encoder, log);
-	if (!Stream_EnsureRemainingCapacity(out, expect))
-		return FALSE;
+	{
+		const SSIZE_T expect =
+		    fdk_aac_dsp_impl_stream_info(context->fdkAacInstance, context->encoder, log);
+		if (expect < 0)
+			return FALSE;
 
-	ssize_t encoded =
-	    fdk_aac_dsp_impl_encode(context->fdkAacInstance, data, length, Stream_Pointer(out),
-	                            Stream_GetRemainingCapacity(out), log);
-	if (encoded < 0)
-		return FALSE;
-	return Stream_SafeSeek(out, encoded);
+		if (!Stream_EnsureRemainingCapacity(out, (size_t)expect))
+			return FALSE;
+	}
+
+	{
+		ssize_t encoded =
+		    fdk_aac_dsp_impl_encode(context->fdkAacInstance, data, length, Stream_Pointer(out),
+		                            Stream_GetRemainingCapacity(out), log);
+		if (encoded < 0)
+			return FALSE;
+		return Stream_SafeSeek(out, (size_t)encoded);
+	}
 }
 
 BOOL fdk_aac_dsp_decode(FREERDP_DSP_COMMON_CONTEXT* context, const AUDIO_FORMAT* srcFormat,

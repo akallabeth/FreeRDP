@@ -370,6 +370,7 @@ static unsigned get_channelmode(unsigned channels)
 			return MODE_2;
 	}
 }
+
 int fdk_aac_dsp_impl_config(void* handle, int encoder, unsigned samplerate, unsigned channels,
                             unsigned bytes_per_second, void (*log)(const char* fmt, ...))
 {
@@ -379,6 +380,7 @@ int fdk_aac_dsp_impl_config(void* handle, int encoder, unsigned samplerate, unsi
 	if (encoder)
 	{
 		size_t x;
+		AACENC_ERROR err;
 		struct t_param_pair
 		{
 			AACENC_PARAM param;
@@ -398,7 +400,7 @@ int fdk_aac_dsp_impl_config(void* handle, int encoder, unsigned samplerate, unsi
 		{
 			const struct t_param_pair* param = &params[x];
 
-			AACENC_ERROR err = aacEncoder_SetParam(self, param->param, param->value);
+			err = aacEncoder_SetParam(self, param->param, param->value);
 			if (err != AACENC_OK)
 			{
 				log("aacEncoder_SetParam(%s, %d) failed with %s", aac_enc_param_str(param->param),
@@ -407,21 +409,23 @@ int fdk_aac_dsp_impl_config(void* handle, int encoder, unsigned samplerate, unsi
 			}
 		}
 
-		AACENC_ERROR err = aacEncEncode(self, NULL, NULL, NULL, NULL);
+		err = aacEncEncode(self, NULL, NULL, NULL, NULL);
 		if (err != AACENC_OK)
 		{
 			log("aacEncEncode failed with %s", enc_err_str(err));
 			return -1;
 		}
 
-		AACENC_InfoStruct info = { 0 };
-		err = aacEncInfo(self, &info);
-		if (err != AACENC_OK)
 		{
-			log("aacEncInfo failed with %s", enc_err_str(err));
-			return -1;
+			AACENC_InfoStruct info = { 0 };
+			err = aacEncInfo(self, &info);
+			if (err != AACENC_OK)
+			{
+				log("aacEncInfo failed with %s", enc_err_str(err));
+				return -1;
+			}
+			log_enc_info(&info, log);
 		}
-		log_enc_info(&info, log);
 		return 0;
 	}
 	else
@@ -510,19 +514,33 @@ ssize_t fdk_aac_dsp_impl_stream_info(void* handle, int encoder, void (*log)(cons
 ssize_t fdk_aac_dsp_impl_encode(void* handle, const void* data, size_t size, void* dst,
                                 size_t dstSize, void (*log)(const char* fmt, ...))
 {
+	AACENC_ERROR err;
+
+	INT inSizes[] = { size };
+	INT inElSizes[] = { sizeof(INT_PCM) };
+	INT inIdentifiers[] = { IN_AUDIO_DATA };
+	void* inBuffers[] = { data };
+
 	const AACENC_BufDesc inBufDesc = {
 		.numBufs = 1,
-		.bufs = { data },
-		.bufferIdentifiers = { IN_AUDIO_DATA },
-		.bufSizes = { size },
-		.bufElSizes = { 2 } /* TODO: 8/16 bit input? */
+		.bufs = inBuffers,
+		.bufferIdentifiers = inIdentifiers,
+		.bufSizes = inSizes,
+		.bufElSizes = inElSizes /* TODO: 8/16 bit input? */
 	};
+
+	INT outSizes[] = { dstSize };
+	INT outElSizes[] = { 1 };
+	INT outIdentifiers[] = { OUT_BITSTREAM_DATA };
+	void* outBuffers[] = { dst };
 	const AACENC_BufDesc outBufDesc = { .numBufs = 1,
-		                                .bufs = { dst },
-		                                .bufferIdentifiers = { OUT_BITSTREAM_DATA },
-		                                .bufSizes = { dstSize },
-		                                .bufElSizes = { 1 } };
-	const AACENC_InArgs inArgs = { .numInSamples = size / 2, /* TODO: 8/16 bit input? */
+		                                .bufs = outBuffers,
+		                                .bufferIdentifiers = outIdentifiers,
+		                                .bufSizes = outSizes,
+		                                .bufElSizes = outElSizes };
+
+	const AACENC_InArgs inArgs = { .numInSamples =
+		                               size / sizeof(INT_PCM), /* TODO: 8/16 bit input? */
 		                           .numAncBytes = 0 };
 	AACENC_OutArgs outArgs = { 0 };
 
@@ -531,7 +549,7 @@ ssize_t fdk_aac_dsp_impl_encode(void* handle, const void* data, size_t size, voi
 	assert(handle);
 	assert(log);
 
-	AACENC_ERROR err = aacEncEncode(self, &inBufDesc, &outBufDesc, &inArgs, &outArgs);
+	err = aacEncEncode(self, &inBufDesc, &outBufDesc, &inArgs, &outArgs);
 	if (err != AACENC_OK)
 	{
 		log("aacEncEncode failed with %s", enc_err_str(err));
