@@ -28,8 +28,8 @@ void fdk_aac_dsp_impl_uninit(void** handle, int encoder, void (*log)(const char*
 
 ssize_t fdk_aac_dsp_impl_stream_info(void* handle, int encoder, void (*log)(const char* fmt, ...));
 
-int fdk_aac_dsp_impl_config(void* handle, int encoder, const unsigned char* data, size_t size,
-                            void (*log)(const char* fmt, ...));
+int fdk_aac_dsp_impl_config(void* handle, int encoder, unsigned samplerate, unsigned channels,
+                            unsigned bytes_per_second, void (*log)(const char* fmt, ...));
 
 ssize_t fdk_aac_dsp_impl_decode_fill(void* handle, const void* data, size_t size,
                                      void (*log)(const char* fmt, ...));

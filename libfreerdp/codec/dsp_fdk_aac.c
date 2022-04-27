@@ -59,9 +59,9 @@ BOOL fdk_aac_dsp_encode(FREERDP_DSP_COMMON_CONTEXT* context, const AUDIO_FORMAT*
 
 	if (!context->fdkSetup)
 	{
-		const unsigned char eld_conf[] = { 0xF8, 0xE8, 0x50, 0x00 };
-		ssize_t rc = fdk_aac_dsp_impl_config(context->fdkAacInstance, context->encoder, eld_conf,
-		                                     sizeof(eld_conf), log);
+		ssize_t rc = fdk_aac_dsp_impl_config(
+		    context->fdkAacInstance, context->encoder, context->format.nSamplesPerSec,
+		    context->format.nChannels, context->format.nAvgBytesPerSec, log);
 		if (rc < 0)
 			return FALSE;
 
@@ -97,9 +97,9 @@ BOOL fdk_aac_dsp_decode(FREERDP_DSP_COMMON_CONTEXT* context, const AUDIO_FORMAT*
 
 	if (!context->fdkSetup)
 	{
-		const unsigned char eld_conf[] = { 0xF8, 0xE8, 0x50, 0x00 };
-		ssize_t rc = fdk_aac_dsp_impl_config(context->fdkAacInstance, context->encoder, eld_conf,
-		                                     sizeof(eld_conf), log);
+		ssize_t rc = fdk_aac_dsp_impl_config(
+		    context->fdkAacInstance, context->encoder, context->format.nSamplesPerSec,
+		    context->format.nChannels, context->format.nAvgBytesPerSec, log);
 		if (rc < 0)
 			return FALSE;
 
