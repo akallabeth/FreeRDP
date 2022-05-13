@@ -51,6 +51,13 @@ If release binaries (and old android API support) are required, build 32 bit arc
 and 64 bit architectures with
 ./scripts/android-build-freerdp.sh --ndk <ANDROID_NDK> --sdk <ANDROID_SDK> --conf ./scripts/android-build-64.conf
 
+Special note for OpenH264
+================
+
+Their build system is somewhat strange and always has issues with any NDK still supported, so they usually need
+an older version. Add --openh264-ndk <ANDROID_NDK> or export ANDROID_NDK_OPENH264 to let the build system know
+which NDK to use for OpenH264
+
 Building the APK (Android Studio)
 ================
 
