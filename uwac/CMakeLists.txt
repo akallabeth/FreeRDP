@@ -27,6 +27,13 @@ if (NOT FREERDP_UNIFIED_BUILD)
 	cmake_minimum_required(VERSION 3.4)
 	project(uwac VERSION ${UWAC_VERSION} LANGUAGES C)
 
+	if (EXISTS "${CMAKE_BINARY_DIR}/conan_paths.cmake")
+		message("Building with conan...")
+		include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
+	else()
+		message("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake does not exist")
+	endif()
+
 	set(CMAKE_C_STANDARD 99)
 	set(CMAKE_C_STANDARD_REQUIRED ON)
 	set(CMAKE_C_EXTENSIONS ON)
