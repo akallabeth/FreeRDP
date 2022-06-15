@@ -829,8 +829,10 @@ static int nla_server_init(rdpNla* nla)
 
 static int nla_server_authenticate(rdpNla* nla)
 {
+	int rc = -1;
+
 	if (nla_server_init(nla) < 1)
-		return -1;
+		goto fail;
 
 	while (TRUE)
 	{
@@ -841,7 +843,7 @@ static int nla_server_authenticate(rdpNla* nla)
 		nla->inputBuffer.BufferType = SECBUFFER_TOKEN;
 
 		if (nla_recv(nla, "Receiving Authentication Token") < 0)
-			return -1;
+			goto fail;
 
 		nla->inputBuffer.pvBuffer = nla->negoToken.pvBuffer;
 		nla->inputBuffer.cbBuffer = nla->negoToken.cbBuffer;
@@ -860,7 +862,7 @@ static int nla_server_authenticate(rdpNla* nla)
 		nla->outputBuffer.pvBuffer = malloc(nla->outputBuffer.cbBuffer);
 
 		if (!nla->outputBuffer.pvBuffer)
-			return -1;
+			goto fail;
 
 		nla->status = nla->table->AcceptSecurityContext(
 		    &nla->credentials, nla->haveContext ? &nla->context : NULL, &nla->inputBufferDesc,
@@ -911,7 +913,7 @@ static int nla_server_authenticate(rdpNla* nla)
 				{
 					WLog_WARN(TAG, "CompleteAuthToken status %s [0x%08" PRIX32 "]",
 					          GetSecurityStatusString(status), status);
-					return -1;
+					goto fail;
 				}
 			}
 
@@ -926,13 +928,10 @@ static int nla_server_authenticate(rdpNla* nla)
 			if (nla->outputBuffer.cbBuffer != 0)
 			{
 				if (!nla_send(nla, "Server: Sending response"))
-				{
-					nla_buffer_free(nla);
-					return -1;
-				}
+					goto fail;
 
 				if (nla_recv(nla, "Receiving pubkey Token") < 0)
-					return -1;
+					goto fail;
 			}
 
 			nla->havePubKeyAuth = TRUE;
@@ -944,7 +943,7 @@ static int nla_server_authenticate(rdpNla* nla)
 				WLog_ERR(TAG,
 				         "QueryContextAttributes SECPKG_ATTR_SIZES failure %s [0x%08" PRIX32 "]",
 				         GetSecurityStatusString(nla->status), nla->status);
-				return -1;
+				goto fail;
 			}
 
 			if (nla->peerVersion < 5)
@@ -957,7 +956,7 @@ static int nla_server_authenticate(rdpNla* nla)
 				WLog_ERR(TAG,
 				         "Error: could not verify client's public key echo %s [0x%08" PRIX32 "]",
 				         GetSecurityStatusString(nla->status), nla->status);
-				return -1;
+				goto fail;
 			}
 
 			sspi_SecBufferFree(&nla->negoToken);
@@ -970,7 +969,7 @@ static int nla_server_authenticate(rdpNla* nla)
 				nla->status = nla_encrypt_public_key_hash(nla);
 
 			if (nla->status != SEC_E_OK)
-				return -1;
+				goto fail;
 		}
 
 		if ((nla->status != SEC_E_OK) && (nla->status != SEC_I_CONTINUE_NEEDED))
@@ -1000,7 +999,8 @@ static int nla_server_authenticate(rdpNla* nla)
 			WLog_ERR(TAG, "AcceptSecurityContext status %s [0x%08" PRIX32 "]",
 			         GetSecurityStatusString(nla->status), nla->status);
 			nla_send(nla, "Server: Sending AcceptSecurityContext error status");
-			return -1; /* Access Denied */
+			goto fail;
+			/* Access Denied */
 		}
 
 		/* send authentication token */
@@ -1021,7 +1021,7 @@ static int nla_server_authenticate(rdpNla* nla)
 	/* Receive encrypted credentials */
 
 	if (nla_recv(nla, "Receive Encryption Credentials") < 0)
-		return -1;
+		goto fail;
 
 	nla->status = nla_decrypt_ts_credentials(nla);
 
@@ -1029,7 +1029,7 @@ static int nla_server_authenticate(rdpNla* nla)
 	{
 		WLog_ERR(TAG, "Could not decrypt TSCredentials status %s [0x%08" PRIX32 "]",
 		         GetSecurityStatusString(nla->status), nla->status);
-		return -1;
+		goto fail;
 	}
 
 	nla->status = nla->table->ImpersonateSecurityContext(&nla->context);
@@ -1038,7 +1038,7 @@ static int nla_server_authenticate(rdpNla* nla)
 	{
 		WLog_ERR(TAG, "ImpersonateSecurityContext status %s [0x%08" PRIX32 "]",
 		         GetSecurityStatusString(nla->status), nla->status);
-		return -1;
+		goto fail;
 	}
 	else
 	{
@@ -1048,7 +1048,7 @@ static int nla_server_authenticate(rdpNla* nla)
 		{
 			WLog_ERR(TAG, "RevertSecurityContext status %s [0x%08" PRIX32 "]",
 			         GetSecurityStatusString(nla->status), nla->status);
-			return -1;
+			goto fail;
 		}
 	}
 
@@ -1058,10 +1058,14 @@ static int nla_server_authenticate(rdpNla* nla)
 	{
 		WLog_ERR(TAG, "DeleteSecurityContext status %s [0x%08" PRIX32 "]",
 		         GetSecurityStatusString(nla->status), nla->status);
-		return -1;
+		goto fail;
 	}
 
 	return 1;
+
+fail:
+	nla_buffer_free(nla);
+	return rc;
 }
 
 /**
@@ -2130,7 +2134,10 @@ static int nla_decode_ts_request(rdpNla* nla, wStream* s)
 int nla_recv_pdu(rdpNla* nla, wStream* s)
 {
 	if (nla_decode_ts_request(nla, s) < 1)
+	{
+		nla_buffer_free(nla);
 		return -1;
+	}
 
 	if (nla->errorCode)
 	{
@@ -2190,7 +2197,10 @@ int nla_recv_pdu(rdpNla* nla, wStream* s)
 	}
 
 	if (nla_client_recv(nla) < 1)
+	{
+		nla_buffer_free(nla);
 		return -1;
+	}
 
 	return 1;
 }
