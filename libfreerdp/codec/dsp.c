@@ -731,6 +731,8 @@ static BOOL freerdp_dsp_encode_ima_adpcm(FREERDP_DSP_CONTEXT* context, const BYT
 
 	if (!Stream_EnsureRemainingCapacity(out, size))
 		return FALSE;
+	if (!Stream_EnsureRemainingCapacity(context->common.buffer, size + 64))
+		return FALSE;
 
 	start = Stream_GetPosition(context->common.buffer);
 
@@ -1279,7 +1281,9 @@ BOOL freerdp_dsp_supports_format(const AUDIO_FORMAT* format, BOOL encode)
 	switch (format->wFormatTag)
 	{
 		case WAVE_FORMAT_AAC_MS:
-			return TRUE;
+			if (!encode)
+				return TRUE;
+			break;
 		default:
 			break;
 	}
