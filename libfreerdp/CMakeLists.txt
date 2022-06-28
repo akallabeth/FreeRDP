@@ -105,13 +105,7 @@ if (WITH_FDK_AAC)
 	include_directories(${FDK_AAC_INCLUDE_DIRS})
 
 	link_directories(${FDK_AAC_LIBRARY_DIRS})
-  freerdp_library_add(${FDK_AAC_LIBRARIES})
-
-	list(APPEND CODEC_SRCS
-    codec/dsp_fdk_impl.c
-    codec/dsp_fdk_impl.h
-    codec/dsp_fdk_aac.c
-    codec/dsp_fdk_aac.h)
+	freerdp_library_add(${FDK_AAC_LIBRARIES})
 endif()
 
 set(OPUS_DEFAULT OFF)
