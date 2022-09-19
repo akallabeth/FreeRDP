@@ -25,10 +25,3 @@ endforeach()
 
 set_property(TARGET ${MODULE_NAME} PROPERTY FOLDER "WinPR/Test")
 
-if(NOT WIN32)
-	add_executable(TestUri TestUri.c)
-	target_link_libraries(TestUri winpr)
-	set_target_properties(TestUri PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${TESTING_OUTPUT_DIRECTORY}")
-	add_test(TestUri ${TESTING_OUTPUT_DIRECTORY}/TestUri)
-	set_property(TARGET TestUri PROPERTY FOLDER "WinPR/Test")
-endif()
