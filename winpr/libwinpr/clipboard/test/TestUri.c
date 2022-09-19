@@ -9,7 +9,7 @@
 #include "../clipboard.h"
 
 #define WINPR_TAG(tag) "com.winpr." tag
-#define TAG WINPR_TAG("clipboard.posix")
+#define TAG WINPR_TAG("clipboard.synthetic.file")
 
 int TestUri(int argc, char* argv[])
 {
