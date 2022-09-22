@@ -69,12 +69,6 @@
 #endif
 #endif
 
-#ifdef FREERDP_TEST_EXPORTS
-#define FREERDP_TEST_API FREERDP_API
-#else
-#define FREERDP_TEST_API
-#endif
-
 #define IFCALL(_cb, ...)      \
 	do                        \
 	{                         \
