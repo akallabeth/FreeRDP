@@ -1151,7 +1151,7 @@ static UINT posix_file_read_perform(struct posix_file* file, UINT32 size, BYTE**
                                     UINT32* actual_size)
 {
 	BYTE* buffer = NULL;
-	ssize_t amount = 0;
+	SSIZE_T amount = 0;
 	WLog_VRB(TAG, "file %d request read %" PRIu32 " bytes", file->fd, size);
 	buffer = malloc(size);
 
