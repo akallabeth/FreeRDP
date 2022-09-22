@@ -18,6 +18,7 @@
  */
 
 #include <winpr/config.h>
+#include <winpr/path.h>
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -39,16 +40,6 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#ifdef _WIN32
-#include "dirent.h"
-#define S_ISDIR(x) (((x)&S_IFDIR))
-#include <winpr/wtypes.h>
-typedef SSIZE_T ssize_t;
-#else
-#include <dirent.h>
-#include <unistd.h>
-#endif
 
 #include <winpr/crt.h>
 #include <winpr/clipboard.h>
@@ -286,24 +277,32 @@ static BOOL add_file_to_list(wClipboard* clipboard, const char* local_name,
                              const WCHAR* remote_name, wArrayList* files);
 
 static BOOL add_directory_entry_to_list(wClipboard* clipboard, const char* local_dir_name,
-                                        const WCHAR* remote_dir_name, const struct dirent* entry,
+                                        const WCHAR* remote_dir_name, const WIN32_FIND_DATAW* entry,
                                         wArrayList* files)
 {
 	BOOL result = FALSE;
 	char* local_name = NULL;
 	WCHAR* remote_name = NULL;
 	WCHAR* remote_base_name = NULL;
+	char utf_name[MAX_PATH + 1] = { 0 };
+	char* p1 = &utf_name[0];
+	char** ptr = &p1;
+
+	if (ConvertFromUnicode(CP_UTF8, 0, entry->cFileName, ARRAYSIZE(entry->cFileName), ptr,
+	                       ARRAYSIZE(utf_name) - 1, NULL, NULL) <= 0)
+		return FALSE;
 
 	/* Skip special directory entries. */
-	if ((strcmp(entry->d_name, ".") == 0) || (strcmp(entry->d_name, "..") == 0))
+
+	if ((strcmp(utf_name, ".") == 0) || (strcmp(utf_name, "..") == 0))
 		return TRUE;
 
-	remote_base_name = convert_local_name_component_to_remote(clipboard, entry->d_name);
+	remote_base_name = convert_local_name_component_to_remote(clipboard, utf_name);
 
 	if (!remote_base_name)
 		return FALSE;
 
-	local_name = concat_local_name(local_dir_name, entry->d_name);
+	local_name = concat_local_name(local_dir_name, utf_name);
 	remote_name = concat_remote_name(remote_dir_name, remote_base_name);
 
 	if (local_name && remote_name)
@@ -315,71 +314,78 @@ static BOOL add_directory_entry_to_list(wClipboard* clipboard, const char* local
 	return result;
 }
 
-static BOOL do_add_directory_contents_to_list(wClipboard* clipboard, const char* local_name,
-                                              const WCHAR* remote_name, DIR* dirp,
-                                              wArrayList* files)
+static char* allocated_printf(const char* fmt, ...)
 {
-	/*
-	 * For some reason POSIX does not require readdir() to be thread-safe.
-	 * However, readdir_r() has really insane interface and is pretty bad
-	 * replacement for it. Fortunately, most C libraries guarantee thread-
-	 * safety of readdir() when it is used for distinct directory streams.
-	 *
-	 * Thus we can use readdir() in multithreaded applications if we are
-	 * sure that it will not corrupt some global data. It would be nice
-	 * to have a compile-time check for this here, but some C libraries
-	 * do not provide a #define because of reasons (I'm looking at you,
-	 * musl). We should not be breaking people's builds because of that,
-	 * so we do nothing and proceed with fingers crossed.
-	 */
-	for (;;)
+	int rc1, rc2;
+	size_t size;
+	va_list ap;
+	char* buffer = NULL;
+
+	va_start(ap, fmt);
+	rc1 = vsnprintf(NULL, 0, fmt, ap);
+	va_end(ap);
+	if (rc1 <= 0)
+		return NULL;
+
+	size = (size_t)rc1;
+	buffer = calloc(size + 2, sizeof(char));
+	if (!buffer)
+		return NULL;
+
+	va_start(ap, fmt);
+	rc2 = vsnprintf(buffer, size + 1, fmt, ap);
+	va_end(ap);
+	if (rc2 != rc1)
 	{
-		struct dirent* entry = NULL;
-		errno = 0;
-		entry = readdir(dirp);
-
-		if (!entry)
-		{
-			int err = errno;
-
-			if (!err)
-				break;
-
-			WLog_ERR(TAG, "failed to read directory: %s", strerror(err));
-			return FALSE;
-		}
-
-		if (!add_directory_entry_to_list(clipboard, local_name, remote_name, entry, files))
-			return FALSE;
+		free(buffer);
+		return NULL;
 	}
-
-	return TRUE;
+	return buffer;
 }
 
 static BOOL add_directory_contents_to_list(wClipboard* clipboard, const char* local_name,
                                            const WCHAR* remote_name, wArrayList* files)
 {
 	BOOL result = FALSE;
-	DIR* dirp = NULL;
-	WLog_VRB(TAG, "adding directory: %s", local_name);
-	dirp = opendir(local_name);
+	WIN32_FIND_DATAW data = { 0 };
+	HANDLE hdl = INVALID_HANDLE_VALUE;
+	WCHAR* wname = NULL;
+	char separator = PathGetSeparatorA(0);
+	char* find_name = allocated_printf("%s%c*.*", local_name, separator);
 
-	if (!dirp)
+	if (ConvertToUnicode(CP_UTF8, 0, find_name, -1, &wname, 0) <= 0)
+		goto out;
+
+	WLog_VRB(TAG, "adding directory: %s", local_name);
+
+	hdl = FindFirstFileW(wname, &data);
+
+	if (INVALID_HANDLE_VALUE == hdl)
 	{
-		int err = errno;
-		WLog_ERR(TAG, "failed to open directory %s: %s", local_name, strerror(err));
+		DWORD err = GetLastError();
+		WLog_ERR(TAG, "failed to open directory %s: %" PRIu32, local_name, err);
 		goto out;
 	}
 
-	result = do_add_directory_contents_to_list(clipboard, local_name, remote_name, dirp, files);
-
-	if (closedir(dirp))
+	do
 	{
-		int err = errno;
-		WLog_WARN(TAG, "failed to close directory: %s", strerror(err));
+		if (!add_directory_entry_to_list(clipboard, local_name, remote_name, &data, files))
+			return FALSE;
+	} while (FindNextFileW(hdl, &data));
+
+	result = TRUE;
+out:
+	if (INVALID_HANDLE_VALUE != hdl)
+	{
+		if (!FindClose(hdl))
+		{
+			DWORD err = GetLastError();
+			WLog_WARN(TAG, "failed to close directory: %" PRIu32, err);
+		}
 	}
 
-out:
+	free(wname);
+	free(find_name);
 	return result;
 }
 
