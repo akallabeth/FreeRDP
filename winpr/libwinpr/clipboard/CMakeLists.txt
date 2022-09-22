@@ -18,21 +18,10 @@
 winpr_module_add(
 	synthetic.c
 	clipboard.c
-	clipboard.h)
-
-if(WIN32)
-    winpr_module_add(
-        synthetic_file.h
-        synthetic_file.c
-        dirent.h
-        dirent.c
-        )
-elseif(HAVE_UNISTD_H)
-	winpr_module_add(
-		synthetic_file.h
-		synthetic_file.c
+	clipboard.h
+	synthetic_file.h
+	synthetic_file.c
 	)
-endif()
 
 if(BUILD_TESTING)
 	add_subdirectory(test)
