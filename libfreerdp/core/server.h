@@ -66,6 +66,8 @@ struct rdp_peer_channel
 	BYTE dvc_open_state;
 	UINT32 dvc_total_length;
 	rdpMcsChannel* mcsChannel;
+
+	char name[128];
 };
 
 struct WTSVirtualChannelManager
