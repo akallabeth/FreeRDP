@@ -555,17 +555,6 @@ int certificate_store_contains_data(rdpCertificateStore* certificate_store,
 		return certificate_match_data_file(certificate_store, certificate_data);
 }
 
-static char* decode(const char* value)
-{
-	size_t len, length;
-	char* converted = NULL;
-	if (!value)
-		return NULL;
-	len = strlen(value);
-	crypto_base64_decode(value, len, (BYTE**)&converted, &length);
-	return converted;
-}
-
 static char* encode(const char* value)
 {
 	size_t len;

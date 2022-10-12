@@ -255,24 +255,23 @@ static int freerdp_detect_keyboard(DWORD* keyboardLayoutId)
 	return 0;
 }
 
+#ifdef __APPLE__
 static int freerdp_keyboard_init_apple(DWORD* keyboardLayoutId,
                                        DWORD x11_keycode_to_rdp_scancode[256])
 {
-	DWORD vkcode;
-	DWORD keycode;
-	DWORD keycode_to_vkcode[256];
+	size_t keycode;
+	DWORD keycode_to_vkcode[256] = { 0 };
 
-	ZeroMemory(keycode_to_vkcode, sizeof(keycode_to_vkcode));
-
-	for (keycode = 0; keycode < 256; keycode++)
+	for (keycode = 0; keycode < ARRAYSIZE(keycode_to_vkcode); keycode++)
 	{
-		vkcode = keycode_to_vkcode[keycode] =
+		const DWORD vkcode = keycode_to_vkcode[keycode] =
 		    GetVirtualKeyCodeFromKeycode(keycode, KEYCODE_TYPE_APPLE);
 		x11_keycode_to_rdp_scancode[keycode] = GetVirtualScanCodeFromVirtualKeyCode(vkcode, 4);
 	}
 
 	return 0;
 }
+#endif
 
 static int freerdp_keyboard_init_x11_evdev(DWORD* keyboardLayoutId,
                                            DWORD x11_keycode_to_rdp_scancode[256])
