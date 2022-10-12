@@ -663,7 +663,7 @@ typedef struct
 #define SEC_WINNT_AUTH_IDENTITY_UNICODE 0x2
 #define SEC_WINNT_AUTH_IDENTITY_EXTENDED 0x100
 
-#if !defined(_WIN32) || defined(_UWP)
+#if !defined(_WIN32) || defined(_UWP) || defined(__MINGW32__)
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -812,6 +812,7 @@ typedef union _SEC_WINNT_AUTH_IDENTITY_INFO
 #pragma clang diagnostic pop
 #endif
 
+#if !defined(__MINGW32__)
 typedef struct
 {
 	ULONG_PTR dwLower;
@@ -847,7 +848,9 @@ typedef struct
 } SecBufferDesc;
 typedef SecBufferDesc* PSecBufferDesc;
 
-#endif /* !defined(_WIN32) || defined(_UWP) */
+#endif /* __MINGW32__ */
+
+#endif /* !defined(_WIN32) || defined(_UWP) || defined(__MINGW32__) */
 
 typedef SECURITY_STATUS (*psSspiNtlmHashCallback)(void* client,
                                                   const SEC_WINNT_AUTH_IDENTITY* authIdentity,
