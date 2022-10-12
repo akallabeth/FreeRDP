@@ -1045,9 +1045,10 @@ int rdp_recv_data_pdu(rdpRdp* rdp, wStream* s)
 			break;
 
 		case DATA_PDU_TYPE_SYNCHRONIZE:
-			if (!rdp_recv_synchronize_pdu(rdp, cs))
+			if (!rdp_recv_server_synchronize_pdu(rdp, cs))
 			{
-				WLog_ERR(TAG, "DATA_PDU_TYPE_SYNCHRONIZE - rdp_recv_synchronize_pdu() failed");
+				WLog_ERR(TAG,
+				         "DATA_PDU_TYPE_SYNCHRONIZE - rdp_recv_server_synchronize_pdu() failed");
 				goto out_fail;
 			}
 
@@ -1179,13 +1180,13 @@ int rdp_recv_message_channel_pdu(rdpRdp* rdp, wStream* s, UINT16 securityFlags)
 	if (securityFlags & SEC_AUTODETECT_REQ)
 	{
 		/* Server Auto-Detect Request PDU */
-		return rdp_recv_autodetect_request_packet(rdp, s);
+		return autodetect_recv_request_packet(rdp->autodetect, s);
 	}
 
 	if (securityFlags & SEC_AUTODETECT_RSP)
 	{
 		/* Client Auto-Detect Response PDU */
-		return rdp_recv_autodetect_response_packet(rdp, s);
+		return autodetect_recv_response_packet(rdp->autodetect, s);
 	}
 
 	if (securityFlags & SEC_HEARTBEAT)
