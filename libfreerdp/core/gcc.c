@@ -933,6 +933,7 @@ BOOL gcc_read_client_core_data(wStream* s, rdpMcs* mcs, UINT16 blockLength)
 
 	do
 	{
+		UINT16 serialNumber;
 		UINT16 clientProductIdLen;
 		if (blockLength < 2)
 			break;
@@ -946,14 +947,27 @@ BOOL gcc_read_client_core_data(wStream* s, rdpMcs* mcs, UINT16 blockLength)
 		Stream_Read_UINT16(s, clientProductIdLen); /* clientProductID (2 bytes) */
 		blockLength -= 2;
 
+		if (clientProductIdLen != 0)
+		{
+			WLog_WARN(
+			    TAG,
+			    "[MS-RDPBCGR] 2.2.1.3.2 Client Core Data (TS_UD_CS_CORE) clientProductId=%" PRIu16
+			    ", expected 1",
+			    clientProductIdLen);
+		}
 		if (blockLength < 4)
 			break;
 
-		Stream_Seek_UINT32(s); /* serialNumber (4 bytes) */
+		Stream_Read_UINT32(s, serialNumber); /* serialNumber (4 bytes) */
 		blockLength -= 4;
 
 		if (blockLength < 2)
 			break;
+
+		WLog_DBG(
+		    TAG,
+		    "[MS-RDPBCGR] 2.2.1.3.2 Client Core Data (TS_UD_CS_CORE) serialNumber=0x%08" PRIx32,
+		    serialNumber);
 
 		Stream_Read_UINT16(s, highColorDepth); /* highColorDepth (2 bytes) */
 		blockLength -= 2;
@@ -961,14 +975,26 @@ BOOL gcc_read_client_core_data(wStream* s, rdpMcs* mcs, UINT16 blockLength)
 		if (blockLength < 2)
 			break;
 
+		WLog_DBG(
+		    TAG,
+		    "[MS-RDPBCGR] 2.2.1.3.2 Client Core Data (TS_UD_CS_CORE) highColorDepth=0x%04" PRIx16,
+		    highColorDepth);
+
 		Stream_Read_UINT16(s, supportedColorDepths); /* supportedColorDepths (2 bytes) */
 		blockLength -= 2;
 
 		if (blockLength < 2)
 			break;
 
+		WLog_DBG(TAG,
+		         "[MS-RDPBCGR] 2.2.1.3.2 Client Core Data (TS_UD_CS_CORE) "
+		         "supportedColorDepths=0x%04" PRIx16,
+		         supportedColorDepths);
+
 		Stream_Read_UINT16(s, earlyCapabilityFlags); /* earlyCapabilityFlags (2 bytes) */
-		settings->EarlyCapabilityFlags = (UINT32)earlyCapabilityFlags;
+		if (!freerdp_settings_set_uint32(settings, FreeRDP_EarlyCapabilityFlags,
+		                                 earlyCapabilityFlags))
+			return FALSE;
 		blockLength -= 2;
 
 		/* clientDigProductId (64 bytes): Contains a value that uniquely identifies the client */
@@ -984,7 +1010,8 @@ BOOL gcc_read_client_core_data(wStream* s, rdpMcs* mcs, UINT16 blockLength)
 		}
 
 		Stream_Seek(s, 64); /* clientDigProductId (64 bytes) */
-		freerdp_settings_set_string(settings, FreeRDP_ClientProductId, strbuffer);
+		if (!freerdp_settings_set_string(settings, FreeRDP_ClientProductId, strbuffer))
+			return FALSE;
 		blockLength -= 64;
 
 		if (blockLength < 1)
