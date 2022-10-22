@@ -1977,86 +1977,94 @@ static int rdg_write_websocket_data_packet(rdpRdg* rdg, const BYTE* buf, int isi
 {
 	size_t payloadSize;
 	size_t fullLen;
+	size_t offset = 0;
 	int status;
 	wStream* sWS;
-
-	uint32_t maskingKey;
-	BYTE* maskingKeyByte1 = (BYTE*)&maskingKey;
-	BYTE* maskingKeyByte2 = maskingKeyByte1 + 1;
-	BYTE* maskingKeyByte3 = maskingKeyByte1 + 2;
-	BYTE* maskingKeyByte4 = maskingKeyByte1 + 3;
-
-	int streamPos;
-
-	winpr_RAND((BYTE*)&maskingKey, 4);
-
-	payloadSize = isize + 10;
-	if ((isize < 0) || (isize > UINT16_MAX))
-		return -1;
-
-	if (payloadSize < 1)
-		return 0;
-
-	if (payloadSize < 126)
-		fullLen = payloadSize + 6; /* 2 byte "mini header" + 4 byte masking key */
-	else if (payloadSize < 0x10000)
-		fullLen = payloadSize + 8; /* 2 byte "mini header" + 2 byte length + 4 byte masking key */
-	else
-		fullLen = payloadSize + 14; /* 2 byte "mini header" + 8 byte length + 4 byte masking key */
-
-	sWS = Stream_New(NULL, fullLen);
-	if (!sWS)
-		return FALSE;
-
-	Stream_Write_UINT8(sWS, WEBSOCKET_FIN_BIT | WebsocketBinaryOpcode);
-	if (payloadSize < 126)
-		Stream_Write_UINT8(sWS, payloadSize | WEBSOCKET_MASK_BIT);
-	else if (payloadSize < 0x10000)
+	while (offset < isize)
 	{
-		Stream_Write_UINT8(sWS, 126 | WEBSOCKET_MASK_BIT);
-		Stream_Write_UINT16_BE(sWS, payloadSize);
+		int psize = (isize - offset > 1400 ? 1400 : isize - offset);
+		uint32_t maskingKey;
+		BYTE* maskingKeyByte1 = (BYTE*)&maskingKey;
+		BYTE* maskingKeyByte2 = maskingKeyByte1 + 1;
+		BYTE* maskingKeyByte3 = maskingKeyByte1 + 2;
+		BYTE* maskingKeyByte4 = maskingKeyByte1 + 3;
+
+		int streamPos;
+
+		winpr_RAND((BYTE*)&maskingKey, 4);
+
+		payloadSize = psize + 10;
+		if ((psize < 0) || (psize > UINT16_MAX))
+			return -1;
+
+		if (payloadSize < 1)
+			return 0;
+
+		if (payloadSize < 126)
+			fullLen = payloadSize + 6; /* 2 byte "mini header" + 4 byte masking key */
+		else if (payloadSize < 0x10000)
+			fullLen =
+			    payloadSize + 8; /* 2 byte "mini header" + 2 byte length + 4 byte masking key */
+		else
+			fullLen =
+			    payloadSize + 14; /* 2 byte "mini header" + 8 byte length + 4 byte masking key */
+
+		sWS = Stream_New(NULL, fullLen);
+		if (!sWS)
+			return FALSE;
+
+		Stream_Write_UINT8(sWS, WEBSOCKET_FIN_BIT | WebsocketBinaryOpcode);
+		if (payloadSize < 126)
+			Stream_Write_UINT8(sWS, payloadSize | WEBSOCKET_MASK_BIT);
+		else if (payloadSize < 0x10000)
+		{
+			Stream_Write_UINT8(sWS, 126 | WEBSOCKET_MASK_BIT);
+			Stream_Write_UINT16_BE(sWS, payloadSize);
+		}
+		else
+		{
+			Stream_Write_UINT8(sWS, 127 | WEBSOCKET_MASK_BIT);
+			/* biggest packet possible is 0xffff + 0xa, so 32bit is always enough */
+			Stream_Write_UINT32_BE(sWS, 0);
+			Stream_Write_UINT32_BE(sWS, payloadSize);
+		}
+		Stream_Write_UINT32(sWS, maskingKey);
+
+		Stream_Write_UINT16(sWS,
+		                    PKT_TYPE_DATA ^ (*maskingKeyByte1 | *maskingKeyByte2 << 8)); /* Type */
+		Stream_Write_UINT16(sWS, 0 ^ (*maskingKeyByte3 | *maskingKeyByte4 << 8)); /* Reserved */
+		Stream_Write_UINT32(sWS, (UINT32)payloadSize ^ maskingKey); /* Packet length */
+		Stream_Write_UINT16(sWS, (UINT16)psize ^
+		                             (*maskingKeyByte1 | *maskingKeyByte2 << 8)); /* Data size */
+
+		/* masking key is now off by 2 bytes. fix that */
+		maskingKey = (maskingKey & 0xffff) << 16 | (maskingKey >> 16);
+
+		/* mask as much as possible with 32bit access */
+		for (streamPos = 0; streamPos + 4 <= psize; streamPos += 4)
+		{
+			uint32_t masked = *((const uint32_t*)((const BYTE*)buf + streamPos)) ^ maskingKey;
+			Stream_Write_UINT32(sWS, masked);
+		}
+
+		/* mask the rest byte by byte */
+		for (; streamPos < psize; streamPos++)
+		{
+			BYTE* partialMask = (BYTE*)(&maskingKey) + streamPos % 4;
+			BYTE masked = *((const BYTE*)((const BYTE*)buf + streamPos)) ^ *partialMask;
+			Stream_Write_UINT8(sWS, masked);
+		}
+
+		Stream_SealLength(sWS);
+		status = tls_write_all(rdg->tlsOut, Stream_Buffer(sWS), Stream_Length(sWS));
+		Stream_Free(sWS, TRUE);
+
+		if (status < 0)
+			return status;
+
+		buf += psize;
+		offset += psize;
 	}
-	else
-	{
-		Stream_Write_UINT8(sWS, 127 | WEBSOCKET_MASK_BIT);
-		/* biggest packet possible is 0xffff + 0xa, so 32bit is always enough */
-		Stream_Write_UINT32_BE(sWS, 0);
-		Stream_Write_UINT32_BE(sWS, payloadSize);
-	}
-	Stream_Write_UINT32(sWS, maskingKey);
-
-	Stream_Write_UINT16(sWS, PKT_TYPE_DATA ^ (*maskingKeyByte1 | *maskingKeyByte2 << 8)); /* Type */
-	Stream_Write_UINT16(sWS, 0 ^ (*maskingKeyByte3 | *maskingKeyByte4 << 8)); /* Reserved */
-	Stream_Write_UINT32(sWS, (UINT32)payloadSize ^ maskingKey);               /* Packet length */
-	Stream_Write_UINT16(sWS,
-	                    (UINT16)isize ^ (*maskingKeyByte1 | *maskingKeyByte2 << 8)); /* Data size */
-
-	/* masking key is now off by 2 bytes. fix that */
-	maskingKey = (maskingKey & 0xffff) << 16 | (maskingKey >> 16);
-
-	/* mask as much as possible with 32bit access */
-	for (streamPos = 0; streamPos + 4 <= isize; streamPos += 4)
-	{
-		uint32_t masked = *((const uint32_t*)((const BYTE*)buf + streamPos)) ^ maskingKey;
-		Stream_Write_UINT32(sWS, masked);
-	}
-
-	/* mask the rest byte by byte */
-	for (; streamPos < isize; streamPos++)
-	{
-		BYTE* partialMask = (BYTE*)(&maskingKey) + streamPos % 4;
-		BYTE masked = *((const BYTE*)((const BYTE*)buf + streamPos)) ^ *partialMask;
-		Stream_Write_UINT8(sWS, masked);
-	}
-
-	Stream_SealLength(sWS);
-
-	status = tls_write_all(rdg->tlsOut, Stream_Buffer(sWS), Stream_Length(sWS));
-	Stream_Free(sWS, TRUE);
-
-	if (status < 0)
-		return status;
-
 	return isize;
 }
 
