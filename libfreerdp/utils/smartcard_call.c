@@ -296,10 +296,9 @@ static DWORD filter_device_by_name_w(wLinkedList* list, LPWSTR* mszReaders, DWOR
 	if (LinkedList_Count(list) < 1)
 		return cchReaders;
 
-	res = ConvertFromUnicode(CP_UTF8, 0, *mszReaders, (int)cchReaders, &readers, 0, NULL, NULL);
+	readers = ConvertWCharNToUtf8Alloc(*mszReaders, cchReaders, NULL);
 
-	/* When res==0, readers may have been set to NULL by ConvertFromUnicode */
-	if ((res < 0) || ((DWORD)res != cchReaders) || (readers == 0))
+	if (!readers)
 	{
 		free(readers);
 		return 0;
@@ -308,9 +307,9 @@ static DWORD filter_device_by_name_w(wLinkedList* list, LPWSTR* mszReaders, DWOR
 	free(*mszReaders);
 	*mszReaders = NULL;
 	rc = filter_device_by_name_a(list, &readers, cchReaders);
-	res = ConvertToUnicode(CP_UTF8, 0, readers, (int)rc, mszReaders, 0);
 
-	if ((res < 0) || ((DWORD)res != rc))
+	*mszReaders = ConvertUtf8NToWCharAlloc(readers, rc, NULL);
+	if (!*mszReaders)
 		rc = 0;
 
 	free(readers);

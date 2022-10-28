@@ -1448,17 +1448,11 @@ static BOOL rdp_read_input_capability_set(wStream* s, rdpSettings* settings)
 	Stream_Read_UINT32(s, settings->KeyboardFunctionKey); /* keyboardFunctionKeys (4 bytes) */
 
 	{
-		BOOL res;
-		char* str = NULL;
-		int rc = ConvertFromUnicode(CP_UTF8, 0, (LPCWSTR)Stream_Pointer(s), 64 / sizeof(WCHAR),
-		                            &str, -1, NULL, NULL);
-		if (rc < 0)
+		char str[65] = { 0 };
+		if (!Stream_Read_UTF16_String_As_UTF8_Buffer(s, 64 / sizeof(WCHAR), str, ARRAYSIZE(str)))
 			return FALSE;
-		res = freerdp_settings_set_string(settings, FreeRDP_ImeFileName, str);
-		free(str);
-		if (!res)
+		if (!freerdp_settings_set_string(settings, FreeRDP_ImeFileName, str))
 			return FALSE;
-		Stream_Seek(s, 64); /* imeFileName (64 bytes) */
 	}
 
 	settings->FastPathInput = inputFlags & (INPUT_FLAG_FASTPATH_INPUT | INPUT_FLAG_FASTPATH_INPUT2);

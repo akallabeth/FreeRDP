@@ -6,6 +6,7 @@
 #include <winpr/print.h>
 #include <winpr/windows.h>
 
+#if defined(WITH_WINPR_DEPRECATED)
 /* Letters */
 
 static BYTE c_cedilla_UTF8[] = "\xC3\xA7\x00";
@@ -504,12 +505,14 @@ fail:
 	free(dst);
 	return FALSE;
 }
+#endif
 
 int TestUnicodeConversion(int argc, char* argv[])
 {
 	WINPR_UNUSED(argc);
 	WINPR_UNUSED(argv);
 
+#if defined(WITH_WINPR_DEPRECATED)
 	/* Letters */
 
 	printf("Letters\n");
@@ -637,5 +640,6 @@ int TestUnicodeConversion(int argc, char* argv[])
 
 	    }
 	*/
+#endif
 	return 0;
 }
