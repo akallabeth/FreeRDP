@@ -1996,3 +1996,42 @@ const char* freerdp_rdp_version_string(UINT32 version)
 			return "RDP_VERSION_UNKNOWN";
 	}
 }
+
+BOOL freerdp_settings_set_string_from_utf16(rdpSettings* settings, size_t id, const WCHAR* param)
+{
+	if (!param)
+		return freerdp_settings_set_string_(settings, id, NULL, 0, TRUE);
+
+	size_t len = 0;
+
+	char* str = ConvertWCharToUtf8Alloc(param, &len);
+	if (!str && (len != 0))
+		return FALSE;
+
+	return freerdp_settings_set_string_(settings, id, str, len, TRUE);
+}
+
+BOOL freerdp_settings_set_string_from_utf16N(rdpSettings* settings, size_t id, const WCHAR* param,
+                                             size_t length)
+{
+	size_t len = 0;
+	if (!param)
+		return freerdp_settings_set_string_(settings, id, NULL, length, TRUE);
+
+	char* str = ConvertWCharNToUtf8Alloc(param, length, &len);
+	if (!str && (length != 0))
+		return FALSE;
+
+	return freerdp_settings_set_string_(settings, id, str, len, TRUE);
+}
+
+WCHAR* freerdp_settings_get_string_as_utf16(const rdpSettings* settings, size_t id,
+                                            size_t* pCharLen)
+{
+	const char* str = freerdp_settings_get_string(settings, id);
+	if (pCharLen)
+		*pCharLen = 0;
+	if (!str)
+		return NULL;
+	return ConvertUtf8ToWCharAlloc(str, pCharLen);
+}
