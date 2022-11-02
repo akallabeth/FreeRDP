@@ -154,7 +154,11 @@
  *
  */
 
-int MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
+#if !defined(WITH_WINPR_DEPRECATED)
+static
+#endif
+    int
+    MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
                         LPWSTR lpWideCharStr, int cchWideChar)
 {
 	LPWSTR targetStart;
@@ -277,7 +281,11 @@ int MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int
  *
  */
 
-int WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr, int cchWideChar,
+#if !defined(WITH_WINPR_DEPRECATED)
+static
+#endif
+    int
+    WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr, int cchWideChar,
                         LPSTR lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar,
                         LPBOOL lpUsedDefaultChar)
 {
