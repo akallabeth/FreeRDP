@@ -80,7 +80,6 @@ typedef struct
 static UINT parallel_process_irp_create(PARALLEL_DEVICE* parallel, IRP* irp)
 {
 	char* path = NULL;
-	int status;
 	WCHAR* ptr;
 	UINT32 PathLength;
 	if (!Stream_SafeSeek(irp->input, 28))

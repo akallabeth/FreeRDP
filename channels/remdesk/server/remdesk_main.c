@@ -299,7 +299,6 @@ static UINT remdesk_recv_ctl_remote_control_desktop_pdu(RemdeskServerContext* co
 static UINT remdesk_recv_ctl_authenticate_pdu(RemdeskServerContext* context, wStream* s,
                                               REMDESK_CHANNEL_HEADER* header)
 {
-	int status;
 	int cchStringW;
 	WCHAR* pStringW;
 	UINT32 msgLength;

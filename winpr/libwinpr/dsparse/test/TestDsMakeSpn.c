@@ -110,8 +110,8 @@ static BOOL test_DsMakeSpnW(void)
 		char* SpnA = buffer1;
 		char* testSpnA = buffer2;
 
-		ConvertWCharToUtf8(Spn, SpnA, ARRAYSIZE(SpnA));
-		ConvertWCharToUtf8(testSpn, testSpnA, ARRAYSIZE(testSpnA));
+		ConvertWCharToUtf8(Spn, SpnA, ARRAYSIZE(buffer1));
+		ConvertWCharToUtf8(testSpn, testSpnA, ARRAYSIZE(buffer2));
 		printf("DsMakeSpnW: SPN mismatch: Actual: %s, Expected: %s\n", SpnA, testSpnA);
 		goto fail;
 	}
@@ -120,7 +120,7 @@ static BOOL test_DsMakeSpnW(void)
 		char buffer[8192] = { 0 };
 		char* SpnA = buffer;
 
-		ConvertWCharToUtf8(Spn, SpnA, ARRAYSIZE(SpnA));
+		ConvertWCharToUtf8(Spn, SpnA, ARRAYSIZE(buffer));
 		printf("DsMakeSpnW: %s\n", SpnA);
 	}
 

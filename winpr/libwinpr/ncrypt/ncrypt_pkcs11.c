@@ -846,7 +846,7 @@ static SECURITY_STATUS get_piv_container_name(NCryptP11KeyHandle* key, BYTE* piv
 		return NTE_BAD_KEY;
 
 	fix_padded_string((char*)slot_info.slotDescription, sizeof(slot_info.slotDescription));
-	reader = ConvertUtf8NToWCharAlloc(slot_info.slotDescription,
+	reader = ConvertUtf8NToWCharAlloc((char*)slot_info.slotDescription,
 	                                  ARRAYSIZE(slot_info.slotDescription), NULL);
 	ret = NTE_NO_MEMORY;
 	if (!reader)
@@ -985,8 +985,8 @@ static SECURITY_STATUS NCryptP11KeyGetProperties(NCryptP11KeyHandle* keyHandle,
 				if (cbOutput < *pcbResult)
 					return NTE_NO_MEMORY;
 
-				if (ConvertUtf8ToWChar(slotInfo.slotDescription, cnv.wc, cbOutput / sizeof(WCHAR)) <
-				    0)
+				if (ConvertUtf8ToWChar((char*)slotInfo.slotDescription, cnv.wc,
+				                       cbOutput / sizeof(WCHAR)) < 0)
 					return NTE_NO_MEMORY;
 			}
 			return ERROR_SUCCESS;

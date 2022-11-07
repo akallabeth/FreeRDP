@@ -714,7 +714,6 @@ static UINT
 wlf_cliprdr_server_format_data_response(CliprdrClientContext* context,
                                         const CLIPRDR_FORMAT_DATA_RESPONSE* formatDataResponse)
 {
-	int cnv;
 	UINT rc = ERROR_INTERNAL_ERROR;
 	UINT32 size;
 	LPSTR cdata = NULL;
@@ -747,7 +746,7 @@ wlf_cliprdr_server_format_data_response(CliprdrClientContext* context,
 			data = cdata;
 			size = 0;
 			if (cdata)
-				size = (UINT32)strnlen(data, (size_t)cnv);
+				size = (UINT32)strnlen(data, size);
 			break;
 
 		default:

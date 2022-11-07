@@ -1048,8 +1048,6 @@ HANDLE FindFirstFileA(LPCSTR lpFileName, LPWIN32_FIND_DATAA lpFindFileData)
 static BOOL ConvertFindDataAToW(LPWIN32_FIND_DATAA lpFindFileDataA,
                                 LPWIN32_FIND_DATAW lpFindFileDataW)
 {
-	size_t length;
-
 	if (!lpFindFileDataA || !lpFindFileDataW)
 		return FALSE;
 

@@ -291,7 +291,6 @@ static BOOL printer_load_from_config(const rdpSettings* settings, rdpPrinter* pr
 	WCHAR* wname = NULL;
 	size_t wlen;
 	char* path = NULL;
-	int rc;
 	UINT32 flags = 0;
 	void* DriverName = NULL;
 	UINT32 DriverNameLen = 0;
