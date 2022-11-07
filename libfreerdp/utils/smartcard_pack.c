@@ -342,24 +342,24 @@ static char* smartcard_convert_string_list(const void* in, size_t bytes, BOOL un
 
 	if (unicode)
 	{
-		mszA = ConvertWCharNToUtf8Alloc(string.wz, bytes / sizeof(WCHAR), NULL);
+		mszA = ConvertWCharNToUtf8Alloc(string.wz, bytes / sizeof(WCHAR), &length);
 		if (!mszA)
 			return NULL;
 	}
 	else
 	{
-		length = bytes;
-		mszA = (char*)calloc(length, sizeof(char));
+		mszA = (char*)calloc(bytes, sizeof(char));
 		if (!mszA)
 			return NULL;
-		CopyMemory(mszA, string.sz, length - 1);
-		mszA[length - 1] = '\0';
+		CopyMemory(mszA, string.sz, bytes - 1);
+		mszA[bytes - 1] = '\0';
+		length = strnlen(mszA, bytes);
 	}
 
-	for (index = 0; index < length - 1; index++)
+	for (index = 1; index < length; index++)
 	{
-		if (mszA[index] == '\0')
-			mszA[index] = ',';
+		if (mszA[index - 1] == '\0')
+			mszA[index - 1] = ',';
 	}
 
 	return mszA;
