@@ -185,8 +185,6 @@ wStream* cliprdr_packet_format_list_new(const CLIPRDR_FORMAT_LIST* formatList,
 {
 	wStream* s;
 	UINT32 index;
-	int cchWideChar;
-	LPWSTR lpWideCharStr;
 	size_t formatNameSize = 0;
 	char* szFormatName;
 	WCHAR* wszFormatName;

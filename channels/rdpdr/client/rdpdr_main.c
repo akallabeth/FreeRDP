@@ -837,7 +837,6 @@ struct hotplug_delete_arg
 
 static BOOL hotplug_delete_foreach(ULONG_PTR key, void* element, void* data)
 {
-	int rc;
 	char* path = NULL;
 	BOOL dev_found = FALSE;
 	struct hotplug_delete_arg* arg = (struct hotplug_delete_arg*)data;

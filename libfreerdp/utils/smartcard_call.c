@@ -289,7 +289,6 @@ static DWORD filter_device_by_name_a(wLinkedList* list, LPSTR* mszReaders, DWORD
 
 static DWORD filter_device_by_name_w(wLinkedList* list, LPWSTR* mszReaders, DWORD cchReaders)
 {
-	int res;
 	DWORD rc;
 	LPSTR readers = NULL;
 

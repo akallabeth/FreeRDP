@@ -1425,7 +1425,6 @@ static int nla_decode_ts_request(rdpNla* nla, wStream* s)
 	WinPrAsn1_OctetString octet_string;
 	WinPrAsn1_INTEGER val;
 	UINT32 version = 0;
-	char buffer[1024];
 
 	WINPR_ASSERT(nla);
 	WINPR_ASSERT(s);

@@ -392,8 +392,6 @@ int sspi_SetAuthIdentityWithUnicodePassword(SEC_WINNT_AUTH_IDENTITY* identity, c
                                             const char* domain, LPWSTR password,
                                             ULONG passwordLength)
 {
-	int status;
-
 	sspi_FreeAuthIdentity(identity);
 	identity->Flags &= ~SEC_WINNT_AUTH_IDENTITY_ANSI;
 	identity->Flags |= SEC_WINNT_AUTH_IDENTITY_UNICODE;

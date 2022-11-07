@@ -613,8 +613,9 @@ BOOL PathFileExistsA(LPCSTR pszPath)
 
 BOOL PathFileExistsW(LPCWSTR pszPath)
 {
-	LPSTR lpFileNameA;
+	LPSTR lpFileNameA = NULL;
 	BOOL ret = FALSE;
+
 	if (!pszPath)
 		goto fail;
 	lpFileNameA = ConvertWCharToUtf8Alloc(pszPath, NULL);

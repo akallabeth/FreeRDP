@@ -323,7 +323,7 @@ static LONG smartcard_ndr_read_u(wStream* s, UUID** data)
 
 static char* smartcard_convert_string_list(const void* in, size_t bytes, BOOL unicode)
 {
-	size_t index, length;
+	size_t index, length = 0;
 	union
 	{
 		const void* pv;

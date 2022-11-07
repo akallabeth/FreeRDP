@@ -1443,7 +1443,6 @@ static void rdpdr_server_write_device_iorequest(wStream* s, UINT32 deviceId, UIN
 static UINT rdpdr_server_read_file_directory_information(wStream* s,
                                                          FILE_DIRECTORY_INFORMATION* fdi)
 {
-	int rc;
 	UINT32 fileNameLength;
 	WINPR_ASSERT(fdi);
 	ZeroMemory(fdi, sizeof(FILE_DIRECTORY_INFORMATION));

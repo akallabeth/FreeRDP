@@ -3,7 +3,7 @@
 #include "md5.h"
 #include <string.h>
 
-void hmac_md5_init(WINPR_HMAC_MD5_CTX* ctx, unsigned char* key, size_t key_len)
+void hmac_md5_init(WINPR_HMAC_MD5_CTX* ctx, const unsigned char* key, size_t key_len)
 {
 	const WINPR_HMAC_MD5_CTX empty = { 0 };
 	unsigned char k_ipad[KEY_IOPAD_SIZE] = { 0 };
@@ -39,7 +39,7 @@ void hmac_md5_init(WINPR_HMAC_MD5_CTX* ctx, unsigned char* key, size_t key_len)
 	winpr_MD5_Update(&ctx->ocontext, k_opad, KEY_IOPAD_SIZE);
 }
 
-void hmac_md5_update(WINPR_HMAC_MD5_CTX* ctx, unsigned char* text, size_t text_len)
+void hmac_md5_update(WINPR_HMAC_MD5_CTX* ctx, const unsigned char* text, size_t text_len)
 {
 	assert(ctx);
 	winpr_MD5_Update(&ctx->icontext, text, text_len);
