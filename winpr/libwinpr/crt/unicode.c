@@ -151,7 +151,6 @@
  *
  */
 
-#if defined(WITH_ICU)
 #if !defined(WITH_WINPR_DEPRECATED)
 static
 #endif
@@ -211,7 +210,6 @@ static
 	return int_WideCharToMultiByte(CodePage, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr,
 	                               cbMultiByte, lpDefaultChar, lpUsedDefaultChar);
 }
-#endif
 
 #endif
 
