@@ -2,7 +2,8 @@
  * WinPR: Windows Portable Runtime
  * Unicode Conversion (CRT)
  *
- * Copyright 2012 Marc-Andre Moreau <marcandre.moreau@gmail.com>
+ * Copyright 2022 Armin Novak <anovak@thincast.com>
+ * Copyright 2022 Thincast Technologies GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +37,8 @@
 #include "../log.h"
 #define TAG WINPR_TAG("unicode")
 
-int MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
-                        LPWSTR lpWideCharStr, int cchWideChar)
+int int_MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
+                            LPWSTR lpWideCharStr, int cchWideChar)
 {
 	/* If cbMultiByte is 0, the function fails */
 	if ((cbMultiByte == 0) || (cbMultiByte < -1))
@@ -74,9 +75,9 @@ int MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int
 	return cchWideChar;
 }
 
-int WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr, int cchWideChar,
-                        LPSTR lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar,
-                        LPBOOL lpUsedDefaultChar)
+int int_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr, int cchWideChar,
+                            LPSTR lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar,
+                            LPBOOL lpUsedDefaultChar)
 {
 	/* If cchWideChar is 0, the function fails */
 	if ((cchWideChar == 0) || (cchWideChar < -1))
