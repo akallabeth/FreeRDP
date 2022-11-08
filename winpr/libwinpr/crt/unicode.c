@@ -33,8 +33,14 @@
 
 #ifndef _WIN32
 
+#if !defined(__APPLE__)
+#define WITH_ICU
+#endif
+
+#if defined(WITH_ICU)
 #include <unicode/ucnv.h>
 #include <unicode/ustring.h>
+#endif
 
 #include "../log.h"
 #define TAG WINPR_TAG("unicode")
@@ -150,6 +156,7 @@
  *
  */
 
+#if defined(WITH_ICU)
 #if !defined(WITH_WINPR_DEPRECATED)
 static
 #endif
@@ -258,7 +265,9 @@ static
                         LPSTR lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar,
                         LPBOOL lpUsedDefaultChar)
 {
+#if defined(WITH_ICU)
 	char* targetStart;
+#endif
 
 	/* If cchWideChar is 0, the function fails */
 
@@ -313,6 +322,7 @@ static
 	}
 	return cbMultiByte;
 }
+#endif
 
 #endif
 

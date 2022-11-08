@@ -22,9 +22,13 @@ set (CRT_FILES alignment.c
 	unicode.c
 	string.c)
 
-find_package(ICU REQUIRED i18n uc io)
-winpr_include_directory_add(${ICU_INCLUDE_DIRS})
-winpr_library_add_private(${ICU_LIBRARIES})
+if (NOT APPLE)
+	find_package(ICU REQUIRED i18n uc io)
+	winpr_include_directory_add(${ICU_INCLUDE_DIRS})
+	winpr_library_add_private(${ICU_LIBRARIES})
+else()
+	list(APPEND CRT_FILES unicode_apple.m)
+endif()
 
 winpr_module_add(${CRT_FILES})
 
