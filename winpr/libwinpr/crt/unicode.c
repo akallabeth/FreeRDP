@@ -33,12 +33,8 @@
 
 #ifndef _WIN32
 
-#if defined(WITH_ICU)
 #include <unicode/ucnv.h>
 #include <unicode/ustring.h>
-#else
-#include "utf.h"
-#endif
 
 #include "../log.h"
 #define TAG WINPR_TAG("unicode")
@@ -162,11 +158,6 @@ static
                         LPWSTR lpWideCharStr, int cchWideChar)
 {
 	LPWSTR targetStart;
-#if !defined(WITH_ICU)
-	const BYTE* sourceStart;
-	int length;
-	ConversionResult result;
-#endif
 
 	/* If cbMultiByte is 0, the function fails */
 
@@ -187,7 +178,6 @@ static
 	 * if cchWideChar is 0, the function returns the required buffer size
 	 * in characters for lpWideCharStr and makes no use of the output parameter itself.
 	 */
-#if defined(WITH_ICU)
 	{
 		UErrorCode error;
 		int32_t targetLength;
@@ -220,27 +210,6 @@ static
 			cchWideChar = U_SUCCESS(error) ? targetLength : 0;
 		}
 	}
-#else
-
-	if (cchWideChar == 0)
-	{
-		sourceStart = (const BYTE*)lpMultiByteStr;
-		targetStart = (WCHAR*)NULL;
-		result = ConvertUTF8toUTF16(&sourceStart, &sourceStart[cbMultiByte], &targetStart, NULL,
-		                            strictConversion);
-		length = targetStart - ((WCHAR*)NULL);
-	}
-	else
-	{
-		sourceStart = (const BYTE*)lpMultiByteStr;
-		targetStart = lpWideCharStr;
-		result = ConvertUTF8toUTF16(&sourceStart, &sourceStart[cbMultiByte], &targetStart,
-		                            &targetStart[cchWideChar], strictConversion);
-		length = targetStart - ((WCHAR*)lpWideCharStr);
-	}
-
-	cchWideChar = (result == conversionOK) ? length : 0;
-#endif
 	return cchWideChar;
 }
 
@@ -289,14 +258,7 @@ static
                         LPSTR lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar,
                         LPBOOL lpUsedDefaultChar)
 {
-#if !defined(WITH_ICU)
-	int length;
-	const WCHAR* sourceStart;
-	ConversionResult result;
-	BYTE* targetStart;
-#else
 	char* targetStart;
-#endif
 
 	/* If cchWideChar is 0, the function fails */
 
@@ -317,7 +279,6 @@ static
 	 * if cbMultiByte is 0, the function returns the required buffer size
 	 * in bytes for lpMultiByteStr and makes no use of the output parameter itself.
 	 */
-#if defined(WITH_ICU)
 	{
 		UErrorCode error;
 		int32_t targetLength;
@@ -350,27 +311,6 @@ static
 			cbMultiByte = U_SUCCESS(error) ? targetLength : 0;
 		}
 	}
-#else
-
-	if (cbMultiByte == 0)
-	{
-		sourceStart = (const WCHAR*)lpWideCharStr;
-		targetStart = (BYTE*)NULL;
-		result = ConvertUTF16toUTF8(&sourceStart, &sourceStart[cchWideChar], &targetStart, NULL,
-		                            strictConversion);
-		length = targetStart - ((BYTE*)NULL);
-	}
-	else
-	{
-		sourceStart = (const WCHAR*)lpWideCharStr;
-		targetStart = (BYTE*)lpMultiByteStr;
-		result = ConvertUTF16toUTF8(&sourceStart, &sourceStart[cchWideChar], &targetStart,
-		                            &targetStart[cbMultiByte], strictConversion);
-		length = targetStart - ((BYTE*)lpMultiByteStr);
-	}
-
-	cbMultiByte = (result == conversionOK) ? length : 0;
-#endif
 	return cbMultiByte;
 }
 
