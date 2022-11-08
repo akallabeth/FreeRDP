@@ -6,86 +6,322 @@
 #include <winpr/print.h>
 #include <winpr/windows.h>
 
+typedef struct
+{
+	char* utf8;
+	size_t utf8CharLen;
+	WCHAR* utf16;
+	size_t utf16CharLen;
+} testcase_t;
+
+static const testcase_t tests[] = {
+	/* Letters */
+	{ "\xC3\xA7\x00", 2, "\xE7\x00\x00\x00", 1 },
+
+	/* English */
+	{ "Hello\0", 5, "\x48\x00\x65\x00\x6C\x00\x6C\x00\x6F\x00\x00\x00", 5 },
+	{ "How are you?\0", 13,
+	  "\x48\x00\x6F\x00\x77\x00\x20\x00\x61\x00\x72\x00\x65\x00\x20\x00\x79\x00\x6F\x00\x75\x00\x3F"
+	  "\x00\x00\x00",
+	  13 },
+
+	/* French */
+	{ "Allo\0", 5, "\x41\x00\x6C\x00\x6C\x00\x6F\x00\x00\x00", 5 },
+	{ "\x43\x6F\x6D\x6D\x65\x6E\x74\x20\xC3\xA7\x61\x20\x76\x61\x3F\x00", 15,
+	  "\x43\x00\x6F\x00\x6D\x00\x6D\x00\x65\x00\x6E\x00\x74\x00\x20\x00\xE7\x00\x61\x00\x20\x00\x76"
+	  "\x00\x61\x00\x3F\x00\x00\x00",
+	  16 },
+
+	/* Russian */
+
+	{ "\xD0\x97\xD0\xB4\xD0\xBE\xD1\x80\xD0\xBE\xD0\xB2\xD0\xBE\x00", 8,
+	  "\x17\x04\x34\x04\x3E\x04\x40\x04\x3E\x04\x32\x04\x3E\x04\x00\x00", 15 },
+	{ "\xD0\x9A\xD0\xB0\xD0\xBA\x20\xD0\xB4\xD0\xB5\xD0\xBB\xD0\xB0\x3F\x00", 10,
+	  "\x1A\x04\x30\x04\x3A\x04\x20\x00\x34\x04\x35\x04\x3B\x04\x30\x04\x3F\x00\x00\x00", 17 },
+
+	/* Arabic */
+	{ "\xD8\xA7\xD9\x84\xD8\xB3\xD9\x84\xD8\xA7\xD9\x85\x20\xD8\xB9\xD9\x84\xD9\x8A\xD9\x83\xD9\x85"
+	  "\x00",
+	  13,
+	  "\x27\x06\x44\x06\x33\x06\x44\x06\x27\x06\x45\x06\x20\x00\x39\x06\x44\x06\x4A\x06\x43\x06\x45"
+	  "\x06\x00\x00",
+	  24 },
+	{ "\xD9\x83\xD9\x8A\xD9\x81\x20\xD8\xAD\xD8\xA7\xD9\x84\xD9\x83\xD8\x9F\x00", 10,
+	  "\x43\x06\x4A\x06\x41\x06\x20\x00\x2D\x06\x27\x06\x44\x06\x43\x06\x1F\x06\x00\x00", 18 },
+
+	/* Chinese */
+	{ "\xE4\xBD\xA0\xE5\xA5\xBD\x00", 3, "\x60\x4F\x7D\x59\x00\x00", 7 },
+	{ "\xE4\xBD\xA0\xE5\xA5\xBD\xE5\x90\x97\x00", 4, "\x60\x4F\x7D\x59\x17\x54\x00\x00", 10 }
+};
+
+static BOOL utf16_equals(const WCHAR* str, size_t len, const testcase_t* test)
+{
+	WINPR_ASSERT(test);
+	return memcmp(str, test->utf16, len * sizeof(WCHAR)) == 0;
+}
+
+static BOOL convert_utf8_to_utf16_ConvertUtf8NToWChar(size_t x, const testcase_t* test)
+{
+	WCHAR buffer[8192] = { 0 };
+
+	WINPR_ASSERT(test);
+
+	printf("[%s] running testcase %" PRIuz " ConvertUtf8NToWChar:\n", __func__, x);
+	SSIZE_T rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen, NULL, 0);
+	if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
+	{
+		fprintf(stderr,
+		        "[%s] expected ConvertUtf8NToWChar(NULL) return %" PRIuz ", got %" PRIdz "\n",
+		        __func__, test->utf16CharLen, rc);
+		return FALSE;
+	}
+
+	rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen + 1, NULL, 0);
+	if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
+	{
+		fprintf(stderr,
+		        "[%s] expected ConvertUtf8NToWChar(NULL) return %" PRIuz ", got %" PRIdz "\n",
+		        __func__, test->utf16CharLen, rc);
+		return FALSE;
+	}
+
+	rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen, buffer, ARRAYSIZE(buffer));
+	if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
+	{
+		fprintf(stderr,
+		        "[%s] expected ConvertUtf8NToWChar(buffer) return %" PRIuz ", got %" PRIdz "\n",
+		        __func__, test->utf16CharLen, rc);
+		return FALSE;
+	}
+	if (!utf16_equals(buffer, test->utf16CharLen, test))
+		return FALSE;
+
+	rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen + 1, buffer, ARRAYSIZE(buffer));
+	if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
+	{
+		fprintf(stderr,
+		        "[%s] expected ConvertUtf8NToWChar(buffer) return %" PRIuz ", got %" PRIdz "\n",
+		        __func__, test->utf16CharLen, rc);
+		return FALSE;
+	}
+	if (!utf16_equals(buffer, test->utf16CharLen, test))
+		return FALSE;
+
+	if (test->utf16CharLen > 1)
+	{
+		rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen, buffer, test->utf16CharLen - 1);
+		if ((rc < 0) || ((size_t)rc != (test->utf16CharLen - 1)))
+		{
+			fprintf(stderr,
+			        "[%s] expected ConvertUtf8NToWChar(small buffer) return %" PRIuz ", got %" PRIdz
+			        "\n",
+			        __func__, test->utf16CharLen - 1, rc);
+			return FALSE;
+		}
+		if (!utf16_equals(buffer, test->utf16CharLen - 1, test))
+			return FALSE;
+
+		rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen + 1, buffer, test->utf16CharLen - 1);
+		if ((rc < 0) || ((size_t)rc != (test->utf16CharLen - 1)))
+		{
+			fprintf(stderr,
+			        "[%s] expected ConvertUtf8NToWChar(small buffer) return %" PRIuz ", got %" PRIdz
+			        "\n",
+			        __func__, test->utf16CharLen - 1, rc);
+			return FALSE;
+		}
+		if (!utf16_equals(buffer, test->utf16CharLen - 1, test))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+static BOOL convert_utf8_to_utf16_ConvertUtf8ToWChar(size_t x, const testcase_t* test)
+{
+	WCHAR buffer[8192] = { 0 };
+
+	WINPR_ASSERT(test);
+
+	printf("[%s] running testcase %" PRIuz " ConvertUtf8ToWChar:\n", __func__, x);
+	SSIZE_T rc = ConvertUtf8ToWChar(test->utf8, NULL, 0);
+	if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
+	{
+		fprintf(stderr,
+		        "[%s] expected ConvertUtf8ToWChar(NULL) return %" PRIuz ", got %" PRIdz "\n",
+		        __func__, test->utf16CharLen, rc);
+		return FALSE;
+	}
+
+	rc = ConvertUtf8ToWChar(test->utf8, buffer, ARRAYSIZE(buffer));
+	if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
+	{
+		fprintf(stderr,
+		        "[%s] expected ConvertUtf8ToWChar(buffer) return %" PRIuz ", got %" PRIdz "\n",
+		        __func__, test->utf16CharLen, rc);
+		return FALSE;
+	}
+	if (!utf16_equals(buffer, test->utf16CharLen, test))
+		return FALSE;
+
+	if (test->utf16CharLen > 1)
+	{
+		rc = ConvertUtf8ToWChar(test->utf8, buffer, test->utf16CharLen - 1);
+		if ((rc < 0) || ((size_t)rc != (test->utf16CharLen - 1)))
+		{
+			fprintf(stderr,
+			        "[%s] expected ConvertUtf8ToWChar(small buffer) return %" PRIuz ", got %" PRIdz
+			        "\n",
+			        __func__, test->utf16CharLen, rc);
+			return FALSE;
+		}
+		if (!utf16_equals(buffer, test->utf16CharLen - 1, test))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+static BOOL convert_utf8_to_utf16_ConvertUtf8NToWCharAlloc(size_t x, const testcase_t* test)
+{
+	BOOL rc = FALSE;
+	WCHAR* tmp = NULL;
+	size_t len = 0;
+
+	WINPR_ASSERT(test);
+
+	printf("[%s] running testcase %" PRIuz " ConvertUtf8NToWCharAlloc:\n", __func__, x);
+
+	tmp = ConvertUtf8NToWCharAlloc(test->utf8, test->utf8CharLen, NULL);
+	if (!tmp)
+	{
+		fprintf(stderr, "[%s] expected ConvertUtf8NToWCharAlloc(NULL) return %p [%" PRIuz "]\n",
+		        __func__, tmp, test->utf16CharLen);
+		goto fail;
+	}
+	if (!utf16_equals(tmp, test->utf16CharLen, test))
+		goto fail;
+
+	free(tmp);
+	tmp = ConvertUtf8NToWCharAlloc(test->utf8, test->utf8CharLen + 1, NULL);
+	if (!tmp)
+	{
+		fprintf(stderr, "[%s] expected ConvertUtf8NToWCharAlloc(NULL) return %p [%" PRIuz "]\n",
+		        __func__, tmp, test->utf16CharLen);
+		goto fail;
+	}
+	if (!utf16_equals(tmp, test->utf16CharLen, test))
+		goto fail;
+	free(tmp);
+	tmp = ConvertUtf8NToWCharAlloc(test->utf8, test->utf8CharLen, &len);
+	if (!tmp)
+	{
+		fprintf(stderr, "[%s] expected ConvertUtf8NToWCharAlloc(NULL) return %p [%" PRIuz "]\n",
+		        __func__, tmp, test->utf16CharLen);
+		goto fail;
+	}
+
+	if (len != test->utf16CharLen)
+	{
+		fprintf(stderr,
+		        "[%s] expected ConvertUtf8NToWCharAlloc(NULL) return %" PRIuz ", got %" PRIuz "\n",
+		        __func__, test->utf16CharLen, len);
+		goto fail;
+	}
+	if (!utf16_equals(tmp, test->utf16CharLen, test))
+		goto fail;
+	free(tmp);
+	tmp = ConvertUtf8NToWCharAlloc(test->utf8, test->utf8CharLen + 1, &len);
+	if (!tmp)
+	{
+		fprintf(stderr, "[%s] expected ConvertUtf8NToWCharAlloc(NULL) return %p [%" PRIuz "]\n",
+		        __func__, tmp, test->utf16CharLen);
+		goto fail;
+	}
+
+	if (len != test->utf16CharLen)
+	{
+		fprintf(stderr,
+		        "[%s] expected ConvertUtf8NToWCharAlloc(NULL) return %" PRIuz ", got %" PRIuz "\n",
+		        __func__, test->utf16CharLen, len);
+		goto fail;
+	}
+
+	if (!utf16_equals(tmp, test->utf16CharLen, test))
+		goto fail;
+
+	rc = TRUE;
+fail:
+	free(tmp);
+	return rc;
+}
+
+static BOOL convert_utf8_to_utf16_ConvertUtf8ToWCharAlloc(size_t x, const testcase_t* test)
+{
+	BOOL rc = FALSE;
+	WCHAR* tmp = NULL;
+	size_t len = 0;
+
+	WINPR_ASSERT(test);
+
+	printf("[%s] running testcase %" PRIuz " ConvertUtf8ToWCharAlloc:\n", __func__, x);
+
+	tmp = ConvertUtf8ToWCharAlloc(test->utf8, NULL);
+	if (!tmp)
+	{
+		fprintf(stderr, "[%s] expected ConvertUtf8ToWCharAlloc(NULL) return %p [%" PRIuz "]\n",
+		        __func__, tmp, test->utf16CharLen);
+		goto fail;
+	}
+	if (!utf16_equals(tmp, test->utf16CharLen, test))
+		goto fail;
+
+	free(tmp);
+	tmp = ConvertUtf8ToWCharAlloc(test->utf8, &len);
+	if (!tmp)
+	{
+		fprintf(stderr, "[%s] expected ConvertUtf8ToWCharAlloc(NULL) return %p [%" PRIuz "]\n",
+		        __func__, tmp, test->utf16CharLen);
+		goto fail;
+	}
+
+	if (len != test->utf16CharLen)
+	{
+		fprintf(stderr,
+		        "[%s] expected ConvertUtf8ToWCharAlloc(NULL) return %" PRIuz ", got %" PRIuz "\n",
+		        __func__, test->utf16CharLen, len);
+		goto fail;
+	}
+	if (!utf16_equals(tmp, test->utf16CharLen, test))
+		goto fail;
+
+	rc = TRUE;
+fail:
+	free(tmp);
+	return rc;
+}
+
+static BOOL convert_utf8_to_utf16(size_t x, const testcase_t* test)
+{
+	if (!convert_utf8_to_utf16_ConvertUtf8NToWChar(x, test))
+		return FALSE;
+	if (!convert_utf8_to_utf16_ConvertUtf8ToWChar(x, test))
+		return FALSE;
+	if (!convert_utf8_to_utf16_ConvertUtf8NToWCharAlloc(x, test))
+		return FALSE;
+	if (!convert_utf8_to_utf16_ConvertUtf8ToWCharAlloc(x, test))
+		return FALSE;
+	return TRUE;
+}
+
+static BOOL convert_utf16_to_utf8(size_t x, const testcase_t* test)
+{
+	printf("[%s] running testcase %" PRIuz "\n", __func__, x);
+
+	return TRUE;
+}
+
 #if defined(WITH_WINPR_DEPRECATED)
-/* Letters */
-
-static BYTE c_cedilla_UTF8[] = "\xC3\xA7\x00";
-static BYTE c_cedilla_UTF16[] = "\xE7\x00\x00\x00";
-static int c_cedilla_cchWideChar = 2;
-static int c_cedilla_cbMultiByte = 3;
-
-/* English */
-
-static BYTE en_Hello_UTF8[] = "Hello\0";
-static BYTE en_Hello_UTF16[] = "\x48\x00\x65\x00\x6C\x00\x6C\x00\x6F\x00\x00\x00";
-static int en_Hello_cchWideChar = 6;
-static int en_Hello_cbMultiByte = 6;
-
-static BYTE en_HowAreYou_UTF8[] = "How are you?\0";
-static BYTE en_HowAreYou_UTF16[] =
-    "\x48\x00\x6F\x00\x77\x00\x20\x00\x61\x00\x72\x00\x65\x00\x20\x00"
-    "\x79\x00\x6F\x00\x75\x00\x3F\x00\x00\x00";
-static int en_HowAreYou_cchWideChar = 13;
-static int en_HowAreYou_cbMultiByte = 13;
-
-/* French */
-
-static BYTE fr_Hello_UTF8[] = "Allo\0";
-static BYTE fr_Hello_UTF16[] = "\x41\x00\x6C\x00\x6C\x00\x6F\x00\x00\x00";
-static int fr_Hello_cchWideChar = 5;
-static int fr_Hello_cbMultiByte = 5;
-
-static BYTE fr_HowAreYou_UTF8[] =
-    "\x43\x6F\x6D\x6D\x65\x6E\x74\x20\xC3\xA7\x61\x20\x76\x61\x3F\x00";
-static BYTE fr_HowAreYou_UTF16[] =
-    "\x43\x00\x6F\x00\x6D\x00\x6D\x00\x65\x00\x6E\x00\x74\x00\x20\x00"
-    "\xE7\x00\x61\x00\x20\x00\x76\x00\x61\x00\x3F\x00\x00\x00";
-static int fr_HowAreYou_cchWideChar = 15;
-static int fr_HowAreYou_cbMultiByte = 16;
-
-/* Russian */
-
-static BYTE ru_Hello_UTF8[] = "\xD0\x97\xD0\xB4\xD0\xBE\xD1\x80\xD0\xBE\xD0\xB2\xD0\xBE\x00";
-static BYTE ru_Hello_UTF16[] = "\x17\x04\x34\x04\x3E\x04\x40\x04\x3E\x04\x32\x04\x3E\x04\x00\x00";
-static int ru_Hello_cchWideChar = 8;
-static int ru_Hello_cbMultiByte = 15;
-
-static BYTE ru_HowAreYou_UTF8[] =
-    "\xD0\x9A\xD0\xB0\xD0\xBA\x20\xD0\xB4\xD0\xB5\xD0\xBB\xD0\xB0\x3F\x00";
-static BYTE ru_HowAreYou_UTF16[] =
-    "\x1A\x04\x30\x04\x3A\x04\x20\x00\x34\x04\x35\x04\x3B\x04\x30\x04"
-    "\x3F\x00\x00\x00";
-static int ru_HowAreYou_cchWideChar = 10;
-static int ru_HowAreYou_cbMultiByte = 17;
-
-/* Arabic */
-
-static BYTE ar_Hello_UTF8[] = "\xD8\xA7\xD9\x84\xD8\xB3\xD9\x84\xD8\xA7\xD9\x85\x20\xD8\xB9\xD9"
-                              "\x84\xD9\x8A\xD9\x83\xD9\x85\x00";
-static BYTE ar_Hello_UTF16[] = "\x27\x06\x44\x06\x33\x06\x44\x06\x27\x06\x45\x06\x20\x00\x39\x06"
-                               "\x44\x06\x4A\x06\x43\x06\x45\x06\x00\x00";
-static int ar_Hello_cchWideChar = 13;
-static int ar_Hello_cbMultiByte = 24;
-
-static BYTE ar_HowAreYou_UTF8[] = "\xD9\x83\xD9\x8A\xD9\x81\x20\xD8\xAD\xD8\xA7\xD9\x84\xD9\x83\xD8"
-                                  "\x9F\x00";
-static BYTE ar_HowAreYou_UTF16[] =
-    "\x43\x06\x4A\x06\x41\x06\x20\x00\x2D\x06\x27\x06\x44\x06\x43\x06"
-    "\x1F\x06\x00\x00";
-static int ar_HowAreYou_cchWideChar = 10;
-static int ar_HowAreYou_cbMultiByte = 18;
-
-/* Chinese */
-
-static BYTE ch_Hello_UTF8[] = "\xE4\xBD\xA0\xE5\xA5\xBD\x00";
-static BYTE ch_Hello_UTF16[] = "\x60\x4F\x7D\x59\x00\x00";
-static int ch_Hello_cchWideChar = 3;
-static int ch_Hello_cbMultiByte = 7;
-
-static BYTE ch_HowAreYou_UTF8[] = "\xE4\xBD\xA0\xE5\xA5\xBD\xE5\x90\x97\x00";
-static BYTE ch_HowAreYou_UTF16[] = "\x60\x4F\x7D\x59\x17\x54\x00\x00";
-static int ch_HowAreYou_cchWideChar = 4;
-static int ch_HowAreYou_cbMultiByte = 10;
 
 /* Uppercasing */
 
@@ -512,87 +748,16 @@ int TestUnicodeConversion(int argc, char* argv[])
 	WINPR_UNUSED(argc);
 	WINPR_UNUSED(argv);
 
+	for (size_t x = 0; x < ARRAYSIZE(tests); x++)
+	{
+		const testcase_t* test = &tests[x];
+		if (!convert_utf8_to_utf16(x, test))
+			return -1;
+		if (!convert_utf16_to_utf8(x, test))
+			return -1;
+	}
+
 #if defined(WITH_WINPR_DEPRECATED)
-	/* Letters */
-
-	printf("Letters\n");
-
-	if (convert_utf8_to_utf16(c_cedilla_UTF8, c_cedilla_UTF16, c_cedilla_cchWideChar) < 1)
-		return -1;
-
-	if (convert_utf16_to_utf8(c_cedilla_UTF16, c_cedilla_UTF8, c_cedilla_cbMultiByte) < 1)
-		return -1;
-
-	/* English */
-
-	printf("English\n");
-
-	if (convert_utf8_to_utf16(en_Hello_UTF8, en_Hello_UTF16, en_Hello_cchWideChar) < 1)
-		return -1;
-	if (convert_utf8_to_utf16(en_HowAreYou_UTF8, en_HowAreYou_UTF16, en_HowAreYou_cchWideChar) < 1)
-		return -1;
-
-	if (convert_utf16_to_utf8(en_Hello_UTF16, en_Hello_UTF8, en_Hello_cbMultiByte) < 1)
-		return -1;
-	if (convert_utf16_to_utf8(en_HowAreYou_UTF16, en_HowAreYou_UTF8, en_HowAreYou_cbMultiByte) < 1)
-		return -1;
-
-	/* French */
-
-	printf("French\n");
-
-	if (convert_utf8_to_utf16(fr_Hello_UTF8, fr_Hello_UTF16, fr_Hello_cchWideChar) < 1)
-		return -1;
-	if (convert_utf8_to_utf16(fr_HowAreYou_UTF8, fr_HowAreYou_UTF16, fr_HowAreYou_cchWideChar) < 1)
-		return -1;
-
-	if (convert_utf16_to_utf8(fr_Hello_UTF16, fr_Hello_UTF8, fr_Hello_cbMultiByte) < 1)
-		return -1;
-	if (convert_utf16_to_utf8(fr_HowAreYou_UTF16, fr_HowAreYou_UTF8, fr_HowAreYou_cbMultiByte) < 1)
-		return -1;
-
-	/* Russian */
-
-	printf("Russian\n");
-
-	if (convert_utf8_to_utf16(ru_Hello_UTF8, ru_Hello_UTF16, ru_Hello_cchWideChar) < 1)
-		return -1;
-	if (convert_utf8_to_utf16(ru_HowAreYou_UTF8, ru_HowAreYou_UTF16, ru_HowAreYou_cchWideChar) < 1)
-		return -1;
-
-	if (convert_utf16_to_utf8(ru_Hello_UTF16, ru_Hello_UTF8, ru_Hello_cbMultiByte) < 1)
-		return -1;
-	if (convert_utf16_to_utf8(ru_HowAreYou_UTF16, ru_HowAreYou_UTF8, ru_HowAreYou_cbMultiByte) < 1)
-		return -1;
-
-	/* Arabic */
-
-	printf("Arabic\n");
-
-	if (convert_utf8_to_utf16(ar_Hello_UTF8, ar_Hello_UTF16, ar_Hello_cchWideChar) < 1)
-		return -1;
-	if (convert_utf8_to_utf16(ar_HowAreYou_UTF8, ar_HowAreYou_UTF16, ar_HowAreYou_cchWideChar) < 1)
-		return -1;
-
-	if (convert_utf16_to_utf8(ar_Hello_UTF16, ar_Hello_UTF8, ar_Hello_cbMultiByte) < 1)
-		return -1;
-	if (convert_utf16_to_utf8(ar_HowAreYou_UTF16, ar_HowAreYou_UTF8, ar_HowAreYou_cbMultiByte) < 1)
-		return -1;
-
-	/* Chinese */
-
-	printf("Chinese\n");
-
-	if (convert_utf8_to_utf16(ch_Hello_UTF8, ch_Hello_UTF16, ch_Hello_cchWideChar) < 1)
-		return -1;
-	if (convert_utf8_to_utf16(ch_HowAreYou_UTF8, ch_HowAreYou_UTF16, ch_HowAreYou_cchWideChar) < 1)
-		return -1;
-
-	if (convert_utf16_to_utf8(ch_Hello_UTF16, ch_Hello_UTF8, ch_Hello_cbMultiByte) < 1)
-		return -1;
-	if (convert_utf16_to_utf8(ch_HowAreYou_UTF16, ch_HowAreYou_UTF8, ch_HowAreYou_cbMultiByte) < 1)
-		return -1;
-
 	/* Uppercasing */
 
 	printf("Uppercasing\n");
