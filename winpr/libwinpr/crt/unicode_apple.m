@@ -53,15 +53,11 @@ int int_MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr,
 		cbMultiByte = (int)len + 1;
 	}
 
-	NSString *utf = [NSString stringWithUTF8String:lpMultiByteString length:cbMultiByte];
+	NSString *utf = [[NSString alloc] initWithBytes:lpMultiByteStr length:cbMultiByte encoding:NSUTF8StringEncoding];
 	if (!utf)
 		return -1;
 
-	NSData *utfdata = [utf dataUsingEncoding:NSUTF16StringEncoding];
-	if (!utfdata)
-		return -1;
-
-	const WCHAR *utf16 = [utfdata bytes];
+	const WCHAR *utf16 = (const WCHAR*)[utf cStringUsingEncoding:NSUTF16StringEncoding];
 	if (!utf16)
 		return -1;
 
@@ -92,15 +88,11 @@ int int_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr,
 		cchWideChar = (int)len + 1;
 	}
 
-	NSString *utf = [NSString stringWithUTF16String:lpMultiByteString length:cchWideChar];
+	NSString *utf = [[NSString alloc] initWithBytes:lpWideCharStr length:cchWideChar*sizeof(WCHAR) encoding:NSUTF16StringEncoding];
 	if (!utf)
 		return -1;
 
-	NSData *utfdata = [utf dataUsingEncoding:NSUTF8StringEncoding];
-	if (!utfdata)
-		return -1;
-
-	const char *utf8 = [utfdata bytes];
+	const char *utf8 = [utf cStringUsingEncoding:NSUTF8StringEncoding];
 	if (!utf8)
 		return -1;
 
@@ -109,7 +101,7 @@ int int_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr,
 	else
 	{
 		cbMultiByte = MIN(strlen(utf8) + 1, cbMultiByte);
-		memcpy(lpWideCha, utf8, cchWideChar * sizeof(char));
+		memcpy(lpMultiByteStr, utf8, cchWideChar * sizeof(char));
 	}
 	return cbMultiByte;
 }

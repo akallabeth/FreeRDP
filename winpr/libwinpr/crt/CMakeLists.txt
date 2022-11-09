@@ -29,6 +29,8 @@ if (NOT APPLE AND NOT WIN32)
 	winpr_library_add_private(${ICU_LIBRARIES})
 elseif(APPLE)
 	list(APPEND CRT_FILES unicode_apple.m)
+	find_library(FOUNDATION_FRAMEWORK Foundation REQUIRED)
+	winpr_library_add_private(${FOUNDATION_FRAMEWORK})
 endif()
 
 winpr_module_add(${CRT_FILES})
