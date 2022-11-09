@@ -361,6 +361,8 @@ int ConvertFromUnicode(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr, int 
 
 void ByteSwapUnicode(WCHAR* wstr, size_t length)
 {
+	WINPR_ASSERT(wstr || (length == 0));
+
 	for (size_t x = 0; x < length; x++)
 		wstr[x] = _byteswap_ushort(wstr[x]);
 }
@@ -372,7 +374,7 @@ SSIZE_T ConvertWCharToUtf8(const WCHAR* wstr, char* str, size_t len)
 	const int rc =
 	    WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, (int)MIN(INT32_MAX, len), NULL, NULL);
 	if (rc <= 0)
-		return -1;
+		return rc;
 	return rc - 1;
 }
 
@@ -384,7 +386,9 @@ SSIZE_T ConvertWCharNToUtf8(const WCHAR* wstr, size_t wlen, char* str, size_t le
 	const int rc =
 	    WideCharToMultiByte(CP_UTF8, 0, wstr, (int)wlen, str, (int)MIN(INT32_MAX, len), NULL, NULL);
 	if (rc <= 0)
-		return -1;
+		return rc;
+	if (wstr && (_wcsnlen(wstr, wlen) == wlen))
+		return rc;
 	return rc - 1;
 }
 
@@ -394,7 +398,7 @@ SSIZE_T ConvertUtf8ToWChar(const char* str, WCHAR* wstr, size_t wlen)
 
 	const int rc = MultiByteToWideChar(CP_UTF8, 0, str, (int)-1, wstr, (int)MIN(INT32_MAX, wlen));
 	if (rc <= 0)
-		return -1;
+		return rc;
 	return rc - 1;
 }
 
@@ -404,7 +408,9 @@ SSIZE_T ConvertUtf8NToWChar(const char* str, size_t len, WCHAR* wstr, size_t wle
 		return -1;
 	const int rc = MultiByteToWideChar(CP_UTF8, 0, str, (int)len, wstr, (int)MIN(INT32_MAX, wlen));
 	if (rc <= 0)
-		return -1;
+		return rc;
+	if (str && (strnlen(str, len) == len))
+		return rc;
 	return rc - 1;
 }
 
@@ -427,7 +433,7 @@ char* ConvertWCharToUtf8Alloc(const WCHAR* wstr, size_t* pUtfCharLength)
 	}
 	WINPR_ASSERT(rc == rc2);
 	if (pUtfCharLength)
-		*pUtfCharLength = strnlen(tmp, (size_t)rc + 1);
+		*pUtfCharLength = (size_t)rc2;
 	return tmp;
 }
 
@@ -451,7 +457,7 @@ char* ConvertWCharNToUtf8Alloc(const WCHAR* wstr, size_t wlen, size_t* pUtfCharL
 	}
 	WINPR_ASSERT(rc == rc2);
 	if (pUtfCharLength)
-		*pUtfCharLength = strnlen(tmp, (size_t)rc + 1);
+		*pUtfCharLength = (size_t)rc2;
 	return tmp;
 }
 
@@ -474,7 +480,7 @@ WCHAR* ConvertUtf8ToWCharAlloc(const char* str, size_t* pSize)
 	}
 	WINPR_ASSERT(rc == rc2);
 	if (pSize)
-		*pSize = _wcsnlen(tmp, (size_t)rc + 1);
+		*pSize = (size_t)rc2;
 	return tmp;
 }
 
@@ -497,6 +503,6 @@ WCHAR* ConvertUtf8NToWCharAlloc(const char* str, size_t len, size_t* pSize)
 	}
 	WINPR_ASSERT(rc == rc2);
 	if (pSize)
-		*pSize = _wcsnlen(tmp, (size_t)rc + 1);
+		*pSize = (size_t)rc2;
 	return tmp;
 }
