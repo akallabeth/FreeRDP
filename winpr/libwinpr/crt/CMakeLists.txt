@@ -22,7 +22,9 @@ set (CRT_FILES alignment.c
 	unicode.c
 	string.c)
 
-if (NOT APPLE AND NOT WIN32)
+IF (ANDROID)
+	list(APPEND CRT_FILES unicode_android.c)
+elseif (NOT APPLE AND NOT WIN32)
 	find_package(ICU REQUIRED i18n uc io)
 	list(APPEND CRT_FILES unicode_icu.c)
 	winpr_include_directory_add(${ICU_INCLUDE_DIRS})
