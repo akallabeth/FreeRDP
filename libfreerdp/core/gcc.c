@@ -912,8 +912,8 @@ BOOL gcc_read_client_core_data(wStream* s, rdpMcs* mcs, UINT16 blockLength)
 	Stream_Read_UINT32(s, settings->ClientBuild);    /* ClientBuild (4 bytes) */
 
 	/* clientName (32 bytes, null-terminated unicode, truncated to 15 characters) */
-	if (!Stream_Read_UTF16_String_As_UTF8_Buffer(s, 32 / sizeof(WCHAR), strbuffer,
-	                                             ARRAYSIZE(strbuffer)))
+	if (Stream_Read_UTF16_String_As_UTF8_Buffer(s, 32 / sizeof(WCHAR), strbuffer,
+	                                            ARRAYSIZE(strbuffer)) < 0)
 	{
 		WLog_ERR(TAG, "failed to convert client host name");
 		return FALSE;
@@ -980,8 +980,8 @@ BOOL gcc_read_client_core_data(wStream* s, rdpMcs* mcs, UINT16 blockLength)
 		if (blockLength < 64)
 			break;
 
-		if (!Stream_Read_UTF16_String_As_UTF8_Buffer(s, 64 / sizeof(WCHAR), strbuffer,
-		                                             ARRAYSIZE(strbuffer)))
+		if (Stream_Read_UTF16_String_As_UTF8_Buffer(s, 64 / sizeof(WCHAR), strbuffer,
+		                                            ARRAYSIZE(strbuffer)) < 0)
 		{
 			WLog_ERR(TAG, "failed to convert the client product identifier");
 			return FALSE;

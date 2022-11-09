@@ -68,8 +68,9 @@ static UINT remdesk_read_channel_header(wStream* s, REMDESK_CHANNEL_HEADER* head
 		return ERROR_INVALID_DATA;
 	}
 
-	if (!Stream_Read_UTF16_String_As_UTF8_Buffer(
-	        s, ChannelNameLen / sizeof(WCHAR), header->ChannelName, ARRAYSIZE(header->ChannelName)))
+	if (Stream_Read_UTF16_String_As_UTF8_Buffer(s, ChannelNameLen / sizeof(WCHAR),
+	                                            header->ChannelName,
+	                                            ARRAYSIZE(header->ChannelName)) < 0)
 		return ERROR_INVALID_DATA;
 
 	return CHANNEL_RC_OK;

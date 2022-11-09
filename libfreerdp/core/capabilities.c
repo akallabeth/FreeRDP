@@ -1446,7 +1446,7 @@ static BOOL rdp_read_input_capability_set(wStream* s, rdpSettings* settings)
 
 	{
 		char str[65] = { 0 };
-		if (!Stream_Read_UTF16_String_As_UTF8_Buffer(s, 64 / sizeof(WCHAR), str, ARRAYSIZE(str)))
+		if (Stream_Read_UTF16_String_As_UTF8_Buffer(s, 64 / sizeof(WCHAR), str, ARRAYSIZE(str)) < 0)
 			return FALSE;
 		if (!freerdp_settings_set_string(settings, FreeRDP_ImeFileName, str))
 			return FALSE;
