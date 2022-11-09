@@ -59,30 +59,47 @@ int int_MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr,
 	{
 		const size_t len = strnlen(lpMultiByteStr, (size_t)cbMultiByte);
 		addNullTerminator = len < (size_t)cbMultiByte; /* If len == cbMultiByte no '\0' was found */
+		cbMultiByte = (int)len;
+		if (addNullTerminator)
+			cbMultiByte++;
 	}
 
 	NSString *utf = [[NSString alloc] initWithBytes:lpMultiByteStr
 	                                         length:cbMultiByte
 	                                       encoding:NSUTF8StringEncoding];
 	if (!utf)
+	{
+		WLog_WARN(TAG, "[NSString alloc] NSUTF8StringEncoding failed [%d] '%s'", cbMultiByte,
+		          lpMultiByteStr);
 		return -1;
+	}
 
 	const WCHAR *utf16 = (const WCHAR *)[utf cStringUsingEncoding:NSUTF16StringEncoding];
+	const size_t utf16ByteLen = [utf lengthOfBytesUsingEncoding:NSUTF16StringEncoding];
+	const size_t utf16CharLen = utf16ByteLen / sizeof(WCHAR);
 	if (!utf16)
+	{
+		WLog_WARN(TAG, "[utf cStringUsingEncoding:NSUTF16StringEncoding] failed");
 		return -1;
+	}
 
 	if (cchWideChar == 0)
-		cchWideChar = _wcslen(utf16);
+	{
+		cchWideChar = _wcsnlen(utf16, utf16CharLen);
+		if (addNullTerminator)
+			cchWideChar++;
+	}
 	else
 	{
-		const size_t len = _wcsnlen(utf16, (size_t)cchWideChar);
+		const size_t len = _wcsnlen(utf16, MIN(utf16CharLen, (size_t)cchWideChar));
 		memcpy(lpWideCharStr, utf16, len * sizeof(WCHAR));
 		if ((len < (size_t)cchWideChar) && (len > 0) && (lpWideCharStr[len - 1] != '\0'))
 			lpWideCharStr[len] = '\0';
-		cchWideChar = (int)len;
+		if (addNullTerminator && (len < cchWideChar))
+			cchWideChar = (int)len + 1;
+		else
+			cchWideChar = (int)len;
 	}
-	if (addNullTerminator)
-		cchWideChar++;
 	return cchWideChar;
 }
 
@@ -109,28 +126,43 @@ int int_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr,
 	{
 		const size_t len = _wcsnlen(lpWideCharStr, (size_t)cchWideChar);
 		addNullTerminator = len < (size_t)cchWideChar; /* If len == cchWideChar no '\0' was found */
+		cchWideChar = (int)len;
+		if (addNullTerminator)
+			cchWideChar++;
 	}
 
 	NSString *utf = [[NSString alloc] initWithCharacters:lpWideCharStr length:cchWideChar];
 	if (!utf)
+	{
+		WLog_WARN(TAG, "[NSString alloc] initWithCharacters failed [%d] 'XXX'", cchWideChar);
 		return -1;
+	}
 
 	const char *utf8 = [utf cStringUsingEncoding:NSUTF8StringEncoding];
+	const size_t utf8Len = [utf lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
 	if (!utf8)
+	{
+		WLog_WARN(TAG, "[utf cStringUsingEncoding:NSUTF8StringEncoding] failed");
 		return -1;
+	}
 
 	if (cbMultiByte == 0)
-		cbMultiByte = strlen(utf8);
+	{
+		cbMultiByte = strnlen(utf8, utf8Len);
+		if (addNullTerminator)
+			cbMultiByte++;
+	}
 	else
 	{
-		const size_t len = strnlen(utf8, (size_t)cbMultiByte);
+		const size_t len = strnlen(utf8, MIN((size_t)cbMultiByte, utf8Len));
 		memcpy(lpMultiByteStr, utf8, len * sizeof(char));
 		if ((len < (size_t)cbMultiByte) && (len > 0) && (lpMultiByteStr[len - 1] != '\0'))
 			lpMultiByteStr[len] = '\0';
-		cbMultiByte = (int)len;
+		if (addNullTerminator && (len < cbMultiByte))
+			cbMultiByte = (int)len + 1;
+		else
+			cbMultiByte = (int)len;
 	}
-	if (addNullTerminator)
-		cbMultiByte++;
 
 	return cbMultiByte;
 }
