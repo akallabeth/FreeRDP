@@ -101,8 +101,9 @@ static BOOL rdp_read_info_null_string(UINT32 flags, wStream* s, size_t cbLen, CH
 
 		if (unicode)
 		{
-			ret = ConvertWCharNToUtf8Alloc(domain, ARRAYSIZE(domain), NULL);
-			if (!ret)
+			size_t len = 0;
+			ret = ConvertWCharNToUtf8Alloc(domain, ARRAYSIZE(domain), &len);
+			if (!ret && (len > 0))
 			{
 				WLog_ERR(TAG, "failed to convert Domain string");
 				return FALSE;
