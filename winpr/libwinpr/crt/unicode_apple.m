@@ -47,17 +47,19 @@ int int_MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr,
 	/* If cbMultiByte is -1, the string is null-terminated */
 	if (cbMultiByte == -1)
 	{
-		size_t len = strnlen((const char*)lpMultiByteStr, INT32_MAX);
+		size_t len = strnlen((const char *)lpMultiByteStr, INT32_MAX);
 		if (len >= INT32_MAX)
 			return 0;
 		cbMultiByte = (int)len + 1;
 	}
 
-	NSString *utf = [[NSString alloc] initWithBytes:lpMultiByteStr length:cbMultiByte encoding:NSUTF8StringEncoding];
+	NSString *utf = [[NSString alloc] initWithBytes:lpMultiByteStr
+	                                         length:cbMultiByte
+	                                       encoding:NSUTF8StringEncoding];
 	if (!utf)
 		return -1;
 
-	const WCHAR *utf16 = (const WCHAR*)[utf cStringUsingEncoding:NSUTF16StringEncoding];
+	const WCHAR *utf16 = (const WCHAR *)[utf cStringUsingEncoding:NSUTF16StringEncoding];
 	if (!utf16)
 		return -1;
 
@@ -88,7 +90,9 @@ int int_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr,
 		cchWideChar = (int)len + 1;
 	}
 
-	NSString *utf = [[NSString alloc] initWithBytes:lpWideCharStr length:cchWideChar*sizeof(WCHAR) encoding:NSUTF16StringEncoding];
+	NSString *utf = [[NSString alloc] initWithBytes:lpWideCharStr
+	                                         length:cchWideChar * sizeof(WCHAR)
+	                                       encoding:NSUTF16StringEncoding];
 	if (!utf)
 		return -1;
 
@@ -105,4 +109,3 @@ int int_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr,
 	}
 	return cbMultiByte;
 }
-
