@@ -54,6 +54,12 @@ static const testcase_t tests[] = {
 	{ "\xE4\xBD\xA0\xE5\xA5\xBD\xE5\x90\x97\x00", 4, "\x60\x4F\x7D\x59\x17\x54\x00\x00", 10 }
 };
 
+static void print_test(size_t x, const testcase_t* test, const char* where, const char* what)
+{
+	printf("[%s] running testcase %" PRIuz " %s [%" PRIuz "] %*s:\n", where, x, what,
+	       test->utf8CharLen, (int)test->utf8CharLen, test->utf8);
+}
+
 static BOOL utf16_equals(const WCHAR* str, size_t len, const testcase_t* test)
 {
 	WINPR_ASSERT(test);
@@ -66,7 +72,7 @@ static BOOL convert_utf8_to_utf16_ConvertUtf8NToWChar(size_t x, const testcase_t
 
 	WINPR_ASSERT(test);
 
-	printf("[%s] running testcase %" PRIuz " ConvertUtf8NToWChar:\n", __func__, x);
+	print_test(x, test, __func__, "ConvertUtf8NToWChar");
 	SSIZE_T rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen, NULL, 0);
 	if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
 	{
@@ -143,7 +149,8 @@ static BOOL convert_utf8_to_utf16_ConvertUtf8ToWChar(size_t x, const testcase_t*
 
 	WINPR_ASSERT(test);
 
-	printf("[%s] running testcase %" PRIuz " ConvertUtf8ToWChar:\n", __func__, x);
+	print_test(x, test, __func__, "ConvertUtf8ToWChar");
+
 	SSIZE_T rc = ConvertUtf8ToWChar(test->utf8, NULL, 0);
 	if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
 	{
@@ -190,7 +197,7 @@ static BOOL convert_utf8_to_utf16_ConvertUtf8NToWCharAlloc(size_t x, const testc
 
 	WINPR_ASSERT(test);
 
-	printf("[%s] running testcase %" PRIuz " ConvertUtf8NToWCharAlloc:\n", __func__, x);
+	print_test(x, test, __func__, "ConvertUtf8NToWCharAlloc");
 
 	tmp = ConvertUtf8NToWCharAlloc(test->utf8, test->utf8CharLen, NULL);
 	if (!tmp)
@@ -264,7 +271,7 @@ static BOOL convert_utf8_to_utf16_ConvertUtf8ToWCharAlloc(size_t x, const testca
 
 	WINPR_ASSERT(test);
 
-	printf("[%s] running testcase %" PRIuz " ConvertUtf8ToWCharAlloc:\n", __func__, x);
+	print_test(x, test, __func__, "ConvertUtf8ToWCharAlloc");
 
 	tmp = ConvertUtf8ToWCharAlloc(test->utf8, NULL);
 	if (!tmp)
