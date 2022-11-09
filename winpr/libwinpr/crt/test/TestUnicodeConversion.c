@@ -68,8 +68,6 @@ static BOOL utf16_equals(const WCHAR* str, size_t len, const testcase_t* test)
 
 static BOOL convert_utf8_to_utf16_ConvertUtf8NToWChar(size_t x, const testcase_t* test)
 {
-	WCHAR buffer[8192] = { 0 };
-
 	WINPR_ASSERT(test);
 
 	print_test(x, test, __func__, "ConvertUtf8NToWChar");
@@ -91,53 +89,69 @@ static BOOL convert_utf8_to_utf16_ConvertUtf8NToWChar(size_t x, const testcase_t
 		return FALSE;
 	}
 
-	rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen, buffer, ARRAYSIZE(buffer));
-	if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
 	{
-		fprintf(stderr,
-		        "[%s] expected ConvertUtf8NToWChar(buffer) return %" PRIuz ", got %" PRIdz "\n",
-		        __func__, test->utf16CharLen, rc);
-		return FALSE;
-	}
-	if (!utf16_equals(buffer, test->utf16CharLen, test))
-		return FALSE;
+		WCHAR buffer[8192] = { 0 };
+		rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen, buffer, ARRAYSIZE(buffer));
 
-	rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen + 1, buffer, ARRAYSIZE(buffer));
-	if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
-	{
-		fprintf(stderr,
-		        "[%s] expected ConvertUtf8NToWChar(buffer) return %" PRIuz ", got %" PRIdz "\n",
-		        __func__, test->utf16CharLen, rc);
-		return FALSE;
+		if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
+		{
+			fprintf(stderr,
+			        "[%s] expected ConvertUtf8NToWChar(buffer) return %" PRIuz ", got %" PRIdz "\n",
+			        __func__, test->utf16CharLen, rc);
+			return FALSE;
+		}
+		if (!utf16_equals(buffer, test->utf16CharLen, test))
+			return FALSE;
 	}
-	if (!utf16_equals(buffer, test->utf16CharLen, test))
-		return FALSE;
+	{
+		WCHAR buffer[8192] = { 0 };
+
+		rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen + 1, buffer, ARRAYSIZE(buffer));
+		if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
+		{
+			fprintf(stderr,
+			        "[%s] expected ConvertUtf8NToWChar(buffer) return %" PRIuz ", got %" PRIdz "\n",
+			        __func__, test->utf16CharLen, rc);
+			return FALSE;
+		}
+		if (!utf16_equals(buffer, test->utf16CharLen, test))
+			return FALSE;
+	}
 
 	if (test->utf16CharLen > 1)
 	{
-		rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen, buffer, test->utf16CharLen - 1);
-		if ((rc < 0) || ((size_t)rc != (test->utf16CharLen - 1)))
 		{
-			fprintf(stderr,
-			        "[%s] expected ConvertUtf8NToWChar(small buffer) return %" PRIuz ", got %" PRIdz
-			        "\n",
-			        __func__, test->utf16CharLen - 1, rc);
-			return FALSE;
-		}
-		if (!utf16_equals(buffer, test->utf16CharLen - 1, test))
-			return FALSE;
+			WCHAR buffer[8192] = { 0 };
 
-		rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen + 1, buffer, test->utf16CharLen - 1);
-		if ((rc < 0) || ((size_t)rc != (test->utf16CharLen - 1)))
-		{
-			fprintf(stderr,
-			        "[%s] expected ConvertUtf8NToWChar(small buffer) return %" PRIuz ", got %" PRIdz
-			        "\n",
-			        __func__, test->utf16CharLen - 1, rc);
-			return FALSE;
+			rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen, buffer, test->utf16CharLen - 1);
+			if ((rc < 0) || ((size_t)rc != (test->utf16CharLen - 1)))
+			{
+				fprintf(stderr,
+				        "[%s] expected ConvertUtf8NToWChar(small buffer) return %" PRIuz
+				        ", got %" PRIdz "\n",
+				        __func__, test->utf16CharLen - 1, rc);
+				return FALSE;
+			}
+			if (!utf16_equals(buffer, test->utf16CharLen - 1, test))
+				return FALSE;
 		}
-		if (!utf16_equals(buffer, test->utf16CharLen - 1, test))
-			return FALSE;
+		{
+
+			WCHAR buffer[8192] = { 0 };
+
+			rc = ConvertUtf8NToWChar(test->utf8, test->utf8CharLen + 1, buffer,
+			                         test->utf16CharLen - 1);
+			if ((rc < 0) || ((size_t)rc != (test->utf16CharLen - 1)))
+			{
+				fprintf(stderr,
+				        "[%s] expected ConvertUtf8NToWChar(small buffer) return %" PRIuz
+				        ", got %" PRIdz "\n",
+				        __func__, test->utf16CharLen - 1, rc);
+				return FALSE;
+			}
+			if (!utf16_equals(buffer, test->utf16CharLen - 1, test))
+				return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -145,8 +159,6 @@ static BOOL convert_utf8_to_utf16_ConvertUtf8NToWChar(size_t x, const testcase_t
 
 static BOOL convert_utf8_to_utf16_ConvertUtf8ToWChar(size_t x, const testcase_t* test)
 {
-	WCHAR buffer[8192] = { 0 };
-
 	WINPR_ASSERT(test);
 
 	print_test(x, test, __func__, "ConvertUtf8ToWChar");
@@ -160,19 +172,23 @@ static BOOL convert_utf8_to_utf16_ConvertUtf8ToWChar(size_t x, const testcase_t*
 		return FALSE;
 	}
 
-	rc = ConvertUtf8ToWChar(test->utf8, buffer, ARRAYSIZE(buffer));
-	if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
 	{
-		fprintf(stderr,
-		        "[%s] expected ConvertUtf8ToWChar(buffer) return %" PRIuz ", got %" PRIdz "\n",
-		        __func__, test->utf16CharLen, rc);
-		return FALSE;
+		WCHAR buffer[8192] = { 0 };
+		rc = ConvertUtf8ToWChar(test->utf8, buffer, ARRAYSIZE(buffer));
+		if ((rc < 0) || ((size_t)rc != test->utf16CharLen))
+		{
+			fprintf(stderr,
+			        "[%s] expected ConvertUtf8ToWChar(buffer) return %" PRIuz ", got %" PRIdz "\n",
+			        __func__, test->utf16CharLen, rc);
+			return FALSE;
+		}
+		if (!utf16_equals(buffer, test->utf16CharLen, test))
+			return FALSE;
 	}
-	if (!utf16_equals(buffer, test->utf16CharLen, test))
-		return FALSE;
 
 	if (test->utf16CharLen > 1)
 	{
+		WCHAR buffer[8192] = { 0 };
 		rc = ConvertUtf8ToWChar(test->utf8, buffer, test->utf16CharLen - 1);
 		if ((rc < 0) || ((size_t)rc != (test->utf16CharLen - 1)))
 		{

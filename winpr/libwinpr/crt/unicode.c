@@ -403,9 +403,14 @@ SSIZE_T ConvertUtf8NToWChar(const char* str, size_t len, WCHAR* wstr, size_t wle
 	if (len > INT32_MAX)
 		return -1;
 	const int rc = MultiByteToWideChar(CP_UTF8, 0, str, (int)len, wstr, (int)MIN(INT32_MAX, wlen));
-	if (rc <= 0)
+	if (rc < 0)
 		return -1;
-	return rc - 1;
+	else if (rc == 0)
+		return 0;
+	else if ((wstr && (wstr[rc - 1] == '\0')) || !wstr)
+		return rc - 1;
+	else
+		return rc;
 }
 
 char* ConvertWCharToUtf8Alloc(const WCHAR* wstr, size_t* pUtfCharLength)

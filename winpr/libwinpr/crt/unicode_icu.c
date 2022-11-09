@@ -42,7 +42,6 @@
 int int_MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
                             LPWSTR lpWideCharStr, int cchWideChar)
 {
-	size_t charLen = 0;
 	LPWSTR targetStart;
 
 	WINPR_UNUSED(dwFlags);
@@ -50,20 +49,6 @@ int int_MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr,
 	/* If cbMultiByte is 0, the function fails */
 
 	if ((cbMultiByte == 0) || (cbMultiByte < -1))
-		return 0;
-
-	/* If cbMultiByte is -1, the string is null-terminated */
-
-	if (cbMultiByte == -1)
-		charLen = strlen(lpMultiByteStr);
-	else if (cbMultiByte < 0)
-	{
-		return -1;
-	}
-	else
-		charLen = strnlen(lpMultiByteStr, (size_t)cbMultiByte);
-
-	if (charLen >= INT32_MAX)
 		return 0;
 
 	/*
@@ -91,21 +76,33 @@ int int_MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr,
 		error = U_ZERO_ERROR;
 
 		if (cchWideChar == 0)
+		{
 			u_strFromUTF8(NULL, 0, &targetLength, lpMultiByteStr, cbMultiByte, &error);
+			cchWideChar = targetLength;
+		}
 		else
 		{
 			u_strFromUTF8(targetStart, targetCapacity, &targetLength, lpMultiByteStr, cbMultiByte,
 			              &error);
 			switch (error)
 			{
+				case U_BUFFER_OVERFLOW_ERROR:
+					cchWideChar = targetCapacity;
+					break;
 				default:
 					cchWideChar = targetLength;
 					break;
 			}
 		}
+
+		/* We always need the full length including the terminating '\0'. */
+		if ((targetCapacity == 0) || (targetLength <= targetCapacity))
+		{
+			if ((cbMultiByte < 0) ||
+			    ((cbMultiByte > 0) && (lpMultiByteStr[cbMultiByte - 1] != '\0')))
+				cchWideChar++;
+		}
 	}
-	if ((cchWideChar > 0) && (charLen == (size_t)cchWideChar))
-		cchWideChar++;
 
 	return cchWideChar;
 }
