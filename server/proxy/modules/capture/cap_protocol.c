@@ -42,10 +42,10 @@ wStream* capture_plugin_create_session_info_packet(pClientContext* pc)
 
 	settings = pc->context.settings;
 
-	if (!settings || !settings->Username)
+	if (!settings || !freerdp_settings_get_string(settings, FreeRDP_Username))
 		return NULL;
 
-	username_length = strlen(settings->Username);
+	username_length = strlen(freerdp_settings_get_string(settings, FreeRDP_Username));
 	if ((username_length == 0) || (username_length > UINT16_MAX))
 		return NULL;
 
@@ -55,7 +55,8 @@ wStream* capture_plugin_create_session_info_packet(pClientContext* pc)
 		return NULL;
 
 	Stream_Write_UINT16(s, (UINT16)username_length);      /* username length (2 bytes) */
-	Stream_Write(s, settings->Username, username_length); /* username */
+	Stream_Write(s, freerdp_settings_get_string(settings, FreeRDP_Username),
+	             username_length);                        /* username */
 	Stream_Write_UINT32(s, settings->DesktopWidth);       /* desktop width (4 bytes) */
 	Stream_Write_UINT32(s, settings->DesktopHeight);      /* desktop height (4 bytes) */
 	Stream_Write_UINT32(

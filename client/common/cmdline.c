@@ -4157,12 +4157,15 @@ int freerdp_client_settings_parse_command_line_arguments(rdpSettings* settings, 
 
 	if (user)
 	{
-		free(settings->Username);
+		if (!freerdp_settings_set_string(settings, FreeRDP_Username, NULL))
+			return COMMAND_LINE_ERROR;
 
-		if (!settings->Domain && user)
+		if (!freerdp_settings_get_string(settings, FreeRDP_Domain) && user)
 		{
 			BOOL ret;
-			free(settings->Domain);
+			if (!freerdp_settings_set_string(settings, FreeRDP_Domain, NULL))
+				return COMMAND_LINE_ERROR;
+
 			ret = freerdp_parse_username(user, &settings->Username, &settings->Domain);
 			free(user);
 
@@ -4170,7 +4173,10 @@ int freerdp_client_settings_parse_command_line_arguments(rdpSettings* settings, 
 				return COMMAND_LINE_ERROR;
 		}
 		else
-			settings->Username = user;
+		{
+			if (!freerdp_settings_set_string(settings, FreeRDP_Username, user))
+				return COMMAND_LINE_ERROR;
+		}
 	}
 
 	if (gwUser)
@@ -4196,14 +4202,14 @@ int freerdp_client_settings_parse_command_line_arguments(rdpSettings* settings, 
 	{
 		const size_t size = 512;
 
-		if (!settings->Password)
+		if (!freerdp_settings_get_string(settings, FreeRDP_Password))
 		{
-			settings->Password = calloc(size, sizeof(char));
-
-			if (!settings->Password)
+			if (!freerdp_settings_set_string_len(settings, FreeRDP_Password, NULL, size))
 				return COMMAND_LINE_ERROR;
 
-			if (!freerdp_passphrase_read("Password: ", settings->Password, size, 1))
+			if (!freerdp_passphrase_read(
+			        "Password: ", freerdp_settings_get_string_writable(settings, FreeRDP_Password),
+			        size, 1))
 				return COMMAND_LINE_ERROR;
 		}
 

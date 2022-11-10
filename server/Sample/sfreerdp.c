@@ -642,7 +642,10 @@ static BOOL tf_peer_post_connect(freerdp_peer* client)
 	if (settings->AutoLogonEnabled)
 	{
 		WLog_DBG(TAG, " and wants to login automatically as %s\\%s",
-		         settings->Domain ? settings->Domain : "", settings->Username);
+		         freerdp_settings_get_string(settings, FreeRDP_Domain)
+		             ? freerdp_settings_get_string(settings, FreeRDP_Domain)
+		             : "",
+		         freerdp_settings_get_string(settings, FreeRDP_Username));
 		/* A real server may perform OS login here if NLA is not executed previously. */
 	}
 

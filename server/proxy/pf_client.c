@@ -719,7 +719,8 @@ static BOOL pf_client_connect(freerdp* instance)
 	WINPR_ASSERT(settings);
 
 	PROXY_LOG_INFO(TAG, pc, "connecting using client info: Username: %s, Domain: %s",
-	               settings->Username, settings->Domain);
+	               freerdp_settings_get_string(settings, FreeRDP_Username),
+	               freerdp_settings_get_string(settings, FreeRDP_Domain));
 
 	pf_client_set_security_settings(pc);
 	if (pf_client_should_retry_without_nla(pc))

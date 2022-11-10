@@ -104,7 +104,8 @@ auth_status utils_authenticate(freerdp* instance, rdp_auth_reason reason, BOOL o
 
 	/* Ask for auth data if no or an empty username was specified or no password was given */
 	if (utils_str_is_empty(freerdp_settings_get_string(settings, FreeRDP_Username)) ||
-	    (settings->Password == NULL && settings->RedirectionPassword == NULL))
+	    (freerdp_settings_get_string(settings, FreeRDP_Password) == NULL &&
+	     settings->RedirectionPassword == NULL))
 		prompt = TRUE;
 
 	if (!prompt)
@@ -116,7 +117,7 @@ auth_status utils_authenticate(freerdp* instance, rdp_auth_reason reason, BOOL o
 		case AUTH_TLS:
 			if (settings->SmartcardLogon)
 			{
-				if (!utils_str_is_empty(settings->Password))
+				if (!utils_str_is_empty(freerdp_settings_get_string(settings, FreeRDP_Password)))
 				{
 					WLog_INFO(TAG, "Authentication via smartcard");
 					return AUTH_SUCCESS;
@@ -159,11 +160,14 @@ BOOL utils_sync_credentials(rdpSettings* settings, BOOL toGateway)
 
 	if (toGateway)
 	{
-		if (!utils_str_copy(settings->Username, &settings->GatewayUsername))
+		if (!utils_str_copy(freerdp_settings_get_string(settings, FreeRDP_Username),
+		                    &settings->GatewayUsername))
 			return FALSE;
-		if (!utils_str_copy(settings->Domain, &settings->GatewayDomain))
+		if (!utils_str_copy(freerdp_settings_get_string(settings, FreeRDP_Domain),
+		                    &settings->GatewayDomain))
 			return FALSE;
-		if (!utils_str_copy(settings->Password, &settings->GatewayPassword))
+		if (!utils_str_copy(freerdp_settings_get_string(settings, FreeRDP_Password),
+		                    &settings->GatewayPassword))
 			return FALSE;
 	}
 	else

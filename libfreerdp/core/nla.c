@@ -276,19 +276,22 @@ static BOOL nla_client_setup_identity(rdpNla* nla)
 	WINPR_ASSERT(instance);
 
 	/* */
-	if ((utils_str_is_empty(settings->Username) ||
-	     (utils_str_is_empty(settings->Password) &&
+	if ((utils_str_is_empty(freerdp_settings_get_string(settings, FreeRDP_Username)) ||
+	     (utils_str_is_empty(freerdp_settings_get_string(settings, FreeRDP_Password)) &&
 	      utils_str_is_empty((const char*)settings->RedirectionPassword))))
 	{
 		PromptPassword = TRUE;
 	}
 
-	if (PromptPassword && !utils_str_is_empty(settings->Username))
+	if (PromptPassword &&
+	    !utils_str_is_empty(freerdp_settings_get_string(settings, FreeRDP_Username)))
 	{
 		sam = SamOpen(NULL, TRUE);
 		if (sam)
 		{
-			entry = SamLookupUserA(sam, settings->Username, strlen(settings->Username), NULL, 0);
+			entry = SamLookupUserA(sam, freerdp_settings_get_string(settings, FreeRDP_Username),
+			                       strlen(freerdp_settings_get_string(settings, FreeRDP_Username)),
+			                       NULL, 0);
 			if (entry)
 			{
 				/**
@@ -330,7 +333,7 @@ static BOOL nla_client_setup_identity(rdpNla* nla)
 		}
 	}
 
-	if (!settings->Username)
+	if (!freerdp_settings_get_string(settings, FreeRDP_Username))
 	{
 		sspi_FreeAuthIdentity(nla->identity);
 		nla->identity = NULL;
@@ -351,14 +354,16 @@ static BOOL nla_client_setup_identity(rdpNla* nla)
 			}
 
 			if (sspi_SetAuthIdentityA(nla->identity, marshalledCredentials, NULL,
-			                          settings->Password) < 0)
+			                          freerdp_settings_get_string(settings, FreeRDP_Password)) < 0)
 				return FALSE;
 
 			CredFree(marshalledCredentials);
 		}
 #else
-		if (sspi_SetAuthIdentityA(nla->identity, settings->Username, settings->Domain,
-		                          settings->Password) < 0)
+		if (sspi_SetAuthIdentityA(nla->identity,
+		                          freerdp_settings_get_string(settings, FreeRDP_Username),
+		                          freerdp_settings_get_string(settings, FreeRDP_Domain),
+		                          freerdp_settings_get_string(settings, FreeRDP_Password)) < 0)
 			return FALSE;
 #endif /* _WIN32 */
 	}
@@ -369,7 +374,8 @@ static BOOL nla_client_setup_identity(rdpNla* nla)
 		if (settings->RedirectionPassword && (settings->RedirectionPasswordLength > 0))
 		{
 			if (sspi_SetAuthIdentityWithUnicodePassword(
-			        nla->identity, settings->Username, settings->Domain,
+			        nla->identity, freerdp_settings_get_string(settings, FreeRDP_Username),
+			        freerdp_settings_get_string(settings, FreeRDP_Domain),
 			        (UINT16*)settings->RedirectionPassword,
 			        settings->RedirectionPasswordLength / sizeof(WCHAR) - 1) < 0)
 				return FALSE;
@@ -379,7 +385,9 @@ static BOOL nla_client_setup_identity(rdpNla* nla)
 		{
 			if (settings->PasswordHash && strlen(settings->PasswordHash) == 32)
 			{
-				if (sspi_SetAuthIdentityA(nla->identity, settings->Username, settings->Domain,
+				if (sspi_SetAuthIdentityA(nla->identity,
+				                          freerdp_settings_get_string(settings, FreeRDP_Username),
+				                          freerdp_settings_get_string(settings, FreeRDP_Domain),
 				                          settings->PasswordHash) < 0)
 					return FALSE;
 
@@ -395,8 +403,10 @@ static BOOL nla_client_setup_identity(rdpNla* nla)
 
 		if (usePassword)
 		{
-			if (sspi_SetAuthIdentityA(nla->identity, settings->Username, settings->Domain,
-			                          settings->Password) < 0)
+			if (sspi_SetAuthIdentityA(nla->identity,
+			                          freerdp_settings_get_string(settings, FreeRDP_Username),
+			                          freerdp_settings_get_string(settings, FreeRDP_Domain),
+			                          freerdp_settings_get_string(settings, FreeRDP_Password)) < 0)
 				return FALSE;
 		}
 	}

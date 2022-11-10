@@ -198,16 +198,19 @@ static BOOL freerdp_client_settings_post_process(rdpSettings* settings)
 	{
 		if (settings->GatewayUseSameCredentials)
 		{
-			if (settings->Username)
+			if (freerdp_settings_get_string(settings, FreeRDP_Username))
 			{
-				if (!freerdp_settings_set_string(settings, FreeRDP_GatewayUsername,
-				                                 settings->Username))
+				if (!freerdp_settings_set_string(
+				        settings, FreeRDP_GatewayUsername,
+				        freerdp_settings_get_string(settings, FreeRDP_Username)))
 					goto out_error;
 			}
 
-			if (settings->Domain)
+			if (freerdp_settings_get_string(settings, FreeRDP_Domain))
 			{
-				if (!freerdp_settings_set_string(settings, FreeRDP_GatewayDomain, settings->Domain))
+				if (!freerdp_settings_set_string(
+				        settings, FreeRDP_GatewayDomain,
+				        freerdp_settings_get_string(settings, FreeRDP_Domain)))
 					goto out_error;
 			}
 

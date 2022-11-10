@@ -2318,8 +2318,8 @@ BOOL license_answer_license_request(rdpLicense* license)
 	s = license_send_stream_init(license);
 	if (!s)
 		return FALSE;
-	if (license->rdp->settings->Username != NULL)
-		username = license->rdp->settings->Username;
+	if (freerdp_settings_get_string(license->rdp->settings, FreeRDP_Username) != NULL)
+		username = freerdp_settings_get_string(license->rdp->settings, FreeRDP_Username);
 	else
 		username = "username";
 

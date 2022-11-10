@@ -443,15 +443,18 @@ static BOOL shadow_client_post_connect(freerdp_peer* peer)
 	shadow_client_mark_invalid(client, 0, NULL);
 	authStatus = -1;
 
-	if (settings->Username && settings->Password)
+	if (freerdp_settings_get_string(settings, FreeRDP_Username) &&
+	    freerdp_settings_get_string(settings, FreeRDP_Password))
 		settings->AutoLogonEnabled = TRUE;
 
 	if (server->authentication && !settings->NlaSecurity)
 	{
 		if (subsystem->Authenticate)
 		{
-			authStatus = subsystem->Authenticate(subsystem, client, settings->Username,
-			                                     settings->Domain, settings->Password);
+			authStatus = subsystem->Authenticate(
+			    subsystem, client, freerdp_settings_get_string(settings, FreeRDP_Username),
+			    freerdp_settings_get_string(settings, FreeRDP_Domain),
+			    freerdp_settings_get_string(settings, FreeRDP_Password));
 		}
 
 		if (authStatus < 0)

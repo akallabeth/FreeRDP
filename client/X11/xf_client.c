@@ -1204,7 +1204,8 @@ static BOOL xf_pre_connect(freerdp* instance)
 	PubSub_SubscribeChannelConnected(context->pubSub, xf_OnChannelConnectedEventHandler);
 	PubSub_SubscribeChannelDisconnected(context->pubSub, xf_OnChannelDisconnectedEventHandler);
 
-	if (!settings->Username && !settings->CredentialsFromStdin && !settings->SmartcardLogon)
+	if (!freerdp_settings_get_string(settings, FreeRDP_Username) &&
+	    !settings->CredentialsFromStdin && !settings->SmartcardLogon)
 	{
 		char login_name[MAX_PATH] = { 0 };
 		ULONG size = sizeof(login_name) - 1;
@@ -1214,7 +1215,8 @@ static BOOL xf_pre_connect(freerdp* instance)
 			if (!freerdp_settings_set_string(settings, FreeRDP_Username, login_name))
 				return FALSE;
 
-			WLog_INFO(TAG, "No user name set. - Using login name: %s", settings->Username);
+			WLog_INFO(TAG, "No user name set. - Using login name: %s",
+			          freerdp_settings_get_string(settings, FreeRDP_Username));
 		}
 	}
 

@@ -275,22 +275,17 @@ BOOL rdp_client_connect(rdpRdp* rdp)
 
 	if (settings->GatewayEnabled)
 	{
-		char* user = NULL;
-		char* domain = NULL;
+		const char* user = freerdp_settings_get_string(settings, FreeRDP_Username);
+		const char* domain = freerdp_settings_get_string(settings, FreeRDP_Domain);
 		char* cookie = NULL;
 		size_t user_length = 0;
 		size_t domain_length = 0;
 		size_t cookie_length = 0;
 
-		if (settings->Username)
-		{
-			user = settings->Username;
-			user_length = strlen(settings->Username);
-		}
+		if (user)
+			user_length = strlen(user);
 
-		if (settings->Domain)
-			domain = settings->Domain;
-		else
+		if (!domain)
 			domain = settings->ComputerName;
 
 		domain_length = strlen(domain);
@@ -304,7 +299,7 @@ BOOL rdp_client_connect(rdpRdp* rdp)
 		CharUpperBuffA(cookie, domain_length);
 		cookie[domain_length] = '\\';
 
-		if (settings->Username)
+		if (user)
 			CopyMemory(&cookie[domain_length + 1], user, user_length);
 
 		cookie[cookie_length] = '\0';
@@ -313,7 +308,8 @@ BOOL rdp_client_connect(rdpRdp* rdp)
 	}
 	else
 	{
-		status = nego_set_cookie(rdp->nego, settings->Username);
+		status =
+		    nego_set_cookie(rdp->nego, freerdp_settings_get_string(settings, FreeRDP_Username));
 	}
 
 	if (!status)
@@ -365,7 +361,7 @@ BOOL rdp_client_connect(rdpRdp* rdp)
 		{
 			wStream s = { 0 };
 
-			if ((settings->Username != NULL) &&
+			if ((freerdp_settings_get_string(settings, FreeRDP_Username) != NULL) &&
 			    ((freerdp_settings_get_string(settings, FreeRDP_Password) != NULL) ||
 			     (settings->RedirectionPassword != NULL &&
 			      settings->RedirectionPasswordLength > 0)))
