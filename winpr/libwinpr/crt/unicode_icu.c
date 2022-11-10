@@ -42,6 +42,7 @@
 int int_MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
                             LPWSTR lpWideCharStr, int cchWideChar)
 {
+	BOOL isNullTerminated = TRUE;
 	LPWSTR targetStart;
 
 	WINPR_UNUSED(dwFlags);
@@ -51,6 +52,19 @@ int int_MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr,
 	if ((cbMultiByte == 0) || (cbMultiByte < -1))
 		return 0;
 
+	size_t len;
+	if (cbMultiByte == -1)
+		len = strlen(lpMultiByteStr) + 1;
+	else
+	{
+		len = strnlen(lpMultiByteStr, cbMultiByte);
+		isNullTerminated = (len < cbMultiByte);
+		if (isNullTerminated)
+			len++;
+	}
+	if (len >= INT_MAX)
+		return -1;
+	cbMultiByte = (int)len;
 	/*
 	 * if cchWideChar is 0, the function returns the required buffer size
 	 * in characters for lpWideCharStr and makes no use of the output parameter itself.
@@ -75,32 +89,28 @@ int int_MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr,
 		targetCapacity = cchWideChar;
 		error = U_ZERO_ERROR;
 
-		if (cchWideChar == 0)
-		{
-			u_strFromUTF8(NULL, 0, &targetLength, lpMultiByteStr, cbMultiByte, &error);
-			cchWideChar = targetLength;
-		}
-		else
-		{
-			u_strFromUTF8(targetStart, targetCapacity, &targetLength, lpMultiByteStr, cbMultiByte,
-			              &error);
-			switch (error)
-			{
-				case U_BUFFER_OVERFLOW_ERROR:
-					cchWideChar = targetCapacity;
-					break;
-				default:
-					cchWideChar = targetLength;
-					break;
-			}
-		}
+		u_strFromUTF8(targetStart, targetCapacity, &targetLength, lpMultiByteStr, cbMultiByte,
+		              &error);
 
-		/* We always need the full length including the terminating '\0'. */
-		if ((targetCapacity == 0) || (targetLength <= targetCapacity))
+		switch (error)
 		{
-			if ((cbMultiByte < 0) ||
-			    ((cbMultiByte > 0) && (lpMultiByteStr[cbMultiByte - 1] != '\0')))
-				cchWideChar++;
+			case U_BUFFER_OVERFLOW_ERROR:
+				if (targetCapacity > 0)
+					cchWideChar = targetCapacity;
+				else
+					cchWideChar = targetLength;
+				break;
+			case U_STRING_NOT_TERMINATED_WARNING:
+				cchWideChar = targetLength;
+				break;
+			case U_ZERO_ERROR:
+				cchWideChar = targetLength;
+				break;
+			default:
+				WLog_WARN(TAG, "[%s] unexpected ICU error code %s [0x%08" PRIx32 "]", __func__,
+				          u_errorName(error), error);
+				cchWideChar = targetLength;
+				break;
 		}
 	}
 
@@ -111,6 +121,7 @@ int int_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr,
                             LPSTR lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar,
                             LPBOOL lpUsedDefaultChar)
 {
+	BOOL isNullTerminated = TRUE;
 	char* targetStart;
 
 	/* If cchWideChar is 0, the function fails */
@@ -120,13 +131,20 @@ int int_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr,
 
 	/* If cchWideChar is -1, the string is null-terminated */
 
+	size_t len;
 	if (cchWideChar == -1)
+		len = _wcslen(lpWideCharStr) + 1;
+	else
 	{
-		size_t len = _wcslen(lpWideCharStr);
-		if (len >= INT32_MAX)
-			return 0;
-		cchWideChar = (int)len + 1;
+		len = _wcsnlen(lpWideCharStr, cchWideChar);
+		isNullTerminated = len < cchWideChar;
+		if (isNullTerminated)
+			len++;
 	}
+
+	if (len >= INT32_MAX)
+		return 0;
+	cchWideChar = (int)len;
 
 	/*
 	 * if cbMultiByte is 0, the function returns the required buffer size
@@ -152,16 +170,26 @@ int int_WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr,
 		targetCapacity = cbMultiByte;
 		error = U_ZERO_ERROR;
 
-		if (cbMultiByte == 0)
+		u_strToUTF8(targetStart, targetCapacity, &targetLength, lpWideCharStr, cchWideChar, &error);
+		switch (error)
 		{
-			u_strToUTF8(NULL, 0, &targetLength, lpWideCharStr, cchWideChar, &error);
-			cbMultiByte = targetLength;
-		}
-		else
-		{
-			u_strToUTF8(targetStart, targetCapacity, &targetLength, lpWideCharStr, cchWideChar,
-			            &error);
-			cbMultiByte = U_SUCCESS(error) ? targetLength : 0;
+			case U_BUFFER_OVERFLOW_ERROR:
+				if (targetCapacity > 0)
+					cbMultiByte = targetCapacity;
+				else
+					cbMultiByte = targetLength;
+				break;
+			case U_STRING_NOT_TERMINATED_WARNING:
+				cbMultiByte = targetLength;
+				break;
+			case U_ZERO_ERROR:
+				cbMultiByte = targetLength;
+				break;
+			default:
+				WLog_WARN(TAG, "[%s] unexpected ICU error code %s [0x%08" PRIx32 "]", __func__,
+				          u_errorName(error), error);
+				cbMultiByte = targetLength;
+				break;
 		}
 	}
 	return cbMultiByte;
