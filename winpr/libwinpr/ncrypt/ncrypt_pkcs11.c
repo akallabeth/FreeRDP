@@ -75,11 +75,12 @@ typedef struct
 	CK_ULONG keyIndex;
 } P11EnumKeysState;
 
-static struct
+typedef struct
 {
 	const char* label;
 	BYTE tag[3];
-} piv_cert_tags[] = {
+} piv_cert_tags_t;
+static const piv_cert_tags_t piv_cert_tags[] = {
 	{ "Certificate for PIV Authentication", "\x5F\xC1\x05" },
 	{ "Certificate for Digital Signature", "\x5F\xC1\x0A" },
 	{ "Certificate for Key Management", "\x5F\xC1\x0B" },
@@ -916,9 +917,10 @@ static SECURITY_STATUS check_for_piv_container_name(NCryptP11KeyHandle* key, BYT
                                                     DWORD cbOutput, DWORD* pcbResult, char* label,
                                                     size_t label_len)
 {
-	for (int i = 0; i < ARRAYSIZE(piv_cert_tags); i++)
+	for (size_t i = 0; i < ARRAYSIZE(piv_cert_tags); i++)
 	{
-		if (strncmp(label, piv_cert_tags[i].label, label_len) == 0)
+		const piv_cert_tags_t* cur = &piv_cert_tags[i];
+		if (strncmp(label, cur->label, label_len) == 0)
 		{
 			*pcbResult = PIV_CONTAINER_NAME_LEN * sizeof(WCHAR);
 			if (!pbOutput)
@@ -926,7 +928,7 @@ static SECURITY_STATUS check_for_piv_container_name(NCryptP11KeyHandle* key, BYT
 			else if (cbOutput < PIV_CONTAINER_NAME_LEN * sizeof(WCHAR))
 				return NTE_NO_MEMORY;
 			else
-				return get_piv_container_name(key, piv_cert_tags[i].tag, pbOutput, cbOutput);
+				return get_piv_container_name(key, cur->tag, pbOutput, cbOutput);
 		}
 	}
 	return NTE_NOT_FOUND;
