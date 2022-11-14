@@ -242,12 +242,12 @@ static void wts_listener_free(void* arg)
 
 static BOOL channelIdMatch(const void* k1, const void* k2)
 {
-	return *((UINT32*)k1) == *((UINT32*)k2);
+	return *((const UINT32*)k1) == *((const UINT32*)k2);
 }
 
 static UINT32 channelIdHash(const void* id)
 {
-	return *((UINT32*)id);
+	return *((const UINT32*)id);
 }
 
 static IWTSVirtualChannelManager* dvcman_new(drdynvcPlugin* plugin)
