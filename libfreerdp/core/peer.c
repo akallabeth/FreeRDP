@@ -33,6 +33,7 @@
 
 #include "rdp.h"
 #include "peer.h"
+#include "multitransport.h"
 
 #define TAG FREERDP_TAG("core.peer")
 
@@ -960,13 +961,26 @@ static state_run_t peer_recv_callback_internal(rdpTransport* transport, wStream*
 		case CONNECTION_STATE_MULTITRANSPORT_BOOTSTRAPPING_REQUEST:
 			if (settings->SupportMultitransport)
 			{
-				if (!multitransport_server_send_request(rdp->multitransport))
-					ret = STATE_RUN_FAILED;
-				else
+				/* TODO: this counter shall end up in a listener or server instance */
+				static UINT32 reqId = 0;
+				BYTE cookie[16];
+				winpr_RAND(cookie, sizeof(cookie));
+
+				ret = multitransport_server_request(rdp->multitransport, reqId++,
+				                                    INITIATE_REQUEST_PROTOCOL_UDPFECR, cookie);
+				switch (ret)
 				{
-					if (rdp_server_transition_to_state(
-					        rdp, CONNECTION_STATE_MULTITRANSPORT_BOOTSTRAPPING_RESPONSE))
-						ret = STATE_RUN_CONTINUE;
+					case STATE_RUN_SUCCESS:
+						rdp_server_transition_to_state(
+						    rdp, CONNECTION_STATE_MULTITRANSPORT_BOOTSTRAPPING_RESPONSE);
+						break;
+					case STATE_RUN_CONTINUE:
+						/* mismatch on the supported kind of UDP transports */
+						rdp_server_transition_to_state(
+						    rdp, CONNECTION_STATE_CAPABILITIES_EXCHANGE_DEMAND_ACTIVE);
+						break;
+					default:
+						break;
 				}
 			}
 			else

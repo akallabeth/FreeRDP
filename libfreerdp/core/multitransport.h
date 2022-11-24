@@ -36,16 +36,38 @@ typedef enum
 	INITIATE_REQUEST_PROTOCOL_UDPFECL = 0x02
 } MultitransportRequestProtocol;
 
-FREERDP_LOCAL state_run_t multitransport_client_recv_request(rdpMultitransport* multitransport,
-                                                             wStream* s);
-FREERDP_LOCAL BOOL multitransport_server_send_request(rdpMultitransport* multitransport);
+typedef state_run_t (*MultiTransportRequestCb)(rdpMultitransport* multi, UINT32 reqId,
+                                               UINT16 reqProto, const BYTE* cookie);
+typedef state_run_t (*MultiTransportResponseCb)(rdpMultitransport* multi, UINT32 reqId,
+                                                UINT16 reqProto, const BYTE* cookie,
+                                                UINT32 hrResponse);
 
-FREERDP_LOCAL BOOL multitransport_server_recv_response(rdpMultitransport* multitransport,
-                                                       wStream* s, HRESULT* hr);
-FREERDP_LOCAL BOOL multitransport_client_send_response(rdpMultitransport* multitransport,
+#define RDPUDP_COOKIE_LEN 16
+#define RDPUDP_COOKIE_HASHLEN 32
+
+struct rdp_multitransport
+{
+	rdpRdp* rdp;
+
+	MultiTransportRequestCb MtRequest;
+	MultiTransportResponseCb MtResponse;
+
+	/* server-side data */
+	UINT32 reliableReqId;
+
+	BYTE reliableCookie[RDPUDP_COOKIE_LEN];
+	BYTE reliableCookieHash[RDPUDP_COOKIE_HASHLEN];
+};
+
+FREERDP_LOCAL state_run_t multitransport_recv_request(rdpMultitransport* multi, wStream* s);
+FREERDP_LOCAL state_run_t multitransport_server_request(rdpMultitransport* multi, UINT32 reqId,
+                                                        UINT16 reqProto, const BYTE* cookie);
+
+FREERDP_LOCAL state_run_t multitransport_recv_response(rdpMultitransport* multi, wStream* s);
+FREERDP_LOCAL BOOL multitransport_client_send_response(rdpMultitransport* multi, UINT32 reqId,
                                                        HRESULT hr);
 
 FREERDP_LOCAL rdpMultitransport* multitransport_new(rdpRdp* rdp, UINT16 protocol);
-FREERDP_LOCAL void multitransport_free(rdpMultitransport* multitransport);
+FREERDP_LOCAL void multitransport_free(rdpMultitransport* multi);
 
 #endif /* FREERDP_LIB_CORE_MULTITRANSPORT_H */
