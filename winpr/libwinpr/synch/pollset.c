@@ -220,4 +220,45 @@ BOOL pollset_isSignaled(WINPR_POLL_SET* set, size_t idx)
 	return FALSE;
 #endif
 }
+
+BOOL pollset_isReadSignaled(WINPR_POLL_SET* set, size_t idx)
+{
+	if (idx > set->fillIndex)
+	{
+		WLog_ERR(TAG, "%s: index=%d out of pollset(fillIndex=%" PRIuz ")", __FUNCTION__, idx,
+		         set->fillIndex);
+		return FALSE;
+	}
+
+#ifdef HAVE_POLL_H
+	return !!(set->pollset[idx].revents & POLLIN);
+#else
+	FdIndex* fdIndex = &set->fdIndex[idx];
+	if (fdIndex->fd < 0)
+		return FALSE;
+
+	return FD_ISSET(fdIndex->fd, &set->rset);
+#endif
+}
+
+BOOL pollset_isWriteSignaled(WINPR_POLL_SET* set, size_t idx)
+{
+	if (idx > set->fillIndex)
+	{
+		WLog_ERR(TAG, "%s: index=%d out of pollset(fillIndex=%" PRIuz ")", __FUNCTION__, idx,
+		         set->fillIndex);
+		return FALSE;
+	}
+
+#ifdef HAVE_POLL_H
+	return !!(set->pollset[idx].revents & POLLOUT);
+#else
+	FdIndex* fdIndex = &set->fdIndex[idx];
+	if (fdIndex->fd < 0)
+		return FALSE;
+
+	return FD_ISSET(fdIndex->fd, &set->wset);
+#endif
+}
+
 #endif
