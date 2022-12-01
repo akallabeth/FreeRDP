@@ -158,8 +158,8 @@ static INLINE HRESULT HRESULT_FROM_WIN32(unsigned long x)
 
 #define HRESULT_SEVERITY(hr) (((hr) >> 31) & 0x1)
 
-#define SUCCEEDED(hr) (((hr)) >= 0)
-#define FAILED(hr) (((hr)) < 0)
+#define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
+#define FAILED(hr) (((HRESULT)(hr)) < 0)
 #define IS_ERROR(Status) (((unsigned long)(Status)) >> 31 == SEVERITY_ERROR)
 
 #define MAKE_HRESULT(sev, fac, code)                                         \
