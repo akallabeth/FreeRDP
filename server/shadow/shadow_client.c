@@ -353,9 +353,12 @@ static INLINE BOOL shadow_client_recalc_desktop_size(rdpShadowClient* client)
 	WINPR_ASSERT(width <= UINT16_MAX);
 	WINPR_ASSERT(height >= 0);
 	WINPR_ASSERT(height <= UINT16_MAX);
+
+	// TODO: Nedd to resize the CLIENT!
+#if 0
 	if (settings->DesktopWidth != (UINT32)width || settings->DesktopHeight != (UINT32)height)
 		return TRUE;
-
+#endif
 	return FALSE;
 }
 
@@ -434,7 +437,8 @@ static BOOL shadow_client_post_connect(freerdp_peer* peer)
 		WLog_INFO(TAG, "Client from %s is resized (%" PRIu32 "x%" PRIu32 "@%" PRIu32 ")",
 		          peer->hostname, settings->DesktopWidth, settings->DesktopHeight,
 		          freerdp_settings_get_uint32(settings, FreeRDP_ColorDepth));
-		return FALSE;
+		if (!rc)
+			return rc;
 	}
 
 	if (shadow_client_channels_post_connect(client) != CHANNEL_RC_OK)
