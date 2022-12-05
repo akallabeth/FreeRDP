@@ -1129,6 +1129,11 @@ static BOOL rdp_read_pointer_capability_set(wStream* s, rdpSettings* settings)
 	settings->ColorPointerFlag = colorPointerFlag;
 	settings->PointerCacheSize = pointerCacheSize;
 
+	WLog_WARN(TAG, "xxxxxx [%s] ColorPointerCacheSize=%" PRIu32, __FUNCTION__,
+	          settings->ColorPointerCacheSize);
+	WLog_WARN(TAG, "xxxxxx [%s] PointerCacheSize=%" PRIu32, __FUNCTION__,
+	          settings->PointerCacheSize);
+
 	return TRUE;
 }
 
@@ -1162,6 +1167,10 @@ static BOOL rdp_write_pointer_capability_set(wStream* s, const rdpSettings* sett
 	    s, (UINT16)settings->ColorPointerCacheSize); /* colorPointerCacheSize (2 bytes) */
 	Stream_Write_UINT16(s, (UINT16)settings->PointerCacheSize); /* pointerCacheSize (2 bytes) */
 
+	WLog_WARN(TAG, "xxxxxx [%s] ColorPointerCacheSize=%" PRIu32, __FUNCTION__,
+	          settings->ColorPointerCacheSize);
+	WLog_WARN(TAG, "xxxxxx [%s] PointerCacheSize=%" PRIu32, __FUNCTION__,
+	          settings->PointerCacheSize);
 	return rdp_capability_set_finish(s, (UINT16)header, CAPSET_TYPE_POINTER);
 }
 
