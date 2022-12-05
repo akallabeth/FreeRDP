@@ -1128,6 +1128,7 @@ static BOOL rdp_read_pointer_capability_set(wStream* s, rdpSettings* settings)
 	WINPR_ASSERT(settings);
 	settings->ColorPointerFlag = colorPointerFlag;
 	settings->PointerCacheSize = pointerCacheSize;
+	settings->ColorPointerCacheSize = colorPointerCacheSize;
 
 	WLog_WARN(TAG, "xxxxxx [%s] ColorPointerCacheSize=%" PRIu32, __FUNCTION__,
 	          settings->ColorPointerCacheSize);
