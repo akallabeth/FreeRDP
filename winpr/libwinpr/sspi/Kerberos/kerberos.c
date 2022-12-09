@@ -355,10 +355,8 @@ cleanup:
 		krb5_free_principal(ctx, principal);
 	if (creds_ctx)
 		krb5_init_creds_free(ctx, creds_ctx);
-#ifdef HAVE_AT_LEAST_KRB_V1_13
 	if (gic_opt)
 		krb5_get_init_creds_opt_free(ctx, gic_opt);
-#endif
 	if (ctx)
 		krb5_free_context(ctx);
 
