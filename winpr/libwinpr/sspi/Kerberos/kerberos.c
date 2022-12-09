@@ -41,10 +41,6 @@
 
 #include "kerberos.h"
 
-#ifdef WITH_KRB5_HEIMDAL
-#include <krb5-protos.h>
-#endif
-
 #include "../sspi.h"
 #include "../../log.h"
 #define TAG WINPR_TAG("sspi.Kerberos")
@@ -310,10 +306,8 @@ static SECURITY_STATUS SEC_ENTRY kerberos_AcquireCredentialsHandleA(
 			kerberos_set_krb_opts(ctx, gic_opt, krb_settings);
 		}
 
-#ifdef WITH_KRB5_MIT
 		krb5_get_init_creds_opt_set_out_ccache(ctx, gic_opt, ccache);
 		krb5_get_init_creds_opt_set_in_ccache(ctx, gic_opt, ccache);
-#endif
 
 		if ((rv = krb5_init_creds_init(ctx, principal, krb5_prompter, password, start_time, gic_opt,
 		                               &creds_ctx)))
@@ -321,16 +315,6 @@ static SECURITY_STATUS SEC_ENTRY kerberos_AcquireCredentialsHandleA(
 
 		if ((rv = krb5_init_creds_get(ctx, creds_ctx)))
 			goto cleanup;
-
-#ifdef WITH_KRB5_HEIMDAL
-		{
-			krb5_creds creds;
-			if ((rv = krb5_init_creds_get_creds(ctx, creds_ctx, &creds)))
-				goto cleanup;
-			if (rv = krb5_cc_store_cred(ctx, ccache, &creds))
-				goto cleanup;
-		}
-#endif
 	}
 
 	credentials = calloc(1, sizeof(KRB_CREDENTIALS));
