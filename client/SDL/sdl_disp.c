@@ -75,10 +75,9 @@ static BOOL sdl_disp_settings_changed(sdlDispContext* sdlDisp)
 
 	if (sdlDisp->lastSentDeviceScaleFactor != settings->DeviceScaleFactor)
 		return TRUE;
-	/* TODFO
 	    if (sdlDisp->fullscreen != sdlDisp->sdl->fullscreen)
 	        return TRUE;
-	*/
+
 	return FALSE;
 }
 
