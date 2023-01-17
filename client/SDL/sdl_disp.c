@@ -97,7 +97,7 @@ static BOOL sdl_update_last_sent(sdlDispContext* sdlDisp)
 	sdlDisp->lastSentDesktopOrientation = settings->DesktopOrientation;
 	sdlDisp->lastSentDesktopScaleFactor = settings->DesktopScaleFactor;
 	sdlDisp->lastSentDeviceScaleFactor = settings->DeviceScaleFactor;
-	// TODO sdlDisp->fullscreen = sdlDisp->sdl->fullscreen;
+	sdlDisp->fullscreen = sdlDisp->sdl->fullscreen;
 	return TRUE;
 }
 
@@ -127,7 +127,6 @@ static BOOL sdl_disp_sendResize(sdlDispContext* sdlDisp)
 	if (!sdl_disp_settings_changed(sdlDisp))
 		return TRUE;
 
-	/* TODO: Multimonitor support for wayland
 	if (sdl->fullscreen && (settings->MonitorCount > 0))
 	{
 	    if (sdl_disp_sendLayout(sdlDisp->disp, settings->MonitorDefArray,
@@ -135,7 +134,6 @@ static BOOL sdl_disp_sendResize(sdlDispContext* sdlDisp)
 	        return FALSE;
 	}
 	else
-	*/
 	{
 		sdlDisp->waitingResize = TRUE;
 		layout.Flags = DISPLAY_CONTROL_MONITOR_PRIMARY;

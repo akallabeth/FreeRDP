@@ -20,9 +20,13 @@
 #ifndef FREERDP_CLIENT_SDL_UTILS_H
 #define FREERDP_CLIENT_SDL_UTILS_H
 
+#include <winpr/wlog.h>
+
 #include <stdbool.h>
 #include <SDL.h>
 
 const char* sdl_event_type_str(Uint32 type);
+const char* sdl_error_string(Uint32 res);
+BOOL sdl_log_error(Uint32 res, wLog* log, const char* fkt);
 
 #endif /* FREERDP_CLIENT_SDL_UTILS_H */

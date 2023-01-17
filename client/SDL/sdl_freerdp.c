@@ -52,8 +52,6 @@
 #include "sdl_touch.h"
 #include "sdl_pointer.h"
 
-#define TAG CLIENT_TAG("SDL")
-
 enum SDL_EXIT_CODE
 {
 	/* section 0-15: protocol-independent codes */
@@ -451,7 +449,7 @@ static BOOL sdl_pre_connect(freerdp* instance)
 		if ((maxWidth != 0) && (maxHeight != 0) &&
 		    !freerdp_settings_get_bool(settings, FreeRDP_SmartSizing))
 		{
-			WLog_INFO(TAG, "Update size to %ux%u", maxWidth, maxHeight);
+			WLog_Print(sdl->log, WLOG_INFO, "Update size to %ux%u", maxWidth, maxHeight);
 			settings->DesktopWidth = maxWidth;
 			settings->DesktopHeight = maxHeight;
 		}
@@ -461,14 +459,14 @@ static BOOL sdl_pre_connect(freerdp* instance)
 		/* Check +auth-only has a username and password. */
 		if (!freerdp_settings_get_string(settings, FreeRDP_Password))
 		{
-			WLog_INFO(TAG, "auth-only, but no password set. Please provide one.");
+			WLog_Print(sdl->log, WLOG_INFO, "auth-only, but no password set. Please provide one.");
 			return FALSE;
 		}
 
 		if (!freerdp_settings_set_bool(settings, FreeRDP_DeactivateClientDecoding, TRUE))
 			return FALSE;
 
-		WLog_INFO(TAG, "Authentication only. Don't connect SDL.");
+		WLog_Print(sdl->log, WLOG_INFO, "Authentication only. Don't connect SDL.");
 	}
 
 	/* TODO: Any code your client requires */
@@ -556,10 +554,14 @@ BOOL sdl_create_windows(sdlContext* sdl)
 	WINPR_ASSERT(sdl);
 
 	const char* title = sdl_window_get_title(sdl->common.context.settings);
+	const BOOL multimon =
+	    freerdp_settings_get_bool(sdl->common.context.settings, FreeRDP_UseMultimon);
 	BOOL rc = FALSE;
 
-	// TODO: Multimonitor setup
-	sdl->windowCount = 1;
+	if (multimon)
+		sdl->windowCount = SDL_GetNumVideoDisplays();
+	else
+		sdl->windowCount = 1;
 
 	const UINT32 w =
 	    freerdp_settings_get_uint32(sdl->common.context.settings, FreeRDP_DesktopWidth);
@@ -569,7 +571,17 @@ BOOL sdl_create_windows(sdlContext* sdl)
 	sdl_window_t* window = NULL;
 	for (size_t x = 0; x < sdl->windowCount; x++)
 	{
+		SDL_Rect rect = {
+			.x = SDL_WINDOWPOS_UNDEFINED, .y = SDL_WINDOWPOS_UNDEFINED, .w = w, .h = h
+		};
+
 		Uint32 flags = SDL_WINDOW_SHOWN;
+
+		if (multimon)
+		{
+			const int rc = SDL_GetDisplayBounds(x, &rect);
+			sdl_log_error(rc, sdl->log, "SDL_GetDisplayBounds");
+		}
 
 		if (sdl->highDpi)
 		{
@@ -578,13 +590,12 @@ BOOL sdl_create_windows(sdlContext* sdl)
 #endif
 		}
 
-		if (sdl->common.context.settings->Fullscreen || sdl->common.context.settings->UseMultimon)
+		if (sdl->common.context.settings->Fullscreen || multimon)
 			flags |= SDL_WINDOW_FULLSCREEN;
 
 		window = &sdl->windows[x];
 
-		window->window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-		                                  (int)w, (int)h, flags);
+		window->window = SDL_CreateWindow(title, rect.x, rect.y, (int)rect.w, (int)rect.h, flags);
 		if (!window->window)
 			goto fail;
 	}
@@ -752,11 +763,11 @@ static BOOL sdl_post_connect(freerdp* instance)
 		/* Check +auth-only has a username and password. */
 		if (!freerdp_settings_get_string(context->settings, FreeRDP_Password))
 		{
-			WLog_INFO(TAG, "auth-only, but no password set. Please provide one.");
+			WLog_Print(sdl->log, WLOG_INFO, "auth-only, but no password set. Please provide one.");
 			return FALSE;
 		}
 
-		WLog_INFO(TAG, "Authentication only. Don't connect to X.");
+		WLog_Print(sdl->log, WLOG_INFO, "Authentication only. Don't connect to X.");
 		return TRUE;
 	}
 
@@ -846,6 +857,7 @@ static int WINAPI sdl_client_thread_proc(LPVOID arg)
 	WINPR_ASSERT(instance->context);
 	WINPR_ASSERT(instance->context->settings);
 
+	sdlContext* sdl = (sdlContext*)instance->context;
 	if (!rc)
 	{
 		UINT32 error = freerdp_get_last_error(instance->context);
@@ -856,8 +868,9 @@ static int WINAPI sdl_client_thread_proc(LPVOID arg)
 	{
 		DWORD code = freerdp_get_last_error(instance->context);
 		freerdp_abort_connect_context(instance->context);
-		WLog_ERR(TAG, "Authentication only, freerdp_get_last_error() %s [0x%08" PRIx32 "] %s",
-		         freerdp_get_last_error_name(code), code, freerdp_get_last_error_string(code));
+		WLog_Print(sdl->log, WLOG_ERROR,
+		           "Authentication only, freerdp_get_last_error() %s [0x%08" PRIx32 "] %s",
+		           freerdp_get_last_error_name(code), code, freerdp_get_last_error_string(code));
 		goto disconnect;
 	}
 
@@ -894,7 +907,7 @@ static int WINAPI sdl_client_thread_proc(LPVOID arg)
 
 		if (nCount == 0)
 		{
-			WLog_ERR(TAG, "%s: freerdp_get_event_handles failed", __FUNCTION__);
+			WLog_Print(sdl->log, WLOG_ERROR, "%s: freerdp_get_event_handles failed", __FUNCTION__);
 			break;
 		}
 
@@ -915,15 +928,16 @@ static int WINAPI sdl_client_thread_proc(LPVOID arg)
 			}
 
 			if (freerdp_get_last_error(instance->context) == FREERDP_ERROR_SUCCESS)
-				WLog_ERR(TAG, "%s: WaitForMultipleObjects failed with %" PRIu32 "", __FUNCTION__,
-				         status);
+				WLog_Print(sdl->log, WLOG_ERROR,
+				           "%s: WaitForMultipleObjects failed with %" PRIu32 "", __FUNCTION__,
+				           status);
 			break;
 		}
 
 		if (!freerdp_check_event_handles(instance->context))
 		{
 			if (freerdp_get_last_error(instance->context) == FREERDP_ERROR_SUCCESS)
-				WLog_ERR(TAG, "Failed to check FreeRDP event handles");
+				WLog_Print(sdl->log, WLOG_ERROR, "Failed to check FreeRDP event handles");
 
 			break;
 		}
@@ -938,16 +952,17 @@ static int WINAPI sdl_client_thread_proc(LPVOID arg)
 		                                      Disconnect_Ultimatum_user_requested))
 		{
 			/* This situation might be limited to Windows XP. */
-			WLog_INFO(TAG, "Error info says user did not initiate but disconnect ultimatum says "
-			               "they did; treat this as a user logoff");
+			WLog_Print(sdl->log, WLOG_INFO,
+			           "Error info says user did not initiate but disconnect ultimatum says "
+			           "they did; treat this as a user logoff");
 			exit_code = SDL_EXIT_LOGOFF;
 		}
 	}
 
 disconnect:
 	if (freerdp_settings_get_bool(instance->context->settings, FreeRDP_AuthenticationOnly))
-		WLog_INFO(TAG, "Authentication only, exit status %s [%" PRId32 "]",
-		          sdl_map_to_code_tag(exit_code), exit_code);
+		WLog_Print(sdl->log, WLOG_INFO, "Authentication only, exit status %s [%" PRId32 "]",
+		           sdl_map_to_code_tag(exit_code), exit_code);
 	freerdp_disconnect(instance);
 	return exit_code;
 }
@@ -978,8 +993,7 @@ static int sdl_logon_error_info(freerdp* instance, UINT32 data, UINT32 type)
 		return -1;
 
 	tf = (sdlContext*)instance->context;
-	WLog_INFO(TAG, "Logon Error Info %s [%s]", str_data, str_type);
-	WINPR_UNUSED(tf);
+	WLog_Print(tf->log, WLOG_INFO, "Logon Error Info %s [%s]", str_data, str_type);
 
 	return 1;
 }
@@ -991,6 +1005,8 @@ static BOOL sdl_client_new(freerdp* instance, rdpContext* context)
 	if (!instance || !context)
 		return FALSE;
 
+#define TAG CLIENT_TAG("SDL")
+	tf->log = WLog_Get(TAG);
 	instance->PreConnect = sdl_pre_connect;
 	instance->PostConnect = sdl_post_connect;
 	instance->PostDisconnect = sdl_post_disconnect;
