@@ -126,7 +126,7 @@ static BOOL sdl_disp_sendResize(sdlDispContext* sdlDisp)
 	if (!sdl_disp_settings_changed(sdlDisp))
 		return TRUE;
 
-	if (sdl->fullscreen && (settings->MonitorCount > 0))
+	if (sdl->fullscreen && (settings->MonitorCount > 0) && settings->UseMultimon)
 	{
 	    if (sdl_disp_sendLayout(sdlDisp->disp, settings->MonitorDefArray,
 	                           settings->MonitorCount) != CHANNEL_RC_OK)
@@ -192,7 +192,7 @@ static void sdl_disp_OnActivated(void* context, const ActivatedEventArgs* e)
 
 	sdlDisp->waitingResize = FALSE;
 
-	if (sdlDisp->activated && !settings->Fullscreen)
+	if (sdlDisp->activated && !settings->Fullscreen && !settings->UseMultimon)
 	{
 		sdl_disp_set_window_resizable(sdlDisp);
 
@@ -215,7 +215,7 @@ static void sdl_disp_OnGraphicsReset(void* context, const GraphicsResetEventArgs
 
 	sdlDisp->waitingResize = FALSE;
 
-	if (sdlDisp->activated && !settings->Fullscreen)
+	if (sdlDisp->activated && !settings->Fullscreen && !settings->UseMultimon)
 	{
 		sdl_disp_set_window_resizable(sdlDisp);
 		sdl_disp_sendResize(sdlDisp);
@@ -232,7 +232,7 @@ static void sdl_disp_OnTimer(void* context, const TimerEventArgs* e)
 	if (!sdl_disp_check_context(context, &sdl, &sdlDisp, &settings))
 		return;
 
-	if (!sdlDisp->activated || settings->Fullscreen)
+	if (!sdlDisp->activated || settings->Fullscreen || settings->UseMultimon)
 		return;
 
 	sdl_disp_sendResize(sdlDisp);
