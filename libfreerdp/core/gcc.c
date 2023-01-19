@@ -1015,6 +1015,8 @@ BOOL gcc_read_client_core_data(wStream* s, rdpMcs* mcs, UINT16 blockLength)
 			break;
 
 		Stream_Read_UINT16(s, earlyCapabilityFlags); /* earlyCapabilityFlags (2 bytes) */
+        WLog_WARN(TAG, "[%p] xxxxxxxxxxx %s: 0x%08" PRIx32 " --> 0x%08" PRIx32, settings, __FUNCTION__,
+                      settings->EarlyCapabilityFlags, earlyCapabilityFlags);
 		settings->EarlyCapabilityFlags = (UINT32)earlyCapabilityFlags;
 		blockLength -= 2;
 
@@ -1150,6 +1152,8 @@ BOOL gcc_read_client_core_data(wStream* s, rdpMcs* mcs, UINT16 blockLength)
 
 	WLog_DBG(TAG, "Received EarlyCapabilityFlags=%s",
 	         rdp_early_caps_string(earlyCapabilityFlags, buffer, sizeof(buffer)));
+    WLog_WARN(TAG, "[%p] xxxxxxxxxxx %s: 0x%08" PRIx32 " --> 0x%08" PRIx32, settings, __FUNCTION__,
+                  settings->EarlyCapabilityFlags, earlyCapabilityFlags);
 	settings->EarlyCapabilityFlags = earlyCapabilityFlags;
 	return updateEarlyClientCaps(settings, earlyCapabilityFlags, connectionType);
 }
