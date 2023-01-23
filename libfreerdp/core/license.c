@@ -1158,7 +1158,7 @@ BOOL license_encrypt_premaster_secret(rdpLicense* license)
 	{
 		SSIZE_T length = crypto_rsa_public_encrypt(
 		    license->PremasterSecret, PREMASTER_SECRET_LENGTH, cinfo->ModulusLength, cinfo->Modulus,
-		    cinfo->exponent, EncryptedPremasterSecret);
+		    cinfo->exponent, EncryptedPremasterSecret, cinfo->ModulusLength);
 		if ((length < 0) || (length > UINT16_MAX))
 			return FALSE;
 		license->EncryptedPremasterSecret->length = (UINT16)length;

@@ -678,7 +678,8 @@ static BOOL cert_write_rsa_signature(wStream* s, const void* sigData, size_t sig
 		return FALSE;
 
 	crypto_rsa_private_encrypt(signature, sizeof(signature), TSSK_KEY_LENGTH, tssk_modulus,
-	                           tssk_privateExponent, encryptedSignature);
+	                           tssk_privateExponent, encryptedSignature,
+	                           sizeof(encryptedSignature));
 
 	if (!Stream_EnsureRemainingCapacity(s, 2 * sizeof(UINT16) + sizeof(encryptedSignature) + 8))
 		return FALSE;

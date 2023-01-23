@@ -93,16 +93,20 @@ extern "C"
 
 	FREERDP_API SSIZE_T crypto_rsa_public_encrypt(const BYTE* input, size_t length,
 	                                              size_t key_length, const BYTE* modulus,
-	                                              const BYTE* exponent, BYTE* output);
+	                                              const BYTE* exponent, BYTE* output,
+	                                              size_t out_length);
 	FREERDP_API SSIZE_T crypto_rsa_public_decrypt(const BYTE* input, size_t length,
 	                                              size_t key_length, const BYTE* modulus,
-	                                              const BYTE* exponent, BYTE* output);
+	                                              const BYTE* exponent, BYTE* output,
+	                                              size_t out_length);
 	FREERDP_API SSIZE_T crypto_rsa_private_encrypt(const BYTE* input, size_t length,
 	                                               size_t key_length, const BYTE* modulus,
-	                                               const BYTE* private_exponent, BYTE* output);
+	                                               const BYTE* private_exponent, BYTE* output,
+	                                               size_t out_length);
 	FREERDP_API SSIZE_T crypto_rsa_private_decrypt(const BYTE* input, size_t length,
 	                                               size_t key_length, const BYTE* modulus,
-	                                               const BYTE* private_exponent, BYTE* output);
+	                                               const BYTE* private_exponent, BYTE* output,
+	                                               size_t out_length);
 	FREERDP_API void crypto_reverse(BYTE* data, size_t length);
 
 	FREERDP_API char* crypto_base64_encode(const BYTE* data, size_t length);
