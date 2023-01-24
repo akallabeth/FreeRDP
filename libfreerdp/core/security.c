@@ -404,7 +404,6 @@ BOOL security_salted_mac_signature(rdpRdp* rdp, const BYTE* data, UINT32 length,
 	WINPR_ASSERT(data || (length == 0));
 	WINPR_ASSERT(output);
 
-	EnterCriticalSection(&rdp->critical);
 	security_UINT32_le(length_le, length); /* length must be little-endian */
 
 	if (encryption)
@@ -469,7 +468,7 @@ BOOL security_salted_mac_signature(rdpRdp* rdp, const BYTE* data, UINT32 length,
 out:
 	if (!result)
 		WLog_WARN(TAG, "security mac signature generation failed");
-	LeaveCriticalSection(&rdp->critical);
+
 	winpr_Digest_Free(sha1);
 	winpr_Digest_Free(md5);
 	return result;
@@ -656,15 +655,16 @@ BOOL security_establish_keys(rdpRdp* rdp)
 		rdp->rc4_key_len = 16;
 	}
 
-	EnterCriticalSection(&rdp->critical);
+	if (!security_lock(rdp))
+		return FALSE;
 	memcpy(rdp->decrypt_update_key, rdp->decrypt_key, 16);
 	memcpy(rdp->encrypt_update_key, rdp->encrypt_key, 16);
 	rdp->decrypt_use_count = 0;
 	rdp->decrypt_checksum_use_count = 0;
 	rdp->encrypt_use_count = 0;
 	rdp->encrypt_checksum_use_count = 0;
-	LeaveCriticalSection(&rdp->critical);
-	return TRUE;
+
+	return security_unlock(rdp);
 }
 
 static BOOL security_key_update(BYTE* key, BYTE* update_key, size_t key_len, rdpRdp* rdp)
@@ -735,7 +735,8 @@ out:
 BOOL security_encrypt(BYTE* data, size_t length, rdpRdp* rdp)
 {
 	BOOL rc = FALSE;
-	EnterCriticalSection(&rdp->critical);
+
+	WINPR_ASSERT(rdp);
 	if (!rdp->rc4_encrypt_key)
 	{
 		WLog_ERR(TAG, "rdp->rc4_encrypt_key=%p", rdp->rc4_encrypt_key);
@@ -758,7 +759,6 @@ BOOL security_encrypt(BYTE* data, size_t length, rdpRdp* rdp)
 	rdp->encrypt_checksum_use_count++;
 	rc = TRUE;
 fail:
-	LeaveCriticalSection(&rdp->critical);
 	return rc;
 }
 
@@ -769,7 +769,6 @@ BOOL security_decrypt(BYTE* data, size_t length, rdpRdp* rdp)
 	WINPR_ASSERT(data || (length == 0));
 	WINPR_ASSERT(rdp);
 
-	EnterCriticalSection(&rdp->critical);
 	if (!rdp->rc4_decrypt_key)
 	{
 		WLog_ERR(TAG, "rdp->rc4_decrypt_key=%p", rdp->rc4_decrypt_key);
@@ -794,7 +793,6 @@ BOOL security_decrypt(BYTE* data, size_t length, rdpRdp* rdp)
 fail:
 	if (!rc)
 		WLog_WARN(TAG, "Failed to decrypt security");
-	LeaveCriticalSection(&rdp->critical);
 	return rc;
 }
 
@@ -804,9 +802,10 @@ BOOL security_hmac_signature(const BYTE* data, size_t length, BYTE* output, rdpR
 	BYTE use_count_le[4];
 	WINPR_HMAC_CTX* hmac;
 	BOOL result = FALSE;
-	EnterCriticalSection(&rdp->critical);
+
+	WINPR_ASSERT(rdp);
+
 	security_UINT32_le(use_count_le, rdp->encrypt_use_count);
-	LeaveCriticalSection(&rdp->critical);
 
 	if (!(hmac = winpr_HMAC_New()))
 		return FALSE;
@@ -835,14 +834,12 @@ BOOL security_fips_encrypt(BYTE* data, size_t length, rdpRdp* rdp)
 	BOOL rc = FALSE;
 	size_t olen;
 
-	EnterCriticalSection(&rdp->critical);
 	if (!winpr_Cipher_Update(rdp->fips_encrypt, data, length, data, &olen))
 		goto fail;
 
 	rdp->encrypt_use_count++;
 	rc = TRUE;
 fail:
-	LeaveCriticalSection(&rdp->critical);
 	return rc;
 }
 
@@ -865,9 +862,8 @@ BOOL security_fips_check_signature(const BYTE* data, size_t length, const BYTE* 
 	BYTE use_count_le[4];
 	WINPR_HMAC_CTX* hmac;
 	BOOL result = FALSE;
-	EnterCriticalSection(&rdp->critical);
+
 	security_UINT32_le(use_count_le, rdp->decrypt_use_count++);
-	LeaveCriticalSection(&rdp->critical);
 
 	if (!(hmac = winpr_HMAC_New()))
 		return FALSE;
@@ -890,4 +886,18 @@ BOOL security_fips_check_signature(const BYTE* data, size_t length, const BYTE* 
 out:
 	winpr_HMAC_Free(hmac);
 	return result;
+}
+
+BOOL security_lock(rdpRdp* rdp)
+{
+	WINPR_ASSERT(rdp);
+	EnterCriticalSection(&rdp->critical);
+	return TRUE;
+}
+
+BOOL security_unlock(rdpRdp* rdp)
+{
+	WINPR_ASSERT(rdp);
+	LeaveCriticalSection(&rdp->critical);
+	return TRUE;
 }

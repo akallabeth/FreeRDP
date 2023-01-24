@@ -634,6 +634,10 @@ static BOOL rdp_security_stream_out(rdpRdp* rdp, wStream* s, int length, UINT32 
 
 		if (sec_flags & SEC_ENCRYPT)
 		{
+			BOOL res = FALSE;
+			if (!security_lock(rdp))
+				return FALSE;
+
 			if (rdp->settings->EncryptionMethods == ENCRYPTION_METHOD_FIPS)
 			{
 				data = Stream_Pointer(s) + 12;
@@ -652,10 +656,11 @@ static BOOL rdp_security_stream_out(rdpRdp* rdp, wStream* s, int length, UINT32 
 				Stream_Write_UINT8(s, *pad);
 
 				if (!security_hmac_signature(data, length, Stream_Pointer(s), rdp))
-					return FALSE;
+					goto unlock;
 
 				Stream_Seek(s, 8);
-				security_fips_encrypt(data, length + *pad, rdp);
+				if (!security_fips_encrypt(data, length + *pad, rdp))
+					goto unlock;
 			}
 			else
 			{
@@ -669,13 +674,21 @@ static BOOL rdp_security_stream_out(rdpRdp* rdp, wStream* s, int length, UINT32 
 					status = security_mac_signature(rdp, data, length, Stream_Pointer(s));
 
 				if (!status)
-					return FALSE;
+					goto unlock;
 
 				Stream_Seek(s, 8);
 
 				if (!security_encrypt(Stream_Pointer(s), length, rdp))
-					return FALSE;
+					goto unlock;
 			}
+			res = TRUE;
+
+		unlock:
+
+			if (!security_unlock(rdp))
+				return FALSE;
+			if (!res)
+				return FALSE;
 		}
 
 		rdp->sec_flags = 0;
@@ -1306,6 +1319,7 @@ BOOL rdp_read_flow_control_pdu(wStream* s, UINT16* type, UINT16* channel_id)
 
 BOOL rdp_decrypt(rdpRdp* rdp, wStream* s, UINT16* pLength, UINT16 securityFlags)
 {
+	BOOL res = FALSE;
 	BYTE cmac[8] = { 0 };
 	BYTE wmac[8] = { 0 };
 	BOOL status = FALSE;
@@ -1316,6 +1330,9 @@ BOOL rdp_decrypt(rdpRdp* rdp, wStream* s, UINT16* pLength, UINT16 securityFlags)
 	WINPR_ASSERT(s);
 	WINPR_ASSERT(pLength);
 
+	if (!security_lock(rdp))
+		return FALSE;
+
 	length = *pLength;
 	if (rdp->settings->EncryptionMethods == ENCRYPTION_METHOD_FIPS)
 	{
@@ -1325,7 +1342,7 @@ BOOL rdp_decrypt(rdpRdp* rdp, wStream* s, UINT16* pLength, UINT16 securityFlags)
 		INT64 padLength;
 
 		if (!Stream_CheckAndLogRequiredLength(TAG, s, 12))
-			return FALSE;
+			goto unlock;
 
 		Stream_Read_UINT16(s, len);    /* 0x10 */
 		Stream_Read_UINT8(s, version); /* 0x1 */
@@ -1338,64 +1355,69 @@ BOOL rdp_decrypt(rdpRdp* rdp, wStream* s, UINT16* pLength, UINT16 securityFlags)
 		if ((length <= 0) || (padLength <= 0) || (padLength > UINT16_MAX))
 		{
 			WLog_ERR(TAG, "FATAL: invalid pad length %" PRId32, padLength);
-			return FALSE;
+			goto unlock;
 		}
 
 		if (!security_fips_decrypt(Stream_Pointer(s), length, rdp))
 		{
 			WLog_ERR(TAG, "FATAL: cannot decrypt");
-			return FALSE; /* TODO */
+			goto unlock;
 		}
 
 		if (!security_fips_check_signature(Stream_Pointer(s), length - pad, sig, rdp))
 		{
 			WLog_ERR(TAG, "FATAL: invalid packet signature");
-			return FALSE; /* TODO */
+			goto unlock;
 		}
 
 		Stream_SetLength(s, Stream_Length(s) - pad);
 		*pLength = (UINT16)padLength;
-		return TRUE;
 	}
-
-	if (!Stream_CheckAndLogRequiredLength(TAG, s, sizeof(wmac)))
-		return FALSE;
-
-	Stream_Read(s, wmac, sizeof(wmac));
-	length -= sizeof(wmac);
-
-	if (length <= 0)
-	{
-		WLog_ERR(TAG, "FATAL: invalid length field");
-		return FALSE;
-	}
-
-	if (!security_decrypt(Stream_Pointer(s), length, rdp))
-		return FALSE;
-
-	if (securityFlags & SEC_SECURE_CHECKSUM)
-		status = security_salted_mac_signature(rdp, Stream_Pointer(s), length, FALSE, cmac);
 	else
-		status = security_mac_signature(rdp, Stream_Pointer(s), length, cmac);
-
-	if (!status)
-		return FALSE;
-
-	if (memcmp(wmac, cmac, sizeof(wmac)) != 0)
 	{
-		WLog_ERR(TAG, "WARNING: invalid packet signature");
-		/*
-		 * Because Standard RDP Security is totally broken,
-		 * and cannot protect against MITM, don't treat signature
-		 * verification failure as critical. This at least enables
-		 * us to work with broken RDP clients and servers that
-		 * generate invalid signatures.
-		 */
-		// return FALSE;
-	}
+		if (!Stream_CheckAndLogRequiredLength(TAG, s, sizeof(wmac)))
+			goto unlock;
 
-	*pLength = length;
-	return TRUE;
+		Stream_Read(s, wmac, sizeof(wmac));
+		length -= sizeof(wmac);
+
+		if (length <= 0)
+		{
+			WLog_ERR(TAG, "FATAL: invalid length field");
+			goto unlock;
+		}
+
+		if (!security_decrypt(Stream_Pointer(s), length, rdp))
+			goto unlock;
+
+		if (securityFlags & SEC_SECURE_CHECKSUM)
+			status = security_salted_mac_signature(rdp, Stream_Pointer(s), length, FALSE, cmac);
+		else
+			status = security_mac_signature(rdp, Stream_Pointer(s), length, cmac);
+
+		if (!status)
+			goto unlock;
+
+		if (memcmp(wmac, cmac, sizeof(wmac)) != 0)
+		{
+			WLog_ERR(TAG, "WARNING: invalid packet signature");
+			/*
+			 * Because Standard RDP Security is totally broken,
+			 * and cannot protect against MITM, don't treat signature
+			 * verification failure as critical. This at least enables
+			 * us to work with broken RDP clients and servers that
+			 * generate invalid signatures.
+			 */
+			// return FALSE;
+		}
+
+		*pLength = length;
+	}
+	res = TRUE;
+unlock:
+	if (!security_unlock(rdp))
+		return FALSE;
+	return res;
 }
 
 const char* pdu_type_to_str(UINT16 pduType, char* buffer, size_t length)
