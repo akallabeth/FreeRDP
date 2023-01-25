@@ -54,6 +54,11 @@
 
 #define SDL_TAG CLIENT_TAG("SDL")
 
+enum SDL_USER_EVENTS
+{
+	SDL_USER_EVENT_CREATE_WINDOW = SDL_USEREVENT
+};
+
 enum SDL_EXIT_CODE
 {
 	/* section 0-15: protocol-independent codes */
@@ -509,6 +514,14 @@ static const char* sdl_window_get_title(rdpSettings* settings)
 	return freerdp_settings_get_string(settings, FreeRDP_WindowTitle);
 }
 
+static BOOL sdl_push_event(Uint32 event)
+{
+	int res = 0;
+	SDL_Event q = { .type = event };
+	res = SDL_PushEvent(&q);
+	return res > 0;
+}
+
 static void sdl_cleanup_sdl(sdlContext* sdl)
 {
 	const sdl_window_t empty = { 0 };
@@ -654,7 +667,7 @@ static DWORD WINAPI sdl_run(sdlContext* sdl)
 	{
 		SDL_Event windowEvent = { 0 };
 
-		const int rc = SDL_PollEvent(&windowEvent);
+		const int rc = SDL_WaitEventTimeout(&windowEvent, 200);
 		if (rc > 0)
 		{
 			// SDL_Log("got event %s", sdl_event_type_str(windowEvent.type));
@@ -780,8 +793,7 @@ static BOOL sdl_post_connect(freerdp* instance)
 		return TRUE;
 	}
 
-	if (!sdl_create_windows(sdl))
-		return FALSE;
+	sdl_push_event(SDL_USER_EVENT_CREATE_WINDOW);
 
 	update_resizeable(sdl, FALSE);
 	update_fullscreen(sdl, context->settings->Fullscreen || context->settings->UseMultimon);
@@ -846,9 +858,7 @@ static void sdl_post_final_disconnect(freerdp* instance)
 
 	context = (sdlContext*)instance->context;
 
-	SDL_Event q = { 0 };
-	q.type = SDL_QUIT;
-	const int res = SDL_PushEvent(&q);
+	sdl_push_event(SDL_QUIT);
 
 	sdl_disp_free(context->disp);
 	context->disp = NULL;
