@@ -139,14 +139,14 @@ static const struct sdl_exit_code_map_t sdl_exit_code_map[] = {
 #if 0
 	ENTRY(FREERDP_ERROR_SUCCESS, SDL_EXIT_SUCCESS), ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_DISCONNECT),
 	ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_LOGOFF), ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_IDLE_TIMEOUT),
-	ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_LOGON_TIMEOUT),
+
 	ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_CONN_REPLACED),
 	ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_OUT_OF_MEMORY),
 	ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_CONN_DENIED),
 	ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_CONN_DENIED_FIPS),
 	ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_USER_PRIVILEGES),
 	ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_FRESH_CREDENTIALS_REQUIRED),
-	ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_DISCONNECT_BY_USER),
+
 	ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_UNKNOWN),
 
 	/* section 16-31: license error set */
@@ -171,6 +171,8 @@ static const struct sdl_exit_code_map_t sdl_exit_code_map[] = {
 	ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_PROTOCOL), ENTRY(FREERDP_ERROR_NONE, SDL_EXIT_CONN_FAILED),
 #endif
 
+	ENTRY(FREERDP_ERROR_LOGON_TIMEOUT, SDL_EXIT_LOGON_TIMEOUT),
+	ENTRY(FREERDP_ERROR_LOGOFF_BY_USER, SDL_EXIT_DISCONNECT_BY_USER),
 	ENTRY(FREERDP_ERROR_AUTHENTICATION_FAILED, SDL_EXIT_AUTH_FAILURE),
 	ENTRY(FREERDP_ERROR_SECURITY_NEGO_CONNECT_FAILED, SDL_EXIT_NEGO_FAILURE),
 	ENTRY(FREERDP_ERROR_CONNECT_LOGON_FAILURE, SDL_EXIT_LOGON_FAILURE),
@@ -849,6 +851,24 @@ static void sdl_post_final_disconnect(freerdp* instance)
 	context->disp = NULL;
 }
 
+static int try_map(freerdp* instance)
+{
+	WINPR_ASSERT(instance);
+	const DWORD code = freerdp_error_info(instance);
+	const DWORD ecode = MAKE_FREERDP_ERROR(ERRINFO, code);
+
+	const struct sdl_exit_code_map_t* entry = sdl_map_entry_by_error(ecode);
+	if (entry)
+		return entry->code;
+
+	const DWORD xcode = freerdp_get_last_error(instance->context);
+	const struct sdl_exit_code_map_t* xentry = sdl_map_entry_by_error(xcode);
+	if (xentry)
+		return xentry->code;
+
+	return 0;
+}
+
 /* RDP main loop.
  * Connects RDP, loops while running and handles event and dispatch, cleans up
  * after the connection ends. */
@@ -883,9 +903,10 @@ static DWORD WINAPI sdl_client_thread_proc(LPVOID arg)
 
 	if (!rc)
 	{
-		DWORD code = freerdp_error_info(instance);
+		const DWORD code = freerdp_error_info(instance);
+
 		if (exit_code == SDL_EXIT_SUCCESS)
-			exit_code = sdl_map_error_to_exit_code(code);
+			exit_code = try_map(instance);
 
 		if (freerdp_get_last_error(instance->context) == FREERDP_ERROR_AUTHENTICATION_FAILED)
 			exit_code = SDL_EXIT_AUTH_FAILURE;
@@ -952,8 +973,8 @@ static DWORD WINAPI sdl_client_thread_proc(LPVOID arg)
 
 	if (exit_code == SDL_EXIT_SUCCESS)
 	{
-		DWORD code = freerdp_error_info(instance);
-		exit_code = sdl_map_error_to_exit_code(code);
+		const DWORD code = freerdp_error_info(instance);
+		exit_code = try_map(instance);
 
 		if ((code == SDL_EXIT_DISCONNECT) && (freerdp_get_disconnect_ultimatum(instance->context) ==
 		                                      Disconnect_Ultimatum_user_requested))
