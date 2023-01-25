@@ -588,7 +588,7 @@ BOOL sdl_create_windows(sdlContext* sdl)
 		                                  (int)w, (int)h, flags);
 		if (!window->window)
 		{
-			WLog_ERR(TAG, "Failed to create SDL window");
+			WLog_ERR(SDL_TAG, "Failed to create SDL window");
 			goto fail;
 		}
 	}
