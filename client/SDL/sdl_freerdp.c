@@ -512,16 +512,6 @@ static void sdl_cleanup_sdl(sdlContext* sdl)
 	if (!sdl)
 		return;
 
-	if (sdl->thread)
-	{
-		int res = 0;
-		SDL_Event q = { 0 };
-		q.type = SDL_QUIT;
-		res = SDL_PushEvent(&q);
-
-		WaitForSingleObject(sdl->thread, INFINITE);
-		CloseHandle(sdl->thread);
-	}
 	for (size_t x = 0; x < sdl->windowCount; x++)
 	{
 		sdl_window_t* window = &sdl->windows[x];
@@ -552,16 +542,14 @@ BOOL sdl_init_sdl_thread(sdlContext* sdl)
 {
 	WINPR_ASSERT(sdl);
 
-	if (!sdl_initialize(sdl))
-		return FALSE;
-
 	sdl->thread = CreateThread(NULL, 0, sdl_run, sdl, 0, NULL);
 	if (!sdl->thread)
-		goto fail;
+		return FALSE;
+	do
+	{
+		Sleep(100);
+	} while (!sdl->sdl_initialized && !freerdp_shall_disconnect_context(&sdl->common.context));
 	return TRUE;
-fail:
-	sdl_cleanup_sdl(sdl);
-	return FALSE;
 }
 
 BOOL sdl_create_windows(sdlContext* sdl)
@@ -648,11 +636,16 @@ static DWORD WINAPI sdl_run(void* arg)
 {
 	sdlContext* sdl = arg;
 	WINPR_ASSERT(sdl);
+
+	if (!sdl_initialize(sdl))
+		goto fail;
+
 	while (!freerdp_shall_disconnect_context(&sdl->common.context))
 	{
 		SDL_Event windowEvent = { 0 };
-		while (!freerdp_shall_disconnect_context(&sdl->common.context) &&
-		       SDL_PollEvent(&windowEvent))
+
+		const int rc = SDL_PollEvent(&windowEvent);
+		if (rc > 0)
 		{
 			// SDL_Log("got event %s", sdl_event_type_str(windowEvent.type));
 			switch (windowEvent.type)
@@ -737,7 +730,10 @@ static DWORD WINAPI sdl_run(void* arg)
 			}
 		}
 	}
-	return TRUE;
+
+fail:
+	sdl_cleanup_sdl(sdl);
+	return 0;
 }
 
 /* Called after a RDP connection was successfully established.
@@ -839,9 +835,18 @@ static void sdl_post_final_disconnect(freerdp* instance)
 
 	context = (sdlContext*)instance->context;
 
+	if (context->thread)
+	{
+		int res = 0;
+		SDL_Event q = { 0 };
+		q.type = SDL_QUIT;
+		res = SDL_PushEvent(&q);
+
+		WaitForSingleObject(context->thread, INFINITE);
+		CloseHandle(context->thread);
+	}
 	sdl_disp_free(context->disp);
 	context->disp = NULL;
-	sdl_cleanup_sdl(context);
 }
 
 /* RDP main loop.
