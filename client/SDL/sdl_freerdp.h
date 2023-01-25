@@ -48,12 +48,13 @@ typedef struct
 	BOOL grab_kbd;
 	BOOL highDpi;
 
+	BOOL use_sdl;
 	BOOL sdl_initialized;
+
+	HANDLE thread;
 
 	size_t windowCount;
 	sdl_window_t windows[16];
-
-	HANDLE thread;
 
 	SDL_Surface* primary;
 
@@ -61,6 +62,8 @@ typedef struct
 	Uint32 sdl_pixel_format;
 
 	wLog* log;
+
+	int exit_code;
 } sdlContext;
 
 void update_resizeable(sdlContext* sdl, BOOL enable);
