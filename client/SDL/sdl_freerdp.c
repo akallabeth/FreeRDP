@@ -248,7 +248,7 @@ static const char* sdl_map_to_code_tag(int code)
 	return NULL;
 }
 
-static BOOL sdl_init_sdl(sdlContext* sdl);
+static BOOL sdl_init_sdl_thread(sdlContext* sdl);
 static DWORD WINAPI sdl_run(void* arg);
 static BOOL sdl_create_windows(sdlContext* sdl);
 
@@ -442,7 +442,7 @@ static BOOL sdl_pre_connect(freerdp* instance)
 		UINT32 maxWidth = 0;
 		UINT32 maxHeight = 0;
 
-		if (!sdl_init_sdl(sdl))
+		if (!sdl_init_sdl_thread(sdl))
 			return FALSE;
 
 		if (!sdl_detect_monitors(sdl, &maxWidth, &maxHeight))
@@ -533,14 +533,27 @@ static void sdl_cleanup_sdl(sdlContext* sdl)
 	sdl->primary = NULL;
 
 	sdl->windowCount = 0;
+	sdl->sdl_initialized = FALSE;
 	SDL_Quit();
 }
 
-BOOL sdl_init_sdl(sdlContext* sdl)
+static BOOL sdl_initialize(sdlContext* sdl)
 {
 	WINPR_ASSERT(sdl);
 
-	SDL_Init(SDL_INIT_VIDEO);
+	const Uint32 res = SDL_Init(SDL_INIT_VIDEO);
+	if (sdl_log_error(res, sdl->log, "SDL_Init"))
+		return FALSE;
+	sdl->sdl_initialized = TRUE;
+	return TRUE;
+}
+
+BOOL sdl_init_sdl_thread(sdlContext* sdl)
+{
+	WINPR_ASSERT(sdl);
+
+	if (!sdl_initialize(sdl))
+		return FALSE;
 
 	sdl->thread = CreateThread(NULL, 0, sdl_run, sdl, 0, NULL);
 	if (!sdl->thread)

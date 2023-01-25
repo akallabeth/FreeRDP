@@ -48,6 +48,8 @@ typedef struct
 	BOOL grab_kbd;
 	BOOL highDpi;
 
+	BOOL sdl_initialized;
+
 	size_t windowCount;
 	sdl_window_t windows[16];
 
