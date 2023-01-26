@@ -1146,6 +1146,7 @@ void key_free(rdpRsaKey* key)
 	if (key->PrivateExponent)
 		memset(key->PrivateExponent, 0, key->PrivateExponentLength);
 	free(key->PrivateExponent);
+	cert_info_free(&key->cert);
 	free(key);
 }
 
