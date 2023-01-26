@@ -477,6 +477,7 @@ BOOL rdp_read_header(rdpRdp* rdp, wStream* s, UINT16* length, UINT16* channelId)
 	{
 		if (code == X224_TPDU_DISCONNECT_REQUEST)
 		{
+			WLog_WARN(TAG, "Received X224_TPDU_DISCONNECT_REQUEST, terminating");
 			utils_abort_connect(rdp);
 			return TRUE;
 		}
@@ -1359,16 +1360,10 @@ BOOL rdp_decrypt(rdpRdp* rdp, wStream* s, UINT16* pLength, UINT16 securityFlags)
 		}
 
 		if (!security_fips_decrypt(Stream_Pointer(s), length, rdp))
-		{
-			WLog_ERR(TAG, "FATAL: cannot decrypt");
 			goto unlock;
-		}
 
 		if (!security_fips_check_signature(Stream_Pointer(s), length - pad, sig, rdp))
-		{
-			WLog_ERR(TAG, "FATAL: invalid packet signature");
 			goto unlock;
-		}
 
 		Stream_SetLength(s, Stream_Length(s) - pad);
 		*pLength = (UINT16)padLength;
@@ -1508,10 +1503,7 @@ static state_run_t rdp_recv_tpkt_pdu(rdpRdp* rdp, wStream* s)
 		if (securityFlags & (SEC_ENCRYPT | SEC_REDIRECTION_PKT))
 		{
 			if (!rdp_decrypt(rdp, s, &length, securityFlags))
-			{
-				WLog_ERR(TAG, "rdp_decrypt failed");
 				return STATE_RUN_FAILED;
-			}
 		}
 
 		if (securityFlags & SEC_REDIRECTION_PKT)

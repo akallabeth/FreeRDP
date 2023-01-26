@@ -848,7 +848,10 @@ BOOL security_fips_decrypt(BYTE* data, size_t length, rdpRdp* rdp)
 	size_t olen;
 
 	if (!rdp || !rdp->fips_decrypt)
+	{
+		WLog_ERR(TAG, "rdp=%p, rdp->fips_decrypt=%p", rdp, rdp->fips_decrypt);
 		return FALSE;
+	}
 
 	if (!winpr_Cipher_Update(rdp->fips_decrypt, data, length, data, &olen))
 		return FALSE;
@@ -858,9 +861,9 @@ BOOL security_fips_decrypt(BYTE* data, size_t length, rdpRdp* rdp)
 
 BOOL security_fips_check_signature(const BYTE* data, size_t length, const BYTE* sig, rdpRdp* rdp)
 {
-	BYTE buf[WINPR_SHA1_DIGEST_LENGTH];
+	BYTE buf[WINPR_SHA1_DIGEST_LENGTH] = { 0 };
 	BYTE use_count_le[4];
-	WINPR_HMAC_CTX* hmac;
+	WINPR_HMAC_CTX* hmac = NULL;
 	BOOL result = FALSE;
 
 	security_UINT32_le(use_count_le, rdp->decrypt_use_count++);
@@ -884,6 +887,8 @@ BOOL security_fips_check_signature(const BYTE* data, size_t length, const BYTE* 
 		result = TRUE;
 
 out:
+	if (!result)
+		WLog_WARN(TAG, "signature check failed");
 	winpr_HMAC_Free(hmac);
 	return result;
 }
