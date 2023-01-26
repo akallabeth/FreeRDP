@@ -979,6 +979,7 @@ BOOL rdp_client_skip_mcs_channel_join(rdpRdp* rdp)
 	for (UINT32 i = 0; i < mcs->channelCount; i++)
 	{
 		rdpMcsChannel* cur = &mcs->channels[i];
+		WLog_DBG(TAG, " %s [%" PRIu16 "]", cur->Name, cur->ChannelId);
 		cur->joined = TRUE;
 	}
 
@@ -1045,7 +1046,11 @@ BOOL rdp_client_connect_mcs_channel_join_confirm(rdpRdp* rdp, wStream* s)
 	else if ((mcs->messageChannelId != 0) && !mcs->messageChannelJoined)
 	{
 		if (channelId != mcs->messageChannelId)
+		{
+			WLog_ERR(TAG, "expected messageChannelId=%" PRIu16 ", got %" PRIu16,
+			         mcs->messageChannelId, channelId);
 			return FALSE;
+		}
 
 		mcs->messageChannelJoined = TRUE;
 
@@ -1126,8 +1131,8 @@ BOOL rdp_client_connect_auto_detect(rdpRdp* rdp, wStream* s)
 			}
 		}
 		else
-			WLog_WARN(TAG, "expected messageChannelId=0x%04" PRIx16 ", got 0x%04" PRIx16,
-			          messageChannelId, channelId);
+			WLog_WARN(TAG, "expected messageChannelId=" PRIu16 ", got %" PRIu16, messageChannelId,
+			          channelId);
 
 		Stream_SetPosition(s, pos);
 	}
@@ -1457,7 +1462,7 @@ BOOL rdp_server_accept_mcs_connect_initial(rdpRdp* rdp, wStream* s)
 		ADDIN_ARGV* arg;
 		rdpMcsChannel* cur = &mcs->channels[i];
 		const char* params[1] = { cur->Name };
-		WLog_INFO(TAG, " %s", cur->Name);
+		WLog_INFO(TAG, " %s [%" PRIu16 "]", cur->Name, cur->ChannelId);
 		arg = freerdp_addin_argv_new(ARRAYSIZE(params), params);
 		if (!arg)
 			return FALSE;
@@ -1505,6 +1510,7 @@ static BOOL rdp_server_skip_mcs_channel_join(rdpRdp* rdp)
 	for (UINT32 i = 0; i < mcs->channelCount; i++)
 	{
 		rdpMcsChannel* cur = &mcs->channels[i];
+		WLog_DBG(TAG, " %s [%" PRIu16 "]", cur->Name, cur->ChannelId);
 		cur->joined = TRUE;
 	}
 	return rdp_server_transition_to_state(rdp, CONNECTION_STATE_RDP_SECURITY_COMMENCEMENT);
@@ -1560,6 +1566,7 @@ BOOL rdp_server_accept_mcs_channel_join_request(rdpRdp* rdp, wStream* s)
 	for (i = 0; i < mcs->channelCount; i++)
 	{
 		rdpMcsChannel* cur = &mcs->channels[i];
+		WLog_DBG(TAG, " %s [%" PRIu16 "]", cur->Name, cur->ChannelId);
 		if (cur->ChannelId == channelId)
 			cur->joined = TRUE;
 
