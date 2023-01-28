@@ -178,6 +178,11 @@ static const BYTE tssk_privateExponent[] = {
 	0x35, 0x07, 0x79, 0x17, 0x0b, 0x51, 0x9b, 0xb3, 0xc7, 0x10, 0x01, 0x13, 0xe7, 0x3f, 0xf3, 0x5f
 };
 
+static const rdpRsaKey tssk = { .PrivateExponent = tssk_privateExponent,
+	                            .PrivateExponentLength = sizeof(tssk_privateExponent),
+	                            .cert = { .Modulus = tssk_modulus,
+	                                      .ModulusLength = sizeof(tssk_modulus) } };
+
 #if defined(CERT_VALIDATE_RSA)
 static const BYTE tssk_exponent[] = { 0x5b, 0x7b, 0x88, 0xc0 };
 #endif
@@ -677,8 +682,8 @@ static BOOL cert_write_rsa_signature(wStream* s, const void* sigData, size_t sig
 	if (!winpr_Digest(WINPR_MD_MD5, sigData, sigDataLen, signature, sizeof(signature)))
 		return FALSE;
 
-	crypto_rsa_private_encrypt(signature, sizeof(signature), TSSK_KEY_LENGTH, tssk_modulus,
-	                           tssk_privateExponent, encryptedSignature);
+	crypto_rsa_private_encrypt(signature, sizeof(signature), &tssk, encryptedSignature,
+	                           sizeof(encryptedSignature));
 
 	if (!Stream_EnsureRemainingCapacity(s, 2 * sizeof(UINT16) + sizeof(encryptedSignature) + 8))
 		return FALSE;
