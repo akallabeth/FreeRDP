@@ -27,6 +27,10 @@
 
 #define TAG FREERDP_TAG("core")
 
+static const BYTE A[] = { 'A' };
+static const BYTE BB[] = { 'B', 'B' };
+static const BYTE CCC[] = { 'C', 'C', 'C' };
+
 /* 0x36 repeated 40 times */
 static const BYTE pad1[40] = { "\x36\x36\x36\x36\x36\x36\x36\x36"
 	                           "\x36\x36\x36\x36\x36\x36\x36\x36"
@@ -80,8 +84,9 @@ static const BYTE fips_oddparity_table[256] = {
 	0xf1, 0xf1, 0xf2, 0xf2, 0xf4, 0xf4, 0xf7, 0xf7, 0xf8, 0xf8, 0xfb, 0xfb, 0xfd, 0xfd, 0xfe, 0xfe
 };
 
-static BOOL security_salted_hash(const BYTE* salt, const BYTE* input, size_t length,
-                                 const BYTE* salt1, const BYTE* salt2, BYTE* output, size_t out_len)
+static BOOL security_salted_hash(const BYTE* salt, size_t salt_len, const BYTE* input,
+                                 size_t length, const BYTE* salt1, size_t salt1_len,
+                                 const BYTE* salt2, size_t salt2_len, BYTE* output, size_t out_len)
 {
 	WINPR_DIGEST_CTX* sha1 = NULL;
 	WINPR_DIGEST_CTX* md5 = NULL;
@@ -141,13 +146,14 @@ out:
 	return result;
 }
 
-static BOOL security_premaster_hash(const char* input, size_t length, const BYTE* premaster_secret,
-                                    const BYTE* client_random, const BYTE* server_random,
-                                    BYTE* output, size_t out_len)
+static BOOL security_premaster_hash(const BYTE* input, size_t length, const BYTE* premaster_secret,
+                                    size_t pre_len, const BYTE* client_random, size_t client_len,
+                                    const BYTE* server_random, size_t server_len, BYTE* output,
+                                    size_t out_len)
 {
 	/* PremasterHash(Input) = SaltedHash(PremasterSecret, Input, ClientRandom, ServerRandom) */
-	return security_salted_hash(premaster_secret, (const BYTE*)input, length, client_random,
-	                            server_random, output, out_len);
+	return security_salted_hash(premaster_secret, pre_len, input, length, client_random, client_len,
+	                            server_random, server_len, output, out_len);
 }
 
 BOOL security_master_secret(const BYTE* premaster_secret, size_t pre_len, const BYTE* client_random,
@@ -156,21 +162,24 @@ BOOL security_master_secret(const BYTE* premaster_secret, size_t pre_len, const 
 {
 	/* MasterSecret = PremasterHash('A') + PremasterHash('BB') + PremasterHash('CCC') */
 	WINPR_ASSERT(out_len >= 32);
-	return security_premaster_hash("A", 1, premaster_secret, client_random, server_random,
-	                               &output[0], out_len) &&
-	       security_premaster_hash("BB", 2, premaster_secret, client_random, server_random,
-	                               &output[16], out_len - 16) &&
-	       security_premaster_hash("CCC", 3, premaster_secret, client_random, server_random,
-	                               &output[32], out_len - 32);
+	return security_premaster_hash(A, sizeof(A), premaster_secret, pre_len, client_random,
+	                               client_len, server_random, server_len, &output[0], out_len) &&
+	       security_premaster_hash(BB, sizeof(BB), premaster_secret, pre_len, client_random,
+	                               client_len, server_random, server_len, &output[16],
+	                               out_len - 16) &&
+	       security_premaster_hash(CCC, sizeof(CCC), premaster_secret, pre_len, client_random,
+	                               client_len, server_random, server_len, &output[32],
+	                               out_len - 32);
 }
 
-static BOOL security_master_hash(const char* input, size_t length, const BYTE* master_secret,
-                                 const BYTE* client_random, const BYTE* server_random, BYTE* output,
+static BOOL security_master_hash(const BYTE* input, size_t length, const BYTE* master_secret,
+                                 size_t master_len, const BYTE* client_random, size_t client_len,
+                                 const BYTE* server_random, size_t server_len, BYTE* output,
                                  size_t out_len)
 {
 	/* MasterHash(Input) = SaltedHash(MasterSecret, Input, ServerRandom, ClientRandom) */
-	return security_salted_hash(master_secret, (const BYTE*)input, length, server_random,
-	                            client_random, output, out_len);
+	return security_salted_hash(master_secret, master_len, input, length, server_random, server_len,
+	                            client_random, client_len, output, out_len);
 }
 
 BOOL security_session_key_blob(const BYTE* master_secret, size_t master_len,
@@ -180,12 +189,12 @@ BOOL security_session_key_blob(const BYTE* master_secret, size_t master_len,
 {
 	/* MasterHash = MasterHash('A') + MasterHash('BB') + MasterHash('CCC') */
 	WINPR_ASSERT(out_len >= 32);
-	return security_master_hash("A", 1, master_secret, client_random, server_random, &output[0],
-	                            16) &&
-	       security_master_hash("BB", 2, master_secret, client_random, server_random, &output[16],
-	                            16) &&
-	       security_master_hash("CCC", 3, master_secret, client_random, server_random, &output[32],
-	                            out_len - 32);
+	return security_master_hash(A, sizeof(A), master_secret, master_len, client_random, client_len,
+	                            server_random, server_len, &output[0], 16) &&
+	       security_master_hash(BB, sizeof(BB), master_secret, master_len, client_random,
+	                            client_len, server_random, server_len, &output[16], 16) &&
+	       security_master_hash(CCC, sizeof(CCC), master_secret, master_len, client_random,
+	                            client_len, server_random, server_len, &output[32], out_len - 32);
 }
 
 void security_mac_salt_key(const BYTE* session_key_blob, size_t session_len,
@@ -502,30 +511,38 @@ out:
 	return result;
 }
 
-static BOOL security_A(const BYTE* master_secret, const BYTE* client_random,
-                       const BYTE* server_random, BYTE* output, size_t out_len)
+static BOOL security_A(const BYTE* master_secret, size_t master_len, const BYTE* client_random,
+                       size_t client_len, const BYTE* server_random, size_t server_len,
+                       BYTE* output, size_t out_len)
 {
 	WINPR_ASSERT(out_len >= 32);
 
-	return security_premaster_hash("A", 1, master_secret, client_random, server_random, &output[0],
-	                               16) &&
-	       security_premaster_hash("BB", 2, master_secret, client_random, server_random,
-	                               &output[16], 16) &&
-	       security_premaster_hash("CCC", 3, master_secret, client_random, server_random,
-	                               &output[32], out_len - 32);
+	return security_premaster_hash(A, sizeof(A), master_secret, master_len, client_random,
+	                               client_len, server_random, server_len, &output[0], 16) &&
+	       security_premaster_hash(BB, sizeof(BB), master_secret, master_len, client_random,
+	                               client_len, server_random, server_len, &output[16], 16) &&
+	       security_premaster_hash(CCC, sizeof(CCC), master_secret, master_len, client_random,
+	                               client_len, server_random, server_len, &output[32],
+	                               out_len - 32);
 }
 
-static BOOL security_X(const BYTE* master_secret, const BYTE* client_random,
-                       const BYTE* server_random, BYTE* output, size_t out_len)
+static BOOL security_X(const BYTE* master_secret, size_t master_len, const BYTE* client_random,
+                       size_t client_len, const BYTE* server_random, size_t server_len,
+                       BYTE* output, size_t out_len)
 {
+	const BYTE X[] = { 'X' };
+	const BYTE YY[] = { 'Y', 'Y' };
+	const BYTE ZZZ[] = { 'Z', 'Z', 'Z' };
+
 	WINPR_ASSERT(out_len >= 32);
 
-	return security_premaster_hash("X", 1, master_secret, client_random, server_random, &output[0],
-	                               16) &&
-	       security_premaster_hash("YY", 2, master_secret, client_random, server_random,
-	                               &output[16], 16) &&
-	       security_premaster_hash("ZZZ", 3, master_secret, client_random, server_random,
-	                               &output[32], out_len - 32);
+	return security_premaster_hash(X, sizeof(X), master_secret, master_len, client_random,
+	                               client_len, server_random, server_len, &output[0], 16) &&
+	       security_premaster_hash(YY, sizeof(YY), master_secret, master_len, client_random,
+	                               client_len, server_random, server_len, &output[16], 16) &&
+	       security_premaster_hash(ZZZ, sizeof(ZZZ), master_secret, master_len, client_random,
+	                               client_len, server_random, server_len, &output[32],
+	                               out_len - 32);
 }
 
 static void fips_expand_key_bits(const BYTE* in, size_t in_len, BYTE* out, size_t out_len)
@@ -648,9 +665,11 @@ BOOL security_establish_keys(rdpRdp* rdp)
 	memcpy(pre_master_secret, client_random, 24);
 	memcpy(pre_master_secret + 24, server_random, 24);
 
-	if (!security_A(pre_master_secret, client_random, server_random, master_secret,
+	if (!security_A(pre_master_secret, sizeof(pre_master_secret), client_random,
+	                sizeof(client_random), server_random, sizeof(server_random), master_secret,
 	                sizeof(master_secret)) ||
-	    !security_X(master_secret, client_random, server_random, session_key_blob,
+	    !security_X(master_secret, sizeof(master_secret), client_random, sizeof(client_random),
+	                server_random, sizeof(server_random), session_key_blob,
 	                sizeof(session_key_blob)))
 	{
 		return FALSE;
