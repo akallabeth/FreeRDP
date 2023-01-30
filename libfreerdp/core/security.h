@@ -29,14 +29,16 @@
 #include <winpr/stream.h>
 
 FREERDP_LOCAL BOOL security_master_secret(const BYTE* premaster_secret, const BYTE* client_random,
-                                          const BYTE* server_random, BYTE* output);
+                                          const BYTE* server_random, BYTE* output, size_t out_len);
 FREERDP_LOCAL BOOL security_session_key_blob(const BYTE* master_secret, const BYTE* client_random,
-                                             const BYTE* server_random, BYTE* output);
+                                             const BYTE* server_random, BYTE* output,
+                                             size_t out_len);
 FREERDP_LOCAL void security_mac_salt_key(const BYTE* session_key_blob, const BYTE* client_random,
-                                         const BYTE* server_random, BYTE* output);
+                                         const BYTE* server_random, BYTE* output, size_t out_len);
 FREERDP_LOCAL BOOL security_licensing_encryption_key(const BYTE* session_key_blob,
                                                      const BYTE* client_random,
-                                                     const BYTE* server_random, BYTE* output);
+                                                     const BYTE* server_random, BYTE* output,
+                                                     size_t out_len);
 FREERDP_LOCAL BOOL security_mac_data(const BYTE* mac_salt_key, size_t mac_salt_key_length,
                                      const BYTE* data, UINT32 length, BYTE* output,
                                      size_t output_length);

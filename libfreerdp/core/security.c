@@ -81,14 +81,15 @@ static const BYTE fips_oddparity_table[256] = {
 };
 
 static BOOL security_salted_hash(const BYTE* salt, const BYTE* input, size_t length,
-                                 const BYTE* salt1, const BYTE* salt2, BYTE* output)
+                                 const BYTE* salt1, const BYTE* salt2, BYTE* output, size_t out_len)
 {
 	WINPR_DIGEST_CTX* sha1 = NULL;
 	WINPR_DIGEST_CTX* md5 = NULL;
-	BYTE sha1_digest[WINPR_SHA1_DIGEST_LENGTH];
+	BYTE sha1_digest[WINPR_SHA1_DIGEST_LENGTH] = { 0 };
 	BOOL result = FALSE;
 
 	/* SaltedHash(Salt, Input, Salt1, Salt2) = MD5(S + SHA1(Input + Salt + Salt1 + Salt2)) */
+	WINPR_ASSERT(out_len >= WINPR_MD5_DIGEST_LENGTH);
 
 	/* SHA1_Digest = SHA1(Input + Salt + Salt1 + Salt2) */
 	if (!(sha1 = winpr_Digest_New()))
@@ -130,7 +131,7 @@ static BOOL security_salted_hash(const BYTE* salt, const BYTE* input, size_t len
 	if (!winpr_Digest_Update(md5, sha1_digest, sizeof(sha1_digest))) /* SHA1_Digest */
 		goto out;
 
-	if (!winpr_Digest_Final(md5, output, WINPR_MD5_DIGEST_LENGTH))
+	if (!winpr_Digest_Final(md5, output, out_len))
 		goto out;
 
 	result = TRUE;
@@ -140,49 +141,55 @@ out:
 	return result;
 }
 
-static BOOL security_premaster_hash(const char* input, int length, const BYTE* premaster_secret,
+static BOOL security_premaster_hash(const char* input, size_t length, const BYTE* premaster_secret,
                                     const BYTE* client_random, const BYTE* server_random,
-                                    BYTE* output)
+                                    BYTE* output, size_t out_len)
 {
 	/* PremasterHash(Input) = SaltedHash(PremasterSecret, Input, ClientRandom, ServerRandom) */
 	return security_salted_hash(premaster_secret, (const BYTE*)input, length, client_random,
-	                            server_random, output);
+	                            server_random, output, out_len);
 }
 
 BOOL security_master_secret(const BYTE* premaster_secret, const BYTE* client_random,
-                            const BYTE* server_random, BYTE* output)
+                            const BYTE* server_random, BYTE* output, size_t out_len)
 {
 	/* MasterSecret = PremasterHash('A') + PremasterHash('BB') + PremasterHash('CCC') */
+	WINPR_ASSERT(out_len >= 32);
 	return security_premaster_hash("A", 1, premaster_secret, client_random, server_random,
-	                               &output[0]) &&
+	                               &output[0], out_len) &&
 	       security_premaster_hash("BB", 2, premaster_secret, client_random, server_random,
-	                               &output[16]) &&
+	                               &output[16], out_len - 16) &&
 	       security_premaster_hash("CCC", 3, premaster_secret, client_random, server_random,
-	                               &output[32]);
+	                               &output[32], out_len - 32);
 }
 
-static BOOL security_master_hash(const char* input, int length, const BYTE* master_secret,
-                                 const BYTE* client_random, const BYTE* server_random, BYTE* output)
+static BOOL security_master_hash(const char* input, size_t length, const BYTE* master_secret,
+                                 const BYTE* client_random, const BYTE* server_random, BYTE* output,
+                                 size_t out_len)
 {
 	/* MasterHash(Input) = SaltedHash(MasterSecret, Input, ServerRandom, ClientRandom) */
 	return security_salted_hash(master_secret, (const BYTE*)input, length, server_random,
-	                            client_random, output);
+	                            client_random, output, out_len);
 }
 
 BOOL security_session_key_blob(const BYTE* master_secret, const BYTE* client_random,
-                               const BYTE* server_random, BYTE* output)
+                               const BYTE* server_random, BYTE* output, size_t out_len)
 {
 	/* MasterHash = MasterHash('A') + MasterHash('BB') + MasterHash('CCC') */
-	return security_master_hash("A", 1, master_secret, client_random, server_random, &output[0]) &&
-	       security_master_hash("BB", 2, master_secret, client_random, server_random,
-	                            &output[16]) &&
-	       security_master_hash("CCC", 3, master_secret, client_random, server_random, &output[32]);
+	WINPR_ASSERT(out_len >= 32);
+	return security_master_hash("A", 1, master_secret, client_random, server_random, &output[0],
+	                            16) &&
+	       security_master_hash("BB", 2, master_secret, client_random, server_random, &output[16],
+	                            16) &&
+	       security_master_hash("CCC", 3, master_secret, client_random, server_random, &output[32],
+	                            out_len - 32);
 }
 
 void security_mac_salt_key(const BYTE* session_key_blob, const BYTE* client_random,
-                           const BYTE* server_random, BYTE* output)
+                           const BYTE* server_random, BYTE* output, size_t out_len)
 {
 	/* MacSaltKey = First128Bits(SessionKeyBlob) */
+	WINPR_ASSERT(out_len >= 16);
 	memcpy(output, session_key_blob, 16);
 }
 
@@ -216,10 +223,12 @@ out:
 }
 
 static BOOL security_md5_16_32_32_Allow_FIPS(const BYTE* in0, const BYTE* in1, const BYTE* in2,
-                                             BYTE* output)
+                                             BYTE* output, size_t out_len)
 {
 	WINPR_DIGEST_CTX* md5 = NULL;
 	BOOL result = FALSE;
+
+	WINPR_ASSERT(out_len >= WINPR_MD5_DIGEST_LENGTH);
 
 	if (!(md5 = winpr_Digest_New()))
 		return FALSE;
@@ -231,7 +240,7 @@ static BOOL security_md5_16_32_32_Allow_FIPS(const BYTE* in0, const BYTE* in1, c
 		goto out;
 	if (!winpr_Digest_Update(md5, in2, 32))
 		goto out;
-	if (!winpr_Digest_Final(md5, output, WINPR_MD5_DIGEST_LENGTH))
+	if (!winpr_Digest_Final(md5, output, out_len))
 		goto out;
 
 	result = TRUE;
@@ -241,14 +250,14 @@ out:
 }
 
 BOOL security_licensing_encryption_key(const BYTE* session_key_blob, const BYTE* client_random,
-                                       const BYTE* server_random, BYTE* output)
+                                       const BYTE* server_random, BYTE* output, size_t out_len)
 {
 	/* LicensingEncryptionKey = MD5(Second128Bits(SessionKeyBlob) + ClientRandom + ServerRandom))
 	 * Allow FIPS use of MD5 here, this is just used for creating the licensing encryption key as
 	 * described in MS-RDPELE. This is for RDP licensing packets which will already be encrypted
 	 * under FIPS, so the use of MD5 here is not for sensitive data protection. */
 	return security_md5_16_32_32_Allow_FIPS(&session_key_blob[16], client_random, server_random,
-	                                        output);
+	                                        output, out_len);
 }
 
 static void security_UINT32_le(BYTE* output, UINT32 value)
@@ -479,26 +488,30 @@ out:
 	return result;
 }
 
-static BOOL security_A(BYTE* master_secret, const BYTE* client_random, BYTE* server_random,
-                       BYTE* output)
+static BOOL security_A(const BYTE* master_secret, const BYTE* client_random,
+                       const BYTE* server_random, BYTE* output, size_t out_len)
 {
-	return security_premaster_hash("A", 1, master_secret, client_random, server_random,
-	                               &output[0]) &&
+	WINPR_ASSERT(out_len >= 32);
+
+	return security_premaster_hash("A", 1, master_secret, client_random, server_random, &output[0],
+	                               16) &&
 	       security_premaster_hash("BB", 2, master_secret, client_random, server_random,
-	                               &output[16]) &&
+	                               &output[16], 16) &&
 	       security_premaster_hash("CCC", 3, master_secret, client_random, server_random,
-	                               &output[32]);
+	                               &output[32], out_len - 32);
 }
 
-static BOOL security_X(BYTE* master_secret, const BYTE* client_random, BYTE* server_random,
-                       BYTE* output)
+static BOOL security_X(const BYTE* master_secret, const BYTE* client_random,
+                       const BYTE* server_random, BYTE* output, size_t out_len)
 {
-	return security_premaster_hash("X", 1, master_secret, client_random, server_random,
-	                               &output[0]) &&
+	WINPR_ASSERT(out_len >= 32);
+
+	return security_premaster_hash("X", 1, master_secret, client_random, server_random, &output[0],
+	                               16) &&
 	       security_premaster_hash("YY", 2, master_secret, client_random, server_random,
-	                               &output[16]) &&
+	                               &output[16], 16) &&
 	       security_premaster_hash("ZZZ", 3, master_secret, client_random, server_random,
-	                               &output[32]);
+	                               &output[32], out_len - 32);
 }
 
 static void fips_expand_key_bits(BYTE* in, BYTE* out)
@@ -610,8 +623,10 @@ BOOL security_establish_keys(rdpRdp* rdp)
 	memcpy(pre_master_secret, client_random, 24);
 	memcpy(pre_master_secret + 24, server_random, 24);
 
-	if (!security_A(pre_master_secret, client_random, server_random, master_secret) ||
-	    !security_X(master_secret, client_random, server_random, session_key_blob))
+	if (!security_A(pre_master_secret, client_random, server_random, master_secret,
+	                sizeof(master_secret)) ||
+	    !security_X(master_secret, client_random, server_random, session_key_blob,
+	                sizeof(session_key_blob)))
 	{
 		return FALSE;
 	}
@@ -632,10 +647,12 @@ BOOL security_establish_keys(rdpRdp* rdp)
 		/* This is for RDP licensing packets which will already be encrypted under FIPS, so the use
 		 * of MD5 here is not */
 		/* for sensitive data protection. */
-		status = security_md5_16_32_32_Allow_FIPS(&session_key_blob[16], client_random,
-		                                          server_random, rdp->decrypt_key);
-		status &= security_md5_16_32_32_Allow_FIPS(&session_key_blob[32], client_random,
-		                                           server_random, rdp->encrypt_key);
+		status =
+		    security_md5_16_32_32_Allow_FIPS(&session_key_blob[16], client_random, server_random,
+		                                     rdp->decrypt_key, sizeof(rdp->decrypt_key));
+		status &=
+		    security_md5_16_32_32_Allow_FIPS(&session_key_blob[32], client_random, server_random,
+		                                     rdp->encrypt_key, sizeof(rdp->encrypt_key));
 	}
 
 	if (!status)
