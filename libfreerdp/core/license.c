@@ -1030,20 +1030,25 @@ static BOOL license_generate_keys(rdpLicense* license)
 
 	if (
 	    /* MasterSecret */
-	    !security_master_secret(license->PremasterSecret, license->ClientRandom,
-	                            license->ServerRandom, license->MasterSecret,
-	                            sizeof(license->MasterSecret)) ||
+	    !security_master_secret(license->PremasterSecret, sizeof(license->PremasterSecret),
+	                            license->ClientRandom, sizeof(license->ClientRandom),
+	                            license->ServerRandom, sizeof(license->ServerRandom),
+	                            license->MasterSecret, sizeof(license->MasterSecret)) ||
 	    /* SessionKeyBlob */
-	    !security_session_key_blob(license->MasterSecret, license->ClientRandom,
-	                               license->ServerRandom, license->SessionKeyBlob,
-	                               sizeof(license->SessionKeyBlob)))
+	    !security_session_key_blob(license->MasterSecret, sizeof(license->MasterSecret),
+	                               license->ClientRandom, sizeof(license->ClientRandom),
+	                               license->ServerRandom, sizeof(license->ServerRandom),
+	                               license->SessionKeyBlob, sizeof(license->SessionKeyBlob)))
 	{
 		return FALSE;
 	}
-	security_mac_salt_key(license->SessionKeyBlob, license->ClientRandom, license->ServerRandom,
-	                      license->MacSaltKey, sizeof(license->MacSaltKey)); /* MacSaltKey */
+	security_mac_salt_key(license->SessionKeyBlob, sizeof(license->SessionKeyBlob),
+	                      license->ClientRandom, sizeof(license->ClientRandom),
+	                      license->ServerRandom, sizeof(license->ServerRandom), license->MacSaltKey,
+	                      sizeof(license->MacSaltKey)); /* MacSaltKey */
 	ret = security_licensing_encryption_key(
-	    license->SessionKeyBlob, license->ClientRandom, license->ServerRandom,
+	    license->SessionKeyBlob, sizeof(license->SessionKeyBlob), license->ClientRandom,
+	    sizeof(license->ClientRandom), license->ServerRandom, sizeof(license->ServerRandom),
 	    license->LicensingEncryptionKey,
 	    sizeof(license->LicensingEncryptionKey)); /* LicensingEncryptionKey */
 #ifdef WITH_DEBUG_LICENSE
@@ -1512,8 +1517,8 @@ static BOOL license_read_encrypted_premaster_secret_blob(wStream* s, LICENSE_BLO
 {
 	if (!license_read_binary_blob(s, blob))
 		return FALSE;
-	WINPR_ASSERT(ModulusLength);
-	*ModulusLength = blob->length;
+	if (ModulusLength)
+		*ModulusLength = blob->length;
 	return TRUE;
 }
 
@@ -1764,8 +1769,7 @@ BOOL license_read_license_info(rdpLicense* license, wStream* s)
 	Stream_Read(s, license->ClientRandom, sizeof(license->ClientRandom));
 
 	/* Licensing Binary Blob with EncryptedPreMasterSecret: */
-	if (!license_read_encrypted_premaster_secret_blob(s, license->EncryptedPremasterSecret,
-	                                                  &info->ModulusLength))
+	if (!license_read_encrypted_premaster_secret_blob(s, license->EncryptedPremasterSecret, NULL))
 		goto error;
 
 	/* Licensing Binary Blob with LicenseInfo: */

@@ -28,16 +28,22 @@
 
 #include <winpr/stream.h>
 
-FREERDP_LOCAL BOOL security_master_secret(const BYTE* premaster_secret, const BYTE* client_random,
-                                          const BYTE* server_random, BYTE* output, size_t out_len);
-FREERDP_LOCAL BOOL security_session_key_blob(const BYTE* master_secret, const BYTE* client_random,
-                                             const BYTE* server_random, BYTE* output,
-                                             size_t out_len);
-FREERDP_LOCAL void security_mac_salt_key(const BYTE* session_key_blob, const BYTE* client_random,
-                                         const BYTE* server_random, BYTE* output, size_t out_len);
+FREERDP_LOCAL BOOL security_master_secret(const BYTE* premaster_secret, size_t pre_len,
+                                          const BYTE* client_random, size_t client_len,
+                                          const BYTE* server_random, size_t server_len,
+                                          BYTE* output, size_t out_len);
+FREERDP_LOCAL BOOL security_session_key_blob(const BYTE* master_secret, size_t master_len,
+                                             const BYTE* client_random, size_t client_len,
+                                             const BYTE* server_random, size_t server_len,
+                                             BYTE* output, size_t out_len);
+FREERDP_LOCAL void security_mac_salt_key(const BYTE* session_key_blob, size_t session_len,
+                                         const BYTE* client_random, size_t client_len,
+                                         const BYTE* server_random, size_t server_len, BYTE* output,
+                                         size_t out_len);
 FREERDP_LOCAL BOOL security_licensing_encryption_key(const BYTE* session_key_blob,
-                                                     const BYTE* client_random,
-                                                     const BYTE* server_random, BYTE* output,
+                                                     size_t session_len, const BYTE* client_random,
+                                                     size_t client_len, const BYTE* server_random,
+                                                     size_t server_len, BYTE* output,
                                                      size_t out_len);
 FREERDP_LOCAL BOOL security_mac_data(const BYTE* mac_salt_key, size_t mac_salt_key_length,
                                      const BYTE* data, UINT32 length, BYTE* output,
@@ -58,6 +64,6 @@ FREERDP_LOCAL BOOL security_hmac_signature(const BYTE* data, size_t length, BYTE
 FREERDP_LOCAL BOOL security_fips_encrypt(BYTE* data, size_t length, rdpRdp* rdp);
 FREERDP_LOCAL BOOL security_fips_decrypt(BYTE* data, size_t length, rdpRdp* rdp);
 FREERDP_LOCAL BOOL security_fips_check_signature(const BYTE* data, size_t length, const BYTE* sig,
-                                                 rdpRdp* rdp);
+                                                 size_t sig_len, rdpRdp* rdp);
 
 #endif /* FREERDP_LIB_CORE_SECURITY_H */

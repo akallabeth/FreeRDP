@@ -150,8 +150,9 @@ static BOOL security_premaster_hash(const char* input, size_t length, const BYTE
 	                            server_random, output, out_len);
 }
 
-BOOL security_master_secret(const BYTE* premaster_secret, const BYTE* client_random,
-                            const BYTE* server_random, BYTE* output, size_t out_len)
+BOOL security_master_secret(const BYTE* premaster_secret, size_t pre_len, const BYTE* client_random,
+                            size_t client_len, const BYTE* server_random, size_t server_len,
+                            BYTE* output, size_t out_len)
 {
 	/* MasterSecret = PremasterHash('A') + PremasterHash('BB') + PremasterHash('CCC') */
 	WINPR_ASSERT(out_len >= 32);
@@ -172,8 +173,10 @@ static BOOL security_master_hash(const char* input, size_t length, const BYTE* m
 	                            client_random, output, out_len);
 }
 
-BOOL security_session_key_blob(const BYTE* master_secret, const BYTE* client_random,
-                               const BYTE* server_random, BYTE* output, size_t out_len)
+BOOL security_session_key_blob(const BYTE* master_secret, size_t master_len,
+                               const BYTE* client_random, size_t client_len,
+                               const BYTE* server_random, size_t server_len, BYTE* output,
+                               size_t out_len)
 {
 	/* MasterHash = MasterHash('A') + MasterHash('BB') + MasterHash('CCC') */
 	WINPR_ASSERT(out_len >= 32);
@@ -185,8 +188,9 @@ BOOL security_session_key_blob(const BYTE* master_secret, const BYTE* client_ran
 	                            out_len - 32);
 }
 
-void security_mac_salt_key(const BYTE* session_key_blob, const BYTE* client_random,
-                           const BYTE* server_random, BYTE* output, size_t out_len)
+void security_mac_salt_key(const BYTE* session_key_blob, size_t session_len,
+                           const BYTE* client_random, size_t client_len, const BYTE* server_random,
+                           size_t server_len, BYTE* output, size_t out_len)
 {
 	/* MacSaltKey = First128Bits(SessionKeyBlob) */
 	WINPR_ASSERT(out_len >= 16);
@@ -252,8 +256,10 @@ out:
 	return result;
 }
 
-BOOL security_licensing_encryption_key(const BYTE* session_key_blob, const BYTE* client_random,
-                                       const BYTE* server_random, BYTE* output, size_t out_len)
+BOOL security_licensing_encryption_key(const BYTE* session_key_blob, size_t session_len,
+                                       const BYTE* client_random, size_t client_len,
+                                       const BYTE* server_random, size_t server_len, BYTE* output,
+                                       size_t out_len)
 {
 	/* LicensingEncryptionKey = MD5(Second128Bits(SessionKeyBlob) + ClientRandom + ServerRandom))
 	 * Allow FIPS use of MD5 here, this is just used for creating the licensing encryption key as
@@ -903,7 +909,8 @@ BOOL security_fips_decrypt(BYTE* data, size_t length, rdpRdp* rdp)
 	return TRUE;
 }
 
-BOOL security_fips_check_signature(const BYTE* data, size_t length, const BYTE* sig, rdpRdp* rdp)
+BOOL security_fips_check_signature(const BYTE* data, size_t length, const BYTE* sig, size_t sig_len,
+                                   rdpRdp* rdp)
 {
 	BYTE buf[WINPR_SHA1_DIGEST_LENGTH] = { 0 };
 	BYTE use_count_le[4] = { 0 };
