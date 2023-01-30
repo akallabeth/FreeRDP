@@ -38,6 +38,8 @@
 
 #include "license.h"
 
+#include "../crypto/crypto.h"
+
 #define TAG FREERDP_TAG("core.license")
 
 #if 0
@@ -1029,18 +1031,21 @@ static BOOL license_generate_keys(rdpLicense* license)
 	if (
 	    /* MasterSecret */
 	    !security_master_secret(license->PremasterSecret, license->ClientRandom,
-	                            license->ServerRandom, license->MasterSecret) ||
+	                            license->ServerRandom, license->MasterSecret,
+	                            sizeof(license->MasterSecret)) ||
 	    /* SessionKeyBlob */
 	    !security_session_key_blob(license->MasterSecret, license->ClientRandom,
-	                               license->ServerRandom, license->SessionKeyBlob))
+	                               license->ServerRandom, license->SessionKeyBlob,
+	                               sizeof(license->SessionKeyBlob)))
 	{
 		return FALSE;
 	}
 	security_mac_salt_key(license->SessionKeyBlob, license->ClientRandom, license->ServerRandom,
-	                      license->MacSaltKey); /* MacSaltKey */
+	                      license->MacSaltKey, sizeof(license->MacSaltKey)); /* MacSaltKey */
 	ret = security_licensing_encryption_key(
 	    license->SessionKeyBlob, license->ClientRandom, license->ServerRandom,
-	    license->LicensingEncryptionKey); /* LicensingEncryptionKey */
+	    license->LicensingEncryptionKey,
+	    sizeof(license->LicensingEncryptionKey)); /* LicensingEncryptionKey */
 #ifdef WITH_DEBUG_LICENSE
 	WLog_DBG(TAG, "ClientRandom:");
 	winpr_HexDump(TAG, WLOG_DEBUG, license->ClientRandom, sizeof(license->ClientRandom));
