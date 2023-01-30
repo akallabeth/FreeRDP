@@ -43,9 +43,9 @@ FREERDP_LOCAL BOOL security_mac_data(const BYTE* mac_salt_key, size_t mac_salt_k
                                      const BYTE* data, UINT32 length, BYTE* output,
                                      size_t output_length);
 FREERDP_LOCAL BOOL security_mac_signature(rdpRdp* rdp, const BYTE* data, UINT32 length,
-                                          BYTE* output);
+                                          BYTE* output, size_t out_len);
 FREERDP_LOCAL BOOL security_salted_mac_signature(rdpRdp* rdp, const BYTE* data, UINT32 length,
-                                                 BOOL encryption, BYTE* output);
+                                                 BOOL encryption, BYTE* output, size_t out_len);
 FREERDP_LOCAL BOOL security_establish_keys(rdpRdp* rdp);
 
 FREERDP_LOCAL BOOL security_lock(rdpRdp* rdp);
@@ -54,7 +54,7 @@ FREERDP_LOCAL BOOL security_unlock(rdpRdp* rdp);
 FREERDP_LOCAL BOOL security_encrypt(BYTE* data, size_t length, rdpRdp* rdp);
 FREERDP_LOCAL BOOL security_decrypt(BYTE* data, size_t length, rdpRdp* rdp);
 FREERDP_LOCAL BOOL security_hmac_signature(const BYTE* data, size_t length, BYTE* output,
-                                           rdpRdp* rdp);
+                                           size_t out_len, rdpRdp* rdp);
 FREERDP_LOCAL BOOL security_fips_encrypt(BYTE* data, size_t length, rdpRdp* rdp);
 FREERDP_LOCAL BOOL security_fips_decrypt(BYTE* data, size_t length, rdpRdp* rdp);
 FREERDP_LOCAL BOOL security_fips_check_signature(const BYTE* data, size_t length, const BYTE* sig,

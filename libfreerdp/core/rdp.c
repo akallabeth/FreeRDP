@@ -656,7 +656,9 @@ static BOOL rdp_security_stream_out(rdpRdp* rdp, wStream* s, int length, UINT32 
 
 				Stream_Write_UINT8(s, *pad);
 
-				if (!security_hmac_signature(data, length, Stream_Pointer(s), rdp))
+				if (!Stream_CheckAndLogRequiredCapacity(TAG, s, 8))
+					goto unlock;
+				if (!security_hmac_signature(data, length, Stream_Pointer(s), 8, rdp))
 					goto unlock;
 
 				Stream_Seek(s, 8);
@@ -668,11 +670,13 @@ static BOOL rdp_security_stream_out(rdpRdp* rdp, wStream* s, int length, UINT32 
 				data = Stream_Pointer(s) + 8;
 				length = length - (data - Stream_Buffer(s));
 
+				if (!Stream_CheckAndLogRequiredCapacity(TAG, s, 8))
+					goto unlock;
 				if (sec_flags & SEC_SECURE_CHECKSUM)
-					status =
-					    security_salted_mac_signature(rdp, data, length, TRUE, Stream_Pointer(s));
+					status = security_salted_mac_signature(rdp, data, length, TRUE,
+					                                       Stream_Pointer(s), 8);
 				else
-					status = security_mac_signature(rdp, data, length, Stream_Pointer(s));
+					status = security_mac_signature(rdp, data, length, Stream_Pointer(s), 8);
 
 				if (!status)
 					goto unlock;
@@ -1389,9 +1393,10 @@ BOOL rdp_decrypt(rdpRdp* rdp, wStream* s, UINT16* pLength, UINT16 securityFlags)
 			goto unlock;
 
 		if (securityFlags & SEC_SECURE_CHECKSUM)
-			status = security_salted_mac_signature(rdp, Stream_Pointer(s), length, FALSE, cmac);
+			status = security_salted_mac_signature(rdp, Stream_Pointer(s), length, FALSE, cmac,
+			                                       sizeof(cmac));
 		else
-			status = security_mac_signature(rdp, Stream_Pointer(s), length, cmac);
+			status = security_mac_signature(rdp, Stream_Pointer(s), length, cmac, sizeof(cmac));
 
 		if (!status)
 			goto unlock;

@@ -342,7 +342,8 @@ out:
 	return result;
 }
 
-BOOL security_mac_signature(rdpRdp* rdp, const BYTE* data, UINT32 length, BYTE* output)
+BOOL security_mac_signature(rdpRdp* rdp, const BYTE* data, UINT32 length, BYTE* output,
+                            size_t out_len)
 {
 	WINPR_DIGEST_CTX* sha1 = NULL;
 	WINPR_DIGEST_CTX* md5 = NULL;
@@ -354,6 +355,7 @@ BOOL security_mac_signature(rdpRdp* rdp, const BYTE* data, UINT32 length, BYTE* 
 	WINPR_ASSERT(rdp);
 	WINPR_ASSERT(data || (length == 0));
 	WINPR_ASSERT(output);
+	WINPR_ASSERT(out_len >= 8);
 
 	security_UINT32_le(length_le, sizeof(length_le), length); /* length must be little-endian */
 
@@ -409,7 +411,7 @@ out:
 }
 
 BOOL security_salted_mac_signature(rdpRdp* rdp, const BYTE* data, UINT32 length, BOOL encryption,
-                                   BYTE* output)
+                                   BYTE* output, size_t out_len)
 {
 	WINPR_DIGEST_CTX* sha1 = NULL;
 	WINPR_DIGEST_CTX* md5 = NULL;
@@ -422,6 +424,7 @@ BOOL security_salted_mac_signature(rdpRdp* rdp, const BYTE* data, UINT32 length,
 	WINPR_ASSERT(rdp);
 	WINPR_ASSERT(data || (length == 0));
 	WINPR_ASSERT(output);
+	WINPR_ASSERT(out_len >= 8);
 
 	security_UINT32_le(length_le, sizeof(length_le), length); /* length must be little-endian */
 
@@ -834,7 +837,8 @@ fail:
 	return rc;
 }
 
-BOOL security_hmac_signature(const BYTE* data, size_t length, BYTE* output, rdpRdp* rdp)
+BOOL security_hmac_signature(const BYTE* data, size_t length, BYTE* output, size_t out_len,
+                             rdpRdp* rdp)
 {
 	BYTE buf[WINPR_SHA1_DIGEST_LENGTH] = { 0 };
 	BYTE use_count_le[4] = { 0 };
@@ -842,6 +846,8 @@ BOOL security_hmac_signature(const BYTE* data, size_t length, BYTE* output, rdpR
 	BOOL result = FALSE;
 
 	WINPR_ASSERT(rdp);
+	WINPR_ASSERT(output);
+	WINPR_ASSERT(out_len >= 8);
 
 	security_UINT32_le(use_count_le, sizeof(use_count_le), rdp->encrypt_use_count);
 
