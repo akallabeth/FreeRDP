@@ -193,10 +193,13 @@ void security_mac_salt_key(const BYTE* session_key_blob, const BYTE* client_rand
 	memcpy(output, session_key_blob, 16);
 }
 
-static BOOL security_md5_16_32_32(const BYTE* in0, const BYTE* in1, const BYTE* in2, BYTE* output)
+static BOOL security_md5_16_32_32(const BYTE* in0, const BYTE* in1, const BYTE* in2, BYTE* output,
+                                  size_t out_len)
 {
 	WINPR_DIGEST_CTX* md5 = NULL;
 	BOOL result = FALSE;
+
+	WINPR_ASSERT(WINPR_MD5_DIGEST_LENGTH <= out_len);
 
 	if (!(md5 = winpr_Digest_New()))
 		return FALSE;
@@ -213,7 +216,7 @@ static BOOL security_md5_16_32_32(const BYTE* in0, const BYTE* in1, const BYTE* 
 	if (!winpr_Digest_Update(md5, in2, 32))
 		goto out;
 
-	if (!winpr_Digest_Final(md5, output, WINPR_MD5_DIGEST_LENGTH))
+	if (!winpr_Digest_Final(md5, output, out_len))
 		goto out;
 
 	result = TRUE;
@@ -262,6 +265,7 @@ BOOL security_licensing_encryption_key(const BYTE* session_key_blob, const BYTE*
 
 static void security_UINT32_le(BYTE* output, UINT32 value)
 {
+	WINPR_ASSERT(output);
 	output[0] = (value)&0xFF;
 	output[1] = (value >> 8) & 0xFF;
 	output[2] = (value >> 16) & 0xFF;
@@ -514,21 +518,28 @@ static BOOL security_X(const BYTE* master_secret, const BYTE* client_random,
 	                               &output[32], out_len - 32);
 }
 
-static void fips_expand_key_bits(BYTE* in, BYTE* out)
+static void fips_expand_key_bits(const BYTE* in, size_t in_len, BYTE* out, size_t out_len)
 {
-	BYTE buf[21], c;
-	int i, b, p, r;
+	BYTE buf[21] = { 0 };
+
+	WINPR_ASSERT(in);
+	WINPR_ASSERT(in_len >= sizeof(buf));
+
+	WINPR_ASSERT(out);
+	WINPR_ASSERT(out_len > 24);
 
 	/* reverse every byte in the key */
-	for (i = 0; i < 21; i++)
+	for (size_t i = 0; i < sizeof(buf); i++)
 		buf[i] = fips_reverse_table[in[i]];
 
 	/* insert a zero-bit after every 7th bit */
-	for (i = 0, b = 0; i < 24; i++, b += 7)
+	size_t b = 0;
+	for (size_t i = 0; i < 24; i++, b += 7)
 	{
-		p = b / 8;
-		r = b % 8;
+		const size_t p = b / 8;
+		const size_t r = b % 8;
 
+		WINPR_ASSERT(p < sizeof(buf));
 		if (r <= 1)
 		{
 			out[i] = (buf[p] << r) & 0xfe;
@@ -536,7 +547,7 @@ static void fips_expand_key_bits(BYTE* in, BYTE* out)
 		else
 		{
 			/* c is accumulator */
-			c = buf[p] << r;
+			BYTE c = buf[p] << r;
 			c |= buf[p + 1] >> (8 - r);
 			out[i] = c & 0xfe;
 		}
@@ -544,7 +555,7 @@ static void fips_expand_key_bits(BYTE* in, BYTE* out)
 
 	/* reverse every byte */
 	/* alter lsb so the byte has odd parity */
-	for (i = 0; i < 24; i++)
+	for (size_t i = 0; i < 24; i++)
 		out[i] = fips_oddparity_table[fips_reverse_table[out[i]]];
 }
 
@@ -610,13 +621,17 @@ BOOL security_establish_keys(rdpRdp* rdp)
 
 		if (settings->ServerMode)
 		{
-			fips_expand_key_bits(client_encrypt_key_t, rdp->fips_decrypt_key);
-			fips_expand_key_bits(client_decrypt_key_t, rdp->fips_encrypt_key);
+			fips_expand_key_bits(client_encrypt_key_t, sizeof(client_encrypt_key_t),
+			                     rdp->fips_decrypt_key, sizeof(rdp->fips_decrypt_key));
+			fips_expand_key_bits(client_decrypt_key_t, sizeof(client_decrypt_key_t),
+			                     rdp->fips_encrypt_key, sizeof(rdp->fips_encrypt_key));
 		}
 		else
 		{
-			fips_expand_key_bits(client_encrypt_key_t, rdp->fips_encrypt_key);
-			fips_expand_key_bits(client_decrypt_key_t, rdp->fips_decrypt_key);
+			fips_expand_key_bits(client_encrypt_key_t, sizeof(client_encrypt_key_t),
+			                     rdp->fips_encrypt_key, sizeof(rdp->fips_encrypt_key));
+			fips_expand_key_bits(client_decrypt_key_t, sizeof(client_decrypt_key_t),
+			                     rdp->fips_decrypt_key, sizeof(rdp->fips_decrypt_key));
 		}
 	}
 
@@ -636,9 +651,9 @@ BOOL security_establish_keys(rdpRdp* rdp)
 	if (settings->ServerMode)
 	{
 		status = security_md5_16_32_32(&session_key_blob[16], client_random, server_random,
-		                               rdp->encrypt_key);
+		                               rdp->encrypt_key, sizeof(rdp->encrypt_key));
 		status &= security_md5_16_32_32(&session_key_blob[32], client_random, server_random,
-		                                rdp->decrypt_key);
+		                                rdp->decrypt_key, sizeof(rdp->decrypt_key));
 	}
 	else
 	{
@@ -691,7 +706,7 @@ BOOL security_establish_keys(rdpRdp* rdp)
 
 static BOOL security_key_update(BYTE* key, BYTE* update_key, size_t key_len, rdpRdp* rdp)
 {
-	BYTE sha1h[WINPR_SHA1_DIGEST_LENGTH];
+	BYTE sha1h[WINPR_SHA1_DIGEST_LENGTH] = { 0 };
 	WINPR_DIGEST_CTX* sha1 = NULL;
 	WINPR_DIGEST_CTX* md5 = NULL;
 	WINPR_RC4_CTX* rc4 = NULL;
@@ -820,9 +835,9 @@ fail:
 
 BOOL security_hmac_signature(const BYTE* data, size_t length, BYTE* output, rdpRdp* rdp)
 {
-	BYTE buf[WINPR_SHA1_DIGEST_LENGTH];
-	BYTE use_count_le[4];
-	WINPR_HMAC_CTX* hmac;
+	BYTE buf[WINPR_SHA1_DIGEST_LENGTH] = { 0 };
+	BYTE use_count_le[4] = { 0 };
+	WINPR_HMAC_CTX* hmac = NULL;
 	BOOL result = FALSE;
 
 	WINPR_ASSERT(rdp);
@@ -854,7 +869,7 @@ out:
 BOOL security_fips_encrypt(BYTE* data, size_t length, rdpRdp* rdp)
 {
 	BOOL rc = FALSE;
-	size_t olen;
+	size_t olen = 0;
 
 	if (!winpr_Cipher_Update(rdp->fips_encrypt, data, length, data, &olen))
 		goto fail;
@@ -867,7 +882,7 @@ fail:
 
 BOOL security_fips_decrypt(BYTE* data, size_t length, rdpRdp* rdp)
 {
-	size_t olen;
+	size_t olen = 0;
 
 	if (!rdp || !rdp->fips_decrypt)
 	{
