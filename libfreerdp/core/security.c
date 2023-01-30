@@ -263,9 +263,10 @@ BOOL security_licensing_encryption_key(const BYTE* session_key_blob, const BYTE*
 	                                        output, out_len);
 }
 
-static void security_UINT32_le(BYTE* output, UINT32 value)
+static void security_UINT32_le(BYTE* output, size_t out_len, UINT32 value)
 {
 	WINPR_ASSERT(output);
+	WINPR_ASSERT(out_len >= 4);
 	output[0] = (value)&0xFF;
 	output[1] = (value >> 8) & 0xFF;
 	output[2] = (value >> 16) & 0xFF;
@@ -285,7 +286,7 @@ BOOL security_mac_data(const BYTE* mac_salt_key, size_t mac_salt_key_length, con
 	WINPR_ASSERT(output_length == WINPR_MD5_DIGEST_LENGTH);
 
 	/* MacData = MD5(MacSaltKey + pad2 + SHA1(MacSaltKey + pad1 + length + data)) */
-	security_UINT32_le(length_le, length); /* length must be little-endian */
+	security_UINT32_le(length_le, sizeof(length_le), length); /* length must be little-endian */
 
 	/* SHA1_Digest = SHA1(MacSaltKey + pad1 + length + data) */
 	if (!(sha1 = winpr_Digest_New()))
@@ -354,7 +355,7 @@ BOOL security_mac_signature(rdpRdp* rdp, const BYTE* data, UINT32 length, BYTE* 
 	WINPR_ASSERT(data || (length == 0));
 	WINPR_ASSERT(output);
 
-	security_UINT32_le(length_le, length); /* length must be little-endian */
+	security_UINT32_le(length_le, sizeof(length_le), length); /* length must be little-endian */
 
 	/* SHA1_Digest = SHA1(MACKeyN + pad1 + length + data) */
 	if (!(sha1 = winpr_Digest_New()))
@@ -422,11 +423,11 @@ BOOL security_salted_mac_signature(rdpRdp* rdp, const BYTE* data, UINT32 length,
 	WINPR_ASSERT(data || (length == 0));
 	WINPR_ASSERT(output);
 
-	security_UINT32_le(length_le, length); /* length must be little-endian */
+	security_UINT32_le(length_le, sizeof(length_le), length); /* length must be little-endian */
 
 	if (encryption)
 	{
-		security_UINT32_le(use_count_le, rdp->encrypt_checksum_use_count);
+		security_UINT32_le(use_count_le, sizeof(use_count_le), rdp->encrypt_checksum_use_count);
 	}
 	else
 	{
@@ -434,7 +435,7 @@ BOOL security_salted_mac_signature(rdpRdp* rdp, const BYTE* data, UINT32 length,
 		 * We calculate checksum on plain text, so we must have already
 		 * decrypt it, which means decrypt_checksum_use_count is off by one.
 		 */
-		security_UINT32_le(use_count_le, rdp->decrypt_checksum_use_count - 1);
+		security_UINT32_le(use_count_le, sizeof(use_count_le), rdp->decrypt_checksum_use_count - 1);
 	}
 
 	/* SHA1_Digest = SHA1(MACKeyN + pad1 + length + data) */
@@ -842,7 +843,7 @@ BOOL security_hmac_signature(const BYTE* data, size_t length, BYTE* output, rdpR
 
 	WINPR_ASSERT(rdp);
 
-	security_UINT32_le(use_count_le, rdp->encrypt_use_count);
+	security_UINT32_le(use_count_le, sizeof(use_count_le), rdp->encrypt_use_count);
 
 	if (!(hmac = winpr_HMAC_New()))
 		return FALSE;
@@ -903,7 +904,7 @@ BOOL security_fips_check_signature(const BYTE* data, size_t length, const BYTE* 
 	WINPR_HMAC_CTX* hmac = NULL;
 	BOOL result = FALSE;
 
-	security_UINT32_le(use_count_le, rdp->decrypt_use_count++);
+	security_UINT32_le(use_count_le, sizeof(use_count_le), rdp->decrypt_use_count++);
 
 	if (!(hmac = winpr_HMAC_New()))
 		return FALSE;
