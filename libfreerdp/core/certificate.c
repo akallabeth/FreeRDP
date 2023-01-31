@@ -150,6 +150,7 @@ struct rdp_certificate
 	char* pem;
 	size_t pem_length;
 
+	BOOL isRSA;
 	rdpCertInfo cert_info;
 	rdpX509CertChain x509_cert_chain;
 };
@@ -158,6 +159,8 @@ struct rdp_rsa_key
 {
 	char* pem;
 	size_t pem_length;
+
+	BOOL isRSA;
 
 	rdpCertInfo cert;
 	BYTE* PrivateExponent;
@@ -482,6 +485,7 @@ static BOOL certificate_process_server_public_key(rdpCertificate* certificate, w
 
 	WINPR_ASSERT(certificate);
 	WINPR_ASSERT(s);
+	WINPR_ASSERT(certificate->isRSA);
 
 	if (!Stream_CheckAndLogRequiredLength(TAG, s, 20))
 		return FALSE;
@@ -519,6 +523,7 @@ static BOOL certificate_process_server_public_signature(rdpCertificate* certific
                                                         wStream* s, UINT32 siglen)
 {
 	WINPR_ASSERT(certificate);
+	WINPR_ASSERT(certificate->isRSA);
 #if defined(CERT_VALIDATE_PADDING) || defined(CERT_VALIDATE_RSA)
 	size_t i, sum;
 #endif
@@ -616,6 +621,8 @@ static BOOL certificate_read_server_proprietary_certificate(rdpCertificate* cert
 	size_t sigdatalen = 0;
 
 	WINPR_ASSERT(certificate);
+	WINPR_ASSERT(certificate->isRSA);
+
 	if (!Stream_CheckAndLogRequiredLength(TAG, s, 12))
 		return FALSE;
 
@@ -685,6 +692,7 @@ static BOOL certificate_read_server_proprietary_certificate(rdpCertificate* cert
 static BOOL cert_write_rsa_public_key(wStream* s, const rdpCertificate* cert)
 {
 	WINPR_ASSERT(cert);
+	WINPR_ASSERT(cert->isRSA);
 
 	const UINT32 keyLen = cert->cert_info.ModulusLength + 8;
 	const UINT32 bitLen = cert->cert_info.ModulusLength * 8;
@@ -735,6 +743,8 @@ static BOOL cert_write_server_certificate_v1(wStream* s, const rdpCertificate* c
 	const BYTE* sigData = Stream_Pointer(s) - sizeof(UINT32);
 
 	WINPR_ASSERT(start >= 4);
+	WINPR_ASSERT(certificate->isRSA);
+
 	if (!Stream_EnsureRemainingCapacity(s, 10))
 		return FALSE;
 	Stream_Write_UINT32(s, SIGNATURE_ALG_RSA);
@@ -750,6 +760,7 @@ static BOOL cert_write_server_certificate_v1(wStream* s, const rdpCertificate* c
 static BOOL cert_write_server_certificate_v2(wStream* s, const rdpCertificate* certificate)
 {
 	WINPR_ASSERT(certificate);
+	WINPR_ASSERT(certificate->isRSA);
 
 	const rdpX509CertChain* chain = &certificate->x509_cert_chain;
 	const size_t padding = 8ull + 4ull * chain->count;
@@ -776,7 +787,7 @@ SSIZE_T certificate_write_server_certificate(const rdpCertificate* certificate, 
 {
 	if (!certificate)
 		return -1;
-
+	WINPR_ASSERT(certificate->isRSA);
 	const size_t start = Stream_GetPosition(s);
 	if (!Stream_EnsureRemainingCapacity(s, 4))
 		return -1;
@@ -815,6 +826,7 @@ static BOOL certificate_read_server_x509_certificate_chain(rdpCertificate* certi
 	DEBUG_CERTIFICATE("Server X.509 Certificate Chain");
 
 	WINPR_ASSERT(certificate);
+	WINPR_ASSERT(certificate->isRSA);
 	if (!Stream_CheckAndLogRequiredLength(TAG, s, 4))
 		return FALSE;
 
@@ -862,6 +874,7 @@ static BOOL certificate_write_server_x509_certificate_chain(const rdpCertificate
 	UINT32 numCertBlobs = 0;
 
 	WINPR_ASSERT(certificate);
+	WINPR_ASSERT(certificate->isRSA);
 	WINPR_ASSERT(s);
 
 	numCertBlobs = certificate->x509_cert_chain.count;
@@ -895,6 +908,7 @@ BOOL certificate_read_server_certificate(rdpCertificate* certificate, const BYTE
 	UINT32 dwVersion = 0;
 
 	WINPR_ASSERT(certificate);
+	WINPR_ASSERT(certificate->isRSA);
 	if (length < 4) /* NULL certificate is not an error see #1795 */
 		return TRUE;
 
@@ -1004,6 +1018,8 @@ static BOOL key_read_private(rdpRsaKey* key, const char* pem, size_t pem_length)
 {
 	BOOL rc = FALSE;
 	RSA* rsa = rsa_from_private_pem(pem, pem_length);
+	if (!rsa)
+		return TRUE;
 
 	const BIGNUM* rsa_e = NULL;
 	const BIGNUM* rsa_n = NULL;
@@ -1044,6 +1060,8 @@ static BOOL key_read_private(rdpRsaKey* key, const char* pem, size_t pem_length)
 
 	if (!cert_info_create(&key->cert, rsa_n, rsa_e))
 		goto fail;
+
+	key->isRSA = TRUE;
 	rc = TRUE;
 fail:
 	RSA_free(rsa);
@@ -1085,13 +1103,19 @@ rdpRsaKey* freerdp_key_new_from_pem(const char* keycontent, size_t keycontent_le
 {
 	rdpRsaKey* key = NULL;
 
-	if (!keycontent)
+	if (!keycontent || (keycontent_length == 0))
 		return NULL;
 
 	key = (rdpRsaKey*)calloc(1, sizeof(rdpRsaKey));
 
 	if (!key)
 		return NULL;
+
+	key->pem = calloc(keycontent_length + 1, sizeof(char));
+	if (!key->pem)
+		goto fail;
+	memcpy(key->pem, keycontent, keycontent_length);
+	key->pem_length = keycontent_length;
 
 	if (!key_read_private(key, keycontent, keycontent_length))
 		goto fail;
@@ -1184,6 +1208,15 @@ rdpRsaKey* key_clone(const rdpRsaKey* key)
 	if (!_key)
 		return NULL;
 
+	if (key->pem)
+	{
+		_key->pem = calloc(key->pem_length, sizeof(char));
+		if (!_key->pem)
+			goto out_fail;
+		memcpy(_key->pem, key->pem, key->pem_length);
+		_key->pem_length = key->pem_length;
+	}
+
 	if (key->PrivateExponent)
 	{
 		_key->PrivateExponent = (BYTE*)malloc(key->PrivateExponentLength);
@@ -1210,6 +1243,7 @@ void freerdp_key_free(rdpRsaKey* key)
 		memset(key->PrivateExponent, 0, key->PrivateExponentLength);
 	free(key->PrivateExponent);
 	cert_info_free(&key->cert);
+	free(key->pem);
 	free(key);
 }
 
@@ -1434,9 +1468,6 @@ fail:
 
 rdpCertificate* freerdp_certificate_new_from_pem(const char* pem, size_t length)
 {
-	const BIGNUM* rsa_e = NULL;
-	const BIGNUM* rsa_n = NULL;
-	const BIGNUM* rsa_d = NULL;
 	RSA* rsa = NULL;
 	rdpCertificate* cert = freerdp_certificate_new();
 
@@ -1444,14 +1475,19 @@ rdpCertificate* freerdp_certificate_new_from_pem(const char* pem, size_t length)
 		goto fail;
 
 	rsa = rsa_from_private_pem(pem, length);
-	if (!rsa)
-		goto fail;
-	RSA_get0_key(rsa, &rsa_n, &rsa_e, &rsa_d);
-	if (!rsa_n || !rsa_e || !rsa_d)
-		goto fail;
-	if (!cert_info_create(&cert->cert_info, rsa_n, rsa_e))
-		goto fail;
-	RSA_free(rsa);
+	if (rsa)
+	{
+		const BIGNUM* rsa_e = NULL;
+		const BIGNUM* rsa_n = NULL;
+		const BIGNUM* rsa_d = NULL;
+		RSA_get0_key(rsa, &rsa_n, &rsa_e, &rsa_d);
+		if (!rsa_n || !rsa_e || !rsa_d)
+			goto fail;
+		if (!cert_info_create(&cert->cert_info, rsa_n, rsa_e))
+			goto fail;
+		RSA_free(rsa);
+		cert->isRSA = TRUE;
+	}
 	return cert;
 
 fail:
@@ -1482,6 +1518,7 @@ const rdpCertInfo* freerdp_certificate_get_info(const rdpCertificate* certificat
 {
 	if (!certificate)
 		return NULL;
+	WINPR_ASSERT(certificate->isRSA);
 	return &certificate->cert_info;
 }
 
@@ -1499,6 +1536,7 @@ const BYTE* freerdp_key_get_exponent(const rdpRsaKey* key, size_t* exponent_leng
 	if (!key)
 		return NULL;
 
+	WINPR_ASSERT(key->isRSA);
 	if (exponent_length)
 		*exponent_length = key->PrivateExponentLength;
 	return key->PrivateExponent;
@@ -1508,6 +1546,7 @@ const rdpCertInfo* freerdp_key_get_cert_info(const rdpRsaKey* key)
 {
 	if (!key)
 		return NULL;
+	WINPR_ASSERT(key->isRSA);
 	return &key->cert;
 }
 
