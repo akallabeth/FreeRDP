@@ -1253,10 +1253,16 @@ static BOOL license_decrypt_and_check_MAC(rdpLicense* license, const BYTE* input
 	if (freerdp_settings_get_bool(license->rdp->settings, FreeRDP_TransportDumpReplay))
 		return TRUE;
 
-	return license_rc4_with_licenseKey(license, input, len, target) &&
-	       security_mac_data(license->MacSaltKey, sizeof(license->MacSaltKey), target->data, len,
-	                         macData, sizeof(macData)) &&
-	       (memcmp(packetMac, macData, sizeof(macData)) == 0);
+	if (!license_rc4_with_licenseKey(license, input, len, target))
+		return FALSE;
+
+	if (!security_mac_data(license->MacSaltKey, sizeof(license->MacSaltKey), target->data, len,
+	                       macData, sizeof(macData)))
+		return FALSE;
+
+	if (memcmp(packetMac, macData, sizeof(macData)) != 0)
+		return FALSE;
+	return TRUE;
 }
 
 /**
