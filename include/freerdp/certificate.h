@@ -29,6 +29,7 @@ extern "C"
 #endif
 
 	/* Certificates */
+	typedef struct x509_st X509;
 
 	struct rdp_CertInfo
 	{
@@ -47,6 +48,8 @@ extern "C"
 	FREERDP_API void freerdp_certificate_free(rdpCertificate* certificate);
 	FREERDP_API const char* freerdp_certificate_get_pem(const rdpCertificate* certificate,
 	                                                    size_t* length);
+	FREERDP_API X509* freerdp_certificate_get_x509(const rdpCertificate* certificate);
+
 	FREERDP_API const rdpCertInfo* freerdp_certificate_get_info(const rdpCertificate* certificate);
 	FREERDP_API rdpCertInfo* freerdp_certificate_get_info_writeable(rdpCertificate* certificate);
 

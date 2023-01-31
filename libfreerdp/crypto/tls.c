@@ -1005,7 +1005,6 @@ TlsHandshakeResult freerdp_tls_accept_ex(rdpTls* tls, BIO* underlying, rdpSettin
 	long options = 0;
 	EVP_PKEY* privkey;
 	int status;
-	X509* x509;
 
 	/**
 	 * SSL_OP_NO_SSLv2:
@@ -1092,9 +1091,7 @@ TlsHandshakeResult freerdp_tls_accept_ex(rdpTls* tls, BIO* underlying, rdpSettin
 		return TLS_HANDSHAKE_ERROR;
 	}
 
-	size_t length = 0;
-	const char* pem = freerdp_certificate_get_pem(certificate, &length);
-	x509 = crypto_cert_from_pem(pem, length);
+	X509* x509 = freerdp_certificate_get_x509(certificate);
 	if (!x509)
 	{
 		WLog_ERR(TAG, "invalid certificate");
