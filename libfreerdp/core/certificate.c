@@ -1102,48 +1102,74 @@ fail:
 	return NULL;
 }
 
+static char* read_pem_file(const char* name, size_t* plength)
+{
+	WINPR_ASSERT(name);
+	WINPR_ASSERT(plength);
+
+	*plength = 0;
+
+	char* pem = NULL;
+	SSIZE_T size = 0;
+	FILE* fp = winpr_fopen(name, "rb");
+	if (!fp)
+	{
+		WLog_ERR(TAG, "unable to open file %s: %s", name, strerror(errno));
+		goto fail;
+	}
+
+	if (_fseeki64(fp, 0, SEEK_END) < 0)
+	{
+		WLog_ERR(TAG, "unable to seek in file %s: %s", name, strerror(errno));
+		goto fail;
+	}
+
+	size = _ftelli64(fp);
+	if (size < 0)
+	{
+		WLog_ERR(TAG, "unable to ftell in file %s: %s", name, strerror(errno));
+		goto fail;
+	}
+
+	if (_fseeki64(fp, 0, SEEK_SET) < 0)
+	{
+		WLog_ERR(TAG, "unable to seek in file %s: %s", name, strerror(errno));
+		goto fail;
+	}
+
+	pem = calloc((size_t)size + 1, sizeof(char));
+	if (!pem)
+	{
+		WLog_ERR(TAG, "unable to allocate %" PRIdz " bytes", size);
+		goto fail;
+	}
+
+	if (fread(pem, (size_t)size, 1, fp) != 1)
+	{
+		WLog_ERR(TAG, "unable to read from file %s: %s", name, strerror(errno));
+		free(pem);
+		pem = NULL;
+		goto fail;
+	}
+
+	*plength = (size_t)size;
+fail:
+	return pem;
+}
+
 rdpRsaKey* freerdp_key_new_from_file(const char* keyfile)
 {
-	FILE* fp = NULL;
-	INT64 length;
+	size_t length = 0;
 	char* buffer = NULL;
 	rdpRsaKey* key = NULL;
 
 	if (!keyfile)
 		return NULL;
 
-	fp = winpr_fopen(keyfile, "rb");
-
-	if (!fp)
-	{
-		WLog_ERR(TAG, "unable to open RSA key file %s: %s.", keyfile, strerror(errno));
-		goto out_free;
-	}
-
-	if (_fseeki64(fp, 0, SEEK_END) < 0)
-		goto out_free;
-
-	if ((length = _ftelli64(fp)) < 0)
-		goto out_free;
-
-	if (_fseeki64(fp, 0, SEEK_SET) < 0)
-		goto out_free;
-
-	buffer = (char*)malloc(length + 1);
-
+	buffer = read_pem_file(keyfile, &length);
 	if (!buffer)
-		goto out_free;
-
-	if (fread((void*)buffer, length, 1, fp) != 1)
-		goto out_free;
-
-	buffer[length] = '\0';
+		return NULL;
 	key = freerdp_key_new_from_pem(buffer, length);
-out_free:
-
-	if (fp)
-		fclose(fp);
-
 	free(buffer);
 	return key;
 }
@@ -1394,29 +1420,15 @@ void freerdp_certificate_free(rdpCertificate* certificate)
 
 rdpCertificate* freerdp_certificate_new_from_file(const char* file)
 {
-	INT64 size = 0;
-	char* pem = NULL;
 	rdpCertificate* cert = NULL;
-	FILE* fp = winpr_fopen(file, "r");
-	if (!fp)
+	size_t size = 0;
+	char* pem = read_pem_file(file, &size);
+	if (!file)
 		return NULL;
-
-	fseek(fp, 0, SEEK_END);
-	size = _ftelli64(fp);
-	fseek(fp, 0, SEEK_SET);
-	if (size <= 0)
-		goto fail;
-
-	pem = calloc((size_t)size + 2, sizeof(char));
-	if (!pem)
-		goto fail;
-	if (fread(pem, 1, (size_t)size, fp) != (size_t)size)
-		goto fail;
 
 	cert = freerdp_certificate_new_from_pem(pem, size + 1);
 fail:
 	free(pem);
-	fclose(fp);
 	return cert;
 }
 
