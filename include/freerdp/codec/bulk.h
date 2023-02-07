@@ -36,4 +36,13 @@
 #define L1_COMPRESSED 0x01
 #define L1_INNER_COMPRESSION 0x10
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* FREERDP_CODEC_BULK_H */

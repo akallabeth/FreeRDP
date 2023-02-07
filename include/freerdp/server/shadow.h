@@ -43,189 +43,199 @@
 #include <winpr/collections.h>
 #include <winpr/cmdline.h>
 
-typedef struct rdp_shadow_client rdpShadowClient;
-typedef struct rdp_shadow_server rdpShadowServer;
-typedef struct rdp_shadow_screen rdpShadowScreen;
-typedef struct rdp_shadow_surface rdpShadowSurface;
-typedef struct rdp_shadow_encoder rdpShadowEncoder;
-typedef struct rdp_shadow_capture rdpShadowCapture;
-typedef struct rdp_shadow_subsystem rdpShadowSubsystem;
-typedef struct rdp_shadow_multiclient_event rdpShadowMultiClientEvent;
-
-typedef struct S_RDP_SHADOW_ENTRY_POINTS RDP_SHADOW_ENTRY_POINTS;
-typedef int (*pfnShadowSubsystemEntry)(RDP_SHADOW_ENTRY_POINTS* pEntryPoints);
-
-typedef rdpShadowSubsystem* (*pfnShadowSubsystemNew)(void);
-typedef void (*pfnShadowSubsystemFree)(rdpShadowSubsystem* subsystem);
-
-typedef int (*pfnShadowSubsystemInit)(rdpShadowSubsystem* subsystem);
-typedef int (*pfnShadowSubsystemUninit)(rdpShadowSubsystem* subsystem);
-
-typedef int (*pfnShadowSubsystemStart)(rdpShadowSubsystem* subsystem);
-typedef int (*pfnShadowSubsystemStop)(rdpShadowSubsystem* subsystem);
-
-typedef UINT32 (*pfnShadowEnumMonitors)(MONITOR_DEF* monitors, UINT32 maxMonitors);
-
-typedef int (*pfnShadowAuthenticate)(rdpShadowSubsystem* subsystem, rdpShadowClient* client,
-                                     const char* user, const char* domain, const char* password);
-typedef BOOL (*pfnShadowClientConnect)(rdpShadowSubsystem* subsystem, rdpShadowClient* client);
-typedef void (*pfnShadowClientDisconnect)(rdpShadowSubsystem* subsystem, rdpShadowClient* client);
-typedef BOOL (*pfnShadowClientCapabilities)(rdpShadowSubsystem* subsystem, rdpShadowClient* client);
-
-typedef BOOL (*pfnShadowSynchronizeEvent)(rdpShadowSubsystem* subsystem, rdpShadowClient* client,
-                                          UINT32 flags);
-typedef BOOL (*pfnShadowKeyboardEvent)(rdpShadowSubsystem* subsystem, rdpShadowClient* client,
-                                       UINT16 flags, UINT8 code);
-typedef BOOL (*pfnShadowUnicodeKeyboardEvent)(rdpShadowSubsystem* subsystem,
-                                              rdpShadowClient* client, UINT16 flags, UINT16 code);
-typedef BOOL (*pfnShadowMouseEvent)(rdpShadowSubsystem* subsystem, rdpShadowClient* client,
-                                    UINT16 flags, UINT16 x, UINT16 y);
-typedef BOOL (*pfnShadowExtendedMouseEvent)(rdpShadowSubsystem* subsystem, rdpShadowClient* client,
-                                            UINT16 flags, UINT16 x, UINT16 y);
-
-typedef BOOL (*pfnShadowChannelAudinServerReceiveSamples)(rdpShadowSubsystem* subsystem,
-                                                          rdpShadowClient* client,
-                                                          const AUDIO_FORMAT* format, wStream* buf,
-                                                          size_t nframes);
-
-struct rdp_shadow_client
+#ifdef __cplusplus
+extern "C"
 {
-	rdpContext context;
+#endif
 
-	HANDLE thread;
-	BOOL activated;
-	BOOL first_frame;
-	BOOL inLobby;
-	BOOL mayView;
-	BOOL mayInteract;
-	BOOL suppressOutput;
-	UINT16 surfaceId;
-	wMessageQueue* MsgQueue;
-	CRITICAL_SECTION lock;
-	REGION16 invalidRegion;
-	rdpShadowServer* server;
-	rdpShadowEncoder* encoder;
-	rdpShadowSubsystem* subsystem;
+	typedef struct rdp_shadow_client rdpShadowClient;
+	typedef struct rdp_shadow_server rdpShadowServer;
+	typedef struct rdp_shadow_screen rdpShadowScreen;
+	typedef struct rdp_shadow_surface rdpShadowSurface;
+	typedef struct rdp_shadow_encoder rdpShadowEncoder;
+	typedef struct rdp_shadow_capture rdpShadowCapture;
+	typedef struct rdp_shadow_subsystem rdpShadowSubsystem;
+	typedef struct rdp_shadow_multiclient_event rdpShadowMultiClientEvent;
 
-	UINT32 pointerX;
-	UINT32 pointerY;
+	typedef struct S_RDP_SHADOW_ENTRY_POINTS RDP_SHADOW_ENTRY_POINTS;
+	typedef int (*pfnShadowSubsystemEntry)(RDP_SHADOW_ENTRY_POINTS* pEntryPoints);
 
-	HANDLE vcm;
-	EncomspServerContext* encomsp;
-	RemdeskServerContext* remdesk;
-	RdpsndServerContext* rdpsnd;
-	audin_server_context* audin;
-	RdpgfxServerContext* rdpgfx;
+	typedef rdpShadowSubsystem* (*pfnShadowSubsystemNew)(void);
+	typedef void (*pfnShadowSubsystemFree)(rdpShadowSubsystem* subsystem);
 
-	BOOL resizeRequested;
-	UINT32 resizeWidth;
-	UINT32 resizeHeight;
-};
+	typedef int (*pfnShadowSubsystemInit)(rdpShadowSubsystem* subsystem);
+	typedef int (*pfnShadowSubsystemUninit)(rdpShadowSubsystem* subsystem);
 
-struct rdp_shadow_server
-{
-	void* ext;
-	HANDLE thread;
-	HANDLE StopEvent;
-	wArrayList* clients;
-	rdpSettings* settings;
-	rdpShadowScreen* screen;
-	rdpShadowSurface* surface;
-	rdpShadowSurface* lobby;
-	rdpShadowCapture* capture;
-	rdpShadowSubsystem* subsystem;
+	typedef int (*pfnShadowSubsystemStart)(rdpShadowSubsystem* subsystem);
+	typedef int (*pfnShadowSubsystemStop)(rdpShadowSubsystem* subsystem);
 
-	DWORD port;
-	BOOL mayView;
-	BOOL mayInteract;
-	BOOL shareSubRect;
-	BOOL authentication;
-	UINT32 selectedMonitor;
-	RECTANGLE_16 subRect;
+	typedef UINT32 (*pfnShadowEnumMonitors)(MONITOR_DEF* monitors, UINT32 maxMonitors);
 
-	/* Codec settings */
-	RLGR_MODE rfxMode;
-	H264_RATECONTROL_MODE h264RateControlMode;
-	UINT32 h264BitRate;
-	UINT32 h264FrameRate;
-	UINT32 h264QP;
+	typedef int (*pfnShadowAuthenticate)(rdpShadowSubsystem* subsystem, rdpShadowClient* client,
+	                                     const char* user, const char* domain,
+	                                     const char* password);
+	typedef BOOL (*pfnShadowClientConnect)(rdpShadowSubsystem* subsystem, rdpShadowClient* client);
+	typedef void (*pfnShadowClientDisconnect)(rdpShadowSubsystem* subsystem,
+	                                          rdpShadowClient* client);
+	typedef BOOL (*pfnShadowClientCapabilities)(rdpShadowSubsystem* subsystem,
+	                                            rdpShadowClient* client);
 
-	char* ipcSocket;
-	char* ConfigPath;
-	char* CertificateFile;
-	char* PrivateKeyFile;
-	CRITICAL_SECTION lock;
-	freerdp_listener* listener;
-};
+	typedef BOOL (*pfnShadowSynchronizeEvent)(rdpShadowSubsystem* subsystem,
+	                                          rdpShadowClient* client, UINT32 flags);
+	typedef BOOL (*pfnShadowKeyboardEvent)(rdpShadowSubsystem* subsystem, rdpShadowClient* client,
+	                                       UINT16 flags, UINT8 code);
+	typedef BOOL (*pfnShadowUnicodeKeyboardEvent)(rdpShadowSubsystem* subsystem,
+	                                              rdpShadowClient* client, UINT16 flags,
+	                                              UINT16 code);
+	typedef BOOL (*pfnShadowMouseEvent)(rdpShadowSubsystem* subsystem, rdpShadowClient* client,
+	                                    UINT16 flags, UINT16 x, UINT16 y);
+	typedef BOOL (*pfnShadowExtendedMouseEvent)(rdpShadowSubsystem* subsystem,
+	                                            rdpShadowClient* client, UINT16 flags, UINT16 x,
+	                                            UINT16 y);
 
-struct rdp_shadow_surface
-{
-	rdpShadowServer* server;
+	typedef BOOL (*pfnShadowChannelAudinServerReceiveSamples)(rdpShadowSubsystem* subsystem,
+	                                                          rdpShadowClient* client,
+	                                                          const AUDIO_FORMAT* format,
+	                                                          wStream* buf, size_t nframes);
 
-	UINT16 x;
-	UINT16 y;
-	UINT32 width;
-	UINT32 height;
-	UINT32 scanline;
-	DWORD format;
-	BYTE* data;
+	struct rdp_shadow_client
+	{
+		rdpContext context;
 
-	CRITICAL_SECTION lock;
-	REGION16 invalidRegion;
-};
+		HANDLE thread;
+		BOOL activated;
+		BOOL first_frame;
+		BOOL inLobby;
+		BOOL mayView;
+		BOOL mayInteract;
+		BOOL suppressOutput;
+		UINT16 surfaceId;
+		wMessageQueue* MsgQueue;
+		CRITICAL_SECTION lock;
+		REGION16 invalidRegion;
+		rdpShadowServer* server;
+		rdpShadowEncoder* encoder;
+		rdpShadowSubsystem* subsystem;
 
-struct S_RDP_SHADOW_ENTRY_POINTS
-{
-	pfnShadowSubsystemNew New;
-	pfnShadowSubsystemFree Free;
+		UINT32 pointerX;
+		UINT32 pointerY;
 
-	pfnShadowSubsystemInit Init;
-	pfnShadowSubsystemUninit Uninit;
+		HANDLE vcm;
+		EncomspServerContext* encomsp;
+		RemdeskServerContext* remdesk;
+		RdpsndServerContext* rdpsnd;
+		audin_server_context* audin;
+		RdpgfxServerContext* rdpgfx;
 
-	pfnShadowSubsystemStart Start;
-	pfnShadowSubsystemStop Stop;
+		BOOL resizeRequested;
+		UINT32 resizeWidth;
+		UINT32 resizeHeight;
+	};
 
-	pfnShadowEnumMonitors EnumMonitors;
-};
+	struct rdp_shadow_server
+	{
+		void* ext;
+		HANDLE thread;
+		HANDLE StopEvent;
+		wArrayList* clients;
+		rdpSettings* settings;
+		rdpShadowScreen* screen;
+		rdpShadowSurface* surface;
+		rdpShadowSurface* lobby;
+		rdpShadowCapture* capture;
+		rdpShadowSubsystem* subsystem;
 
-struct rdp_shadow_subsystem
-{
-	RDP_SHADOW_ENTRY_POINTS ep;
-	HANDLE event;
-	UINT32 numMonitors;
-	UINT32 captureFrameRate;
-	UINT32 selectedMonitor;
-	MONITOR_DEF monitors[16];
-	MONITOR_DEF virtualScreen;
+		DWORD port;
+		BOOL mayView;
+		BOOL mayInteract;
+		BOOL shareSubRect;
+		BOOL authentication;
+		UINT32 selectedMonitor;
+		RECTANGLE_16 subRect;
 
-	/* This event indicates that we have graphic change */
-	/* such as screen update and resize. It should not be */
-	/* used by subsystem implementation directly */
-	rdpShadowMultiClientEvent* updateEvent;
+		/* Codec settings */
+		RLGR_MODE rfxMode;
+		H264_RATECONTROL_MODE h264RateControlMode;
+		UINT32 h264BitRate;
+		UINT32 h264FrameRate;
+		UINT32 h264QP;
 
-	wMessagePipe* MsgPipe;
-	UINT32 pointerX;
-	UINT32 pointerY;
+		char* ipcSocket;
+		char* ConfigPath;
+		char* CertificateFile;
+		char* PrivateKeyFile;
+		CRITICAL_SECTION lock;
+		freerdp_listener* listener;
+	};
 
-	AUDIO_FORMAT* rdpsndFormats;
-	size_t nRdpsndFormats;
-	AUDIO_FORMAT* audinFormats;
-	size_t nAudinFormats;
+	struct rdp_shadow_surface
+	{
+		rdpShadowServer* server;
 
-	pfnShadowSynchronizeEvent SynchronizeEvent;
-	pfnShadowKeyboardEvent KeyboardEvent;
-	pfnShadowUnicodeKeyboardEvent UnicodeKeyboardEvent;
-	pfnShadowMouseEvent MouseEvent;
-	pfnShadowExtendedMouseEvent ExtendedMouseEvent;
-	pfnShadowChannelAudinServerReceiveSamples AudinServerReceiveSamples;
+		UINT16 x;
+		UINT16 y;
+		UINT32 width;
+		UINT32 height;
+		UINT32 scanline;
+		DWORD format;
+		BYTE* data;
 
-	pfnShadowAuthenticate Authenticate;
-	pfnShadowClientConnect ClientConnect;
-	pfnShadowClientDisconnect ClientDisconnect;
-	pfnShadowClientCapabilities ClientCapabilities;
+		CRITICAL_SECTION lock;
+		REGION16 invalidRegion;
+	};
 
-	rdpShadowServer* server;
-};
+	struct S_RDP_SHADOW_ENTRY_POINTS
+	{
+		pfnShadowSubsystemNew New;
+		pfnShadowSubsystemFree Free;
+
+		pfnShadowSubsystemInit Init;
+		pfnShadowSubsystemUninit Uninit;
+
+		pfnShadowSubsystemStart Start;
+		pfnShadowSubsystemStop Stop;
+
+		pfnShadowEnumMonitors EnumMonitors;
+	};
+
+	struct rdp_shadow_subsystem
+	{
+		RDP_SHADOW_ENTRY_POINTS ep;
+		HANDLE event;
+		UINT32 numMonitors;
+		UINT32 captureFrameRate;
+		UINT32 selectedMonitor;
+		MONITOR_DEF monitors[16];
+		MONITOR_DEF virtualScreen;
+
+		/* This event indicates that we have graphic change */
+		/* such as screen update and resize. It should not be */
+		/* used by subsystem implementation directly */
+		rdpShadowMultiClientEvent* updateEvent;
+
+		wMessagePipe* MsgPipe;
+		UINT32 pointerX;
+		UINT32 pointerY;
+
+		AUDIO_FORMAT* rdpsndFormats;
+		size_t nRdpsndFormats;
+		AUDIO_FORMAT* audinFormats;
+		size_t nAudinFormats;
+
+		pfnShadowSynchronizeEvent SynchronizeEvent;
+		pfnShadowKeyboardEvent KeyboardEvent;
+		pfnShadowUnicodeKeyboardEvent UnicodeKeyboardEvent;
+		pfnShadowMouseEvent MouseEvent;
+		pfnShadowExtendedMouseEvent ExtendedMouseEvent;
+		pfnShadowChannelAudinServerReceiveSamples AudinServerReceiveSamples;
+
+		pfnShadowAuthenticate Authenticate;
+		pfnShadowClientConnect ClientConnect;
+		pfnShadowClientDisconnect ClientDisconnect;
+		pfnShadowClientCapabilities ClientCapabilities;
+
+		rdpShadowServer* server;
+	};
 
 /* Definition of message between subsystem and clients */
 #define SHADOW_MSG_IN_REFRESH_REQUEST_ID 1001
@@ -280,11 +290,6 @@ typedef struct
 	UINT16 left;
 	UINT16 right;
 } SHADOW_MSG_OUT_AUDIO_OUT_VOLUME;
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 	FREERDP_API void shadow_subsystem_set_entry_builtin(const char* name);
 	FREERDP_API void shadow_subsystem_set_entry(pfnShadowSubsystemEntry pEntry);

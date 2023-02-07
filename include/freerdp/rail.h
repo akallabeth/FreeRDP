@@ -27,6 +27,11 @@
 
 #define RAIL_SVC_CHANNEL_NAME "rail"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /* DEPRECATED: RAIL PDU flags use the spec conformant naming with TS_ prefix */
 #if defined(WITH_FREERDP_DEPRECATED)
 #define RAIL_EXEC_FLAG_EXPAND_WORKINGDIRECTORY 0x0001
@@ -572,11 +577,6 @@ typedef enum
 	TS_RAIL_ORDER_CARETBLINKINFO = 0x001A,
 	TS_RAIL_ORDER_EXEC_RESULT = 0x0080
 } ORDER_TYPE;
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 	FREERDP_API BOOL rail_read_unicode_string(wStream* s, RAIL_UNICODE_STRING* unicode_string);
 	FREERDP_API BOOL utf8_string_to_rail_string(const char* string,

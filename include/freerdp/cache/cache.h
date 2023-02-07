@@ -34,21 +34,21 @@
 #include <freerdp/cache/offscreen.h>
 #include <freerdp/cache/palette.h>
 
-struct rdp_cache
-{
-	rdpGlyphCache* glyph;         /* 0 */
-	rdpBrushCache* brush;         /* 1 */
-	rdpPointerCache* pointer;     /* 2 */
-	rdpBitmapCache* bitmap;       /* 3 */
-	rdpOffscreenCache* offscreen; /* 4 */
-	rdpPaletteCache* palette;     /* 5 */
-	rdpNineGridCache* nine_grid;  /* 6 */
-};
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+	struct rdp_cache
+	{
+		rdpGlyphCache* glyph;         /* 0 */
+		rdpBrushCache* brush;         /* 1 */
+		rdpPointerCache* pointer;     /* 2 */
+		rdpBitmapCache* bitmap;       /* 3 */
+		rdpOffscreenCache* offscreen; /* 4 */
+		rdpPaletteCache* palette;     /* 5 */
+		rdpNineGridCache* nine_grid;  /* 6 */
+	};
 
 	FREERDP_API rdpCache* cache_new(rdpContext* context);
 	FREERDP_API void cache_free(rdpCache* cache);

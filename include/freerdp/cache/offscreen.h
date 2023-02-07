@@ -27,12 +27,12 @@
 
 #include <winpr/stream.h>
 
-typedef struct rdp_offscreen_cache rdpOffscreenCache;
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+	typedef struct rdp_offscreen_cache rdpOffscreenCache;
 
 	FREERDP_API rdpBitmap* offscreen_cache_get(rdpOffscreenCache* offscreen_cache, UINT32 index);
 

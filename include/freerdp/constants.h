@@ -20,17 +20,22 @@
 #ifndef FREERDP_CONSTANTS_H
 #define FREERDP_CONSTANTS_H
 
-/**
- * Codec IDs
- */
-enum RDP_CODEC_ID
+#ifdef __cplusplus
+extern "C"
 {
-	RDP_CODEC_ID_NONE = 0x00,
-	RDP_CODEC_ID_NSCODEC = 0x01,
-	RDP_CODEC_ID_JPEG = 0x02,
-	RDP_CODEC_ID_REMOTEFX = 0x03,
-	RDP_CODEC_ID_IMAGE_REMOTEFX = 0x04
-};
+#endif
+
+	/**
+	 * Codec IDs
+	 */
+	enum RDP_CODEC_ID
+	{
+		RDP_CODEC_ID_NONE = 0x00,
+		RDP_CODEC_ID_NSCODEC = 0x01,
+		RDP_CODEC_ID_JPEG = 0x02,
+		RDP_CODEC_ID_REMOTEFX = 0x03,
+		RDP_CODEC_ID_IMAGE_REMOTEFX = 0x04
+	};
 
 /**
  * CPU Optimization flags
@@ -66,5 +71,9 @@ enum RDP_CODEC_ID
 /* As of 2022-03-29 the following does not exist officially in [MS-RDPBCGR] */
 #define OSMINORTYPE_NATIVE_WAYLAND (0xFFFF - 1)
 #define OSMINORTYPE_NATIVE_SDL (0xFFFF - 2)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FREERDP_CONSTANTS_H */

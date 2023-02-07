@@ -29,4 +29,13 @@
 #define RDPSND_DVC_CHANNEL_NAME "AUDIO_PLAYBACK_DVC"
 #define RDPSND_LOSSY_DVC_CHANNEL_NAME "AUDIO_PLAYBACK_LOSSY_DVC"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* FREERDP_CHANNEL_RDPSND_H */

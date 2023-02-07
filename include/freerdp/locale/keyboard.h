@@ -30,25 +30,30 @@
 #define RDP_KEYBOARD_LAYOUT_TYPE_VARIANT 2
 #define RDP_KEYBOARD_LAYOUT_TYPE_IME 4
 
-typedef struct
+#ifdef __cplusplus
+extern "C"
 {
-	UINT16 id;
-	UINT8 primaryId;
-	UINT8 subId;
-	char locale[512];
-	char primaryLanguage[512];
-	char primaryLanguageSymbol[512];
-	char subLanguage[512];
-	char subLanguageSymbol[512];
-} RDP_CODEPAGE;
+#endif
 
-typedef struct
-{
-	DWORD code; /* Keyboard layout code */
-	char* name; /* Keyboard layout name */
-} RDP_KEYBOARD_LAYOUT;
+	typedef struct
+	{
+		UINT16 id;
+		UINT8 primaryId;
+		UINT8 subId;
+		char locale[512];
+		char primaryLanguage[512];
+		char primaryLanguageSymbol[512];
+		char subLanguage[512];
+		char subLanguageSymbol[512];
+	} RDP_CODEPAGE;
 
-/* Keyboard layout IDs */
+	typedef struct
+	{
+		DWORD code; /* Keyboard layout code */
+		char* name; /* Keyboard layout name */
+	} RDP_KEYBOARD_LAYOUT;
+
+	/* Keyboard layout IDs */
 
 #define KBD_ARABIC_101 0x00000401
 #define KBD_BULGARIAN 0x00000402
@@ -218,11 +223,6 @@ typedef struct
 #define KBD_TYPE_NOKIA_1050 0x00000005   /* Nokia 1050 and similar keyboards */
 #define KBD_TYPE_NOKIA_9140 0x00000006   /* Nokia 9140 and similar keyboards */
 #define KBD_TYPE_JAPANESE 0x00000007     /* Japanese keyboard */
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 	FREERDP_API DWORD freerdp_keyboard_init(DWORD keyboardLayoutId);
 	FREERDP_API DWORD freerdp_keyboard_init_ex(DWORD keyboardLayoutId,

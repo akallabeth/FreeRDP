@@ -32,4 +32,13 @@
 
 #define TSMF_DVC_CHANNEL_NAME "TSMF"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* FREERDP_CHANNEL_TSMF_H */

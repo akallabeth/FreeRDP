@@ -22,4 +22,13 @@
 
 #include <freerdp/api.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* FREERDP_CHANNELS_SERVER_H */

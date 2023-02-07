@@ -20,14 +20,12 @@
 #ifndef FREERDP_BRUSH_CACHE_H
 #define FREERDP_BRUSH_CACHE_H
 
+#include <winpr/stream.h>
+
 #include <freerdp/api.h>
 #include <freerdp/types.h>
 #include <freerdp/freerdp.h>
 #include <freerdp/update.h>
-
-#include <winpr/stream.h>
-
-typedef struct rdp_brush_cache rdpBrushCache;
 
 #include <freerdp/cache/cache.h>
 
@@ -35,6 +33,8 @@ typedef struct rdp_brush_cache rdpBrushCache;
 extern "C"
 {
 #endif
+
+	typedef struct rdp_brush_cache rdpBrushCache;
 
 	FREERDP_API void* brush_cache_get(rdpBrushCache* brush, UINT32 index, UINT32* bpp);
 	FREERDP_API void brush_cache_put(rdpBrushCache* brush, UINT32 index, void* entry, UINT32 bpp);

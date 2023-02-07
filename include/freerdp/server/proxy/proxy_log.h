@@ -50,4 +50,13 @@
 	WLog_WARN(TAG, "[SessionID=%s]: " _format,       \
 	          (_context && _context->pdata) ? _context->pdata->session_id : "null", ##__VA_ARGS__)
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* FREERDP_SERVER_PROXY_LOG_H */

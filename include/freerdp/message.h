@@ -373,4 +373,13 @@
 #define FREERDP_RDPEI_CHANNEL_DISMISS_HOVERING_CONTACT \
 	MakeMessageId(RdpeiChannel, DismissHoveringContact)
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* FREERDP_CORE_MESSAGE_H */

@@ -25,16 +25,15 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/update.h>
 
-#include <winpr/stream.h>
-
-typedef struct rdp_nine_grid_cache rdpNineGridCache;
-
 #include <freerdp/cache/cache.h>
+#include <winpr/stream.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+	typedef struct rdp_nine_grid_cache rdpNineGridCache;
 
 	FREERDP_API void nine_grid_cache_register_callbacks(rdpUpdate* update);
 

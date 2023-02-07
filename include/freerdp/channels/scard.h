@@ -80,6 +80,11 @@
 #define SCARD_IOCTL_GETREADERICON RDP_SCARD_CTL_CODE(65)      /* SCardGetReaderIconA */
 #define SCARD_IOCTL_GETDEVICETYPEID RDP_SCARD_CTL_CODE(66)    /* SCardGetDeviceTypeIdA */
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #pragma pack(push, 1)
 
 /* interface type_scard_pack */
@@ -487,5 +492,9 @@ typedef struct
 	WriteCache_Common Common;
 	/* [string] */ WCHAR* szLookupName;
 } WriteCacheW_Call;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FREERDP_CHANNEL_SCARD_H */

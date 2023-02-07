@@ -23,6 +23,11 @@
 #include <freerdp/api.h>
 #include <freerdp/freerdp.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #ifndef _WIN32
 #include <signal.h>
 #include <termios.h>
@@ -31,11 +36,6 @@ FREERDP_API extern volatile sig_atomic_t terminal_needs_reset;
 FREERDP_API extern int terminal_fildes;
 FREERDP_API extern struct termios orig_flags;
 FREERDP_API extern struct termios new_flags;
-#endif
-
-#ifdef __cplusplus
-extern "C"
-{
 #endif
 
 	FREERDP_API int freerdp_handle_signals(void);

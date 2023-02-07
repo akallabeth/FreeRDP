@@ -29,6 +29,11 @@
 #include <freerdp/types.h>
 #include <freerdp/redirection.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 /** \file
  * \brief This is the FreeRDP settings module.
  *
@@ -1710,11 +1715,6 @@ enum rdp_settings_type
 	RDP_SETTINGS_TYPE_STRING,
 	RDP_SETTINGS_TYPE_POINTER
 };
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 /**
  * rdpSettings creation flags

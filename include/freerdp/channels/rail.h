@@ -23,4 +23,12 @@
 #include <freerdp/api.h>
 #include <freerdp/types.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef __cplusplus
+}
+#endif
 #endif /* FREERDP_CHANNEL_RAIL_H */

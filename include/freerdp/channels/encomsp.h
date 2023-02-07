@@ -25,13 +25,18 @@
 
 #define ENCOMSP_SVC_CHANNEL_NAME "encomsp"
 
-typedef struct
+#ifdef __cplusplus
+extern "C"
 {
-	UINT16 cchString;
-	WCHAR wString[1024];
-} ENCOMSP_UNICODE_STRING;
+#endif
 
-/* Filter Updated PDU Flags */
+	typedef struct
+	{
+		UINT16 cchString;
+		WCHAR wString[1024];
+	} ENCOMSP_UNICODE_STRING;
+
+	/* Filter Updated PDU Flags */
 
 #define ENCOMSP_FILTER_ENABLED 0x0001
 
@@ -168,5 +173,9 @@ typedef struct
 {
 	DEFINE_ENCOMSP_HEADER_COMMON();
 } ENCOMSP_GRAPHICS_STREAM_RESUMED_PDU;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FREERDP_CHANNEL_ENCOMSP_H */

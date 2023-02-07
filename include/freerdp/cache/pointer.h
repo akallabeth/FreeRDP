@@ -26,25 +26,23 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/graphics.h>
 
-#include <winpr/stream.h>
-
-typedef struct rdp_pointer_cache rdpPointerCache;
-
 #include <freerdp/cache/cache.h>
-
-struct rdp_pointer_cache
-{
-	UINT32 cacheSize;     /* 0 */
-	rdpPointer** entries; /* 1 */
-
-	/* internal */
-	rdpContext* context;
-};
+#include <winpr/stream.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+	typedef struct rdp_pointer_cache rdpPointerCache;
+	struct rdp_pointer_cache
+	{
+		UINT32 cacheSize;     /* 0 */
+		rdpPointer** entries; /* 1 */
+
+		/* internal */
+		rdpContext* context;
+	};
 
 	FREERDP_API void pointer_cache_register_callbacks(rdpUpdate* update);
 

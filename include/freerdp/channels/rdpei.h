@@ -28,14 +28,19 @@
 
 #define RDPEI_DVC_CHANNEL_NAME "Microsoft::Windows::RDS::Input"
 
-/** @brief protocol version */
-enum
+#ifdef __cplusplus
+extern "C"
 {
-	RDPINPUT_PROTOCOL_V10 = 0x00010000,
-	RDPINPUT_PROTOCOL_V101 = 0x00010001,
-	RDPINPUT_PROTOCOL_V200 = 0x00020000,
-	RDPINPUT_PROTOCOL_V300 = 0x00030000
-};
+#endif
+
+	/** @brief protocol version */
+	enum
+	{
+		RDPINPUT_PROTOCOL_V10 = 0x00010000,
+		RDPINPUT_PROTOCOL_V101 = 0x00010001,
+		RDPINPUT_PROTOCOL_V200 = 0x00020000,
+		RDPINPUT_PROTOCOL_V300 = 0x00030000
+	};
 
 /* Server feature flags */
 #define SC_READY_MULTIPEN_INJECTION_SUPPORTED 0x0001
@@ -152,5 +157,9 @@ typedef struct
 	UINT16 frameCount;
 	RDPINPUT_PEN_FRAME* frames;
 } RDPINPUT_PEN_EVENT;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FREERDP_CHANNEL_RDPEI_H */

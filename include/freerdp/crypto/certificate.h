@@ -20,9 +20,6 @@
 #ifndef FREERDP_CRYPTO_CERTIFICATE_H
 #define FREERDP_CRYPTO_CERTIFICATE_H
 
-typedef struct rdp_certificate_data rdpCertificateData;
-typedef struct rdp_certificate_store rdpCertificateStore;
-
 #include <freerdp/crypto/ber.h>
 #include <freerdp/crypto/crypto.h>
 
@@ -36,6 +33,9 @@ typedef struct rdp_certificate_store rdpCertificateStore;
 extern "C"
 {
 #endif
+
+	typedef struct rdp_certificate_data rdpCertificateData;
+	typedef struct rdp_certificate_store rdpCertificateStore;
 
 	FREERDP_API rdpCertificateData* certificate_data_new(const char* hostname, UINT16 port);
 	FREERDP_API void certificate_data_free(rdpCertificateData* certificate_data);

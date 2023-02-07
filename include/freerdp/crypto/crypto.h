@@ -39,16 +39,16 @@
 #include <freerdp/freerdp.h>
 #include <freerdp/crypto/certificate.h>
 
-struct crypto_cert_struct
-{
-	X509* px509;
-	STACK_OF(X509) * px509chain;
-};
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+	struct crypto_cert_struct
+	{
+		X509* px509;
+		STACK_OF(X509) * px509chain;
+	};
 
 	typedef struct crypto_cert_struct* CryptoCert;
 

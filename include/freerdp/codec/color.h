@@ -33,13 +33,18 @@
 #define FREERDP_PIXEL_FORMAT_IS_ABGR(_format) \
 	(FREERDP_PIXEL_FORMAT_TYPE(_format) == FREERDP_PIXEL_FORMAT_TYPE_ABGR)
 
-enum FREERDP_IMAGE_FLAGS
+#ifdef __cplusplus
+extern "C"
 {
-	FREERDP_FLIP_NONE = 0,
-	FREERDP_FLIP_VERTICAL = 1,
-	FREERDP_FLIP_HORIZONTAL = 2,
-	FREERDP_KEEP_DST_ALPHA = 4
-};
+#endif
+
+	enum FREERDP_IMAGE_FLAGS
+	{
+		FREERDP_FLIP_NONE = 0,
+		FREERDP_FLIP_VERTICAL = 1,
+		FREERDP_FLIP_HORIZONTAL = 2,
+		FREERDP_KEEP_DST_ALPHA = 4
+	};
 
 #define FREERDP_PIXEL_FORMAT(_bpp, _type, _a, _r, _g, _b) \
 	((_bpp << 24) | (_type << 16) | (_a << 12) | (_r << 8) | (_g << 4) | (_b))
@@ -101,11 +106,6 @@ struct gdi_palette
 	UINT32 palette[256];
 };
 typedef struct gdi_palette gdiPalette;
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 	/* Compare two color formats but ignore differences in alpha channel.
 	 */

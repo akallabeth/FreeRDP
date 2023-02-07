@@ -74,11 +74,16 @@
 #define REMDESK_ERROR_SHADOWEND_CONFIGCHANGE 301
 #define REMDESK_ERROR_SHADOWEND_UNKNOWN 302
 
-typedef struct
+#ifdef __cplusplus
+extern "C"
 {
-	UINT32 DataLength;
-	char ChannelName[32];
-} REMDESK_CHANNEL_HEADER;
+#endif
+
+	typedef struct
+	{
+		UINT32 DataLength;
+		char ChannelName[32];
+	} REMDESK_CHANNEL_HEADER;
 
 #define REMDESK_CHANNEL_CTL_NAME "RC_CTL"
 #define REMDESK_CHANNEL_CTL_SIZE 22
@@ -147,5 +152,9 @@ typedef struct
 	BYTE* EncryptedPassword;
 	UINT32 EncryptedPasswordLength;
 } REMDESK_CTL_EXPERT_ON_VISTA_PDU;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FREERDP_CHANNEL_REMDESK_H */

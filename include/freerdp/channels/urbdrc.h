@@ -27,4 +27,13 @@
 
 #define URBDRC_CHANNEL_NAME "urbdrc"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* FREERDP_CHANNEL_URBDRC_H */

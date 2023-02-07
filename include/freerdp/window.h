@@ -138,10 +138,15 @@
 #define WS_EX_WINDOWEDGE 0x00000100
 #endif
 
-/**
- * This is a custom extended window style used by XRDP
- * instructing the client to use local window decorations
- */
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+	/**
+	 * This is a custom extended window style used by XRDP
+	 * instructing the client to use local window decorations
+	 */
 
 #define WS_EX_DECORATIONS 0x40000000
 
@@ -280,5 +285,9 @@ struct rdp_window_update
 	UINT32 paddingB[32 - 26];                 /* 26 */
 };
 typedef struct rdp_window_update rdpWindowUpdate;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FREERDP_UPDATE_WINDOW_H */

@@ -29,18 +29,23 @@
 #include <mmreg.h>
 #endif
 
-struct AUDIO_FORMAT
+#ifdef __cplusplus
+extern "C"
 {
-	UINT16 wFormatTag;
-	UINT16 nChannels;
-	UINT32 nSamplesPerSec;
-	UINT32 nAvgBytesPerSec;
-	UINT16 nBlockAlign;
-	UINT16 wBitsPerSample;
-	UINT16 cbSize;
-	BYTE* data;
-};
-typedef struct AUDIO_FORMAT AUDIO_FORMAT;
+#endif
+
+	struct AUDIO_FORMAT
+	{
+		UINT16 wFormatTag;
+		UINT16 nChannels;
+		UINT32 nSamplesPerSec;
+		UINT32 nAvgBytesPerSec;
+		UINT16 nBlockAlign;
+		UINT16 wBitsPerSample;
+		UINT16 cbSize;
+		BYTE* data;
+	};
+	typedef struct AUDIO_FORMAT AUDIO_FORMAT;
 
 #define SNDC_CLOSE 1
 #define SNDC_WAVE 2
@@ -190,11 +195,6 @@ typedef struct AUDIO_FORMAT AUDIO_FORMAT;
 /**
  * Audio Format Functions
  */
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 	FREERDP_API UINT32 audio_format_compute_time_length(const AUDIO_FORMAT* format, size_t size);
 

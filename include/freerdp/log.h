@@ -26,4 +26,13 @@
 #define SERVER_TAG(tag) FREERDP_TAG("server.") tag
 #define CLIENT_TAG(tag) FREERDP_TAG("client.") tag
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* FREERDP_UTILS_DEBUG_H */

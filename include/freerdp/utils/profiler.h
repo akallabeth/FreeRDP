@@ -40,10 +40,6 @@ extern "C"
 	FREERDP_API void profiler_print(PROFILER* profiler);
 	FREERDP_API void profiler_print_footer(void);
 
-#ifdef __cplusplus
-}
-#endif
-
 #ifdef WITH_PROFILER
 #define PROFILER_RENAME(prof, name)   \
 	do                                \
@@ -94,6 +90,10 @@ extern "C"
 	do                        \
 	{                         \
 	} while (0);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* FREERDP_UTILS_PROFILER_H */

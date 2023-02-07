@@ -22,31 +22,39 @@
 #include <freerdp/settings.h>
 #include <freerdp/crypto/crypto.h>
 
-typedef struct SmartcardKeyInfo_st SmartcardKeyInfo;
-
-typedef struct SmartcardCertInfo_st
+#ifdef __cplusplus
+extern "C"
 {
-	LPWSTR csp;
-	LPWSTR reader;
-	CryptoCert certificate;
-	char* pkinitArgs;
-	UINT32 slotId;
-	char* keyName;
-	WCHAR* containerName;
-	char* upn;
-	char* userHint;
-	char* domainHint;
-	char* subject;
-	char* issuer;
-	BYTE sha1Hash[20];
-	SmartcardKeyInfo* key_info;
-} SmartcardCertInfo;
+#endif
+	typedef struct SmartcardKeyInfo_st SmartcardKeyInfo;
 
-FREERDP_API BOOL smartcard_enumerateCerts(const rdpSettings* settings, SmartcardCertInfo*** scCerts,
-                                          DWORD* retCount, BOOL gateway);
-FREERDP_API BOOL smartcard_getCert(const rdpContext* context, SmartcardCertInfo** cert,
-                                   BOOL gateway);
-FREERDP_API void smartcardCertInfo_Free(SmartcardCertInfo* pscCert);
-FREERDP_API void smartcardCertList_Free(SmartcardCertInfo** pscCert, DWORD count);
+	typedef struct SmartcardCertInfo_st
+	{
+		LPWSTR csp;
+		LPWSTR reader;
+		CryptoCert certificate;
+		char* pkinitArgs;
+		UINT32 slotId;
+		char* keyName;
+		WCHAR* containerName;
+		char* upn;
+		char* userHint;
+		char* domainHint;
+		char* subject;
+		char* issuer;
+		BYTE sha1Hash[20];
+		SmartcardKeyInfo* key_info;
+	} SmartcardCertInfo;
 
+	FREERDP_API BOOL smartcard_enumerateCerts(const rdpSettings* settings,
+	                                          SmartcardCertInfo*** scCerts, DWORD* retCount,
+	                                          BOOL gateway);
+	FREERDP_API BOOL smartcard_getCert(const rdpContext* context, SmartcardCertInfo** cert,
+	                                   BOOL gateway);
+	FREERDP_API void smartcardCertInfo_Free(SmartcardCertInfo* pscCert);
+	FREERDP_API void smartcardCertList_Free(SmartcardCertInfo** pscCert, DWORD count);
+
+#ifdef __cplusplus
+}
+#endif
 #endif /* LIBFREERDP_CORE_SMARTCARDLOGON_H */

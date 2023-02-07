@@ -234,4 +234,13 @@
 #define RDP_SCANCODE_LAUNCH_APP1 MAKE_RDP_SCANCODE(0x6E, TRUE) /* VK_LAUNCH_APP1 */
 #define RDP_SCANCODE_LAUNCH_APP2 MAKE_RDP_SCANCODE(0x6F, TRUE) /* VK_LAUNCH_APP2 */
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* FREERDP_LOCALE_KEYBOARD_RDP_SCANCODE_H */

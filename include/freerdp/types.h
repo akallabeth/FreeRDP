@@ -24,6 +24,11 @@
 #include <winpr/wtypes.h>
 #include <winpr/wtsapi.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #ifndef MIN
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #endif
@@ -89,5 +94,9 @@ typedef enum
 
 #include <freerdp/message.h>
 #include <winpr/collections.h>
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __RDP_TYPES_H */
