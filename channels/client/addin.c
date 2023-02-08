@@ -33,6 +33,7 @@
 #include <freerdp/addin.h>
 #include <freerdp/build-config.h>
 #include <freerdp/client/channels.h>
+#include <freerdp/freerdp.h>
 
 #include "tables.h"
 

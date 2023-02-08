@@ -20,7 +20,8 @@
 #ifndef FREERDP_DISPLAY_H
 #define FREERDP_DISPLAY_H
 
-#include <freerdp/freerdp.h>
+#include <freerdp/api.h>
+#include <freerdp/types.h>
 
 #ifdef __cplusplus
 extern "C"

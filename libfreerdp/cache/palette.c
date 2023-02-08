@@ -23,12 +23,28 @@
 
 #include <winpr/crt.h>
 
-#include <freerdp/log.h>
 #include <freerdp/cache/palette.h>
+#include <freerdp/freerdp.h>
+#include <freerdp/log.h>
 
 #include "palette.h"
 
 #define TAG FREERDP_TAG("cache.palette")
+
+typedef struct
+{
+	void* entry;
+} PALETTE_TABLE_ENTRY;
+
+struct rdp_palette_cache
+{
+	UINT32 maxEntries;            /* 0 */
+	PALETTE_TABLE_ENTRY* entries; /* 1 */
+
+	/* internal */
+
+	rdpContext* context;
+};
 
 static void* palette_cache_get(rdpPaletteCache* palette, UINT32 index);
 

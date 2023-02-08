@@ -33,11 +33,18 @@
 
 #include <winpr/stream.h>
 
-#include <freerdp/input.h>
-#include <freerdp/update.h>
-#include <freerdp/message.h>
 #include <freerdp/autodetect.h>
 #include <freerdp/heartbeat.h>
+#include <freerdp/input.h>
+#include <freerdp/message.h>
+#include <freerdp/update.h>
+
+#include <freerdp/cache/cache.h>
+#include <freerdp/channels/channels.h>
+#include <freerdp/gdi/gdi.h>
+#include <freerdp/streamdump.h>
+
+#include <freerdp/utils/smartcardlogon.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -57,40 +64,6 @@ extern "C"
 #define VERIFY_CERT_FLAG_MATCH_LEGACY_SHA1 0x100
 #define VERIFY_CERT_FLAG_FP_IS_PEM 0x200
 
-	typedef enum
-	{
-		CONNECTION_STATE_INITIAL,
-		CONNECTION_STATE_NEGO,
-		CONNECTION_STATE_NLA,
-		CONNECTION_STATE_MCS_CREATE_REQUEST,
-		CONNECTION_STATE_MCS_CREATE_RESPONSE,
-		CONNECTION_STATE_MCS_ERECT_DOMAIN,
-		CONNECTION_STATE_MCS_ATTACH_USER,
-		CONNECTION_STATE_MCS_ATTACH_USER_CONFIRM,
-		CONNECTION_STATE_MCS_CHANNEL_JOIN_REQUEST,
-		CONNECTION_STATE_MCS_CHANNEL_JOIN_RESPONSE,
-		CONNECTION_STATE_RDP_SECURITY_COMMENCEMENT,
-		CONNECTION_STATE_SECURE_SETTINGS_EXCHANGE,
-		CONNECTION_STATE_CONNECT_TIME_AUTO_DETECT_REQUEST,
-		CONNECTION_STATE_CONNECT_TIME_AUTO_DETECT_RESPONSE,
-		CONNECTION_STATE_LICENSING,
-		CONNECTION_STATE_MULTITRANSPORT_BOOTSTRAPPING_REQUEST,
-		CONNECTION_STATE_MULTITRANSPORT_BOOTSTRAPPING_RESPONSE,
-		CONNECTION_STATE_CAPABILITIES_EXCHANGE_DEMAND_ACTIVE,
-		CONNECTION_STATE_CAPABILITIES_EXCHANGE_MONITOR_LAYOUT,
-		CONNECTION_STATE_CAPABILITIES_EXCHANGE_CONFIRM_ACTIVE,
-		CONNECTION_STATE_FINALIZATION_SYNC,
-		CONNECTION_STATE_FINALIZATION_COOPERATE,
-		CONNECTION_STATE_FINALIZATION_REQUEST_CONTROL,
-		CONNECTION_STATE_FINALIZATION_PERSISTENT_KEY_LIST,
-		CONNECTION_STATE_FINALIZATION_FONT_LIST,
-		CONNECTION_STATE_FINALIZATION_CLIENT_SYNC,
-		CONNECTION_STATE_FINALIZATION_CLIENT_COOPERATE,
-		CONNECTION_STATE_FINALIZATION_CLIENT_GRANTED_CONTROL,
-		CONNECTION_STATE_FINALIZATION_CLIENT_FONT_MAP,
-		CONNECTION_STATE_ACTIVE
-	} CONNECTION_STATE;
-
 /* Message types used by gateway messaging callback */
 #define GATEWAY_MESSAGE_CONSENT 1
 #define GATEWAY_MESSAGE_SERVICE 2
@@ -106,26 +79,9 @@ extern "C"
 		AUTH_SMARTCARD_PIN
 	} rdp_auth_reason;
 
-	typedef struct rdp_rdp rdpRdp;
-	typedef struct rdp_gdi rdpGdi;
-	typedef struct rdp_rail rdpRail;
-	typedef struct rdp_cache rdpCache;
-	typedef struct rdp_channels rdpChannels;
-	typedef struct rdp_graphics rdpGraphics;
-	typedef struct rdp_metrics rdpMetrics;
-	typedef struct rdp_codecs rdpCodecs;
-	typedef struct rdp_transport rdpTransport; /* Opaque */
-
-	typedef struct rdp_freerdp freerdp;
-	typedef struct rdp_context rdpContext;
-	typedef struct rdp_freerdp_peer freerdp_peer;
-
 	typedef struct rdp_client_context rdpClientContext;
 	typedef struct rdp_client_entry_points_v1 RDP_CLIENT_ENTRY_POINTS_V1;
 	typedef RDP_CLIENT_ENTRY_POINTS_V1 RDP_CLIENT_ENTRY_POINTS;
-
-	typedef struct stream_dump_context rdpStreamDumpContext;
-	typedef struct SmartcardCertInfo_st SmartcardCertInfo;
 
 	typedef BOOL (*pContextNew)(freerdp* instance, rdpContext* context);
 	typedef void (*pContextFree)(freerdp* instance, rdpContext* context);
@@ -311,7 +267,7 @@ extern "C"
 		                              Pointer to a rdp_gdi structure used to keep the gdi settings.
 		                              It is allocated by gdi_init() and deallocated by gdi_free().
 		                              It must be deallocated before deallocating this rdp_context structure. */
-		ALIGN64 rdpRail* rail;             /* 34 */
+		UINT64 padding34[35 - 34];         /* 34 */
 		ALIGN64 rdpCache* cache;           /* 35 */
 		ALIGN64 rdpChannels* channels;     /* 36 */
 		ALIGN64 rdpGraphics* graphics;     /* 37 */
@@ -629,13 +585,6 @@ owned by rdpRdp */
 
 	FREERDP_API BOOL freerdp_nla_impersonate(rdpContext* context);
 	FREERDP_API BOOL freerdp_nla_revert_to_self(rdpContext* context);
-
-	FREERDP_API void clearChannelError(rdpContext* context);
-	FREERDP_API HANDLE getChannelErrorEventHandle(rdpContext* context);
-	FREERDP_API UINT getChannelError(rdpContext* context);
-	FREERDP_API const char* getChannelErrorDescription(rdpContext* context);
-	FREERDP_API void setChannelError(rdpContext* context, UINT errorNum, const char* format, ...);
-	FREERDP_API BOOL checkChannelErrorEvent(rdpContext* context);
 
 	FREERDP_API const char* freerdp_nego_get_routing_token(rdpContext* context, DWORD* length);
 

@@ -25,11 +25,11 @@
 #include <winpr/wlog.h>
 
 #include <freerdp/api.h>
-#include <freerdp/log.h>
-#include <freerdp/freerdp.h>
 #include <freerdp/cache/cache.h>
 #include <freerdp/codec/color.h>
 #include <freerdp/codec/region.h>
+#include <freerdp/log.h>
+#include <freerdp/types.h>
 
 #include <freerdp/client/rdpgfx.h>
 #include <freerdp/client/geometry.h>
@@ -521,6 +521,7 @@ extern "C"
 
 		wLog* log;
 	};
+	typedef struct rdp_gdi rdpGdi;
 
 	FREERDP_API DWORD gdi_rop3_code(BYTE code);
 	FREERDP_API const char* gdi_rop3_code_string(BYTE code);

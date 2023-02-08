@@ -21,10 +21,9 @@
 #define FREERDP_BITMAP_V2_CACHE_H
 
 #include <freerdp/api.h>
+#include <freerdp/cache/persistent.h>
 #include <freerdp/types.h>
 #include <freerdp/update.h>
-#include <freerdp/freerdp.h>
-#include <freerdp/cache/persistent.h>
 
 #include <winpr/stream.h>
 

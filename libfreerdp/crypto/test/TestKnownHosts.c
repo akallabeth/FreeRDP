@@ -22,6 +22,7 @@
 #include <winpr/sysinfo.h>
 
 #include <freerdp/crypto/certificate.h>
+#include <freerdp/crypto/crypto.h>
 
 /* Some certificates copied from /usr/share/ca-certificates */
 static const char pem1[] = "-----BEGIN CERTIFICATE-----\n"

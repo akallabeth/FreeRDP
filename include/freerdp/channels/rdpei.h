@@ -22,6 +22,8 @@
 #ifndef FREERDP_CHANNEL_RDPEI_H
 #define FREERDP_CHANNEL_RDPEI_H
 
+#include <freerdp/api.h>
+#include <freerdp/types.h>
 #include <winpr/wtypes.h>
 
 #define RDPINPUT_HEADER_LENGTH 6

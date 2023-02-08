@@ -36,10 +36,11 @@
 #include <winpr/print.h>
 #include <winpr/sspicli.h>
 
-#include <freerdp/types.h>
-#include <freerdp/constants.h>
 #include <freerdp/channels/log.h>
 #include <freerdp/channels/rdpdr.h>
+#include <freerdp/constants.h>
+#include <freerdp/freerdp.h>
+#include <freerdp/types.h>
 #include <freerdp/utils/rdpdr_utils.h>
 
 #ifdef _WIN32

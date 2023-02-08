@@ -20,9 +20,6 @@
 #ifndef FREERDP_CRYPTO_CERTIFICATE_H
 #define FREERDP_CRYPTO_CERTIFICATE_H
 
-#include <freerdp/crypto/ber.h>
-#include <freerdp/crypto/crypto.h>
-
 #include <freerdp/api.h>
 #include <freerdp/settings.h>
 

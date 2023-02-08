@@ -27,13 +27,14 @@
 #include <freerdp/gdi/gdi.h>
 #include <freerdp/client/cmdline.h>
 
-#include <freerdp/server/proxy/proxy_log.h>
+#include <freerdp/channels/channels.h>
+#include <freerdp/channels/cliprdr.h>
 #include <freerdp/channels/drdynvc.h>
 #include <freerdp/channels/encomsp.h>
+#include <freerdp/channels/rail.h>
 #include <freerdp/channels/rdpdr.h>
 #include <freerdp/channels/rdpsnd.h>
-#include <freerdp/channels/cliprdr.h>
-#include <freerdp/channels/channels.h>
+#include <freerdp/server/proxy/proxy_log.h>
 
 #include "pf_client.h"
 #include "pf_channel.h"

@@ -23,6 +23,8 @@
 #include <freerdp/api.h>
 #include <freerdp/types.h>
 
+#define RAIL_SVC_CHANNEL_NAME "rail"
+
 #ifdef __cplusplus
 extern "C"
 {

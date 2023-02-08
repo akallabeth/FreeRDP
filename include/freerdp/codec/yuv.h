@@ -23,9 +23,8 @@
 typedef struct S_YUV_CONTEXT YUV_CONTEXT;
 
 #include <freerdp/api.h>
-#include <freerdp/types.h>
-#include <freerdp/freerdp.h>
 #include <freerdp/constants.h>
+#include <freerdp/types.h>
 
 #ifdef __cplusplus
 extern "C"

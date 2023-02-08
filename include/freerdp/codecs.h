@@ -21,8 +21,7 @@
 #define FREERDP_CODECS_H
 
 #include <freerdp/api.h>
-
-#include <freerdp/freerdp.h>
+#include <freerdp/types.h>
 
 #include <freerdp/codec/color.h>
 

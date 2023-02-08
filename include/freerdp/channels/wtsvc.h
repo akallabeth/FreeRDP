@@ -32,8 +32,9 @@
 #ifndef FREERDP_WTSVC_H
 #define FREERDP_WTSVC_H
 
-#include <freerdp/types.h>
+#include <freerdp/api.h>
 #include <freerdp/peer.h>
+#include <freerdp/types.h>
 
 #include <winpr/winpr.h>
 #include <winpr/wtypes.h>

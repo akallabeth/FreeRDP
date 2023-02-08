@@ -30,6 +30,7 @@
 #include <winpr/crypto.h>
 #include <winpr/path.h>
 
+#include <freerdp/freerdp.h>
 #include <freerdp/log.h>
 
 #include <freerdp/utils/smartcardlogon.h>

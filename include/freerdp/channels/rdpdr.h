@@ -33,7 +33,8 @@
 #include <winpr/interlocked.h>
 #include <winpr/collections.h>
 
-#include <freerdp/freerdp.h>
+#include <freerdp/settings.h>
+#include <freerdp/types.h>
 
 #define RDPDR_SVC_CHANNEL_NAME "rdpdr"
 

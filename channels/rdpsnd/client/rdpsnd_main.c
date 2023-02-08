@@ -42,10 +42,11 @@
 #include <winpr/sysinfo.h>
 #include <winpr/collections.h>
 
-#include <freerdp/types.h>
 #include <freerdp/addin.h>
-#include <freerdp/codec/dsp.h>
 #include <freerdp/client/channels.h>
+#include <freerdp/codec/dsp.h>
+#include <freerdp/freerdp.h>
+#include <freerdp/types.h>
 
 #include "rdpsnd_common.h"
 #include "rdpsnd_main.h"

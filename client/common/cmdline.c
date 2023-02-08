@@ -31,21 +31,23 @@
 #include <winpr/ncrypt.h>
 
 #include <freerdp/addin.h>
-#include <freerdp/settings.h>
-#include <freerdp/client/channels.h>
-#include <freerdp/channels/drdynvc.h>
 #include <freerdp/channels/cliprdr.h>
-#include <freerdp/channels/encomsp.h>
-#include <freerdp/channels/rdp2tcp.h>
-#include <freerdp/channels/remdesk.h>
-#include <freerdp/channels/rdpsnd.h>
 #include <freerdp/channels/disp.h>
+#include <freerdp/channels/drdynvc.h>
+#include <freerdp/channels/encomsp.h>
+#include <freerdp/channels/rail.h>
+#include <freerdp/channels/rdp2tcp.h>
+#include <freerdp/channels/rdpdr.h>
+#include <freerdp/channels/rdpsnd.h>
+#include <freerdp/channels/remdesk.h>
+#include <freerdp/channels/urbdrc.h>
+#include <freerdp/client.h>
+#include <freerdp/client/channels.h>
 #include <freerdp/crypto/crypto.h>
 #include <freerdp/locale/keyboard.h>
+#include <freerdp/settings.h>
 #include <freerdp/utils/passphrase.h>
 #include <freerdp/utils/proxy_utils.h>
-#include <freerdp/channels/urbdrc.h>
-#include <freerdp/channels/rdpdr.h>
 
 #if defined(CHANNEL_AINPUT_CLIENT)
 #include <freerdp/channels/ainput.h>

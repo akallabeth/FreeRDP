@@ -49,6 +49,7 @@ extern "C"
 		rdpPaletteCache* palette;     /* 5 */
 		rdpNineGridCache* nine_grid;  /* 6 */
 	};
+	typedef struct rdp_cache rdpCache;
 
 	FREERDP_API rdpCache* cache_new(rdpContext* context);
 	FREERDP_API void cache_free(rdpCache* cache);

@@ -20,8 +20,9 @@
 #ifndef FREERDP_CHANNEL_GEOMETRY_H
 #define FREERDP_CHANNEL_GEOMETRY_H
 
-#include <winpr/wtypes.h>
+#include <freerdp/api.h>
 #include <freerdp/types.h>
+#include <winpr/wtypes.h>
 
 #define GEOMETRY_DVC_CHANNEL_NAME "Microsoft::Windows::RDS::Geometry::v08.01"
 

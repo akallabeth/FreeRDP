@@ -28,6 +28,7 @@
 #ifndef FREERDP_CHANNEL_TSMF_H
 #define FREERDP_CHANNEL_TSMF_H
 
+#include <freerdp/api.h>
 #include <freerdp/types.h>
 
 #define TSMF_DVC_CHANNEL_NAME "TSMF"

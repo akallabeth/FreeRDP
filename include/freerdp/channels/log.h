@@ -23,6 +23,9 @@
 #include <winpr/wlog.h>
 #include <freerdp/log.h>
 
+#include <freerdp/api.h>
+#include <freerdp/types.h>
+
 #define CHANNELS_TAG(tag) FREERDP_TAG("channels.") tag
 
 #ifdef __cplusplus

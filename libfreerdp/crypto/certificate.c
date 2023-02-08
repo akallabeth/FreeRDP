@@ -37,6 +37,7 @@
 #include <freerdp/settings.h>
 
 #include <freerdp/crypto/certificate.h>
+#include <freerdp/crypto/crypto.h>
 
 struct rdp_certificate_store
 {

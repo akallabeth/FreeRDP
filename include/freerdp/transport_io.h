@@ -26,14 +26,11 @@
 #include <freerdp/types.h>
 
 #include <winpr/stream.h>
-#include <freerdp/freerdp.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-	typedef struct rdp_transport_io rdpTransportIo;
 
 	typedef int (*pTCPConnect)(rdpContext* context, rdpSettings* settings, const char* hostname,
 	                           int port, DWORD timeout);

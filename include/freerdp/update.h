@@ -27,10 +27,9 @@
 #include <winpr/stream.h>
 #include <winpr/collections.h>
 
+#include <freerdp/graphics.h>
 #include <freerdp/rail.h>
 #include <freerdp/types.h>
-#include <freerdp/freerdp.h>
-#include <freerdp/graphics.h>
 #include <freerdp/utils/pcap.h>
 
 #include <freerdp/primary.h>

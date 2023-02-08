@@ -26,12 +26,13 @@
 
 #include <freerdp/api.h>
 #include <freerdp/types.h>
-#include <freerdp/freerdp.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+	typedef struct rdp_channels rdpChannels;
 
 	FREERDP_API int freerdp_channels_client_load(rdpChannels* channels, rdpSettings* settings,
 	                                             PVIRTUALCHANNELENTRY entry, void* data);

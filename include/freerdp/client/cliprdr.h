@@ -24,9 +24,9 @@
 
 #include <freerdp/types.h>
 
-#include <freerdp/message.h>
 #include <freerdp/channels/cliprdr.h>
-#include <freerdp/freerdp.h>
+#include <freerdp/message.h>
+#include <freerdp/types.h>
 
 #ifdef __cplusplus
 extern "C"

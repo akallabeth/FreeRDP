@@ -26,8 +26,9 @@
 #include <winpr/string.h>
 #include <winpr/file.h>
 
-#include <freerdp/client/file.h>
 #include <freerdp/client/cmdline.h>
+#include <freerdp/client/file.h>
+#include <freerdp/settings.h>
 
 #include <freerdp/channels/urbdrc.h>
 #include <freerdp/channels/rdpecam.h>

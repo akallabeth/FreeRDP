@@ -53,8 +53,9 @@
 #ifndef FREERDP_DVC_H
 #define FREERDP_DVC_H
 
-#include <freerdp/types.h>
 #include <freerdp/addin.h>
+#include <freerdp/api.h>
+#include <freerdp/types.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -167,6 +168,13 @@ extern "C"
 	void* get_callback_by_name(const char* name, void** context);
 	void add_callback_by_name(const char* name, void* fkt, void* context);
 	void remove_callback_by_name(const char* name, void* context);
+
+	FREERDP_API void clearChannelError(rdpContext* context);
+	FREERDP_API HANDLE getChannelErrorEventHandle(rdpContext* context);
+	FREERDP_API UINT getChannelError(rdpContext* context);
+	FREERDP_API const char* getChannelErrorDescription(rdpContext* context);
+	FREERDP_API void setChannelError(rdpContext* context, UINT errorNum, const char* format, ...);
+	FREERDP_API BOOL checkChannelErrorEvent(rdpContext* context);
 
 #ifdef __cplusplus
 }

@@ -21,8 +21,8 @@
 #define FREERDP_INPUT_H
 
 #include <freerdp/api.h>
-#include <freerdp/freerdp.h>
 #include <freerdp/scancode.h>
+#include <freerdp/types.h>
 
 #include <winpr/crt.h>
 #include <winpr/collections.h>

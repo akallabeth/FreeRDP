@@ -24,10 +24,7 @@
 
 #include <freerdp/api.h>
 #include <freerdp/types.h>
-#include <freerdp/freerdp.h>
 #include <freerdp/update.h>
-
-#include <freerdp/cache/cache.h>
 
 #ifdef __cplusplus
 extern "C"

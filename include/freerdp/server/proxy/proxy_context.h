@@ -22,8 +22,8 @@
 #ifndef FREERDP_SERVER_PROXY_PFCONTEXT_H
 #define FREERDP_SERVER_PROXY_PFCONTEXT_H
 
-#include <freerdp/freerdp.h>
 #include <freerdp/channels/wtsvc.h>
+#include <freerdp/freerdp.h>
 
 #include <freerdp/server/proxy/proxy_config.h>
 #include <freerdp/server/proxy/proxy_types.h>

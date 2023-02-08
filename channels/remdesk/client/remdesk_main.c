@@ -26,6 +26,7 @@
 #include <winpr/print.h>
 
 #include <freerdp/assistance.h>
+#include <freerdp/freerdp.h>
 
 #include <freerdp/channels/log.h>
 #include <freerdp/client/remdesk.h>
