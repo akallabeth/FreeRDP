@@ -51,6 +51,7 @@
 #include "sdl_kbd.h"
 #include "sdl_touch.h"
 #include "sdl_pointer.h"
+#include "sdl_dialogs.h"
 
 #define SDL_TAG CLIENT_TAG("SDL")
 
@@ -690,9 +691,16 @@ static int sdl_run(sdlContext* sdl)
 	while (!freerdp_shall_disconnect_context(&sdl->common.context))
 	{
 		SDL_Event windowEvent = { 0 };
-		while (!freerdp_shall_disconnect_context(&sdl->common.context) &&
-		       SDL_PollEvent(&windowEvent))
+		while (!freerdp_shall_disconnect_context(&sdl->common.context) && SDL_PollEvent(NULL))
 		{
+			/* Only poll standard SDL events and SDL_USEREVENTS meant to create dialogs.
+			 * do not process the dialog return value events here.
+			 */
+			const int prc = SDL_PeepEvents(&windowEvent, 1, SDL_GETEVENT, SDL_FIRSTEVENT,
+			                               SDL_USEREVENT_SCARD_DIALOG);
+			if (sdl_log_error(prc, sdl->log, "SDL_PeepEvents"))
+				goto fail;
+
 #if defined(WITH_DEBUG_SDL_EVENTS)
 			SDL_Log("got event %s [0x%08" PRIx32 "]", sdl_event_type_str(windowEvent.type),
 			        windowEvent.type);
@@ -773,6 +781,20 @@ static int sdl_run(sdlContext* sdl)
 					break;
 				case SDL_APP_WILLENTERFOREGROUND:
 					sdl_redraw(sdl);
+					break;
+				case SDL_USEREVENT_CERT_DIALOG:
+					sdl_cert_dialog_show(windowEvent.user.data1, windowEvent.user.data2);
+					break;
+				case SDL_USEREVENT_SHOW_DIALOG:
+					sdl_message_dialog_show(windowEvent.user.data1, windowEvent.user.data2,
+					                        windowEvent.user.code);
+					break;
+				case SDL_USEREVENT_SCARD_DIALOG:
+					sdl_scard_dialog_show(windowEvent.user.data1, windowEvent.user.code,
+					                      windowEvent.user.data2);
+					break;
+				case SDL_USEREVENT_AUTH_DIALOG:
+					sdl_auth_dialog_show((SDL_UserAuthArg*)windowEvent.padding);
 					break;
 				case SDL_USEREVENT_UPDATE:
 					sdl_end_paint_process(windowEvent.user.data1);
@@ -1112,21 +1134,6 @@ static void sdl_client_global_uninit(void)
 #endif
 }
 
-static int sdl_logon_error_info(freerdp* instance, UINT32 data, UINT32 type)
-{
-	sdlContext* tf;
-	const char* str_data = freerdp_get_logon_error_info_data(data);
-	const char* str_type = freerdp_get_logon_error_info_type(type);
-
-	if (!instance || !instance->context)
-		return -1;
-
-	tf = (sdlContext*)instance->context;
-	WLog_Print(tf->log, WLOG_INFO, "Logon Error Info %s [%s]", str_data, str_type);
-
-	return 1;
-}
-
 static BOOL sdl_client_new(freerdp* instance, rdpContext* context)
 {
 	sdlContext* sdl = (sdlContext*)context;
@@ -1140,11 +1147,6 @@ static BOOL sdl_client_new(freerdp* instance, rdpContext* context)
 	instance->PostConnect = sdl_post_connect;
 	instance->PostDisconnect = sdl_post_disconnect;
 	instance->PostFinalDisconnect = sdl_post_final_disconnect;
-	instance->AuthenticateEx = client_cli_authenticate_ex;
-	instance->VerifyCertificateEx = client_cli_verify_certificate_ex;
-	instance->VerifyChangedCertificateEx = client_cli_verify_changed_certificate_ex;
-	instance->LogonErrorInfo = sdl_logon_error_info;
-	/* TODO: Client display set up */
 
 	sdl->initialize = CreateEventA(NULL, TRUE, FALSE, NULL);
 	sdl->initialized = CreateEventA(NULL, TRUE, FALSE, NULL);
@@ -1216,6 +1218,29 @@ static int RdpClientEntry(RDP_CLIENT_ENTRY_POINTS* pEntryPoints)
 	return 0;
 }
 
+static BOOL register_callbacks(rdpContext* context)
+{
+	WINPR_ASSERT(context);
+
+	freerdp* instance = context->instance;
+	WINPR_ASSERT(instance);
+
+	rdpSettings* settings = context->settings;
+	WINPR_ASSERT(settings);
+
+	if (TRUE)
+	{
+		instance->AuthenticateEx = sdl_authenticate_ex;
+		instance->ChooseSmartcard = sdl_choose_smartcard;
+		instance->LogonErrorInfo = sdl_logon_error_info;
+		instance->VerifyCertificateEx = sdl_verify_certificate_ex;
+		instance->VerifyChangedCertificateEx = sdl_verify_changed_certificate_ex;
+		instance->PresentGatewayMessage = sdl_present_gateway_message;
+	}
+
+	return TRUE;
+}
+
 int main(int argc, char* argv[])
 {
 	int rc = -1;
@@ -1232,12 +1257,16 @@ int main(int argc, char* argv[])
 	          "on your timezone)");
 
 	RdpClientEntry(&clientEntryPoints);
-	sdlContext* sdl = freerdp_client_context_new(&clientEntryPoints);
 
+	rdpContext* context = NULL;
+	sdlContext* sdl = (sdlContext*)freerdp_client_context_new(&clientEntryPoints);
 	if (!sdl)
 		goto fail;
 
-	rdpSettings* settings = sdl->common.context.settings;
+	context = &sdl->common.context;
+	WINPR_ASSERT(context);
+
+	rdpSettings* settings = context->settings;
 	WINPR_ASSERT(settings);
 
 	status = freerdp_client_settings_parse_command_line(settings, argc, argv, FALSE);
@@ -1249,8 +1278,8 @@ int main(int argc, char* argv[])
 		goto fail;
 	}
 
-	rdpContext* context = &sdl->common.context;
-	WINPR_ASSERT(context);
+	if (!register_callbacks(context))
+		goto fail;
 
 	if (!stream_dump_register_handlers(context, CONNECTION_STATE_MCS_CREATE_REQUEST, FALSE))
 		goto fail;

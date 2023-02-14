@@ -29,10 +29,24 @@ if (WITH_DEBUG_SDL_KBD_EVENTS)
 	add_definitions(-DWITH_DEBUG_SDL_KBD_EVENTS)
 endif()
 
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(PC_TTF REQUIRED QUIET SDL2_ttf)
+
+include_directories(${PC_TTF_INCLUDE_DIRS})
 include_directories(${SDL2_INCLUDE_DIRS})
+
 set(SRCS
     sdl_utils.c
     sdl_utils.h
+    sdl_dialogs.c
+    sdl_dialogs.h
+    sdl_widget.h
+    sdl_widget.c
+    sdl_input.h
+    sdl_input.c
+    sdl_select.h
+    sdl_select.c
     sdl_kbd.c
     sdl_kbd.h
     sdl_touch.c
@@ -50,6 +64,8 @@ set(SRCS
 
 set(LIBS
 	${SDL2_LIBRARIES}
+        ${PC_TTF_LIBRARIES}
+        ${PC_IMG_LIBRARIES}
         freerdp-client)
 
 add_executable(${MODULE_NAME} ${SRCS})

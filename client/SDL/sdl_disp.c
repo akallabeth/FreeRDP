@@ -24,6 +24,7 @@
 
 #include <SDL.h>
 
+#include "sdl_freerdp.h"
 #include "sdl_disp.h"
 #include "sdl_kbd.h"
 
