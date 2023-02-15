@@ -27,6 +27,8 @@
 #include "sdl_widget.h"
 #include "sdl_utils.h"
 
+#include "font/font_writer.h"
+
 #include <freerdp/log.h>
 
 #define ARRAYSIZE(x) sizeof(x) / sizeof(x[0])
@@ -101,7 +103,11 @@ bool widget_init(SDL_Renderer* renderer, Widget* w, const SDL_Rect* rect, bool i
 		goto fail;
 	}
 
-	w->font = TTF_OpenFont("/usr/share/fonts/opentype/comic-neue/ComicNeue-Regular.otf", 64);
+	static char* font = NULL;
+	if (!font)
+		font = create_and_return_temorary_font();
+
+	w->font = TTF_OpenFont(font, 64);
 	if (!w->font)
 	{
 		widget_log_error(-1, "TTF_OpenFont");

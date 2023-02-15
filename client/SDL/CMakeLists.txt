@@ -36,6 +36,8 @@ pkg_check_modules(PC_TTF REQUIRED QUIET SDL2_ttf)
 include_directories(${PC_TTF_INCLUDE_DIRS})
 include_directories(${SDL2_INCLUDE_DIRS})
 
+add_subdirectory(font)
+
 set(SRCS
     sdl_utils.c
     sdl_utils.h
@@ -63,6 +65,7 @@ set(SRCS
     sdl_channels.c)
 
 set(LIBS
+	font
 	${SDL2_LIBRARIES}
         ${PC_TTF_LIBRARIES}
         ${PC_IMG_LIBRARIES}
