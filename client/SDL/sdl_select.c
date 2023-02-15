@@ -179,14 +179,17 @@ int sdl_select_get(const char* title, Uint32 count, const char* labels[])
 
 	TTF_Init();
 
+	const size_t widget_height = 50;
+	const size_t widget_width = 600;
+
+	const size_t total_height = count * (widget_height + vpadding) + vpadding;
 	SDL_Window* ecran = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-	                                     800, 600, SDL_WINDOW_RESIZABLE);
+	                                     widget_width, total_height + widget_height, 0);
 	if (ecran == NULL)
 	{
 		widget_log_error(-1, "SDL_CreateWindow");
 		goto fail;
 	}
-	SDL_SetWindowResizable(ecran, SDL_FALSE);
 
 	renderer = SDL_CreateRenderer(ecran, -1, SDL_RENDERER_ACCELERATED);
 	if (renderer == NULL)
@@ -199,12 +202,12 @@ int sdl_select_get(const char* title, Uint32 count, const char* labels[])
 	if (widget_log_error(rc, "SDL_SetRenderDrawBlendMode"))
 		goto fail;
 
-	inputs = text_input_states_new(renderer, count, labels, 300, 100);
+	inputs = text_input_states_new(renderer, count, labels, widget_width, widget_height);
 	if (!inputs)
 		goto fail;
 
-	if (!buttons_init(renderer, ARRAYSIZE(buttons), buttons, buttonlabels, buttonids,
-	                  count * (100 + vpadding) + vpadding, 300, 100))
+	if (!buttons_init(renderer, ARRAYSIZE(buttons), buttons, buttonlabels, buttonids, total_height,
+	                  widget_width / 2, widget_height))
 		goto fail;
 
 	bool running = true;

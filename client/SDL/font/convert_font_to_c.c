@@ -34,10 +34,10 @@ static int read(FILE* out, const char* font)
 	}
 
 	fseek(fp, 0, SEEK_END);
-	size_t size = ftell(fp);
+	off_t size = ftello(fp);
 	fseek(fp, 0, SEEK_SET);
 
-	const int rc = write_header(out, font, size);
+	const int rc = write_header(out, font, (size_t)size);
 	if (rc != 0)
 		goto fail;
 

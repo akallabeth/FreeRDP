@@ -60,7 +60,6 @@ set(SRCS
     sdl_monitor.c
     sdl_monitor.h
     sdl_freerdp.h
-    sdl_freerdp.c
     sdl_channels.h
     sdl_channels.c)
 
@@ -71,8 +70,17 @@ set(LIBS
         ${PC_IMG_LIBRARIES}
         freerdp-client)
 
-add_executable(${MODULE_NAME} ${SRCS})
+add_library(SDL_client OBJECT ${SRCS})
+set_property(TARGET SDL_client PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(SDL_client PRIVATE ${LIBS})
+
+add_executable(${MODULE_NAME} sdl_freerdp.c)
 set_target_properties(${MODULE_NAME} PROPERTIES OUTPUT_NAME "sdl-freerdp")
-target_link_libraries(${MODULE_NAME} PRIVATE ${LIBS})
+target_link_libraries(${MODULE_NAME} PRIVATE SDL_client font)
+
 set_property(TARGET ${MODULE_NAME} PROPERTY FOLDER "Client/SDL")
 install(TARGETS ${MODULE_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT client)
+
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()
