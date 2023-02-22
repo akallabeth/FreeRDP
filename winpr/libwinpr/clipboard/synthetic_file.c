@@ -1027,6 +1027,7 @@ static BOOL register_file_formats_and_synthesizers(wClipboard* clipboard)
 	local_mate_file_format_id = ClipboardRegisterFormat(clipboard, mime_mate_copied_files);
 	file_group_format_id = ClipboardRegisterFormat(clipboard, mime_FileGroupDescriptorW);
 	local_file_format_id = ClipboardRegisterFormat(clipboard, mime_uri_list);
+	const UINT32 text_plain_id = ClipboardRegisterFormat(clipboard, mime_text_plain);
 
 	if (!file_group_format_id || !local_file_format_id || !local_gnome_file_format_id ||
 	    !local_mate_file_format_id)
@@ -1039,6 +1040,10 @@ static BOOL register_file_formats_and_synthesizers(wClipboard* clipboard)
 
 	obj = ArrayList_Object(clipboard->localFiles);
 	obj->fnObjectFree = array_free_synthetic_file;
+
+	if (!ClipboardRegisterSynthesizer(clipboard, file_group_format_id, text_plain_id,
+	                                  convert_filedescriptors_to_uri_list))
+		goto error_free_local_files;
 
 	if (!ClipboardRegisterSynthesizer(clipboard, local_file_format_id, file_group_format_id,
 	                                  convert_uri_list_to_filedescriptors))

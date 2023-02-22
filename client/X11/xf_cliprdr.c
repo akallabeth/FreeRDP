@@ -159,7 +159,7 @@ struct xf_clipboard
 	BYTE* data_raw;
 	BOOL data_raw_format;
 
-	xfCliprdrFormat* requestedFormat;
+	const xfCliprdrFormat* requestedFormat;
 
 	int data_length;
 	int data_raw_length;
@@ -388,6 +388,40 @@ static const CLIPRDR_FORMAT* xf_cliprdr_get_server_format_by_atom(xfClipboard* c
 					return server_format;
 			}
 		}
+	}
+
+	return NULL;
+}
+
+static const CLIPRDR_FORMAT* xf_cliprdr_get_server_format_filedescriptor(xfClipboard* clipboard)
+{
+	WINPR_ASSERT(clipboard);
+
+	for (size_t j = 0; j < clipboard->numServerFormats; j++)
+	{
+		const CLIPRDR_FORMAT* server_format = &(clipboard->serverFormats[j]);
+		if (!server_format->formatName)
+			continue;
+
+		if (strcmp(server_format->formatName, type_FileGroupDescriptorW) == 0)
+			return server_format;
+	}
+
+	return NULL;
+}
+
+static const xfCliprdrFormat* xf_cliprdr_get_client_format_filedescriptor(xfClipboard* clipboard)
+{
+	WINPR_ASSERT(clipboard);
+
+	for (size_t j = 0; j < clipboard->numClientFormats; j++)
+	{
+		const xfCliprdrFormat* format = &(clipboard->clientFormats[j]);
+		if (!format->formatName)
+			continue;
+
+		if (strcmp(format->formatName, type_FileGroupDescriptorW) == 0)
+			return format;
 	}
 
 	return NULL;
@@ -1261,6 +1295,10 @@ static BOOL xf_cliprdr_process_selection_request(xfClipboard* clipboard,
 	respond->target = xevent->target;
 	respond->time = xevent->time;
 
+	char* name = XGetAtomName(clipboard->xfc->display, xevent->target);
+	WLog_INFO(TAG, "xxxxxx target=%d [%s] [%d, %d]", xevent->target, name, clipboard->targets[0],
+	          clipboard->targets[1]);
+	XFree(name);
 	if (xevent->target == clipboard->targets[0]) /* TIMESTAMP */
 	{
 		/* Someone else requests the selection's timestamp */
@@ -1280,6 +1318,14 @@ static BOOL xf_cliprdr_process_selection_request(xfClipboard* clipboard,
 		const xfCliprdrFormat* cformat =
 		    xf_cliprdr_get_client_format_by_atom(clipboard, xevent->target);
 
+		if (!format && cformat)
+		{
+			if (cformat->formatToRequest == CF_UNICODETEXT)
+			{
+				format = xf_cliprdr_get_server_format_filedescriptor(clipboard);
+				cformat = xf_cliprdr_get_client_format_filedescriptor(clipboard);
+			}
+		}
 		if (format && (xevent->requestor != xfc->drawable))
 		{
 			formatId = format->formatId;
@@ -2310,18 +2356,18 @@ xf_cliprdr_server_format_data_response(CliprdrClientContext* context,
 		srcFormatId = CF_RAW;
 		dstFormatId = CF_RAW;
 	}
-	else if (!clipboard->requestedFormat)
+	else if (!format)
 		return ERROR_INTERNAL_ERROR;
-	else if (clipboard->requestedFormat->formatName)
+	else if (format->formatName)
 	{
-		if (strcmp(clipboard->requestedFormat->formatName, type_HtmlFormat) == 0)
+		if (strcmp(format->formatName, type_HtmlFormat) == 0)
 		{
 			srcFormatId = ClipboardGetFormatId(clipboard->system, type_HtmlFormat);
 			dstFormatId = ClipboardGetFormatId(clipboard->system, mime_html);
 			nullTerminated = TRUE;
 		}
 
-		if (strcmp(clipboard->requestedFormat->formatName, type_FileGroupDescriptorW) == 0)
+		if (strcmp(format->formatName, type_FileGroupDescriptorW) == 0)
 		{
 #if defined(WITH_FUSE2) || defined(WITH_FUSE3)
 			/* Build inode table for FILEDESCRIPTORW*/
@@ -2332,7 +2378,7 @@ xf_cliprdr_server_format_data_response(CliprdrClientContext* context,
 			}
 #endif
 
-			srcFormatId = ClipboardGetFormatId(clipboard->system, type_FileGroupDescriptorW);
+			srcFormatId = format->formatToRequest;
 			dstTargetFormat =
 			    xf_cliprdr_get_client_format_by_atom(clipboard, clipboard->respond->target);
 			if (!dstTargetFormat)
@@ -2349,9 +2395,9 @@ xf_cliprdr_server_format_data_response(CliprdrClientContext* context,
 	}
 	else
 	{
-		srcFormatId = clipboard->requestedFormat->formatToRequest;
-		dstFormatId = clipboard->requestedFormat->localFormat;
-		switch (clipboard->requestedFormat->formatToRequest)
+		srcFormatId = format->formatToRequest;
+		dstFormatId = format->localFormat;
+		switch (format->formatToRequest)
 		{
 			case CF_TEXT:
 				nullTerminated = TRUE;
@@ -3248,6 +3294,11 @@ xfClipboard* xf_clipboard_new(xfContext* xfc, BOOL relieveFilenameRestriction)
 
 	clientFormat = &clipboard->clientFormats[n++];
 	clientFormat->atom = XInternAtom(xfc->display, "UTF8_STRING", False);
+	clientFormat->formatToRequest = CF_UNICODETEXT;
+	clientFormat->localFormat = ClipboardGetFormatId(xfc->clipboard->system, mime_text_plain);
+
+	clientFormat = &clipboard->clientFormats[n++];
+	clientFormat->atom = XInternAtom(xfc->display, "text/plain;charset=utf-8", False);
 	clientFormat->formatToRequest = CF_UNICODETEXT;
 	clientFormat->localFormat = ClipboardGetFormatId(xfc->clipboard->system, mime_text_plain);
 
