@@ -59,7 +59,7 @@ static WCHAR read_wchr(FILE* f)
 	const BOOL isTty = _isatty(_fileno(f));
 	if (isTty)
 		return fgetwc(f);
-	if (fwscanf_s(f, L("%c"), &chr, (UINT32)sizeof(char)) && !feof(f))
+	if (fwscanf_s(f, L"%c", &chr, (UINT32)sizeof(char)) && !feof(f))
 		return chr;
 	return 0;
 }
