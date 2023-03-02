@@ -78,7 +78,7 @@ int freerdp_interruptible_getwc(rdpContext* context, FILE* f)
 	}
 }
 
-static void ungetw(FILE* f)
+static void rdp_ungetw(FILE* f)
 {
 	ungetwc(L'*', f);
 }
@@ -118,7 +118,7 @@ char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf
 				{
 					if (read_cnt > 0)
 					{
-						ungetwc(fin);
+						rdp_ungetw(fin);
 						read_cnt--;
 					}
 				}
@@ -129,7 +129,7 @@ char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf
 					{
 						while (read_cnt > 0)
 						{
-							ungetwc(fin);
+							rdp_ungetw(fin);
 							read_cnt--;
 						}
 					}
@@ -140,7 +140,7 @@ char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf
 				default:
 				{
 					wbuf[read_cnt++] = chr;
-					ungetwc(fin);
+					rdp_ungetw(fin);
 				}
 				break;
 			}
