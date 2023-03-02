@@ -59,7 +59,7 @@ static WCHAR read_wchr(FILE* f)
 	const BOOL isTty = _isatty(_fileno(f));
 	if (isTty)
 		return fgetwc(f);
-	if (fwscanf_s(f, L"%c", &chr, (UINT32)sizeof(char)) && !feof(f))
+	if (fwscanf_s(f, L"%c", &chr, (UINT32)sizeof(char)))
 		return chr;
 	return 0;
 }
@@ -110,7 +110,7 @@ char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf
 #define CTRLC 3
 #define SHOW_ASTERISK TRUE
 
-	fwprintf(stderr, L"%s read %c", __FUNCTION__, chr);
+	fwprintf(stderr, L"%s read %c [%d]", __FUNCTION__, (WCHAR)chr, chr);
 	fflush(stderr);
 			switch (chr)
 			{
