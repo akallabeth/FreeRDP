@@ -49,13 +49,7 @@ int freerdp_interruptible_getc(rdpContext* context, FILE* f)
 
 static WCHAR read_wchr(FILE* f)
 {
-	WCHAR chr = 0;
-	const BOOL isTty = _isatty(_fileno(f));
-	if (isTty)
-		return fgetwc(f);
-	if (fwscanf_s(f, L"%c", &chr, (UINT32)sizeof(char)))
-		return chr;
-	return 0;
+	return fgetwc(f);
 }
 
 int freerdp_interruptible_getwc(rdpContext* context, FILE* f)
