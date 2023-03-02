@@ -30,13 +30,7 @@
 
 static char read_chr(FILE* f)
 {
-	char chr;
-	const BOOL isTty = _isatty(_fileno(f));
-	if (isTty)
-		return fgetc(f);
-	if (fscanf_s(f, "%c", &chr, (UINT32)sizeof(char)) && !feof(f))
-		return chr;
-	return 0;
+	return fgetc(f);
 }
 
 int freerdp_interruptible_getc(rdpContext* context, FILE* f)
