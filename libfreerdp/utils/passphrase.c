@@ -66,8 +66,10 @@ char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf
 
 	if (from_stdin)
 	{
-		printf("%s ", prompt);
-		fflush(stdout);
+		FILE* fout = stdout;
+
+		fprintf(fout, "%s ", prompt);
+		fflush(fout);
 		while (read_cnt < bufsiz - 1 && (chr = freerdp_interruptible_getc(context, stdin)) &&
 		       chr != NEWLINE && chr != CARRIAGERETURN)
 		{
@@ -80,7 +82,10 @@ char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf
 					if (read_cnt > 0)
 					{
 						if (SHOW_ASTERISK)
-							printf("\b \b");
+						{
+							fprintf(fout, "\b \b");
+							fflush(fout);
+						}
 						read_cnt--;
 					}
 				}
@@ -92,7 +97,10 @@ char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf
 						while (read_cnt > 0)
 						{
 							if (SHOW_ASTERISK)
-								printf("\b \b");
+							{
+								fprintf(fout, "\b \b");
+								fflush(fout);
+							}
 							read_cnt--;
 						}
 					}
@@ -105,7 +113,10 @@ char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf
 					*(buf + read_cnt) = chr;
 					read_cnt++;
 					if (SHOW_ASTERISK)
-						printf("*");
+					{
+						fprintf(fout, "*");
+						fflush(fout);
+					}
 				}
 				break;
 			}
