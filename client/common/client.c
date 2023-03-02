@@ -479,13 +479,15 @@ static BOOL client_cli_authenticate_raw(freerdp* instance, rdp_auth_reason reaso
 
 	if (!*password)
 	{
+		const BOOL from_stdin =
+		    freerdp_settings_get_bool(instance->context->settings, FreeRDP_CredentialsFromStdin);
 		*password = calloc(password_size, sizeof(char));
 
 		if (!*password)
 			goto fail;
 
 		if (freerdp_passphrase_read(instance->context, prompt[2], *password, password_size,
-		                            instance->context->settings->CredentialsFromStdin) == NULL)
+		                            from_stdin) == NULL)
 			goto fail;
 	}
 
