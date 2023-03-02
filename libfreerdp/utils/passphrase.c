@@ -110,7 +110,7 @@ char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf
 #define CTRLC 3
 #define SHOW_ASTERISK TRUE
 
-	fwprintf(stderr, L"%s read %c [%d]", __FUNCTION__, (WCHAR)chr, chr);
+	fwprintf(stderr, L"%hs read %c [%d]", __FUNCTION__, (WCHAR)chr, chr);
 	fflush(stderr);
 			switch (chr)
 			{
