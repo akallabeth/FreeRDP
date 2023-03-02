@@ -53,31 +53,62 @@ int freerdp_interruptible_getc(rdpContext* context, FILE* f)
 	}
 }
 
+static WCHAR read_wchr(FILE* f)
+{
+	WCHAR chr = 0;
+	const BOOL isTty = _isatty(_fileno(f));
+	if (isTty)
+		return fgetwc(f);
+	if (fwscanf_s(f, L("%c"), &chr, (UINT32)sizeof(char)) && !feof(f))
+		return chr;
+	return 0;
+}
+
+int freerdp_interruptible_getwc(rdpContext* context, FILE* f)
+{
+	HANDLE handles[] = { (HANDLE)_get_osfhandle(_fileno(f)), freerdp_abort_event(context) };
+
+	const DWORD status = WaitForMultipleObjects(ARRAYSIZE(handles), handles, FALSE, INFINITE);
+	switch (status)
+	{
+		case WAIT_OBJECT_0:
+			return read_wchr(f);
+		default:
+			return EOF;
+	}
+}
+
 char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf, size_t bufsiz,
                               int from_stdin)
 {
-#define CTRLC 3
-#define BACKSPACE '\b'
-#define NEWLINE '\n'
-#define CARRIAGERETURN '\r'
-#define SHOW_ASTERISK TRUE
+	size_t read_cnt = 0;
 
-	size_t read_cnt = 0, chr;
+	if (bufsiz < 1)
+		return NULL;
 
-	if (from_stdin)
+	WCHAR* wbuf = calloc(bufsiz, sizeof(WCHAR));
+	if (!wbuf)
+		return NULL;
+
 	{
 		FILE* fout = stdout;
 
 		fprintf(fout, "%s ", prompt);
 		fflush(fout);
-		while (read_cnt < bufsiz - 1 && (chr = freerdp_interruptible_getc(context, stdin)) &&
-		       chr != NEWLINE && chr != CARRIAGERETURN)
+
+		int chr = 0;
+		while ((read_cnt < bufsiz - 1) && (chr = freerdp_interruptible_getwc(context, stdin)))
 		{
+#define CTRLC 3
+#define SHOW_ASTERISK TRUE
+
 			switch (chr)
 			{
+				case L'\n':
+				case L'\r':
 				case EOF:
 					goto end;
-				case BACKSPACE:
+				case L'\b':
 				{
 					if (read_cnt > 0)
 					{
@@ -110,8 +141,7 @@ char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf
 				break;
 				default:
 				{
-					*(buf + read_cnt) = chr;
-					read_cnt++;
+					wbuf[read_cnt++] = chr;
 					if (SHOW_ASTERISK)
 					{
 						fprintf(fout, "*");
@@ -122,12 +152,16 @@ char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf
 			}
 		}
 	end:
-		*(buf + read_cnt) = '\0';
-		printf("\n");
-		fflush(stdout);
+		wbuf[read_cnt] = '\0';
+		fprintf(fout, "\n");
+		fflush(fout);
+
+		ConvertWCharNToUtf8(wbuf, read_cnt, buf, bufsiz);
+		free(wbuf);
 		return buf;
 	}
 fail:
+	free(wbuf);
 	errno = ENOSYS;
 	return NULL;
 }
