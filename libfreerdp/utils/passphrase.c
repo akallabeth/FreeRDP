@@ -80,6 +80,8 @@ int freerdp_interruptible_getwc(rdpContext* context, FILE* f)
 
 static void rdp_ungetw(FILE* f)
 {
+	fprintf(stderr, "%s", __FUNCTION__);
+	fflush(stderr);
 	ungetwc(L'*', f);
 }
 
@@ -108,6 +110,8 @@ char* freerdp_passphrase_read(rdpContext* context, const char* prompt, char* buf
 #define CTRLC 3
 #define SHOW_ASTERISK TRUE
 
+	fwprintf(stderr, L"%s read %c", __FUNCTION__, chr);
+	fflush(stderr);
 			switch (chr)
 			{
 				case L'\n':
