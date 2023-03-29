@@ -51,6 +51,7 @@
 #include "sdl_kbd.h"
 #include "sdl_touch.h"
 #include "sdl_pointer.h"
+#include "sdl_clipboard.h"
 
 #define SDL_TAG CLIENT_TAG("SDL")
 
@@ -785,6 +786,11 @@ static int sdl_run(sdlContext* sdl)
 				case SDL_RENDER_TARGETS_RESET:
 					sdl_redraw(sdl);
 					break;
+
+				case SDL_CLIPBOARDUPDATE:
+					sdl_cliprdr_handle_event(sdl->clipboard);
+					break;
+
 				case SDL_RENDER_DEVICE_RESET:
 					sdl_redraw(sdl);
 					break;
@@ -911,6 +917,10 @@ static BOOL sdl_post_connect(freerdp* instance)
 	if (!sdl->disp)
 		return FALSE;
 
+	sdl->clipboard = sdl_clipboard_new(sdl);
+	if (!sdl->clipboard)
+		return FALSE;
+
 	if (!sdl_register_pointer(instance->context->graphics))
 		return FALSE;
 
@@ -965,6 +975,9 @@ static void sdl_post_final_disconnect(freerdp* instance)
 
 	sdl_disp_free(context->disp);
 	context->disp = NULL;
+
+	sdl_clipboard_free(context->clipboard);
+	context->clipboard = NULL;
 }
 
 /* RDP main loop.

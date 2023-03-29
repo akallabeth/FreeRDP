@@ -29,7 +29,10 @@
 #include <SDL.h>
 #include <SDL_video.h>
 
-typedef struct s_sdlDispContext sdlDispContext;
+#include "sdl_types.h"
+#include "sdl_disp.h"
+#include "sdl_clipboard.h"
+
 typedef struct
 {
 	SDL_Window* window;
@@ -37,7 +40,7 @@ typedef struct
 	int offset_y;
 } sdl_window_t;
 
-typedef struct
+struct sdl_context
 {
 	rdpClientContext common;
 
@@ -62,10 +65,12 @@ typedef struct
 	SDL_Surface* primary;
 
 	sdlDispContext* disp;
+	sdlClipboard* clipboard;
+
 	Uint32 sdl_pixel_format;
 
 	wLog* log;
-} sdlContext;
+};
 
 BOOL update_resizeable(sdlContext* sdl, BOOL enable);
 BOOL update_fullscreen(sdlContext* sdl, BOOL enter);

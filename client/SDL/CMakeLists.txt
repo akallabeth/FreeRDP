@@ -31,22 +31,26 @@ endif()
 
 include_directories(${SDL2_INCLUDE_DIRS})
 set(SRCS
-    sdl_utils.c
-    sdl_utils.h
-    sdl_kbd.c
-    sdl_kbd.h
-    sdl_touch.c
-    sdl_touch.h
-    sdl_pointer.c
-    sdl_pointer.h
-    sdl_disp.c
-    sdl_disp.h
-    sdl_monitor.c
-    sdl_monitor.h
-    sdl_freerdp.h
-    sdl_freerdp.c
-    sdl_channels.h
-    sdl_channels.c)
+	sdl_types.h
+  sdl_utils.c
+  sdl_utils.h
+  sdl_kbd.c
+  sdl_kbd.h
+  sdl_touch.c
+  sdl_touch.h
+  sdl_pointer.c
+  sdl_pointer.h
+  sdl_disp.c
+  sdl_disp.h
+  sdl_monitor.c
+  sdl_monitor.h
+  sdl_freerdp.h
+  sdl_freerdp.c
+  sdl_channels.h
+  sdl_channels.c
+	sdl_clipboard.h
+	sdl_clipboard.c
+)
 
 set(LIBS
 	${SDL2_LIBRARIES}

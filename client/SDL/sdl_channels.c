@@ -28,6 +28,7 @@
 #include "sdl_channels.h"
 #include "sdl_freerdp.h"
 #include "sdl_disp.h"
+#include "sdl_clipboard.h"
 
 void sdl_OnChannelConnectedEventHandler(void* context, const ChannelConnectedEventArgs* e)
 {
@@ -42,8 +43,7 @@ void sdl_OnChannelConnectedEventHandler(void* context, const ChannelConnectedEve
 	else if (strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) == 0)
 	{
 		CliprdrClientContext* clip = (CliprdrClientContext*)e->pInterface;
-		WINPR_ASSERT(clip);
-		clip->custom = context;
+		sdl_cliprdr_init(sdl->clipboard, clip);
 	}
 	else if (strcmp(e->name, DISP_DVC_CHANNEL_NAME) == 0)
 	{
@@ -67,8 +67,7 @@ void sdl_OnChannelDisconnectedEventHandler(void* context, const ChannelDisconnec
 	else if (strcmp(e->name, CLIPRDR_SVC_CHANNEL_NAME) == 0)
 	{
 		CliprdrClientContext* clip = (CliprdrClientContext*)e->pInterface;
-		WINPR_ASSERT(clip);
-		clip->custom = NULL;
+		sdl_cliprdr_uninit(sdl->clipboard, clip);
 	}
 	else if (strcmp(e->name, DISP_DVC_CHANNEL_NAME) == 0)
 	{
