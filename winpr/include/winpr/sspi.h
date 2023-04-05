@@ -678,22 +678,22 @@ typedef struct
 typedef struct
 {
 	UINT16* User;
-	UINT32 UserLength;
+	ULONG UserLength;
 	UINT16* Domain;
-	UINT32 DomainLength;
+	ULONG DomainLength;
 	UINT16* Password;
-	UINT32 PasswordLength;
+	ULONG PasswordLength;
 	UINT32 Flags;
 } SEC_WINNT_AUTH_IDENTITY_W, *PSEC_WINNT_AUTH_IDENTITY_W;
 
 typedef struct
 {
 	BYTE* User;
-	UINT32 UserLength;
+	ULONG UserLength;
 	BYTE* Domain;
-	UINT32 DomainLength;
+	ULONG DomainLength;
 	BYTE* Password;
-	UINT32 PasswordLength;
+	ULONG PasswordLength;
 	UINT32 Flags;
 } SEC_WINNT_AUTH_IDENTITY_A, *PSEC_WINNT_AUTH_IDENTITY_A;
 
@@ -1421,9 +1421,6 @@ extern "C"
 	                                              const WCHAR* user, size_t userLen,
 	                                              const WCHAR* domain, size_t domainLen,
 	                                              const WCHAR* password, size_t passwordLen);
-	WINPR_API int sspi_SetAuthIdentityWithUnicodePassword(SEC_WINNT_AUTH_IDENTITY* identity,
-	                                                      const char* user, const char* domain,
-	                                                      LPCWSTR password, ULONG passwordLength);
 	WINPR_API UINT32 sspi_GetAuthIdentityVersion(const void* identity);
 	WINPR_API UINT32 sspi_GetAuthIdentityFlags(const void* identity);
 	WINPR_API BOOL sspi_GetAuthIdentityUserDomainW(const void* identity, const WCHAR** pUser,
