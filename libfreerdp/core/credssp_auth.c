@@ -99,7 +99,7 @@ static BOOL credssp_auth_update_name_cache(rdpCredsspAuth* auth, TCHAR* name)
 	auth->pkgNameA = NULL;
 	if (name)
 #if defined(UNICODE)
-		auth->pkgNameA = ConvertWCharToUtf8Alloc(auth->info->Name, NULL);
+		auth->pkgNameA = ConvertWCharToUtf8Alloc(name, NULL);
 #else
 		auth->pkgNameA = _strdup(name);
 #endif
