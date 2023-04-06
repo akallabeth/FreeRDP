@@ -138,15 +138,15 @@ BOOL credssp_auth_init(rdpCredsspAuth* auth, TCHAR* pkg_name, SecPkgContext_Bind
 	const SECURITY_STATUS status = auth->table->QuerySecurityPackageInfo(pkg_name, &auth->info);
 	if (status != SEC_E_OK)
 	{
-		WLog_ERR(TAG, "QuerySecurityPackageInfo (%s) failed with %s [0x%08X]", auth->pkgNameA,
-		         GetSecurityStatusString(status), status);
+		WLog_ERR(TAG, "QuerySecurityPackageInfo (%s) failed with %s [0x%08X]",
+		         credssp_auth_pkg_name(auth), GetSecurityStatusString(status), status);
 		return FALSE;
 	}
 
 	if (!credssp_auth_update_name_cache(auth, auth->info->Name))
 		return FALSE;
 
-	WLog_DBG(TAG, "Using package: %s (cbMaxToken: %u bytes)", auth->info->Name,
+	WLog_DBG(TAG, "Using package: %s (cbMaxToken: %u bytes)", credssp_auth_pkg_name(auth),
 	         auth->info->cbMaxToken);
 
 	/* Setup common identity settings */
