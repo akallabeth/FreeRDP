@@ -952,8 +952,6 @@ static BOOL nla_client_init_cred_handle(rdpNla* nla)
 	WINPR_ASSERT(nla);
 	kerbSettings = nla->kerberosSettings;
 	WINPR_ASSERT(kerbSettings);
-	WINPR_ASSERT(nla->table->SetCredentialsAttributes);
-
 	if (kerbSettings->kdcUrl)
 	{
 #ifdef UNICODE
