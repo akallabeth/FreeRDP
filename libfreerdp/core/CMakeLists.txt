@@ -133,7 +133,9 @@ set(${MODULE_PREFIX}_SRCS
 	peer.c
 	peer.h
 	display.c
-	display.h)
+	display.h
+	credssp_auth.c
+	credssp_auth.h)
 
 set(${MODULE_PREFIX}_SRCS ${${MODULE_PREFIX}_SRCS} ${${MODULE_PREFIX}_GATEWAY_SRCS})
 
