@@ -321,14 +321,6 @@ const BYTE* freerdp_key_get_exponent(const rdpPrivateKey* key, size_t* plength)
 	return key->PrivateExponent;
 }
 
-#if !defined(OPENSSL_VERSION_MAJOR) || (OPENSSL_VERSION_MAJOR < 3)
-static RSA* freerdp_key_get_RSA(const rdpPrivateKey* key)
-{
-	WINPR_ASSERT(key);
-	return evp_pkey_to_rsa(key);
-}
-#endif
-
 EVP_PKEY* freerdp_key_get_evp_pkey(const rdpPrivateKey* key)
 {
 	WINPR_ASSERT(key);
@@ -353,7 +345,7 @@ size_t freerdp_key_get_bits(const rdpPrivateKey* key)
 {
 	int rc = -1;
 #if !defined(OPENSSL_VERSION_MAJOR) || (OPENSSL_VERSION_MAJOR < 3)
-	RSA* rsa = freerdp_key_get_RSA(key);
+	RSA* rsa = evp_pkey_to_rsa(key);
 	if (rsa)
 	{
 		rc = RSA_bits(rsa);
