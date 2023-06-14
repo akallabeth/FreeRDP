@@ -30,6 +30,7 @@
 #cmakedefine WITH_OSS
 #cmakedefine WITH_ALSA
 #cmakedefine WITH_PULSE
+#cmakedefine WITH_PIPEWIRE
 #cmakedefine WITH_IOSAUDIO
 #cmakedefine WITH_OPENSLES
 #cmakedefine WITH_GSM

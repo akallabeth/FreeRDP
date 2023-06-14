@@ -47,6 +47,10 @@ if(WITH_PULSE)
 	add_channel_client_subsystem(${MODULE_PREFIX} ${CHANNEL_NAME} "pulse" "")
 endif()
 
+if(WITH_PIPEWIRE)
+	add_channel_client_subsystem(${MODULE_PREFIX} ${CHANNEL_NAME} "pipewire" "")
+endif()
+
 if(WITH_MACAUDIO)
 	add_channel_client_subsystem(${MODULE_PREFIX} ${CHANNEL_NAME} "mac" "")
 endif()
