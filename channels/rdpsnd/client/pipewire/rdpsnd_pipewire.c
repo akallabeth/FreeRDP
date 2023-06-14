@@ -46,16 +46,14 @@ typedef struct
 
 	char* device_name;
 
-	struct pw_main_loop* mainloop;
+	struct pw_thread_loop* thread_loop;
 	struct pw_stream* stream;
 	UINT32 latency;
 	UINT32 volume;
 
 	struct spa_audio_info_raw format;
-	HANDLE thread;
 	HANDLE started;
 	HANDLE available;
-	wQueue* queue;
 	wLog* log;
 
 	const char* cur_data;
@@ -150,14 +148,12 @@ static void do_quit(void* userdata, int signal_number)
 {
 	rdpsndPipewirePlugin* data = userdata;
 	WINPR_ASSERT(data);
-	if (data->mainloop)
+	if (data->thread_loop)
 	{
 		WLog_Print(data->log, WLOG_DEBUG, "quitting with signal %d [%s]", signal_number,
 		           strsignal(signal_number));
-		pw_main_loop_quit(data->mainloop);
-		WaitForSingleObject(data->thread, INFINITE);
+		pw_thread_loop_stop(data->thread_loop);
 	}
-	data->thread = NULL;
 }
 
 static void rdpsnd_pipewire_cleanup(rdpsndPipewirePlugin* pipewire)
@@ -165,10 +161,11 @@ static void rdpsnd_pipewire_cleanup(rdpsndPipewirePlugin* pipewire)
 	WINPR_ASSERT(pipewire);
 
 	pw_stream_destroy(pipewire->stream);
-	pw_main_loop_destroy(pipewire->mainloop);
+	pw_thread_loop_wait(pipewire->thread_loop);
+	pw_main_loop_destroy(pipewire->thread_loop);
 
 	pipewire->stream = NULL;
-	pipewire->mainloop = NULL;
+	pipewire->thread_loop = NULL;
 
 	pw_deinit();
 }
@@ -231,12 +228,12 @@ static BOOL rdpsnd_pipewire_initialize(rdpsndPipewirePlugin* pipewire)
 
 	pw_init(NULL, NULL);
 
-	pipewire->mainloop = pw_main_loop_new(NULL);
+	pipewire->thread_loop = pw_thread_loop_new("freerdp", NULL);
 
-	if (!pipewire->mainloop)
+	if (!pipewire->thread_loop)
 		goto fail;
 
-	struct pw_loop* loop = pw_main_loop_get_loop(pipewire->mainloop);
+	struct pw_loop* loop = pw_thread_loop_get_loop(pipewire->thread_loop);
 	if (!loop)
 		goto fail;
 
@@ -299,7 +296,9 @@ static BOOL rdpsnd_pipewire_connect(rdpsndDevicePlugin* device)
 		return FALSE;
 
 	ResetEvent(pipewire->started);
-	pipewire->thread = CreateThread(NULL, 0, play_thread, pipewire, 0, NULL);
+	const int rc = pw_thread_loop_start(pipewire->thread_loop);
+	if (rc < 0)
+		return FALSE;
 
 	rdpContext* context = freerdp_rdpsnd_get_context(device->rdpsnd);
 	HANDLE handles[] = { freerdp_abort_event(context), pipewire->started };
@@ -486,10 +485,10 @@ static BOOL rdpsnd_pipewire_set_volume(rdpsndDevicePlugin* device, UINT32 value)
 	}
 
 	// TODO: convert to float format
-	pw_thread_loop_lock(pipewire->mainloop);
+	pw_thread_loop_lock(pipewire->thread_loop);
 	const int b = pw_stream_set_control(pipewire->stream, SPA_PROP_channelVolumes,
 	                                    pipewire->format.channels, pipewire->channel_volumes, 0);
-	pw_thread_loop_unlock(pipewire->mainloop);
+	pw_thread_loop_unlock(pipewire->thread_loop);
 	return b == 0;
 }
 
