@@ -32,6 +32,7 @@
 #include <winpr/cmdline.h>
 
 #include <pipewire/pipewire.h>
+#include <spa/param/props.h>
 #include <spa/param/audio/format-utils.h>
 
 #include <freerdp/types.h>
@@ -56,6 +57,11 @@ typedef struct
 	HANDLE available;
 	wQueue* queue;
 	wLog* log;
+
+	const char* cur_data;
+	size_t cur_size;
+
+	float* channel_volumes;
 } rdpsndPipewirePlugin;
 
 static BOOL rdpsnd_check_pipewire(rdpsndPipewirePlugin* pipewire, BOOL haveStream)
@@ -86,14 +92,11 @@ static void on_process(void* userdata)
 {
 	rdpsndPipewirePlugin* pipewire = userdata;
 	WINPR_ASSERT(pipewire);
-	SetEvent(pipewire->available);
 
 	WLog_INFO(TAG, "xxxx");
-	char data[1024] = { 0 };
-	size_t size = sizeof(data);
-	winpr_RAND(data, size);
 
-	queue_buffer(pipewire, data, size);
+	queue_buffer(pipewire, pipewire->cur_data, pipewire->cur_size);
+	SetEvent(pipewire->available);
 }
 
 static BOOL wait_for_buffer(rdpsndPipewirePlugin* pipewire)
@@ -119,9 +122,25 @@ BOOL queue_buffer(rdpsndPipewirePlugin* pipewire, const BYTE* data, size_t size)
 	if (!b)
 		return FALSE;
 
-	if (b->size < size)
+	struct spa_buffer* buf = b->buffer;
+	if (!buf)
 		return FALSE;
-	memcpy(b->buffer, data, size);
+	if (!buf->datas || (buf->n_datas < 1))
+		return FALSE;
+
+	struct spa_data* bdata = &buf->datas[0];
+	if (bdata->type != SPA_DATA_MemPtr)
+		return FALSE;
+	if ((bdata->flags & SPA_DATA_FLAG_WRITABLE) == 0)
+		return FALSE;
+	if (bdata->maxsize < size)
+		return FALSE;
+
+	bdata->chunk->offset = 0;
+	bdata->chunk->stride = pipewire->format.channels * sizeof(UINT16); // TODO: actual type
+	bdata->chunk->size = size;
+
+	memcpy(bdata->data, data, size);
 
 	const int rc = pw_stream_queue_buffer(pipewire->stream, b);
 	return rc == 0;
@@ -227,6 +246,8 @@ static BOOL rdpsnd_pipewire_initialize(rdpsndPipewirePlugin* pipewire)
 	struct pw_properties* props =
 	    pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Playback",
 	                      PW_KEY_MEDIA_ROLE, "Music", NULL);
+	if (!props)
+		goto fail;
 
 	pipewire->stream = pw_stream_new_simple(loop, "freerdp", props, &stream_events, pipewire);
 	if (!pipewire->stream)
@@ -251,6 +272,8 @@ static DWORD WINAPI play_thread(void* arg)
 	struct spa_pod_builder b = SPA_POD_BUILDER_INIT(buffer, sizeof(buffer));
 	const struct spa_pod* params =
 	    spa_format_audio_raw_build(&b, SPA_PARAM_EnumFormat, &pipewire->format);
+	if (!params)
+		goto fail;
 	const int rc = pw_stream_connect(pipewire->stream, PW_DIRECTION_OUTPUT, PW_ID_ANY,
 	                                 PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS |
 	                                     PW_STREAM_FLAG_RT_PROCESS,
@@ -259,8 +282,9 @@ static DWORD WINAPI play_thread(void* arg)
 		goto fail;
 
 	SetEvent(pipewire->started);
-	pw_main_loop_run(pipewire->mainloop);
-
+	const int res = pw_main_loop_run(pipewire->mainloop);
+	if (res < 0)
+		goto fail;
 fail:
 	SetEvent(pipewire->started);
 	rdpsnd_pipewire_cleanup(pipewire);
@@ -294,6 +318,21 @@ static void rdpsnd_pipewire_close(rdpsndDevicePlugin* device)
 		return;
 
 	do_quit(pipewire, 0);
+}
+
+static BOOL rpdsnd_pipewire_update_volumes(rdpsndPipewirePlugin* pipewire, size_t channels)
+{
+	WINPR_ASSERT(pipewire);
+
+	float* tmp = realloc(pipewire->channel_volumes, sizeof(float) * channels);
+	if (!tmp)
+		return FALSE;
+	pipewire->channel_volumes = tmp;
+
+	for (size_t x = 0; x < channels; x++)
+	{
+		tmp[x] = 1.0f;
+	}
 }
 
 static BOOL rdpsnd_pipewire_set_format_spec(rdpsndPipewirePlugin* pipewire,
@@ -341,7 +380,7 @@ static BOOL rdpsnd_pipewire_set_format_spec(rdpsndPipewirePlugin* pipewire,
 
 	pipewire->format = SPA_AUDIO_INFO_RAW_INIT(.format = fmt, .channels = format->nChannels,
 	                                           .rate = format->nSamplesPerSec);
-	return TRUE;
+	return rpdsnd_pipewire_update_volumes(pipewire, format->nChannels);
 }
 
 static BOOL rdpsnd_pipewire_open(rdpsndDevicePlugin* device, const AUDIO_FORMAT* format,
@@ -374,6 +413,7 @@ static void rdpsnd_pipewire_free(rdpsndDevicePlugin* device)
 	CloseHandle(pipewire->started);
 	CloseHandle(pipewire->available);
 	free(pipewire->device_name);
+	free(pipewire->channel_volumes);
 	free(pipewire);
 }
 
@@ -432,7 +472,6 @@ static UINT32 rdpsnd_pipewire_get_volume(rdpsndDevicePlugin* device)
 	if (!rdpsnd_check_pipewire(pipewire, FALSE))
 		return 0;
 
-	// TODO
 	return pipewire->volume;
 }
 
@@ -446,8 +485,12 @@ static BOOL rdpsnd_pipewire_set_volume(rdpsndDevicePlugin* device, UINT32 value)
 		return FALSE;
 	}
 
-	// TODO
-	return TRUE;
+	// TODO: convert to float format
+	pw_thread_loop_lock(pipewire->mainloop);
+	const int b = pw_stream_set_control(pipewire->stream, SPA_PROP_channelVolumes,
+	                                    pipewire->format.channels, pipewire->channel_volumes, 0);
+	pw_thread_loop_unlock(pipewire->mainloop);
+	return b == 0;
 }
 
 static UINT rdpsnd_pipewire_play(rdpsndDevicePlugin* device, const BYTE* data, size_t size)
@@ -457,13 +500,11 @@ static UINT rdpsnd_pipewire_play(rdpsndDevicePlugin* device, const BYTE* data, s
 	if (!rdpsnd_check_pipewire(pipewire, TRUE) || !data)
 		return 0;
 
-#if 0
+	/* set pointers to current data, wait for pipewire to take them */
+	pipewire->cur_data = data;
+	pipewire->cur_size = size;
 	if (!wait_for_buffer(pipewire))
 		return ERROR_INTERNAL_ERROR;
-
-	if (!queue_buffer(pipewire, data, size))
-		return ERROR_INTERNAL_ERROR;
-#endif
 
 	return 0;
 }
@@ -524,7 +565,7 @@ UINT pipewire_freerdp_rdpsnd_client_subsystem_entry(
 	if (!pipewire)
 		return CHANNEL_RC_NO_MEMORY;
 
-	pipewire->log = freerdp_rdpsnd_get_log(pEntryPoints->rdpsnd);
+	pipewire->log = WLog_Get(TAG ".pipewire"); // freerdp_rdpsnd_get_log(pEntryPoints->rdpsnd);
 	pipewire->device.Open = rdpsnd_pipewire_open;
 	pipewire->device.FormatSupported = rdpsnd_pipewire_format_supported;
 	pipewire->device.GetVolume = rdpsnd_pipewire_get_volume;
