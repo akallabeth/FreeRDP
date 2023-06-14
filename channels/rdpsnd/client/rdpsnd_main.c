@@ -1528,6 +1528,13 @@ rdpContext* freerdp_rdpsnd_get_context(rdpsndPlugin* plugin)
 	return plugin->rdpcontext;
 }
 
+wLog* freerdp_rdpsnd_get_log(rdpsndPlugin* plugin)
+{
+	if (!plugin)
+		return NULL;
+	return plugin->log;
+}
+
 static rdpsndPlugin* allocatePlugin(void)
 {
 	rdpsndPlugin* rdpsnd = (rdpsndPlugin*)calloc(1, sizeof(rdpsndPlugin));

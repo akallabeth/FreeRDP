@@ -83,6 +83,7 @@ typedef FREERDP_RDPSND_DEVICE_ENTRY_POINTS* PFREERDP_RDPSND_DEVICE_ENTRY_POINTS;
 typedef UINT (*PFREERDP_RDPSND_DEVICE_ENTRY)(PFREERDP_RDPSND_DEVICE_ENTRY_POINTS pEntryPoints);
 
 FREERDP_API rdpContext* freerdp_rdpsnd_get_context(rdpsndPlugin* plugin);
+FREERDP_API wLog* freerdp_rdpsnd_get_log(rdpsndPlugin* plugin);
 
 #ifdef __cplusplus
 }
