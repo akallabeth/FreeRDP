@@ -2062,6 +2062,8 @@ state_run_t rdp_recv_callback(rdpTransport* transport, wStream* s, void* extra)
 		           "(client)[%s -> %s] current return %s [feeding %" PRIuz " bytes, %" PRIuz
 		           " bytes not processed]",
 		           old, now, state_run_result_string(rc, buffer, sizeof(buffer)), orem, rem);
+		if (STATE_RUN_FAILED == rc)
+			winpr_HexLogDump(rdp->log, WLOG_ERROR, Stream_Buffer(s), Stream_Length(s));
 	} while ((rc == STATE_RUN_TRY_AGAIN) || (rc == STATE_RUN_CONTINUE));
 	return rc;
 }
