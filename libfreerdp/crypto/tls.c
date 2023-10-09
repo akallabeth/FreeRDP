@@ -904,6 +904,7 @@ TlsHandshakeResult freerdp_tls_handshake(rdpTls* tls)
 	int status = BIO_do_handshake(tls->bio);
 	if (status != 1)
 	{
+		ERR_print_errors_fp(stderr);
 		if (!BIO_should_retry(tls->bio))
 			return TLS_HANDSHAKE_ERROR;
 
@@ -915,6 +916,7 @@ TlsHandshakeResult freerdp_tls_handshake(rdpTls* tls)
 
 	if (!cert)
 	{
+		ERR_print_errors_fp(stderr);
 		WLog_ERR(TAG, "tls_get_certificate failed to return the server certificate.");
 		return TLS_HANDSHAKE_ERROR;
 	}
@@ -925,6 +927,7 @@ TlsHandshakeResult freerdp_tls_handshake(rdpTls* tls)
 		tls->Bindings = tls_get_channel_bindings(cert);
 		if (!tls->Bindings)
 		{
+			ERR_print_errors_fp(stderr);
 			WLog_ERR(TAG, "unable to retrieve bindings");
 			break;
 		}
@@ -932,6 +935,7 @@ TlsHandshakeResult freerdp_tls_handshake(rdpTls* tls)
 		free_tls_public_key(tls);
 		if (!freerdp_certificate_get_public_key(cert, &tls->PublicKey, &tls->PublicKeyLength))
 		{
+			ERR_print_errors_fp(stderr);
 			WLog_ERR(TAG,
 			         "freerdp_certificate_get_public_key failed to return the server public key.");
 			break;
@@ -946,6 +950,7 @@ TlsHandshakeResult freerdp_tls_handshake(rdpTls* tls)
 
 			if (verify_status < 1)
 			{
+				ERR_print_errors_fp(stderr);
 				WLog_ERR(TAG, "certificate not trusted, aborting.");
 				freerdp_tls_send_alert(tls);
 				ret = TLS_HANDSHAKE_VERIFY_ERROR;
