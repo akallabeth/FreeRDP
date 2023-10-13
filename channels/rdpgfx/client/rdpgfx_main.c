@@ -640,7 +640,9 @@ static UINT rdpgfx_load_cache_import_offer(RDPGFX_PLUGIN* gfx, RDPGFX_CACHE_IMPO
 	if (!freerdp_settings_get_bool(settings, FreeRDP_BitmapCachePersistEnabled))
 		return CHANNEL_RC_OK;
 
-	if (!settings->BitmapCachePersistFile)
+	const char* BitmapCachePersistFile =
+	    freerdp_settings_get_string(settings, FreeRDP_BitmapCachePersistFile);
+	if (!BitmapCachePersistFile)
 		return CHANNEL_RC_OK;
 
 	persistent = persistent_cache_new();
@@ -648,7 +650,7 @@ static UINT rdpgfx_load_cache_import_offer(RDPGFX_PLUGIN* gfx, RDPGFX_CACHE_IMPO
 	if (!persistent)
 		return CHANNEL_RC_NO_MEMORY;
 
-	if (persistent_cache_open(persistent, settings->BitmapCachePersistFile, FALSE, 3) < 1)
+	if (persistent_cache_open(persistent, BitmapCachePersistFile, FALSE, 3) < 1)
 	{
 		error = CHANNEL_RC_INITIALIZATION_ERROR;
 		goto fail;
@@ -718,7 +720,9 @@ static UINT rdpgfx_save_persistent_cache(RDPGFX_PLUGIN* gfx)
 	if (!freerdp_settings_get_bool(settings, FreeRDP_BitmapCachePersistEnabled))
 		return CHANNEL_RC_OK;
 
-	if (!settings->BitmapCachePersistFile)
+	const char* BitmapCachePersistFile =
+	    freerdp_settings_get_string(settings, FreeRDP_BitmapCachePersistFile);
+	if (!BitmapCachePersistFile)
 		return CHANNEL_RC_OK;
 
 	if (!context->ExportCacheEntry)
@@ -729,7 +733,7 @@ static UINT rdpgfx_save_persistent_cache(RDPGFX_PLUGIN* gfx)
 	if (!persistent)
 		return CHANNEL_RC_NO_MEMORY;
 
-	if (persistent_cache_open(persistent, settings->BitmapCachePersistFile, TRUE, 3) < 1)
+	if (persistent_cache_open(persistent, BitmapCachePersistFile, TRUE, 3) < 1)
 	{
 		error = CHANNEL_RC_INITIALIZATION_ERROR;
 		goto fail;
@@ -848,7 +852,9 @@ static UINT rdpgfx_send_cache_offer(RDPGFX_PLUGIN* gfx)
 	if (!freerdp_settings_get_bool(settings, FreeRDP_BitmapCachePersistEnabled))
 		return CHANNEL_RC_OK;
 
-	if (!settings->BitmapCachePersistFile)
+	const char* BitmapCachePersistFile =
+	    freerdp_settings_get_string(settings, FreeRDP_BitmapCachePersistFile);
+	if (!BitmapCachePersistFile)
 		return CHANNEL_RC_OK;
 
 	persistent = persistent_cache_new();
@@ -856,7 +862,7 @@ static UINT rdpgfx_send_cache_offer(RDPGFX_PLUGIN* gfx)
 	if (!persistent)
 		return CHANNEL_RC_NO_MEMORY;
 
-	if (persistent_cache_open(persistent, settings->BitmapCachePersistFile, FALSE, 3) < 1)
+	if (persistent_cache_open(persistent, BitmapCachePersistFile, FALSE, 3) < 1)
 	{
 		error = CHANNEL_RC_INITIALIZATION_ERROR;
 		goto fail;
@@ -933,7 +939,9 @@ static UINT rdpgfx_load_cache_import_reply(RDPGFX_PLUGIN* gfx, RDPGFX_CACHE_IMPO
 	if (!freerdp_settings_get_bool(settings, FreeRDP_BitmapCachePersistEnabled))
 		return CHANNEL_RC_OK;
 
-	if (!settings->BitmapCachePersistFile)
+	const char* BitmapCachePersistFile =
+	    freerdp_settings_get_string(settings, FreeRDP_BitmapCachePersistFile);
+	if (!BitmapCachePersistFile)
 		return CHANNEL_RC_OK;
 
 	persistent = persistent_cache_new();
@@ -941,7 +949,7 @@ static UINT rdpgfx_load_cache_import_reply(RDPGFX_PLUGIN* gfx, RDPGFX_CACHE_IMPO
 	if (!persistent)
 		return CHANNEL_RC_NO_MEMORY;
 
-	if (persistent_cache_open(persistent, settings->BitmapCachePersistFile, FALSE, 3) < 1)
+	if (persistent_cache_open(persistent, BitmapCachePersistFile, FALSE, 3) < 1)
 	{
 		error = CHANNEL_RC_INITIALIZATION_ERROR;
 		goto fail;
