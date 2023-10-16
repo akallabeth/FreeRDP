@@ -19,9 +19,9 @@
 
 #include <freerdp/config.h>
 
+#include "settings.h"
 #include "capabilities.h"
 #include "fastpath.h"
-#include "settings.h"
 
 #include <winpr/crt.h>
 #include <winpr/rpc.h>

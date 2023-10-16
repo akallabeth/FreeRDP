@@ -20,6 +20,9 @@
  */
 
 #include <freerdp/config.h>
+
+#include "settings.h"
+
 #include <freerdp/crypto/certificate.h>
 
 #include <ctype.h>
@@ -37,7 +40,6 @@
 #include "../crypto/certificate.h"
 #include "../crypto/privatekey.h"
 #include "capabilities.h"
-#include "settings.h"
 
 #define TAG FREERDP_TAG("settings")
 
