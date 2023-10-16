@@ -1087,7 +1087,7 @@ fail:
 }
 
 static BOOL set_creds_octetstring_to_settings(WinPrAsn1Decoder* dec, WinPrAsn1_tagId tagId,
-                                              BOOL optional, size_t settingId,
+                                              BOOL optional, FreeRDP_Settings_Keys_String settingId,
                                               rdpSettings* settings)
 {
 	if (optional)
@@ -1262,7 +1262,7 @@ static BOOL nla_encode_ts_credentials(rdpNla* nla)
 		struct
 		{
 			WinPrAsn1_tagId tag;
-			size_t setting_id;
+			FreeRDP_Settings_Keys_String setting_id;
 		} cspData_fields[] = { { 1, FreeRDP_CardName },
 			                   { 2, FreeRDP_ReaderName },
 			                   { 3, FreeRDP_ContainerName },
