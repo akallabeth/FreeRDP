@@ -401,7 +401,7 @@ SSIZE_T freerdp_settings_get_type_for_key(SSIZE_T key)
 	for (size_t x = 0; x < ARRAYSIZE(settings_map); x++)
 	{
 		const struct settings_str_entry* cur = &settings_map[x];
-		if (cur->id == key)
+		if (cur->id == (SSIZE_T)key)
 			return cur->type;
 	}
 	return -1;
@@ -412,7 +412,7 @@ const char* freerdp_settings_get_name_for_key(SSIZE_T key)
 	for (size_t x = 0; x < ARRAYSIZE(settings_map); x++)
 	{
 		const struct settings_str_entry* cur = &settings_map[x];
-		if (cur->id == key)
+		if (cur->id == (SSIZE_T)key)
 			return cur->str;
 	}
 	return NULL;
