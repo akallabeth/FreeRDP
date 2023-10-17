@@ -619,6 +619,7 @@ BOOL freerdp_settings_get_bool(const rdpSettings* settings, FreeRDP_Settings_Key
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
 			         freerdp_settings_get_name_for_key(id),
 			         freerdp_settings_get_type_name_for_key(id));
+			WINPR_ASSERT(FALSE);
 			return FALSE;
 	}
 }
@@ -1440,6 +1441,7 @@ UINT16 freerdp_settings_get_uint16(const rdpSettings* settings, FreeRDP_Settings
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
 			         freerdp_settings_get_name_for_key(id),
 			         freerdp_settings_get_type_name_for_key(id));
+			WINPR_ASSERT(FALSE);
 			return 0;
 	}
 }
@@ -1513,8 +1515,8 @@ BOOL freerdp_settings_set_uint16(rdpSettings* settings, FreeRDP_Settings_Keys_UI
 
 		default:
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
-			         freerdp_settings_get_name_for_key((size_t)id),
-			         freerdp_settings_get_type_name_for_key((size_t)id));
+			         freerdp_settings_get_name_for_key(id),
+			         freerdp_settings_get_type_name_for_key(id));
 			return FALSE;
 	}
 	return TRUE;
@@ -1528,8 +1530,9 @@ INT16 freerdp_settings_get_int16(const rdpSettings* settings, FreeRDP_Settings_K
 	{
 		default:
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
-			         freerdp_settings_get_name_for_key((size_t)id),
-			         freerdp_settings_get_type_name_for_key((size_t)id));
+			         freerdp_settings_get_name_for_key(id),
+			         freerdp_settings_get_type_name_for_key(id));
+			WINPR_ASSERT(FALSE);
 			return 0;
 	}
 }
@@ -1551,8 +1554,8 @@ BOOL freerdp_settings_set_int16(rdpSettings* settings, FreeRDP_Settings_Keys_Int
 	{
 		default:
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
-			         freerdp_settings_get_name_for_key((size_t)id),
-			         freerdp_settings_get_type_name_for_key((size_t)id));
+			         freerdp_settings_get_name_for_key(id),
+			         freerdp_settings_get_type_name_for_key(id));
 			return FALSE;
 	}
 	return TRUE;
@@ -1937,6 +1940,7 @@ UINT32 freerdp_settings_get_uint32(const rdpSettings* settings, FreeRDP_Settings
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
 			         freerdp_settings_get_name_for_key(id),
 			         freerdp_settings_get_type_name_for_key(id));
+			WINPR_ASSERT(FALSE);
 			return 0;
 	}
 }
@@ -2473,6 +2477,7 @@ INT32 freerdp_settings_get_int32(const rdpSettings* settings, FreeRDP_Settings_K
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
 			         freerdp_settings_get_name_for_key(id),
 			         freerdp_settings_get_type_name_for_key(id));
+			WINPR_ASSERT(FALSE);
 			return 0;
 	}
 }
@@ -2522,6 +2527,7 @@ UINT64 freerdp_settings_get_uint64(const rdpSettings* settings, FreeRDP_Settings
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
 			         freerdp_settings_get_name_for_key(id),
 			         freerdp_settings_get_type_name_for_key(id));
+			WINPR_ASSERT(FALSE);
 			return 0;
 	}
 }
@@ -2562,8 +2568,9 @@ INT64 freerdp_settings_get_int64(const rdpSettings* settings, FreeRDP_Settings_K
 	{
 		default:
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
-			         freerdp_settings_get_name_for_key((size_t)id),
-			         freerdp_settings_get_type_name_for_key((size_t)id));
+			         freerdp_settings_get_name_for_key(id),
+			         freerdp_settings_get_type_name_for_key(id));
+			WINPR_ASSERT(FALSE);
 			return 0;
 	}
 }
@@ -2585,8 +2592,8 @@ BOOL freerdp_settings_set_int64(rdpSettings* settings, FreeRDP_Settings_Keys_Int
 	{
 		default:
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
-			         freerdp_settings_get_name_for_key((size_t)id),
-			         freerdp_settings_get_type_name_for_key((size_t)id));
+			         freerdp_settings_get_name_for_key(id),
+			         freerdp_settings_get_type_name_for_key(id));
 			return FALSE;
 	}
 	return TRUE;
@@ -2894,6 +2901,7 @@ const char* freerdp_settings_get_string(const rdpSettings* settings,
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
 			         freerdp_settings_get_name_for_key(id),
 			         freerdp_settings_get_type_name_for_key(id));
+			WINPR_ASSERT(FALSE);
 			return NULL;
 	}
 }
@@ -3199,6 +3207,7 @@ char* freerdp_settings_get_string_writable(rdpSettings* settings, FreeRDP_Settin
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
 			         freerdp_settings_get_name_for_key(id),
 			         freerdp_settings_get_type_name_for_key(id));
+			WINPR_ASSERT(FALSE);
 			return NULL;
 	}
 }
@@ -3958,6 +3967,7 @@ void* freerdp_settings_get_pointer_writable(rdpSettings* settings, FreeRDP_Setti
 			WLog_ERR(TAG, "Invalid key index %" PRIuz " [%s|%s]", id,
 			         freerdp_settings_get_name_for_key(id),
 			         freerdp_settings_get_type_name_for_key(id));
+			WINPR_ASSERT(FALSE);
 			return NULL;
 	}
 }
