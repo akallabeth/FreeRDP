@@ -1003,6 +1003,8 @@ rdpShadowServer* shadow_server_new(void)
 	server->h264QP = 0;
 	server->authentication = TRUE;
 	server->settings = freerdp_settings_new(FREERDP_SETTINGS_SERVER_MODE);
+	if (server->settings)
+		freerdp_settings_mark_name(server->settings, "shadow-server-settings", server);
 	return server;
 }
 

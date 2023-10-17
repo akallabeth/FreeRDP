@@ -1359,6 +1359,7 @@ static rdpMcs* test_mcs_new(void)
 
 	if (!settings)
 		goto fail;
+	freerdp_settings_mark_name(settings, "mcs-temporary-settings", context);
 	if (!freerdp_settings_set_bool(settings, FreeRDP_TransportDumpReplay, TRUE))
 		goto fail;
 

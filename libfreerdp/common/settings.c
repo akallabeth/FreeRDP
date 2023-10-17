@@ -2209,3 +2209,17 @@ BOOL freerdp_settings_are_valid(const rdpSettings* settings)
 {
 	return settings != NULL;
 }
+
+void freerdp_settings_mark_readonly(rdpSettings* settings)
+{
+	rdpSettingsInternal* intsettings = freerdp_settings_intern_cast(settings);
+	WINPR_ASSERT(intsettings);
+	intsettings->readonly = TRUE;
+}
+
+void freerdp_settings_mark_name(rdpSettings* settings, const char* name, void* instance)
+{
+	rdpSettingsInternal* intsettings = freerdp_settings_intern_cast(settings);
+	WINPR_ASSERT(intsettings);
+	_snprintf(intsettings->name, sizeof(intsettings->name), "%s [%p]", name, instance);
+}

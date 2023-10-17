@@ -1535,6 +1535,7 @@ BOOL freerdp_peer_context_new_ex(freerdp_peer* client, const rdpSettings* settin
 		context->settings = freerdp_settings_clone(settings);
 		if (!context->settings)
 			goto fail;
+		freerdp_settings_mark_name(context->settings, "peer-copied-settings", context);
 	}
 
 	context->dump = stream_dump_new();

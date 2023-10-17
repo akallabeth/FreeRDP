@@ -105,6 +105,25 @@ typedef struct rdp_settings rdpSettings;
 	 */
 	FREERDP_API BOOL freerdp_settings_copy(rdpSettings* dst, const rdpSettings* src);
 
+	/** \brief Mark the copy of settings readonly. All freerdp_settings_set*
+	 *  calls will fail after this has been called.
+	 *
+	 *  This is not reversible.
+	 *
+	 *  \param settings the settings to mark readonly
+	 */
+	FREERDP_API void freerdp_settings_mark_readonly(rdpSettings* settings);
+
+	/** \brief Mark the settings with a unique name
+	 *
+	 * \param settings the settings to mark with a name
+	 * \param name A '\0' terminated string to use
+	 * \param instance A pointer to the rdpContext (or other instance struct) the settings is part
+	 * of.
+	 */
+	FREERDP_API void freerdp_settings_mark_name(rdpSettings* settings, const char* name,
+	                                            void* instance);
+
 	/** \brief copies one setting identified by \b id from \b src to \b dst
 	 *
 	 * The function frees up all allocated data in \b dst before copying the data from \b src

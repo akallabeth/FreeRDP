@@ -235,6 +235,8 @@ BOOL pf_context_copy_settings(rdpSettings* dst, const rdpSettings* src)
 	before_copy = freerdp_settings_clone(dst);
 	if (!before_copy)
 		return FALSE;
+	freerdp_settings_mark_readonly(before_copy);
+	freerdp_settings_mark_name(before_copy, "proxy-copy-temproary", dst);
 
 	if (!freerdp_settings_copy(dst, src))
 		goto out_fail;

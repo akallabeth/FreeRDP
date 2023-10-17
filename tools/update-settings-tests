@@ -35,18 +35,6 @@ def write_str_case(f, entry_idx, val):
     f.write('\t\t{FreeRDP_' + val + ', FREERDP_SETTINGS_TYPE_' + str(entry_types[entry_idx]) + ', "FreeRDP_' + val + '"},\n')
 
 def write_str(f, entry_dict):
-    f.write('typedef enum {\n')
-    f.write('\tFREERDP_SETTINGS_TYPE_BOOL,\n')
-    f.write('\tFREERDP_SETTINGS_TYPE_UINT16,\n')
-    f.write('\tFREERDP_SETTINGS_TYPE_INT16,\n')
-    f.write('\tFREERDP_SETTINGS_TYPE_UINT32,\n')
-    f.write('\tFREERDP_SETTINGS_TYPE_INT32,\n')
-    f.write('\tFREERDP_SETTINGS_TYPE_UINT64,\n')
-    f.write('\tFREERDP_SETTINGS_TYPE_INT64,\n')
-    f.write('\tFREERDP_SETTINGS_TYPE_STRING,\n')
-    f.write('\tFREERDP_SETTINGS_TYPE_POINTER\n')
-    f.write('} FREERDP_SETTINGS_TYPE;\n')
-    f.write('\n')
     f.write('struct settings_str_entry {\n')
     f.write('\tSSIZE_T id;\n')
     f.write('\tSSIZE_T type;\n')
@@ -64,13 +52,23 @@ def write_str(f, entry_dict):
     f.write('};\n\n')
     f.write('\n')
     
+def write_readonly(f, getter):
+    f.write('\tif (!check_readonly(settings))\n')
+    if getter:
+        f.write('\t\treturn NULL;\n')
+    else:
+        f.write('\t\treturn FALSE;\n')
+    f.write('\n')
+
 def write_getter_case(f, val):
     f.write('\t\tcase FreeRDP_' + val + ':\n')
     f.write('\t\t\treturn settings->' + val + ';\n\n')
 
-def write_getter_body(f, values, ret):
+def write_getter_body(f, values, ret, writeable):
     f.write('{\n')
     f.write('\tWINPR_ASSERT(settings);\n\n')
+    if writeable:
+        write_readonly(f, True)
     f.write('\tswitch (id)\n')
     f.write('\t{\n')
     if values:
@@ -109,11 +107,11 @@ def write_getter(f, entry_dict, entry_type, entry_name, postfix):
     else:
         ret = '0';
 
-    write_getter_body(f, values, ret)
+    write_getter_body(f, values, ret, isPointer)
 
     if isString:
         f.write('char* freerdp_settings_get_' + entry_name.lower() + '_writable(rdpSettings* settings, ' + typestr + ' id)\n')
-        write_getter_body(f, values, ret)
+        write_getter_body(f, values, ret, True)
 
 def write_setter_case(f, val, postfix, isPointer):
     f.write('\t\tcase FreeRDP_' + val + ':\n')
@@ -161,6 +159,7 @@ def write_setter(f, entry_dict, entry_type, entry_name, postfix):
     f.write('} cnv;\n')
 
     f.write('\tWINPR_ASSERT(settings);\n\n')
+    write_readonly(f, False)
     if isPointer:
         f.write('\tcnv.cv = val;\n\n')
     elif isString:
@@ -284,6 +283,18 @@ try:
         f.write('\n')
         f.write('\t*current = next;\n')
         f.write('\treturn !next || (*current != NULL);\n')
+        f.write('}\n\n')
+
+        f.write('static BOOL check_readonly(const rdpSettings* settings)\n')
+        f.write('{\n')
+        f.write('\tconst rdpSettingsInternal* s = freerdp_settings_intern_const_cast(settings);')
+        f.write('\tWINPR_ASSERT(s);\n')
+        f.write('\tif (s->readonly)\n')
+        f.write('\t{\n')
+        f.write('\t\tWLog_ERR(TAG, "this settings copy is readonly, access denied");\n')
+        f.write('\t\treturn FALSE;\n')
+        f.write('\t}\n')
+        f.write('\treturn TRUE;\n')
         f.write('}\n\n')
 
         getter_list = dict(type_list)

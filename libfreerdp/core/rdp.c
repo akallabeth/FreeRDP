@@ -2245,10 +2245,14 @@ rdpRdp* rdp_new(rdpContext* context)
 
 	if (!context->settings)
 	{
+		char buffer[64] = { 0 };
+		_snprintf(buffer, sizeof(buffer), "rdp-new-settings=0x%08" PRIx32, flags);
+
 		context->settings = rdp->settings = freerdp_settings_new(flags);
 
 		if (!rdp->settings)
 			goto fail;
+		freerdp_settings_mark_name(rdp->settings, buffer, rdp->context);
 	}
 	else
 		rdp->settings = context->settings;
@@ -2688,6 +2692,8 @@ static BOOL rdp_reset_remote_settings(rdpRdp* rdp)
 	if (!freerdp_settings_get_bool(rdp->settings, FreeRDP_ServerMode))
 		flags |= FREERDP_SETTINGS_SERVER_MODE;
 	rdp->remoteSettings = freerdp_settings_new(flags);
+	if (rdp->remoteSettings)
+		freerdp_settings_mark_name(rdp->remoteSettings, "rdp-remote-settings", rdp->context);
 	return rdp->remoteSettings != NULL;
 }
 
@@ -2698,6 +2704,8 @@ BOOL rdp_set_backup_settings(rdpRdp* rdp)
 	rdp->originalSettings = freerdp_settings_clone(rdp->settings);
 	if (!rdp->originalSettings)
 		return FALSE;
+	freerdp_settings_mark_readonly(rdp->originalSettings);
+	freerdp_settings_mark_name(rdp->originalSettings, "client-backup-settings", rdp->context);
 	return rdp_reset_remote_settings(rdp);
 }
 
@@ -2711,6 +2719,7 @@ BOOL rdp_reset_runtime_settings(rdpRdp* rdp)
 
 	if (!rdp->settings)
 		return FALSE;
+	freerdp_settings_mark_name(rdp->settings, "client-restored-settings", rdp->context);
 	return rdp_reset_remote_settings(rdp);
 }
 

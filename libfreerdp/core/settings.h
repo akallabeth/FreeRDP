@@ -38,6 +38,9 @@
 typedef struct
 {
 	struct rdp_settings base;
+
+	ALIGN64 BOOL readonly;
+	ALIGN64 char name[64];
 } rdpSettingsInternal;
 
 static INLINE rdpSettingsInternal* freerdp_settings_intern_cast(rdpSettings* settings)

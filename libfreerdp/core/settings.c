@@ -819,6 +819,15 @@ void freerdp_settings_free(rdpSettings* settings)
 	if (!settings)
 		return;
 
+	/* reset readonly mark here.
+	 * at this point writeable access is allowed again to clean up all the data
+	 * associated with this instance */
+	{
+		rdpSettingsInternal* intern = freerdp_settings_intern_cast(settings);
+		WINPR_ASSERT(intern);
+		intern->readonly = FALSE;
+	}
+
 	freerdp_settings_free_internal(settings);
 	free(settings);
 }
