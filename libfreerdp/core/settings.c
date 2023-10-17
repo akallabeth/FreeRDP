@@ -43,6 +43,13 @@
 
 #define TAG FREERDP_TAG("settings")
 
+typedef struct
+{
+	FREERDP_SETTINGS_TYPE type;
+	size_t length;
+	void* data;
+} CustomSettingsEntry;
+
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4244)
@@ -341,6 +348,61 @@ BOOL freerdp_capability_buffer_allocate(rdpSettings* settings, UINT32 count)
 	        settings->ReceivedCapabilityDataSizes);
 }
 
+static BOOL custom_settings_entry_equal(const void* objA, const void* objB)
+{
+	const CustomSettingsEntry* a = objA;
+	const CustomSettingsEntry* b = objB;
+	if (!a || !b)
+		return a == b;
+	if (a->type != b->type)
+		return FALSE;
+	if (a->length != b->length)
+		return FALSE;
+	return memcpy(a->data, b->data, a->length) == 0;
+}
+
+static void* custom_settings_entry_copy(const void* val)
+{
+	const CustomSettingsEntry* other = val;
+	if (!other)
+		return NULL;
+
+	CustomSettingsEntry* copy = calloc(1, sizeof(CustomSettingsEntry));
+	if (!copy)
+		return NULL;
+	copy->length = other->length;
+	copy->type = other->type;
+	/* overallocate by 4 bytes, so strings (utf-8, utf-16, utf-32) are always '\0' terminated. */
+	copy->data = calloc(copy->length + 4, sizeof(char));
+	if (!copy->data)
+	{
+		free(copy);
+		return NULL;
+	}
+
+	memcpy(copy->data, other->data, copy->length);
+	return copy;
+}
+
+static BOOL custom_settings_entry_add(wHashTable* table, const char* key,
+                                      FREERDP_SETTINGS_TYPE type, size_t length, const void* data)
+{
+	CustomSettingsEntry entry = { 0 };
+	entry.type = type;
+	entry.length = length;
+	entry.data = data;
+	return HashTable_Insert(table, key, &entry);
+}
+
+static void custom_settings_entry_free(void* val)
+{
+	CustomSettingsEntry* other = val;
+	if (!other)
+		return;
+	free(other->data);
+	free(other);
+}
+
 static rdpSettings* create_instance(void)
 {
 	rdpSettingsInternal* settings = (rdpSettingsInternal*)calloc(1, sizeof(rdpSettingsInternal));
@@ -348,6 +410,19 @@ static rdpSettings* create_instance(void)
 	if (!settings)
 		goto fail;
 	WINPR_ASSERT(settings);
+	settings->custom = HashTable_New(FALSE);
+	if (!settings->custom)
+		goto fail;
+	if (!HashTable_SetupForStringData(settings->custom, FALSE))
+		goto fail;
+
+	wObject* obj = HashTable_ValueObject(settings->custom);
+	if (!obj)
+		goto fail;
+
+	obj->fnObjectEquals = custom_settings_entry_equal;
+	obj->fnObjectNew = custom_settings_entry_copy;
+	obj->fnObjectFree = custom_settings_entry_free;
 
 	return &settings->base;
 
@@ -812,6 +887,11 @@ static void freerdp_settings_free_internal(rdpSettings* settings)
 
 	/* Free all strings, set other pointers NULL */
 	freerdp_settings_free_keys(settings, TRUE);
+	{
+		rdpSettingsInternal* intern = freerdp_settings_intern_cast(settings);
+		WINPR_ASSERT(intern);
+		HashTable_Clear(intern->custom);
+	}
 }
 
 void freerdp_settings_free(rdpSettings* settings)
@@ -829,6 +909,11 @@ void freerdp_settings_free(rdpSettings* settings)
 	}
 
 	freerdp_settings_free_internal(settings);
+	{
+		rdpSettingsInternal* intern = freerdp_settings_intern_cast(settings);
+		WINPR_ASSERT(intern);
+		HashTable_Free(intern->custom);
+	}
 	free(settings);
 }
 
@@ -1100,6 +1185,13 @@ out_fail:
 	return rc;
 }
 
+static BOOL hash_append(const void* key, void* value, void* arg)
+{
+	rdpSettingsInternal* intern = freerdp_settings_intern_cast(arg);
+	WINPR_ASSERT(intern);
+	return HashTable_Insert(intern->custom, key, value);
+}
+
 BOOL freerdp_settings_copy(rdpSettings* _settings, const rdpSettings* settings)
 {
 	BOOL rc;
@@ -1109,6 +1201,15 @@ BOOL freerdp_settings_copy(rdpSettings* _settings, const rdpSettings* settings)
 
 	/* This is required to free all non string buffers */
 	freerdp_settings_free_internal(_settings);
+
+	{
+		rdpSettingsInternal* intern = freerdp_settings_intern_cast(settings);
+		WINPR_ASSERT(intern);
+
+		if (!HashTable_Foreach(intern->custom, hash_append, _settings))
+			return FALSE;
+	}
+
 	/* This copies everything except allocated non string buffers. reset all allocated buffers to
 	 * NULL to fix issues during cleanup */
 	rc = freerdp_settings_clone_keys(_settings, settings);
@@ -1251,5 +1352,47 @@ BOOL identity_set_from_smartcard_hash(SEC_WINNT_AUTH_IDENTITY_W* identity,
 	if (!identity_set_from_settings(identity, settings, userId, domainId, pwdId))
 		return FALSE;
 #endif /* _WIN32 */
+	return TRUE;
+}
+
+BOOL freerdp_settings_set_custom(rdpSettings* settings, const char* key, FREERDP_SETTINGS_TYPE type,
+                                 const void* data, size_t len)
+{
+	rdpSettingsInternal* intern = freerdp_settings_intern_cast(settings);
+	WINPR_ASSERT(intern);
+	if (!key)
+	{
+		WLog_ERR(TAG, "Invalid key value %p", key);
+		return FALSE;
+	}
+	return custom_settings_entry_add(intern->custom, key, type, len, data);
+}
+
+BOOL freerdp_settings_get_custom(rdpSettings* settings, const char* key, FREERDP_SETTINGS_TYPE type,
+                                 const void** data, size_t* len)
+{
+	rdpSettingsInternal* intern = freerdp_settings_intern_cast(settings);
+	WINPR_ASSERT(intern);
+
+	if (!key)
+	{
+		WLog_ERR(TAG, "Invalid key value %p", key);
+		return FALSE;
+	}
+
+	CustomSettingsEntry* entry = HashTable_GetItemValue(intern->custom, key);
+	if (!entry)
+		return FALSE;
+	if (entry->type != type)
+	{
+		WLog_ERR(TAG, "custom settings entry '%s' type mismatch: got %s, expected %s", key,
+		         freerdp_settings_get_type_name_for_type(entry->type),
+		         freerdp_settings_get_type_name_for_type(type));
+		return FALSE;
+	}
+	if (data)
+		*data = entry->data;
+	if (len)
+		*len = entry->length;
 	return TRUE;
 }

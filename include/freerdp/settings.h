@@ -587,6 +587,37 @@ typedef struct rdp_settings rdpSettings;
 	FREERDP_API BOOL freerdp_settings_set_value_for_name(rdpSettings* settings, const char* name,
 	                                                     const char* value);
 
+	/** \brief Set a custom settings entry, existing data will be replaced.
+	 *  existing entries must use the same \b type as the \b type argument, otherwise the function
+	 * fails
+	 *
+	 * \param settings the settings instance to write to
+	 * \param key a string identifying the custom setting, must not be \b NULL
+	 * \param type the type of setting, stored for later reference.
+	 * \param data a pointer to the data to copy
+	 * \param len the length of the data to copy in bytes
+	 *
+	 * \return \b TRUE if set successfully, \b FALSE otherwise. (e.g. existing key of different
+	 * type, ...)
+	 */
+	FREERDP_API BOOL freerdp_settings_set_custom(rdpSettings* settings, const char* key,
+	                                             FREERDP_SETTINGS_TYPE type, const void* data,
+	                                             size_t len);
+
+	/** \brief Get a custom settings entry.
+	 *
+	 *  \param settings the settings instance to read from
+	 *  \param key the key of the settings to retrieve, must not be \b NULL
+	 *  \param type the type of settings entry to expect, must match data found
+	 *  \param data a pointer that will be set to the data in settings
+	 *  \param len a pointer that will be set to the length of the entry (optional)
+	 *
+	 *  \return \b TRUE if found, \b FALSE if no entry available
+	 */
+	FREERDP_API BOOL freerdp_settings_get_custom(rdpSettings* settings, const char* key,
+	                                             FREERDP_SETTINGS_TYPE type, const void** data,
+	                                             size_t* len);
+
 	/** \brief Get a key index for the name string of that key
 	 *
 	 *  \param value A key name string like FreeRDP_ServerMode
