@@ -341,12 +341,26 @@ BOOL freerdp_capability_buffer_allocate(rdpSettings* settings, UINT32 count)
 	        settings->ReceivedCapabilityDataSizes);
 }
 
+static rdpSettings* create_instance(void)
+{
+	rdpSettingsInternal* settings = (rdpSettingsInternal*)calloc(1, sizeof(rdpSettingsInternal));
+
+	if (!settings)
+		goto fail;
+	WINPR_ASSERT(settings);
+
+	return &settings->base;
+
+fail:
+	freerdp_settings_free(settings);
+	return NULL;
+}
+
 rdpSettings* freerdp_settings_new(DWORD flags)
 {
 	char* base;
 	char* issuers[] = { "FreeRDP", "FreeRDP-licenser" };
-	rdpSettings* settings = (rdpSettings*)calloc(1, sizeof(rdpSettings));
-
+	rdpSettings* settings = create_instance();
 	if (!settings)
 		return NULL;
 
@@ -1133,7 +1147,7 @@ out_fail:
 
 rdpSettings* freerdp_settings_clone(const rdpSettings* settings)
 {
-	rdpSettings* _settings = (rdpSettings*)calloc(1, sizeof(rdpSettings));
+	rdpSettings* _settings = create_instance();
 
 	if (!freerdp_settings_copy(_settings, settings))
 		goto out_fail;

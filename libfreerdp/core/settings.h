@@ -35,6 +35,22 @@
 
 #include <string.h>
 
+typedef struct
+{
+	struct rdp_settings base;
+} rdpSettingsInternal;
+
+static INLINE rdpSettingsInternal* freerdp_settings_intern_cast(rdpSettings* settings)
+{
+	return (rdpSettingsInternal*)settings;
+}
+
+static INLINE const rdpSettingsInternal*
+freerdp_settings_intern_const_cast(const rdpSettings* settings)
+{
+	return (rdpSettingsInternal*)settings;
+}
+
 FREERDP_LOCAL BOOL freerdp_settings_set_default_order_support(rdpSettings* settings);
 FREERDP_LOCAL BOOL freerdp_settings_clone_keys(rdpSettings* dst, const rdpSettings* src);
 FREERDP_LOCAL void freerdp_settings_free_keys(rdpSettings* dst, BOOL cleanup);
