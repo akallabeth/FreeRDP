@@ -399,8 +399,29 @@ static void custom_settings_entry_free(void* val)
 	CustomSettingsEntry* other = val;
 	if (!other)
 		return;
+	if (other->length > 0)
+		memset(other->data, 0, other->length);
 	free(other->data);
 	free(other);
+}
+
+static void zfree(void* str, size_t len)
+{
+	if (str)
+		memset(str, 0, len);
+	free(str);
+}
+
+static void wzfree(WCHAR* str)
+{
+	size_t len = _wcslen(str);
+	zfree(str, len * sizeof(WCHAR));
+}
+
+static void czfree(CHAR* str)
+{
+	size_t len = strlen(str);
+	zfree(str, len * sizeof(CHAR));
 }
 
 static rdpSettings* create_instance(void)
@@ -415,15 +436,30 @@ static rdpSettings* create_instance(void)
 		goto fail;
 	if (!HashTable_SetupForStringData(settings->custom, FALSE))
 		goto fail;
+	else
+	{
+		wObject* obj = HashTable_ValueObject(settings->custom);
+		if (!obj)
+			goto fail;
 
-	wObject* obj = HashTable_ValueObject(settings->custom);
-	if (!obj)
+		obj->fnObjectEquals = custom_settings_entry_equal;
+		obj->fnObjectNew = custom_settings_entry_copy;
+		obj->fnObjectFree = custom_settings_entry_free;
+	}
+
+	settings->utf16_cache = HashTable_New(FALSE);
+	if (!settings->utf16_cache)
 		goto fail;
+	else
+	{
+		wObject* obj = HashTable_ValueObject(settings->custom);
+		if (!obj)
+			goto fail;
 
-	obj->fnObjectEquals = custom_settings_entry_equal;
-	obj->fnObjectNew = custom_settings_entry_copy;
-	obj->fnObjectFree = custom_settings_entry_free;
-
+		obj->fnObjectEquals = NULL;
+		obj->fnObjectNew = NULL;
+		obj->fnObjectFree = wzfree;
+	}
 	return &settings->base;
 
 fail:
@@ -788,7 +824,7 @@ rdpSettings* freerdp_settings_new(DWORD flags)
 		/* these values are used only by the client part */
 		path = GetKnownPath(KNOWN_PATH_HOME);
 		rc = freerdp_settings_set_string(settings, FreeRDP_HomePath, path);
-		free(path);
+		czfree(path);
 
 		if (!rc || !freerdp_settings_get_string(settings, FreeRDP_HomePath))
 			goto out_fail;
@@ -805,10 +841,10 @@ rdpSettings* freerdp_settings_new(DWORD flags)
 			{
 				char* combined = GetCombinedPath(base, FREERDP_PRODUCT_STRING);
 				res = freerdp_settings_set_string(settings, FreeRDP_ConfigPath, combined);
-				free(combined);
+				czfree(combined);
 			}
 
-			free(base);
+			czfree(base);
 			if (!res)
 				goto out_fail;
 		}
@@ -824,7 +860,7 @@ rdpSettings* freerdp_settings_new(DWORD flags)
 
 			cpath = GetKnownSubPath(KNOWN_PATH_XDG_CONFIG_HOME, product);
 			res = freerdp_settings_set_string(settings, FreeRDP_ConfigPath, cpath);
-			free(cpath);
+			czfree(cpath);
 			if (!res)
 				goto out_fail;
 		}
@@ -891,6 +927,7 @@ static void freerdp_settings_free_internal(rdpSettings* settings)
 		rdpSettingsInternal* intern = freerdp_settings_intern_cast(settings);
 		WINPR_ASSERT(intern);
 		HashTable_Clear(intern->custom);
+		HashTable_Clear(intern->utf16_cache);
 	}
 }
 
@@ -913,6 +950,7 @@ void freerdp_settings_free(rdpSettings* settings)
 		rdpSettingsInternal* intern = freerdp_settings_intern_cast(settings);
 		WINPR_ASSERT(intern);
 		HashTable_Free(intern->custom);
+		HashTable_Free(intern->utf16_cache);
 	}
 	free(settings);
 }
@@ -1271,13 +1309,6 @@ out_fail:
 #pragma warning(pop)
 #endif
 
-static void zfree(WCHAR* str, size_t len)
-{
-	if (str)
-		memset(str, 0, len * sizeof(WCHAR));
-	free(str);
-}
-
 BOOL identity_set_from_settings_with_pwd(SEC_WINNT_AUTH_IDENTITY* identity,
                                          const rdpSettings* settings,
                                          FreeRDP_Settings_Keys_String UserId,
@@ -1290,13 +1321,11 @@ BOOL identity_set_from_settings_with_pwd(SEC_WINNT_AUTH_IDENTITY* identity,
 	size_t UserLen = 0;
 	size_t DomainLen = 0;
 
-	WCHAR* Username = freerdp_settings_get_string_as_utf16(settings, UserId, &UserLen);
-	WCHAR* Domain = freerdp_settings_get_string_as_utf16(settings, DomainId, &DomainLen);
+	const WCHAR* Username = freerdp_settings_get_string_as_utf16(settings, UserId, &UserLen);
+	const WCHAR* Domain = freerdp_settings_get_string_as_utf16(settings, DomainId, &DomainLen);
 
 	const int rc = sspi_SetAuthIdentityWithLengthW(identity, Username, UserLen, Domain, DomainLen,
 	                                               Password, pwdLen);
-	zfree(Username, UserLen);
-	zfree(Domain, DomainLen);
 	if (rc < 0)
 		return FALSE;
 	return TRUE;
@@ -1312,11 +1341,10 @@ BOOL identity_set_from_settings(SEC_WINNT_AUTH_IDENTITY_W* identity, const rdpSe
 
 	size_t PwdLen = 0;
 
-	WCHAR* Password = freerdp_settings_get_string_as_utf16(settings, PwdId, &PwdLen);
+	const WCHAR* Password = freerdp_settings_get_string_as_utf16(settings, PwdId, &PwdLen);
 
 	const BOOL rc =
 	    identity_set_from_settings_with_pwd(identity, settings, UserId, DomainId, Password, PwdLen);
-	zfree(Password, PwdLen);
 	return rc;
 }
 
@@ -1340,10 +1368,10 @@ BOOL identity_set_from_smartcard_hash(SEC_WINNT_AUTH_IDENTITY_W* identity,
 	}
 
 	size_t pwdLen = 0;
-	WCHAR* Password = freerdp_settings_get_string_as_utf16(settings, pwdId, &pwdLen);
+	const WCHAR* Password = freerdp_settings_get_string_as_utf16(settings, pwdId, &pwdLen);
 	const int rc = sspi_SetAuthIdentityWithLengthW(
 	    identity, marshalledCredentials, _wcslen(marshalledCredentials), NULL, 0, Password, pwdLen);
-	zfree(Password, pwdLen);
+
 	CredFree(marshalledCredentials);
 	if (rc < 0)
 		return FALSE;

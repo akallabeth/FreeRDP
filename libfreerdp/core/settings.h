@@ -42,6 +42,7 @@ typedef struct
 	ALIGN64 BOOL readonly;
 	ALIGN64 char name[64];
 	ALIGN64 wHashTable* custom;
+	ALIGN64 wHashTable* utf16_cache;
 } rdpSettingsInternal;
 
 static INLINE rdpSettingsInternal* freerdp_settings_intern_cast(rdpSettings* settings)

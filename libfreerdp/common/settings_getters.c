@@ -3265,6 +3265,10 @@ BOOL freerdp_settings_set_string_(rdpSettings* settings, FreeRDP_Settings_Keys_S
 
 	cnv.cc = val;
 
+	{
+		rdpSettingsInternal* intsettings = freerdp_settings_intern_cast(settings);
+		HashTable_Remove(intsettings->utf16_cache, (void*)(uintptr_t)id);
+	}
 	switch (id)
 	{
 		case FreeRDP_AcceptedCert:

@@ -550,7 +550,7 @@ static BOOL rdg_send_tunnel_authorization(rdpRdg* rdg)
 	BOOL status;
 	WINPR_ASSERT(rdg);
 	size_t clientNameLen = 0;
-	WCHAR* clientName =
+	const WCHAR* clientName =
 	    freerdp_settings_get_string_as_utf16(rdg->settings, FreeRDP_ClientHostname, &clientNameLen);
 
 	if (!clientName || (clientNameLen >= UINT16_MAX / sizeof(WCHAR)))
@@ -579,7 +579,6 @@ static BOOL rdg_send_tunnel_authorization(rdpRdg* rdg)
 	Stream_SealLength(s);
 	status = rdg_write_packet(rdg, s);
 	Stream_Free(s, TRUE);
-	free(clientName);
 
 	if (status)
 	{
@@ -593,11 +592,10 @@ static BOOL rdg_send_channel_create(rdpRdg* rdg)
 {
 	wStream* s = NULL;
 	BOOL status = FALSE;
-	WCHAR* serverName = NULL;
 	size_t serverNameLen = 0;
 
 	WINPR_ASSERT(rdg);
-	serverName =
+	const WCHAR* serverName =
 	    freerdp_settings_get_string_as_utf16(rdg->settings, FreeRDP_ServerHostname, &serverNameLen);
 
 	if (!serverName || (serverNameLen >= UINT16_MAX / sizeof(WCHAR)))
@@ -622,7 +620,6 @@ static BOOL rdg_send_channel_create(rdpRdg* rdg)
 	Stream_SealLength(s);
 	status = rdg_write_packet(rdg, s);
 fail:
-	free(serverName);
 	Stream_Free(s, TRUE);
 
 	if (status)

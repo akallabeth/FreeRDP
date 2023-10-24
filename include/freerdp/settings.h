@@ -524,11 +524,11 @@ typedef struct rdp_settings rdpSettings;
 	 * \param settings A pointer to the settings struct to use
 	 * \param id The settings identifier
 	 *
-	 * \return An allocated, '\0' terminated WCHAR string or NULL
+	 * \return A '\0' terminated WCHAR string or NULL
 	 */
-	FREERDP_API WCHAR* freerdp_settings_get_string_as_utf16(const rdpSettings* settings,
-	                                                        FreeRDP_Settings_Keys_String id,
-	                                                        size_t* pCharLen);
+	FREERDP_API const WCHAR* freerdp_settings_get_string_as_utf16(const rdpSettings* settings,
+	                                                              FreeRDP_Settings_Keys_String id,
+	                                                              size_t* pCharLen);
 
 	/** \brief Returns a immutable pointer settings value
 	 *

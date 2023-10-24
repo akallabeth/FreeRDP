@@ -464,7 +464,8 @@ static BOOL arm_encodeRedirectPasswd(rdpSettings* settings, const rdpCertificate
 	 */
 
 	size_t wpasswdLen = 0;
-	WCHAR* wpasswd = freerdp_settings_get_string_as_utf16(settings, FreeRDP_Password, &wpasswdLen);
+	const WCHAR* wpasswd =
+	    freerdp_settings_get_string_as_utf16(settings, FreeRDP_Password, &wpasswdLen);
 	if (!wpasswd)
 	{
 		WLog_ERR(TAG, "error when converting password to UTF16");
@@ -519,7 +520,6 @@ out:
 	free(finalOutput);
 	free(output);
 	free(encryptedPass);
-	free(wpasswd);
 	return ret;
 }
 

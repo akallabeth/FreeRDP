@@ -80,7 +80,6 @@ static BOOL rdp_read_info_null_string(rdpSettings* settings, FreeRDP_Settings_Ke
                                       size_t max)
 {
 	const BOOL unicode = (flags & INFO_UNICODE) ? TRUE : FALSE;
-	const size_t nullSize = unicode ? sizeof(WCHAR) : sizeof(CHAR);
 
 	if (!freerdp_settings_set_string(settings, id, NULL))
 		return FALSE;
@@ -741,15 +740,15 @@ static BOOL rdp_write_info_packet(rdpRdp* rdp, wStream* s)
 {
 	BOOL ret = FALSE;
 	UINT32 flags;
-	WCHAR* domainW = NULL;
+	const WCHAR* domainW = NULL;
 	size_t cbDomain = 0;
-	WCHAR* userNameW = NULL;
+	const WCHAR* userNameW = NULL;
 	size_t cbUserName = 0;
 	WCHAR* passwordW = NULL;
 	size_t cbPassword = 0;
-	WCHAR* alternateShellW = NULL;
-	size_t cbAlternateShell = 0;
-	WCHAR* workingDirW = NULL;
+	const WCHAR* alternateShellW = { '*', '\0' };
+	size_t cbAlternateShell = 2;
+	const WCHAR* workingDirW = NULL;
 	size_t cbWorkingDir = 0;
 	BOOL usedPasswordCookie = FALSE;
 	rdpSettings* settings;
@@ -869,29 +868,13 @@ static BOOL rdp_write_info_packet(rdpRdp* rdp, wStream* s)
 		cbPassword = (UINT16)cbPassword * sizeof(WCHAR);
 	}
 
-	const char* altShell;
 	if (!settings->RemoteAssistanceMode)
-		altShell = freerdp_settings_get_string(settings, FreeRDP_AlternateShell);
-	else if (settings->RemoteAssistancePassStub)
-		altShell = "*"; /* This field MUST be filled with "*" */
-	else
-		altShell = freerdp_settings_get_string(settings, FreeRDP_RemoteAssistancePassword);
-
-	if (altShell && strlen(altShell) > 0)
-	{
-		alternateShellW = ConvertUtf8ToWCharAlloc(altShell, &cbAlternateShell);
-		if (!alternateShellW)
-		{
-			WLog_ERR(TAG, "alternateShellW == NULL");
-			goto fail;
-		}
-		if (cbAlternateShell > (UINT16_MAX / sizeof(WCHAR)))
-		{
-			WLog_ERR(TAG, "cbAlternateShell > UINT16_MAX");
-			goto fail;
-		}
-		cbAlternateShell = (UINT16)cbAlternateShell * sizeof(WCHAR);
-	}
+		alternateShellW = freerdp_settings_get_string_as_utf16(settings, FreeRDP_AlternateShell,
+		                                                       &cbAlternateShell);
+	else if (!settings->RemoteAssistancePassStub)
+		alternateShellW = freerdp_settings_get_string_as_utf16(
+		    settings, FreeRDP_RemoteAssistancePassword, &cbAlternateShell);
+	cbAlternateShell = (UINT16)cbAlternateShell * sizeof(WCHAR);
 
 	FreeRDP_Settings_Keys_String inputId = FreeRDP_RemoteAssistanceSessionId;
 	if (!freerdp_settings_get_bool(settings, FreeRDP_RemoteAssistanceMode))
@@ -943,10 +926,6 @@ static BOOL rdp_write_info_packet(rdpRdp* rdp, wStream* s)
 	Stream_Write_UINT16(s, 0);
 	ret = TRUE;
 fail:
-	free(domainW);
-	free(userNameW);
-	free(alternateShellW);
-	free(workingDirW);
 
 	if (!usedPasswordCookie)
 		free(passwordW);

@@ -2083,15 +2083,33 @@ BOOL freerdp_settings_set_string_from_utf16N(rdpSettings* settings, FreeRDP_Sett
 	return freerdp_settings_set_string_(settings, id, str, len);
 }
 
-WCHAR* freerdp_settings_get_string_as_utf16(const rdpSettings* settings,
-                                            FreeRDP_Settings_Keys_String id, size_t* pCharLen)
+const WCHAR* freerdp_settings_get_string_as_utf16(const rdpSettings* settings,
+                                                  FreeRDP_Settings_Keys_String id, size_t* pCharLen)
 {
-	const char* str = freerdp_settings_get_string(settings, id);
-	if (pCharLen)
-		*pCharLen = 0;
-	if (!str)
-		return NULL;
-	return ConvertUtf8ToWCharAlloc(str, pCharLen);
+	rdpSettingsInternal* intsettings = freerdp_settings_intern_cast(settings);
+
+	const WCHAR* val = HashTable_GetItemValue(intsettings->utf16_cache, (void*)(uintptr_t)id);
+	if (val)
+	{
+		if (pCharLen)
+			*pCharLen = _wcslen(val);
+		return val;
+	}
+	else
+	{
+		const char* str = freerdp_settings_get_string(settings, id);
+		if (pCharLen)
+			*pCharLen = 0;
+		if (!str)
+			return NULL;
+		WCHAR* wstr = ConvertUtf8ToWCharAlloc(str, pCharLen);
+		if (!HashTable_Insert(intsettings->utf16_cache, (void*)(uintptr_t)id, wstr))
+		{
+			free(wstr);
+			return NULL;
+		}
+		return wstr;
+	}
 }
 
 const char* freerdp_rdpdr_dtyp_string(UINT32 type)

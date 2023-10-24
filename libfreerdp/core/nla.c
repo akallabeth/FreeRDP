@@ -1279,7 +1279,6 @@ static BOOL nla_encode_ts_credentials(rdpNla* nla)
 		    (BYTE*)freerdp_settings_get_string_as_utf16(settings, FreeRDP_Password, &ss);
 		octet_string.len = ss * sizeof(WCHAR);
 		const BOOL res = WinPrAsn1EncContextualOctetString(enc, 0, &octet_string) > 0;
-		free(octet_string.data);
 		if (!res)
 			goto out;
 
@@ -1303,7 +1302,6 @@ static BOOL nla_encode_ts_credentials(rdpNla* nla)
 			{
 				const BOOL res2 = WinPrAsn1EncContextualOctetString(enc, cspData_fields[i].tag,
 				                                                    &octet_string) > 0;
-				free(octet_string.data);
 				if (!res2)
 					goto out;
 			}
