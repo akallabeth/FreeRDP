@@ -1570,9 +1570,11 @@ static BOOL rdpdr_state_check(rdpdrPlugin* rdpdr, UINT16 packetid,
 	const char* strstate = rdpdr_state_str(rdpdr->state);
 	if (rdpdr->state != expected)
 	{
-		WLog_Print(rdpdr->log, WLOG_ERROR,
-		           "channel [RDPDR] received %s, expected state %s but have state %s, aborting.",
-		           rdpdr_packetid_string(packetid), rdpdr_state_str(expected), strstate);
+		const char* nextstr = rdpdr_state_str(next);
+		WLog_Print(
+		    rdpdr->log, WLOG_ERROR,
+		    "channel [RDPDR] received %s, expected state %s -> %s but have state %s, aborting.",
+		    rdpdr_packetid_string(packetid), rdpdr_state_str(expected), nextstr, strstate);
 
 		rdpdr_state_advance(rdpdr, RDPDR_CHANNEL_STATE_INITIAL);
 		return FALSE;
