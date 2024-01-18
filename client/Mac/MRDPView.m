@@ -473,6 +473,19 @@ DWORD fixKeyCode(DWORD keyCode, unichar keyChar, enum APPLE_KEYBOARD_TYPE type)
 	return keyCode;
 }
 
+static void print_char(NSEvent *event, BOOL down)
+{
+	NSString *characters = [event characters];
+	NSString *charactersNoMod = [event charactersIgnoringModifiers];
+	const int fkey = [event keyCode];
+
+	const char *ccharacters = [characters UTF8String];
+	const char *ccharactersNoMod = [charactersNoMod UTF8String];
+
+	printf("xxxxx '%s'[%p]  [%s|%p] [0x%08x] %s\n", ccharacters, ccharacters, ccharactersNoMod,
+	       ccharactersNoMod, fkey, down ? "DOWN" : "UP");
+}
+
 - (void)keyDown:(NSEvent *)event
 {
 	DWORD keyCode;
@@ -485,6 +498,7 @@ DWORD fixKeyCode(DWORD keyCode, unichar keyChar, enum APPLE_KEYBOARD_TYPE type)
 	if (!is_connected)
 		return;
 
+	print_char(event, TRUE);
 	keyFlags = KBD_FLAGS_DOWN;
 	keyCode = [event keyCode];
 	characters = [event charactersIgnoringModifiers];
@@ -522,6 +536,7 @@ DWORD fixKeyCode(DWORD keyCode, unichar keyChar, enum APPLE_KEYBOARD_TYPE type)
 	if (!is_connected)
 		return;
 
+	print_char(event, FALSE);
 	keyFlags = KBD_FLAGS_RELEASE;
 	keyCode = [event keyCode];
 	characters = [event charactersIgnoringModifiers];
