@@ -57,7 +57,7 @@ static int MutexGetFd(HANDLE handle)
 BOOL MutexCloseHandle(HANDLE handle)
 {
 	WINPR_MUTEX* mutex = (WINPR_MUTEX*)handle;
-	int rc;
+	int rc = 0;
 
 	if (!MutexIsHandled(handle))
 		return FALSE;
@@ -121,7 +121,7 @@ static HANDLE_OPS ops = { MutexIsHandled,
 
 HANDLE CreateMutexW(LPSECURITY_ATTRIBUTES lpMutexAttributes, BOOL bInitialOwner, LPCWSTR lpName)
 {
-	HANDLE handle;
+	HANDLE handle = NULL;
 	char* name = NULL;
 
 	if (lpName)
@@ -139,7 +139,7 @@ HANDLE CreateMutexW(LPSECURITY_ATTRIBUTES lpMutexAttributes, BOOL bInitialOwner,
 HANDLE CreateMutexA(LPSECURITY_ATTRIBUTES lpMutexAttributes, BOOL bInitialOwner, LPCSTR lpName)
 {
 	HANDLE handle = NULL;
-	WINPR_MUTEX* mutex;
+	WINPR_MUTEX* mutex = NULL;
 	mutex = (WINPR_MUTEX*)calloc(1, sizeof(WINPR_MUTEX));
 
 	if (lpMutexAttributes)
@@ -219,8 +219,8 @@ HANDLE OpenMutexW(DWORD dwDesiredAccess, BOOL bInheritHandle, LPCWSTR lpName)
 
 BOOL ReleaseMutex(HANDLE hMutex)
 {
-	ULONG Type;
-	WINPR_HANDLE* Object;
+	ULONG Type = 0;
+	WINPR_HANDLE* Object = NULL;
 
 	if (!winpr_Handle_GetInfo(hMutex, &Type, &Object))
 		return FALSE;

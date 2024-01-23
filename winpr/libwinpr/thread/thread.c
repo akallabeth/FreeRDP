@@ -124,7 +124,7 @@ static BOOL run_mutex_init_(int (*fkt)(pthread_mutex_t*, const pthread_mutexattr
                             const char* name, pthread_mutex_t* mutex,
                             const pthread_mutexattr_t* mutexattr)
 {
-	int rc;
+	int rc = 0;
 
 	WINPR_ASSERT(fkt);
 	WINPR_ASSERT(mutex);
@@ -142,7 +142,7 @@ static BOOL run_mutex_init_(int (*fkt)(pthread_mutex_t*, const pthread_mutexattr
 static BOOL run_mutex_fkt_(int (*fkt)(pthread_mutex_t* mux), const char* name,
                            pthread_mutex_t* mutex)
 {
-	int rc;
+	int rc = 0;
 
 	WINPR_ASSERT(fkt);
 	WINPR_ASSERT(mutex);
@@ -160,7 +160,7 @@ static BOOL run_mutex_fkt_(int (*fkt)(pthread_mutex_t* mux), const char* name,
 static BOOL run_cond_init_(int (*fkt)(pthread_cond_t*, const pthread_condattr_t*), const char* name,
                            pthread_cond_t* condition, const pthread_condattr_t* conditionattr)
 {
-	int rc;
+	int rc = 0;
 
 	WINPR_ASSERT(fkt);
 	WINPR_ASSERT(condition);
@@ -178,7 +178,7 @@ static BOOL run_cond_init_(int (*fkt)(pthread_cond_t*, const pthread_condattr_t*
 static BOOL run_cond_fkt_(int (*fkt)(pthread_cond_t* mux), const char* name,
                           pthread_cond_t* condition)
 {
-	int rc;
+	int rc = 0;
 
 	WINPR_ASSERT(fkt);
 	WINPR_ASSERT(condition);
@@ -502,7 +502,7 @@ static void* thread_launcher(void* arg)
 {
 	DWORD rc = 0;
 	WINPR_THREAD* thread = (WINPR_THREAD*)arg;
-	LPTHREAD_START_ROUTINE fkt;
+	LPTHREAD_START_ROUTINE fkt = NULL;
 
 	if (!thread)
 	{
@@ -609,7 +609,7 @@ HANDLE CreateThread(LPSECURITY_ATTRIBUTES lpThreadAttributes, SIZE_T dwStackSize
                     LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter,
                     DWORD dwCreationFlags, LPDWORD lpThreadId)
 {
-	HANDLE handle;
+	HANDLE handle = NULL;
 	WINPR_THREAD* thread = (WINPR_THREAD*)calloc(1, sizeof(WINPR_THREAD));
 
 	if (!thread)
@@ -798,9 +798,9 @@ VOID ExitThread(DWORD dwExitCode)
 
 BOOL GetExitCodeThread(HANDLE hThread, LPDWORD lpExitCode)
 {
-	ULONG Type;
-	WINPR_HANDLE* Object;
-	WINPR_THREAD* thread;
+	ULONG Type = 0;
+	WINPR_HANDLE* Object = NULL;
+	WINPR_THREAD* thread = NULL;
 
 	if (!winpr_Handle_GetInfo(hThread, &Type, &Object) || Object->Type != HANDLE_TYPE_THREAD)
 	{
@@ -816,7 +816,7 @@ BOOL GetExitCodeThread(HANDLE hThread, LPDWORD lpExitCode)
 
 WINPR_THREAD* winpr_GetCurrentThread(VOID)
 {
-	WINPR_THREAD* ret;
+	WINPR_THREAD* ret = NULL;
 
 	InitOnceExecuteOnce(&threads_InitOnce, initializeThreads, NULL, NULL);
 	if (mainThreadId == pthread_self())
@@ -833,7 +833,7 @@ HANDLE _GetCurrentThread(VOID)
 
 DWORD GetCurrentThreadId(VOID)
 {
-	pthread_t tid;
+	pthread_t tid = 0;
 	tid = pthread_self();
 	/* Since pthread_t can be 64-bits on some systems, take just the    */
 	/* lower 32-bits of it for the thread ID returned by this function. */
@@ -858,10 +858,10 @@ static void userAPC(LPVOID arg)
 
 DWORD QueueUserAPC(PAPCFUNC pfnAPC, HANDLE hThread, ULONG_PTR dwData)
 {
-	ULONG Type;
-	WINPR_HANDLE* Object;
-	WINPR_APC_ITEM* apc;
-	UserApcItem* apcItem;
+	ULONG Type = 0;
+	WINPR_HANDLE* Object = NULL;
+	WINPR_APC_ITEM* apc = NULL;
+	UserApcItem* apcItem = NULL;
 
 	if (!pfnAPC)
 		return 1;
@@ -894,9 +894,9 @@ DWORD QueueUserAPC(PAPCFUNC pfnAPC, HANDLE hThread, ULONG_PTR dwData)
 
 DWORD ResumeThread(HANDLE hThread)
 {
-	ULONG Type;
-	WINPR_HANDLE* Object;
-	WINPR_THREAD* thread;
+	ULONG Type = 0;
+	WINPR_HANDLE* Object = NULL;
+	WINPR_THREAD* thread = NULL;
 
 	if (!winpr_Handle_GetInfo(hThread, &Type, &Object) || Object->Type != HANDLE_TYPE_THREAD)
 	{
@@ -948,9 +948,9 @@ BOOL SwitchToThread(VOID)
 
 BOOL TerminateThread(HANDLE hThread, DWORD dwExitCode)
 {
-	ULONG Type;
-	WINPR_HANDLE* Object;
-	WINPR_THREAD* thread;
+	ULONG Type = 0;
+	WINPR_HANDLE* Object = NULL;
+	WINPR_THREAD* thread = NULL;
 
 	if (!winpr_Handle_GetInfo(hThread, &Type, &Object))
 		return FALSE;
