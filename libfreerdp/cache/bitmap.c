@@ -310,12 +310,13 @@ static int bitmap_cache_save_persistent(rdpBitmapCache* bitmapCache)
 	if (status < 1)
 		goto end;
 
-	for (UINT32 i = 0; i < bitmapCache->maxCells; i++)
+	for (UINT32 i = 0; i < bitmapCache->maxCells && bitmapCache->cells; i++)
 	{
-		for (UINT32 j = 0; j < bitmapCache->cells[i].number + 1; j++)
+		BITMAP_V2_CELL* cell = &bitmapCache->cells[i];
+		for (UINT32 j = 0; j < cell->number + 1 && cell->entries; j++)
 		{
 			PERSISTENT_CACHE_ENTRY cacheEntry;
-			rdpBitmap* bitmap = bitmapCache->cells[i].entries[j];
+			rdpBitmap* bitmap = cell->entries[j];
 
 			if (!bitmap || !bitmap->key64)
 				continue;
@@ -397,8 +398,7 @@ void bitmap_cache_free(rdpBitmapCache* bitmapCache)
 
 	bitmap_cache_save_persistent(bitmapCache);
 
-	UINT32 i = 0;
-	for (i = 0; i < bitmapCache->maxCells; i++)
+	for (UINT32 i = 0; i < bitmapCache->maxCells && bitmapCache->cells; i++)
 	{
 		UINT32 j = 0;
 		BITMAP_V2_CELL* cell = &bitmapCache->cells[i];
@@ -412,7 +412,7 @@ void bitmap_cache_free(rdpBitmapCache* bitmapCache)
 			Bitmap_Free(bitmapCache->context, bitmap);
 		}
 
-		free(bitmapCache->cells[i].entries);
+		free(cell->entries);
 	}
 
 	free(bitmapCache->cells);
