@@ -69,7 +69,7 @@ BOOL MutexCloseHandle(HANDLE handle)
 		         winpr_strerror(rc, ebuffer, sizeof(ebuffer)), rc);
 #if defined(WITH_DEBUG_MUTEX)
 		{
-			size_t used = 0, i;
+			size_t used = 0;
 			void* stack = winpr_backtrace(20);
 			char** msg = NULL;
 
@@ -78,7 +78,7 @@ BOOL MutexCloseHandle(HANDLE handle)
 
 			if (msg)
 			{
-				for (i = 0; i < used; i++)
+				for (size_t i = 0; i < used; i++)
 					WLog_ERR(TAG, "%2" PRIdz ": %s", i, msg[i]);
 			}
 

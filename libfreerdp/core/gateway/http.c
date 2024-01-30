@@ -971,10 +971,8 @@ static BOOL http_response_parse_header(HttpResponse* response)
 {
 	BOOL rc = FALSE;
 	char c = 0;
-	size_t count = 0;
 	char* line = NULL;
 	char* name = NULL;
-	char* value = NULL;
 	char* colon_pos = NULL;
 	char* end_of_header = NULL;
 	char end_of_header_char = 0;
@@ -988,7 +986,7 @@ static BOOL http_response_parse_header(HttpResponse* response)
 	if (!http_response_parse_header_status_line(response, response->lines[0]))
 		goto fail;
 
-	for (count = 1; count < response->count; count++)
+	for (size_t count = 1; count < response->count; count++)
 	{
 		line = response->lines[count];
 
@@ -1026,7 +1024,8 @@ static BOOL http_response_parse_header(HttpResponse* response)
 		name = line;
 
 		/* eat space and tabs before header value */
-		for (value = colon_pos + 1; *value; value++)
+		char* value = colon_pos + 1;
+		for (; *value; value++)
 		{
 			if ((*value != ' ') && (*value != '\t'))
 				break;

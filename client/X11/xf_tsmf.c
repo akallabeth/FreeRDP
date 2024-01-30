@@ -56,12 +56,10 @@ typedef struct xf_xv_context xfXvContext;
 
 static BOOL xf_tsmf_is_format_supported(xfXvContext* xv, UINT32 pixfmt)
 {
-	int i;
-
 	if (!xv->xv_pixfmts)
 		return FALSE;
 
-	for (i = 0; xv->xv_pixfmts[i]; i++)
+	for (int i = 0; xv->xv_pixfmts[i]; i++)
 	{
 		if (xv->xv_pixfmts[i] == pixfmt)
 			return TRUE;
@@ -121,7 +119,7 @@ static int xf_tsmf_xv_video_frame_event(TsmfClientContext* tsmf, TSMF_VIDEO_FRAM
 		if (!xrects)
 			return -1;
 
-		for (i = 0; i < numRects; i++)
+		for (int i = 0; i < numRects; i++)
 		{
 			x = event->x + event->visibleRects[i].left;
 			y = event->y + event->visibleRects[i].top;
@@ -231,7 +229,7 @@ static int xf_tsmf_xv_video_frame_event(TsmfClientContext* tsmf, TSMF_VIDEO_FRAM
 			}
 			else
 			{
-				for (i = 0; i < event->frameHeight; i++)
+				for (int i = 0; i < event->frameHeight; i++)
 				{
 					CopyMemory(image->data + image->offsets[0] + i * image->pitches[0],
 					           event->frameData + i * event->frameWidth, event->frameWidth);
@@ -262,7 +260,7 @@ static int xf_tsmf_xv_video_frame_event(TsmfClientContext* tsmf, TSMF_VIDEO_FRAM
 			}
 			else
 			{
-				for (i = 0; i < event->frameHeight / 2; i++)
+				for (int i = 0; i < event->frameHeight / 2; i++)
 				{
 					CopyMemory(image->data + image->offsets[1] + i * image->pitches[1],
 					           data1 + i * event->frameWidth / 2, event->frameWidth / 2);
@@ -308,7 +306,6 @@ static int xf_tsmf_xv_video_frame_event(TsmfClientContext* tsmf, TSMF_VIDEO_FRAM
 static int xf_tsmf_xv_init(xfContext* xfc, TsmfClientContext* tsmf)
 {
 	int ret;
-	unsigned int i;
 	unsigned int version;
 	unsigned int release;
 	unsigned int event_base;
@@ -359,7 +356,7 @@ static int xf_tsmf_xv_init(xfContext* xfc, TsmfClientContext* tsmf)
 		return -1;
 	}
 
-	for (i = 0; i < num_adaptors; i++)
+	for (unsigned int i = 0; i < num_adaptors; i++)
 	{
 		WLog_DBG(TAG, "adapter port %lu-%lu (%s)", ai[i].base_id,
 		         ai[i].base_id + ai[i].num_ports - 1, ai[i].name);
@@ -380,7 +377,7 @@ static int xf_tsmf_xv_init(xfContext* xfc, TsmfClientContext* tsmf)
 
 	attr = XvQueryPortAttributes(xfc->display, xv->xv_port, &ret);
 
-	for (i = 0; i < (unsigned int)ret; i++)
+	for (unsigned int i = 0; i < (unsigned int)ret; i++)
 	{
 		if (strcmp(attr[i].name, "XV_COLORKEY") == 0)
 		{
@@ -400,7 +397,7 @@ static int xf_tsmf_xv_init(xfContext* xfc, TsmfClientContext* tsmf)
 	{
 		xv->xv_pixfmts = (UINT32*)calloc((ret + 1), sizeof(UINT32));
 
-		for (i = 0; i < (unsigned int)ret; i++)
+		for (unsigned int i = 0; i < (unsigned int)ret; i++)
 		{
 			xv->xv_pixfmts[i] = fo[i].id;
 			WLog_DBG(TAG, "%c%c%c%c ", ((char*)(xv->xv_pixfmts + i))[0],

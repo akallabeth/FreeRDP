@@ -487,7 +487,6 @@ BOOL tsmf_codec_parse_media_type(TS_AM_MEDIA_TYPE* mediatype, wStream* s)
 {
 	UINT32 cbFormat;
 	BOOL ret = TRUE;
-	int i;
 
 	ZeroMemory(mediatype, sizeof(TS_AM_MEDIA_TYPE));
 
@@ -497,7 +496,7 @@ BOOL tsmf_codec_parse_media_type(TS_AM_MEDIA_TYPE* mediatype, wStream* s)
 		return FALSE;
 	tsmf_print_guid(Stream_Pointer(s));
 
-	for (i = 0; tsmf_major_type_map[i].type != TSMF_MAJOR_TYPE_UNKNOWN; i++)
+	for (size_t i = 0; tsmf_major_type_map[i].type != TSMF_MAJOR_TYPE_UNKNOWN; i++)
 	{
 		if (memcmp(tsmf_major_type_map[i].guid, Stream_Pointer(s), 16) == 0)
 			break;
@@ -516,7 +515,7 @@ BOOL tsmf_codec_parse_media_type(TS_AM_MEDIA_TYPE* mediatype, wStream* s)
 		return FALSE;
 	tsmf_print_guid(Stream_Pointer(s));
 
-	for (i = 0; tsmf_sub_type_map[i].type != TSMF_SUB_TYPE_UNKNOWN; i++)
+	for (size_t i = 0; tsmf_sub_type_map[i].type != TSMF_SUB_TYPE_UNKNOWN; i++)
 	{
 		if (memcmp(tsmf_sub_type_map[i].guid, Stream_Pointer(s), 16) == 0)
 			break;
@@ -540,7 +539,7 @@ BOOL tsmf_codec_parse_media_type(TS_AM_MEDIA_TYPE* mediatype, wStream* s)
 		return FALSE;
 	tsmf_print_guid(Stream_Pointer(s));
 
-	for (i = 0; tsmf_format_type_map[i].type != TSMF_FORMAT_TYPE_UNKNOWN; i++)
+	for (size_t i = 0; tsmf_format_type_map[i].type != TSMF_FORMAT_TYPE_UNKNOWN; i++)
 	{
 		if (memcmp(tsmf_format_type_map[i].guid, Stream_Pointer(s), 16) == 0)
 			break;
