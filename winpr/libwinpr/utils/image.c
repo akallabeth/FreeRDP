@@ -189,7 +189,7 @@ static void* winpr_bitmap_write_buffer(const BYTE* data, size_t size, UINT32 wid
 		goto fail;
 	Stream_Write(s, bmp_header, WINPR_IMAGE_BMP_HEADER_LEN);
 
-	if (!Stream_EnsureRemainingCapacity(s, stride * height * 1ull))
+	if (!Stream_EnsureRemainingCapacity(s, 1ull * stride * height))
 		goto fail;
 
 	for (size_t y = 0; y < height; y++)
@@ -338,7 +338,7 @@ static int winpr_image_bitmap_read_buffer(wImage* image, const BYTE* buffer, siz
 		Stream_Read(s, image->data, bi.biSizeImage);
 	else
 	{
-		pDstData = &(image->data[(image->height - 1) * image->scanline]);
+		pDstData = &(image->data[1ull * (image->height - 1) * image->scanline]);
 
 		for (size_t index = 0; index < image->height; index++)
 		{
@@ -489,9 +489,9 @@ void* winpr_convert_to_jpeg(const void* data, size_t size, UINT32 width, UINT32 
 	unsigned long outsize = 0;
 	struct jpeg_compress_struct cinfo = { 0 };
 
-	const size_t expect1 = stride * height;
+	const size_t expect1 = 1ull * stride * height;
 	const size_t bytes = (bpp + 7) / 8;
-	const size_t expect2 = width * height * bytes;
+	const size_t expect2 = 1ull * width * height * bytes;
 	if (expect1 != expect2)
 		return NULL;
 	if (expect1 != size)
@@ -568,7 +568,7 @@ SSIZE_T winpr_convert_from_jpeg(const char* comp_data, size_t comp_data_bytes, U
 	if (!jpeg_start_decompress(&cinfo))
 		goto fail;
 
-	size_t stride = cinfo.image_width * cinfo.num_components;
+	size_t stride = 1ull * cinfo.image_width * cinfo.num_components;
 
 	decomp_data = calloc(stride, cinfo.image_height);
 	if (decomp_data)
@@ -649,7 +649,7 @@ SSIZE_T winpr_convert_from_webp(const char* comp_data, size_t comp_data_bytes, U
 
 	*bpp = 32;
 	*ppdecomp_data = dst;
-	return (*width) * (*height) * 4;
+	return 4ull * (*width) * (*height);
 #endif
 }
 
@@ -831,7 +831,7 @@ static void* winpr_read_png_from_buffer(const void* data, size_t SrcSize, size_t
 	{
 		const size_t stride = width * bpp;
 		const size_t png_stride = png_get_rowbytes(png_ptr, info_ptr);
-		const size_t size = width * height * bpp;
+		const size_t size = stride * height;
 		const size_t copybytes = stride > png_stride ? png_stride : stride;
 
 		rc = malloc(size);

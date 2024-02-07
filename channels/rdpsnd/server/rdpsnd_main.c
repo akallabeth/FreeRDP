@@ -376,7 +376,7 @@ static UINT rdpsnd_server_select_format(RdpsndServerContext* context, UINT16 cli
 	switch (format->wFormatTag)
 	{
 		case WAVE_FORMAT_DVI_ADPCM:
-			bs = (format->nBlockAlign - 4 * format->nChannels) * 4;
+			bs = 4ull * (format->nBlockAlign - 4ull * format->nChannels);
 			context->priv->out_frames -= context->priv->out_frames % bs;
 
 			if (context->priv->out_frames < bs)

@@ -93,7 +93,7 @@ bool webview_impl_run(const std::string& title, const std::string& url, std::str
 	webview.load(QUrl(QString::fromStdString(url)));
 	webview.show();
 
-	if (app.exec() != 0)
+	if (QApplication::exec() != 0)
 		return false;
 
 	auto val = handler.code();

@@ -183,7 +183,7 @@ static BOOL PresentationContext_ref(PresentationContext* presentation)
 static PresentationContext* PresentationContext_new(VideoClientContext* video, BYTE PresentationId,
                                                     UINT32 x, UINT32 y, UINT32 width, UINT32 height)
 {
-	size_t s = width * height * 4ULL;
+	size_t s = 4ull * width * height;
 	VideoClientContextPriv* priv = NULL;
 	PresentationContext* ret = NULL;
 
@@ -647,7 +647,7 @@ static UINT video_control_send_client_notification(VideoClientContext* context,
 		/* TSMM_CLIENT_NOTIFICATION_FRAMERATE_OVERRIDE */
 		Stream_Write_UINT32(s, notif->FramerateOverride.Flags);
 		Stream_Write_UINT32(s, notif->FramerateOverride.DesiredFrameRate);
-		Stream_Zero(s, 4 * 2);
+		Stream_Zero(s, 4ull * 2ull);
 
 		cbSize += 4 * 4;
 	}

@@ -82,12 +82,12 @@ static INLINE BOOL avc420_yuv_to_rgb(const BYTE* pYUVData[3], const UINT32 iStri
 
 	const INT32 width = rect->right - rect->left;
 	const INT32 height = rect->bottom - rect->top;
-	BYTE* pDstPoint =
-	    pDstData + rect->top * nDstStep + rect->left * FreeRDPGetBytesPerPixel(DstFormat);
+	BYTE* pDstPoint = pDstData + 1ull * rect->top * nDstStep +
+	                  1ull * rect->left * FreeRDPGetBytesPerPixel(DstFormat);
 
-	pYUVPoint[0] = pYUVData[0] + rect->top * iStride[0] + rect->left;
-	pYUVPoint[1] = pYUVData[1] + rect->top / 2 * iStride[1] + rect->left / 2;
-	pYUVPoint[2] = pYUVData[2] + rect->top / 2 * iStride[2] + rect->left / 2;
+	pYUVPoint[0] = pYUVData[0] + 1ull * rect->top * iStride[0] + rect->left;
+	pYUVPoint[1] = pYUVData[1] + 1ull * rect->top / 2ull * iStride[1] + rect->left / 2ull;
+	pYUVPoint[2] = pYUVData[2] + 1ull * rect->top / 2ull * iStride[2] + rect->left / 2ull;
 
 	roi.width = width;
 	roi.height = height;
@@ -114,12 +114,12 @@ static INLINE BOOL avc444_yuv_to_rgb(const BYTE* pYUVData[3], const UINT32 iStri
 
 	const INT32 width = rect->right - rect->left;
 	const INT32 height = rect->bottom - rect->top;
-	BYTE* pDstPoint =
-	    pDstData + rect->top * nDstStep + rect->left * FreeRDPGetBytesPerPixel(DstFormat);
+	BYTE* pDstPoint = pDstData + 1ull * rect->top * nDstStep +
+	                  1ull * rect->left * FreeRDPGetBytesPerPixel(DstFormat);
 
-	pYUVPoint[0] = pYUVData[0] + rect->top * iStride[0] + rect->left;
-	pYUVPoint[1] = pYUVData[1] + rect->top * iStride[1] + rect->left;
-	pYUVPoint[2] = pYUVData[2] + rect->top * iStride[2] + rect->left;
+	pYUVPoint[0] = pYUVData[0] + 1ull * rect->top * iStride[0] + rect->left;
+	pYUVPoint[1] = pYUVData[1] + 1ull * rect->top * iStride[1] + rect->left;
+	pYUVPoint[2] = pYUVData[2] + 1ull * rect->top * iStride[2] + rect->left;
 
 	roi.width = width;
 	roi.height = height;
@@ -648,13 +648,14 @@ static void CALLBACK yuv420_encode_work_callback(PTP_CALLBACK_INSTANCE instance,
 
 	roi.width = param->rect.right - param->rect.left;
 	roi.height = param->rect.bottom - param->rect.top;
-	src = param->pSrcData + param->nSrcStep * param->rect.top +
-	      param->rect.left * FreeRDPGetBytesPerPixel(param->SrcFormat);
-	pYUVData[0] = param->pYUVLumaData[0] + param->rect.top * param->iStride[0] + param->rect.left;
-	pYUVData[1] =
-	    param->pYUVLumaData[1] + param->rect.top / 2 * param->iStride[1] + param->rect.left / 2;
-	pYUVData[2] =
-	    param->pYUVLumaData[2] + param->rect.top / 2 * param->iStride[2] + param->rect.left / 2;
+	src = param->pSrcData + 1ull * param->nSrcStep * param->rect.top +
+	      1ull * param->rect.left * FreeRDPGetBytesPerPixel(param->SrcFormat);
+	pYUVData[0] =
+	    param->pYUVLumaData[0] + 1ull * param->rect.top * param->iStride[0] + param->rect.left;
+	pYUVData[1] = param->pYUVLumaData[1] + 1ull * param->rect.top / 2ull * param->iStride[1] +
+	              1ull * param->rect.left / 2ull;
+	pYUVData[2] = param->pYUVLumaData[2] + 1ull * param->rect.top / 2ull * param->iStride[2] +
+	              1ull * param->rect.left / 2ull;
 
 	if (prims->RGBToYUV420_8u_P3AC4R(src, param->SrcFormat, param->nSrcStep, pYUVData,
 	                                 param->iStride, &roi) != PRIMITIVES_SUCCESS)
@@ -679,20 +680,20 @@ static void CALLBACK yuv444v1_encode_work_callback(PTP_CALLBACK_INSTANCE instanc
 
 	roi.width = param->rect.right - param->rect.left;
 	roi.height = param->rect.bottom - param->rect.top;
-	src = param->pSrcData + param->nSrcStep * param->rect.top +
-	      param->rect.left * FreeRDPGetBytesPerPixel(param->SrcFormat);
+	src = param->pSrcData + 1ull * param->nSrcStep * param->rect.top +
+	      1ull * param->rect.left * FreeRDPGetBytesPerPixel(param->SrcFormat);
 	pYUVLumaData[0] =
-	    param->pYUVLumaData[0] + param->rect.top * param->iStride[0] + param->rect.left;
-	pYUVLumaData[1] =
-	    param->pYUVLumaData[1] + param->rect.top / 2 * param->iStride[1] + param->rect.left / 2;
-	pYUVLumaData[2] =
-	    param->pYUVLumaData[2] + param->rect.top / 2 * param->iStride[2] + param->rect.left / 2;
+	    param->pYUVLumaData[0] + 1ull * param->rect.top * param->iStride[0] + param->rect.left;
+	pYUVLumaData[1] = param->pYUVLumaData[1] + 1ull * param->rect.top / 2ull * param->iStride[1] +
+	                  param->rect.left / 2ull;
+	pYUVLumaData[2] = param->pYUVLumaData[2] + 1ull * param->rect.top / 2ull * param->iStride[2] +
+	                  param->rect.left / 2ull;
 	pYUVChromaData[0] =
-	    param->pYUVChromaData[0] + param->rect.top * param->iStride[0] + param->rect.left;
-	pYUVChromaData[1] =
-	    param->pYUVChromaData[1] + param->rect.top / 2 * param->iStride[1] + param->rect.left / 2;
-	pYUVChromaData[2] =
-	    param->pYUVChromaData[2] + param->rect.top / 2 * param->iStride[2] + param->rect.left / 2;
+	    param->pYUVChromaData[0] + 1ull * param->rect.top * param->iStride[0] + param->rect.left;
+	pYUVChromaData[1] = param->pYUVChromaData[1] +
+	                    1ull * param->rect.top / 2ull * param->iStride[1] + param->rect.left / 2ull;
+	pYUVChromaData[2] = param->pYUVChromaData[2] + param->rect.top / 2ull * param->iStride[2] +
+	                    param->rect.left / 2ull;
 	if (prims->RGBToAVC444YUV(src, param->SrcFormat, param->nSrcStep, pYUVLumaData, param->iStride,
 	                          pYUVChromaData, param->iStride, &roi) != PRIMITIVES_SUCCESS)
 	{
@@ -716,20 +717,20 @@ static void CALLBACK yuv444v2_encode_work_callback(PTP_CALLBACK_INSTANCE instanc
 
 	roi.width = param->rect.right - param->rect.left;
 	roi.height = param->rect.bottom - param->rect.top;
-	src = param->pSrcData + param->nSrcStep * param->rect.top +
-	      param->rect.left * FreeRDPGetBytesPerPixel(param->SrcFormat);
+	src = param->pSrcData + 1ull * param->nSrcStep * param->rect.top +
+	      1ull * param->rect.left * FreeRDPGetBytesPerPixel(param->SrcFormat);
 	pYUVLumaData[0] =
-	    param->pYUVLumaData[0] + param->rect.top * param->iStride[0] + param->rect.left;
-	pYUVLumaData[1] =
-	    param->pYUVLumaData[1] + param->rect.top / 2 * param->iStride[1] + param->rect.left / 2;
-	pYUVLumaData[2] =
-	    param->pYUVLumaData[2] + param->rect.top / 2 * param->iStride[2] + param->rect.left / 2;
+	    param->pYUVLumaData[0] + 1ull * param->rect.top * param->iStride[0] + param->rect.left;
+	pYUVLumaData[1] = param->pYUVLumaData[1] + 1ull * param->rect.top / 2ull * param->iStride[1] +
+	                  param->rect.left / 2;
+	pYUVLumaData[2] = param->pYUVLumaData[2] + 1ull * param->rect.top / 2ull * param->iStride[2] +
+	                  param->rect.left / 2;
 	pYUVChromaData[0] =
-	    param->pYUVChromaData[0] + param->rect.top * param->iStride[0] + param->rect.left;
-	pYUVChromaData[1] =
-	    param->pYUVChromaData[1] + param->rect.top / 2 * param->iStride[1] + param->rect.left / 2;
-	pYUVChromaData[2] =
-	    param->pYUVChromaData[2] + param->rect.top / 2 * param->iStride[2] + param->rect.left / 2;
+	    param->pYUVChromaData[0] + 1ull * param->rect.top * param->iStride[0] + param->rect.left;
+	pYUVChromaData[1] = param->pYUVChromaData[1] + param->rect.top / 2ull * param->iStride[1] +
+	                    param->rect.left / 2;
+	pYUVChromaData[2] = param->pYUVChromaData[2] +
+	                    1ull * param->rect.top / 2ull * param->iStride[2] + param->rect.left / 2;
 	if (prims->RGBToAVC444YUVv2(src, param->SrcFormat, param->nSrcStep, pYUVLumaData,
 	                            param->iStride, pYUVChromaData, param->iStride,
 	                            &roi) != PRIMITIVES_SUCCESS)

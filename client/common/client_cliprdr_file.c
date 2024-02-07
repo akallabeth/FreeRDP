@@ -981,7 +981,7 @@ static void cliprdr_file_fuse_read(fuse_req_t fuse_req, fuse_ino_t fuse_ino, siz
 		return;
 	}
 
-	size = MIN(size, 8 * 1024 * 1024);
+	size = MIN(size, 8ull * 1024ull * 1024ull);
 
 	result = request_file_range_async(file_context, fuse_file, fuse_req, offset, size);
 	HashTable_Unlock(file_context->inode_table);
@@ -1910,7 +1910,7 @@ static BOOL set_selection_for_clip_data_entry(CliprdrFileContext* file_context,
 			filetime += file->ftLastWriteTime.dwLowDateTime;
 
 			fuse_file->last_write_time_unix =
-			    filetime / (10 * 1000 * 1000) - WIN32_FILETIME_TO_UNIX_EPOCH;
+			    filetime / (10ull * 1000ull * 1000ull) - WIN32_FILETIME_TO_UNIX_EPOCH;
 			fuse_file->has_last_write_time = TRUE;
 		}
 

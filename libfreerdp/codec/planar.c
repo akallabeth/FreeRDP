@@ -244,13 +244,13 @@ static INLINE INT32 planar_decompress_plane_rle_only(const BYTE* pSrcData, UINT3
 
 	previousScanline = NULL;
 
-	for (INT32 y = 0; y < (INT32)nHeight; y++)
+	for (INT64 y = 0; y < (INT64)nHeight; y++)
 	{
 		BYTE* dstp = &pDstData[((y) * (INT32)nWidth)];
 		pixel = 0;
 		currentScanline = dstp;
 
-		for (INT32 x = 0; x < (INT32)nWidth;)
+		for (INT64 x = 0; x < (INT64)nWidth;)
 		{
 			controlByte = *srcp;
 			srcp++;
@@ -460,7 +460,7 @@ static INLINE INT32 planar_decompress_plane_rle(const BYTE* pSrcData, UINT32 Src
 						pixel = deltaValue;
 					}
 
-					deltaValue = previousScanline[x * 4] + pixel;
+					deltaValue = previousScanline[x * 4ull] + pixel;
 					*dstp = deltaValue;
 					dstp += 4;
 					x++;
@@ -469,7 +469,7 @@ static INLINE INT32 planar_decompress_plane_rle(const BYTE* pSrcData, UINT32 Src
 
 				while (nRunLength > 0)
 				{
-					deltaValue = previousScanline[x * 4] + pixel;
+					deltaValue = previousScanline[x * 4ull] + pixel;
 					*dstp = deltaValue;
 					dstp += 4;
 					x++;
@@ -675,11 +675,11 @@ static BOOL planar_subsample_expand(const BYTE* plane, size_t planeLength, UINT3
 
 	for (UINT32 y = 0; y < nHeight; y++)
 	{
-		const BYTE* src = plane + y / 2 * nPlaneWidth;
+		const BYTE* src = plane + y / 2ull * nPlaneWidth;
 
 		for (UINT32 x = 0; x < nWidth; x++)
 		{
-			deltaPlane[pos++] = src[x / 2];
+			deltaPlane[pos++] = src[x / 2ull];
 		}
 	}
 
@@ -1093,11 +1093,11 @@ static INLINE BOOL freerdp_split_color_planes(BITMAP_PLANAR_CONTEXT* planar, con
 	if (planar->topdown)
 	{
 		UINT32 k = 0;
-		for (UINT32 i = 0; i < height; i++)
+		for (size_t i = 0; i < height; i++)
 		{
-			const BYTE* pixel = &data[scanline * (UINT32)i];
+			const BYTE* pixel = &data[scanline * i];
 
-			for (UINT32 j = 0; j < width; j++)
+			for (size_t j = 0; j < width; j++)
 			{
 				const UINT32 color = FreeRDPReadColor(pixel, format);
 				pixel += FreeRDPGetBytesPerPixel(format);
@@ -1113,9 +1113,9 @@ static INLINE BOOL freerdp_split_color_planes(BITMAP_PLANAR_CONTEXT* planar, con
 
 		for (INT64 i = (INT64)height - 1; i >= 0; i--)
 		{
-			const BYTE* pixel = &data[scanline * (UINT32)i];
+			const BYTE* pixel = &data[scanline * (size_t)i];
 
-			for (UINT32 j = 0; j < width; j++)
+			for (size_t j = 0; j < width; j++)
 			{
 				const UINT32 color = FreeRDPReadColor(pixel, format);
 				pixel += FreeRDPGetBytesPerPixel(format);
@@ -1684,14 +1684,14 @@ BOOL freerdp_bitmap_planar_context_reset(BITMAP_PLANAR_CONTEXT* context, UINT32 
 			return FALSE;
 		context->rlePlanesBuffer = tmp;
 
-		context->planes[0] = &context->planesBuffer[context->maxPlaneSize * 0];
-		context->planes[1] = &context->planesBuffer[context->maxPlaneSize * 1];
-		context->planes[2] = &context->planesBuffer[context->maxPlaneSize * 2];
-		context->planes[3] = &context->planesBuffer[context->maxPlaneSize * 3];
-		context->deltaPlanes[0] = &context->deltaPlanesBuffer[context->maxPlaneSize * 0];
-		context->deltaPlanes[1] = &context->deltaPlanesBuffer[context->maxPlaneSize * 1];
-		context->deltaPlanes[2] = &context->deltaPlanesBuffer[context->maxPlaneSize * 2];
-		context->deltaPlanes[3] = &context->deltaPlanesBuffer[context->maxPlaneSize * 3];
+		context->planes[0] = &context->planesBuffer[context->maxPlaneSize * 0ull];
+		context->planes[1] = &context->planesBuffer[context->maxPlaneSize * 1ull];
+		context->planes[2] = &context->planesBuffer[context->maxPlaneSize * 2ull];
+		context->planes[3] = &context->planesBuffer[context->maxPlaneSize * 3ull];
+		context->deltaPlanes[0] = &context->deltaPlanesBuffer[context->maxPlaneSize * 0ull];
+		context->deltaPlanes[1] = &context->deltaPlanesBuffer[context->maxPlaneSize * 1ull];
+		context->deltaPlanes[2] = &context->deltaPlanesBuffer[context->maxPlaneSize * 2ull];
+		context->deltaPlanes[3] = &context->deltaPlanesBuffer[context->maxPlaneSize * 3ull];
 	}
 	return TRUE;
 }

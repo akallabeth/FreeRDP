@@ -2684,7 +2684,7 @@ int ncrush_compress(NCRUSH_CONTEXT* ncrush, const BYTE* pSrcData, UINT32 SrcSize
 
 			if (IndexLEC * 2ull >= ARRAYSIZE(HuffCodeLEC))
 				return -1;
-			CodeLEC = get_word(&HuffCodeLEC[IndexLEC * 2]);
+			CodeLEC = get_word(&HuffCodeLEC[IndexLEC * 2ull]);
 
 			if (BitLength > 15)
 				return -1006;
@@ -2778,7 +2778,7 @@ int ncrush_compress(NCRUSH_CONTEXT* ncrush, const BYTE* pSrcData, UINT32 SrcSize
 
 				if (IndexLEC * 2ull >= ARRAYSIZE(HuffCodeLEC))
 					return -1;
-				CodeLEC = get_word(&HuffCodeLEC[IndexLEC * 2]);
+				CodeLEC = get_word(&HuffCodeLEC[IndexLEC * 2ull]);
 
 				if (BitLength > 15)
 					return -1008;
@@ -2825,7 +2825,7 @@ int ncrush_compress(NCRUSH_CONTEXT* ncrush, const BYTE* pSrcData, UINT32 SrcSize
 				BitLength = HuffLengthLEC[IndexLEC];
 				if (IndexLEC * 2ull >= ARRAYSIZE(HuffCodeLEC))
 					return -1;
-				CodeLEC = get_word(&HuffCodeLEC[IndexLEC * 2]);
+				CodeLEC = get_word(&HuffCodeLEC[IndexLEC * 2ull]);
 
 				if (BitLength >= 15)
 					return -1011;
@@ -2884,7 +2884,7 @@ int ncrush_compress(NCRUSH_CONTEXT* ncrush, const BYTE* pSrcData, UINT32 SrcSize
 		if (IndexLEC * 2ull >= ARRAYSIZE(HuffCodeLEC))
 			return -1;
 		BitLength = HuffLengthLEC[IndexLEC];
-		CodeLEC = get_word(&HuffCodeLEC[IndexLEC * 2]);
+		CodeLEC = get_word(&HuffCodeLEC[IndexLEC * 2ull]);
 
 		if (BitLength > 15)
 			return -1014;
@@ -2908,7 +2908,7 @@ int ncrush_compress(NCRUSH_CONTEXT* ncrush, const BYTE* pSrcData, UINT32 SrcSize
 	if (BitLength > 15)
 		return -1015;
 
-	bits = get_word(&HuffCodeLEC[IndexLEC * 2]);
+	bits = get_word(&HuffCodeLEC[IndexLEC * 2ull]);
 	NCrushWriteBits(&DstPtr, &accumulator, &offset, bits, BitLength);
 	NCrushWriteFinish(&DstPtr, accumulator);
 	const intptr_t dsize = DstPtr - pDstData;

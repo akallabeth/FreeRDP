@@ -63,7 +63,7 @@ static BOOL nsc_decode(NSC_CONTEXT* context)
 	if (!bmpdata)
 		return FALSE;
 
-	for (UINT32 y = 0; y < context->height; y++)
+	for (size_t y = 0; y < context->height; y++)
 	{
 		const BYTE* yplane = NULL;
 		const BYTE* coplane = NULL;
@@ -262,7 +262,7 @@ static BOOL nsc_context_initialize(NSC_CONTEXT* context, wStream* s)
 	if (!nsc_stream_initialize(context, s))
 		return FALSE;
 
-	const size_t blength = context->width * context->height * 4ull;
+	const size_t blength = 4ull * context->width * context->height;
 
 	if (!context->BitmapData || (blength > context->BitmapDataLength))
 	{

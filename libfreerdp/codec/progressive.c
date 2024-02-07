@@ -388,12 +388,12 @@ static INLINE RFX_PROGRESSIVE_TILE* progressive_tile_new(void)
 		goto fail;
 	memset(tile->data, 0xFF, dataLen);
 
-	size_t signLen = (8192 + 32) * 3;
+	size_t signLen = (8192ull + 32ull) * 3ull;
 	tile->sign = (BYTE*)winpr_aligned_calloc(signLen, sizeof(BYTE), 16);
 	if (!tile->sign)
 		goto fail;
 
-	size_t currentLen = (8192 + 32) * 3;
+	size_t currentLen = (8192ull + 32ull) * 3ull;
 	tile->current = (BYTE*)winpr_aligned_calloc(currentLen, sizeof(BYTE), 16);
 	if (!tile->current)
 		goto fail;
@@ -879,7 +879,7 @@ static INLINE int progressive_rfx_decode_component(PROGRESSIVE_CONTEXT* progress
 	if (status < 0)
 		return status;
 
-	CopyMemory(sign, buffer, 4096 * 2);
+	CopyMemory(sign, buffer, 4096ull * 2ull);
 	if (!extrapolate)
 	{
 		rfx_differential_decode(buffer + 4032, 64);
@@ -2114,9 +2114,9 @@ static INLINE SSIZE_T progressive_wb_skip_region(PROGRESSIVE_CONTEXT* progressiv
 	if (rc < 0)
 		return rc;
 
-	total = (region->numRects * 8);
-	total += (region->numQuant * 5);
-	total += (region->numProgQuant * 16);
+	total = (region->numRects * 8ull);
+	total += (region->numQuant * 5ull);
+	total += (region->numProgQuant * 16ull);
 	total += region->tileDataSize;
 	if (!Stream_SafeSeek(s, total))
 		return -1111;
@@ -2617,7 +2617,7 @@ PROGRESSIVE_CONTEXT* progressive_context_new_ex(BOOL Compressor, UINT32 Threadin
 	progressive->rects = Stream_New(NULL, 1024);
 	if (!progressive->rects)
 		goto fail;
-	progressive->bufferPool = BufferPool_New(TRUE, (8192 + 32) * 3, 16);
+	progressive->bufferPool = BufferPool_New(TRUE, (8192ull + 32ull) * 3ull, 16);
 	if (!progressive->bufferPool)
 		goto fail;
 	progressive->SurfaceContexts = HashTable_New(TRUE);

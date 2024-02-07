@@ -233,7 +233,8 @@ static DWORD WINAPI audin_oss_thread_func(LPVOID arg)
 	if (ioctl(pcm_handle, SNDCTL_DSP_SETFRAGMENT, &tmp) == -1)
 		OSS_LOG_ERR("SNDCTL_DSP_SETFRAGMENT failed", errno);
 
-	buffer_size = (oss->FramesPerPacket * oss->format.nChannels * (oss->format.wBitsPerSample / 8));
+	buffer_size =
+	    (1ull * oss->FramesPerPacket * oss->format.nChannels * (oss->format.wBitsPerSample / 8ull));
 	buffer = (BYTE*)calloc((buffer_size + sizeof(void*)), sizeof(BYTE));
 
 	if (NULL == buffer)

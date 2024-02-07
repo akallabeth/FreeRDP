@@ -28,7 +28,7 @@
 #include <winpr/wtypes.h>
 #include <winpr/wlog.h>
 
-#define WINPR_HEXDUMP_LINE_LENGTH 16
+#define WINPR_HEXDUMP_LINE_LENGTH 16ul
 
 #ifdef __cplusplus
 extern "C"

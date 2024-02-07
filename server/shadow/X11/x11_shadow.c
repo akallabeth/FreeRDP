@@ -796,9 +796,9 @@ static int x11_shadow_screen_grab(x11ShadowSubsystem* subsystem)
 		          subsystem->xshm_gc, 0, 0, subsystem->width, subsystem->height, 0, 0);
 
 		EnterCriticalSection(&surface->lock);
-		status = shadow_capture_compare(surface->data, surface->scanline, surface->width,
-		                                surface->height, (BYTE*)&(image->data[surface->width * 4]),
-		                                image->bytes_per_line, &invalidRect);
+		status = shadow_capture_compare(
+		    surface->data, surface->scanline, surface->width, surface->height,
+		    (BYTE*)&(image->data[4ull * surface->width]), image->bytes_per_line, &invalidRect);
 		LeaveCriticalSection(&surface->lock);
 	}
 	else
@@ -1342,7 +1342,7 @@ static int x11_shadow_subsystem_init(rdpShadowSubsystem* sub)
 	subsystem->cursorMaxWidth = 256;
 	subsystem->cursorMaxHeight = 256;
 	subsystem->cursorPixels =
-	    winpr_aligned_malloc(subsystem->cursorMaxWidth * subsystem->cursorMaxHeight * 4ull, 16);
+	    winpr_aligned_malloc(4ull * subsystem->cursorMaxWidth * subsystem->cursorMaxHeight, 16);
 
 	if (!subsystem->cursorPixels)
 		return -1;

@@ -397,8 +397,8 @@ bool SDLConnectionDialog::createWindow()
 	SDL_Rect rect = { widget_width / 4, vpadding, widget_width * 3 / 4,
 		              total_height - 3 * vpadding - widget_height };
 #else
-	SDL_Rect rect = { hpadding, vpadding, widget_width - 2 * hpadding,
-		              total_height - 2 * vpadding };
+	SDL_Rect rect = { hpadding, vpadding, widget_width - 2l * hpadding,
+		              total_height - 2l * vpadding };
 #endif
 
 	widget_cfg_t w{ textcolor, backgroundcolor, { _renderer, rect, false } };

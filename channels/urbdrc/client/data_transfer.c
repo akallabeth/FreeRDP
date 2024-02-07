@@ -852,7 +852,7 @@ static UINT urb_isoch_transfer(IUDEVICE* pdev, GENERIC_CHANNEL_CALLBACK* callbac
 		return ERROR_INVALID_DATA;
 
 	packetDescriptorData = Stream_Pointer(s);
-	Stream_Seek(s, NumberOfPackets * 12);
+	Stream_Seek(s, NumberOfPackets * 12ull);
 
 	if (!Stream_CheckAndLogRequiredLength(TAG, s, sizeof(UINT32)))
 		return ERROR_INVALID_DATA;

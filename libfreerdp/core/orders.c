@@ -2744,7 +2744,7 @@ BOOL update_write_cache_glyph_order(wStream* s, const CACHE_GLYPH_ORDER* cache_g
 
 	if (*flags & CG_GLYPH_UNICODE_PRESENT)
 	{
-		Stream_Zero(s, cache_glyph->cGlyphs * 2);
+		Stream_Zero(s, cache_glyph->cGlyphs * 2ull);
 	}
 
 	return TRUE;
@@ -2850,7 +2850,7 @@ BOOL update_write_cache_glyph_v2_order(wStream* s, const CACHE_GLYPH_V2_ORDER* c
 
 	if (*flags & CG_GLYPH_UNICODE_PRESENT)
 	{
-		Stream_Zero(s, cache_glyph_v2->cGlyphs * 2);
+		Stream_Zero(s, cache_glyph_v2->cGlyphs * 2ull);
 	}
 
 	return TRUE;
@@ -2876,7 +2876,7 @@ static BOOL update_decompress_brush(wStream* s, BYTE* output, size_t outSize, BY
 
 			for (size_t k = 0; k < bytesPerPixel; k++)
 			{
-				const size_t dstIndex = ((y * 8 + x) * bytesPerPixel) + k;
+				const size_t dstIndex = ((y * 8ull + x) * bytesPerPixel) + k;
 				const size_t srcIndex = (index * bytesPerPixel) + k;
 				if (dstIndex >= outSize)
 					return FALSE;
@@ -2965,7 +2965,7 @@ static CACHE_BRUSH_ORDER* update_read_cache_brush_order(rdpUpdate* update, wStre
 
 				for (int i = 7; i >= 0; i--)
 				{
-					Stream_Read(s, &cache_brush->data[i * scanline], scanline);
+					Stream_Read(s, &cache_brush->data[1ull * i * scanline], scanline);
 				}
 			}
 		}
@@ -3042,7 +3042,7 @@ BOOL update_write_cache_brush_order(wStream* s, const CACHE_BRUSH_ORDER* cache_b
 
 				for (int i = 7; i >= 0; i--)
 				{
-					Stream_Write(s, &cache_brush->data[i * scanline], scanline);
+					Stream_Write(s, &cache_brush->data[1ull * i * scanline], scanline);
 				}
 			}
 		}
@@ -3086,7 +3086,7 @@ update_read_create_offscreen_bitmap_order(wStream* s,
 		if (deleteList->cIndices > deleteList->sIndices)
 		{
 			UINT16* new_indices = NULL;
-			new_indices = (UINT16*)realloc(deleteList->indices, deleteList->cIndices * 2);
+			new_indices = (UINT16*)realloc(deleteList->indices, deleteList->cIndices * 2ull);
 
 			if (!new_indices)
 				return FALSE;

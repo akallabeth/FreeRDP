@@ -227,15 +227,15 @@ int shadow_subsystem_pointer_convert_alpha_pointer_data(
 		return -1;
 	}
 
-	for (UINT32 y = 0; y < height; y++)
+	for (size_t y = 0; y < height; y++)
 	{
-		pSrc8 = &pixels[(width * 4) * (height - 1 - y)];
+		pSrc8 = &pixels[(width * 4ull) * (height - 1ull - y)];
 		pDst8 = &(pointerColor->xorMaskData[y * xorStep]);
 
 		andBit = 0x80;
-		andBits = &(pointerColor->andMaskData[andStep * y]);
+		andBits = &(pointerColor->andMaskData[1ull * andStep * y]);
 
-		for (UINT32 x = 0; x < width; x++)
+		for (size_t x = 0; x < width; x++)
 		{
 			B = *pSrc8++;
 			G = *pSrc8++;

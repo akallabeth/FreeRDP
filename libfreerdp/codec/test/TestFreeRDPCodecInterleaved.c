@@ -29,7 +29,7 @@ static BOOL run_encode_decode_single(UINT16 bpp, BITMAP_INTERLEAVED_CONTEXT* enc
 	const UINT32 y = 0;
 	const UINT32 format = PIXEL_FORMAT_RGBX32;
 	const UINT32 bstep = FreeRDPGetBytesPerPixel(format);
-	const size_t step = (w + 13) * 4;
+	const size_t step = (w + 13ull) * 4ull;
 	const size_t SrcSize = step * h;
 	const float maxDiff = 4.0f * ((bpp < 24) ? 2.0f : 1.0f);
 	UINT32 DstSize = SrcSize;
@@ -61,12 +61,12 @@ static BOOL run_encode_decode_single(UINT16 bpp, BITMAP_INTERLEAVED_CONTEXT* enc
 	if (!rc)
 		goto fail;
 
-	for (UINT32 i = 0; i < h; i++)
+	for (size_t i = 0; i < h; i++)
 	{
 		const BYTE* srcLine = &pSrcData[i * step];
 		const BYTE* dstLine = &pDstData[i * step];
 
-		for (UINT32 j = 0; j < w; j++)
+		for (size_t j = 0; j < w; j++)
 		{
 			BYTE r = 0;
 			BYTE g = 0;

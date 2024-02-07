@@ -750,8 +750,8 @@ BOOL wlf_copy_image(const void* src, size_t srcStride, size_t srcWidth, size_t s
 	}
 	else
 	{
-		const size_t baseSrcOffset = area->top * srcStride + area->left * 4;
-		const size_t baseDstOffset = area->top * dstStride + area->left * 4;
+		const size_t baseSrcOffset = area->top * srcStride + area->left * 4ull;
+		const size_t baseDstOffset = area->top * dstStride + area->left * 4ull;
 		const size_t width = MIN((size_t)area->right - area->left, dstWidth - area->left);
 		const size_t height = MIN((size_t)area->bottom - area->top, dstHeight - area->top);
 		const BYTE* psrc = (const BYTE*)src;

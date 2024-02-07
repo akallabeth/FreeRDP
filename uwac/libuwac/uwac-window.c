@@ -367,7 +367,7 @@ int UwacWindowShmAllocBuffers(UwacWindow* w, int nbuffers, int allocSize, uint32
 #else
 		region16_init(&buffer->damage);
 #endif
-		buffer->data = &((char*)data)[allocSize * i];
+		buffer->data = &((char*)data)[1ull * allocSize * i];
 		buffer->size = allocSize;
 		buffer->wayland_buffer =
 		    wl_shm_pool_create_buffer(pool, allocSize * i, width, height, w->stride, format);

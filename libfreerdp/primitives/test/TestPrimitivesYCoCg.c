@@ -67,9 +67,9 @@ static BOOL test_YCoCgRToRGB_8u_AC4R_func(UINT32 width, UINT32 height)
 		if (status != PRIMITIVES_SUCCESS)
 			goto loop_fail;
 
-		if (memcmp(out_c, out_sse, dstStride * height) != 0)
+		if (memcmp(out_c, out_sse, 1ull * dstStride * height) != 0)
 		{
-			for (size_t i = 0; i < width * height; ++i)
+			for (size_t i = 0; i < 1ull * width * height; ++i)
 			{
 				const UINT32 c = FreeRDPReadColor(out_c + 4 * i, format);
 				const UINT32 sse = FreeRDPReadColor(out_sse + 4 * i, format);

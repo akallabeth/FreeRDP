@@ -97,11 +97,11 @@ static int shadow_encoder_init_grid(rdpShadowEncoder* encoder)
 	if (!encoder->grid)
 		return -1;
 
-	for (UINT32 i = 0; i < encoder->gridHeight; i++)
+	for (size_t i = 0; i < encoder->gridHeight; i++)
 	{
-		for (UINT32 j = 0; j < encoder->gridWidth; j++)
+		for (size_t j = 0; j < encoder->gridWidth; j++)
 		{
-			UINT32 k = (i * encoder->gridWidth) + j;
+			size_t k = (i * encoder->gridWidth) + j;
 			encoder->grid[k] = &(encoder->gridBuffer[k * tileSize]);
 		}
 	}
@@ -291,7 +291,7 @@ static int shadow_encoder_init(rdpShadowEncoder* encoder)
 	shadow_encoder_init_grid(encoder);
 
 	if (!encoder->bs)
-		encoder->bs = Stream_New(NULL, encoder->maxTileWidth * encoder->maxTileHeight * 4ULL);
+		encoder->bs = Stream_New(NULL, 4ull * encoder->maxTileWidth * encoder->maxTileHeight);
 
 	if (!encoder->bs)
 		return -1;

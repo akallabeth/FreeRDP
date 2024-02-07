@@ -112,7 +112,7 @@ fail:
 static BOOL nsc_encode_argb_to_aycocg(NSC_CONTEXT* context, const BYTE* data, UINT32 scanline)
 {
 	UINT16 x = 0;
-	UINT16 y = 0;
+	size_t y = 0;
 	UINT16 rw = 0;
 	BYTE ccl = 0;
 	const BYTE* src = NULL;
@@ -303,13 +303,13 @@ static BOOL nsc_encode_subsampling(NSC_CONTEXT* context)
 	if (tempWidth > context->priv->PlaneBuffersLength / tempHeight)
 		return FALSE;
 
-	for (UINT32 y = 0; y < tempHeight >> 1; y++)
+	for (size_t y = 0; y < tempHeight >> 1; y++)
 	{
-		BYTE* co_dst = context->priv->PlaneBuffers[1] + y * (tempWidth >> 1);
-		BYTE* cg_dst = context->priv->PlaneBuffers[2] + y * (tempWidth >> 1);
-		const INT8* co_src0 = (INT8*)context->priv->PlaneBuffers[1] + (y << 1) * tempWidth;
+		BYTE* co_dst = context->priv->PlaneBuffers[1] + 1ull * y * (tempWidth >> 1);
+		BYTE* cg_dst = context->priv->PlaneBuffers[2] + 1ull * y * (tempWidth >> 1);
+		const INT8* co_src0 = (INT8*)context->priv->PlaneBuffers[1] + 1ull * (y << 1) * tempWidth;
 		const INT8* co_src1 = co_src0 + tempWidth;
-		const INT8* cg_src0 = (INT8*)context->priv->PlaneBuffers[2] + (y << 1) * tempWidth;
+		const INT8* cg_src0 = (INT8*)context->priv->PlaneBuffers[2] + 1ull * (y << 1) * tempWidth;
 		const INT8* cg_src1 = cg_src0 + tempWidth;
 
 		for (UINT32 x = 0; x < tempWidth >> 1; x++)

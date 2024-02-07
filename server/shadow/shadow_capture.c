@@ -130,7 +130,7 @@ int shadow_capture_compare(BYTE* pData1, UINT32 nStep1, UINT32 nWidth, UINT32 nH
 
 			for (UINT32 k = 0; k < th; k++)
 			{
-				if (memcmp(p1, p2, tw * 4) != 0)
+				if (memcmp(p1, p2, 4ull * tw) != 0)
 				{
 					equal = FALSE;
 					break;

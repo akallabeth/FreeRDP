@@ -303,19 +303,19 @@ rfx_dwt_2d_decode_block_sse2(INT16* buffer, INT16* idwt, int subband_width)
 	INT16* ll = NULL;
 	INT16* l_dst = NULL;
 	INT16* h_dst = NULL;
-	_mm_prefetch_buffer((char*)idwt, subband_width * 4 * sizeof(INT16));
+	_mm_prefetch_buffer((char*)idwt, subband_width * 4ull * sizeof(INT16));
 	/* Inverse DWT in horizontal direction, results in 2 sub-bands in L, H order in tmp buffer idwt.
 	 */
 	/* The 4 sub-bands are stored in HL(0), LH(1), HH(2), LL(3) order. */
 	/* The lower part L uses LL(3) and HL(0). */
 	/* The higher part H uses LH(1) and HH(2). */
-	ll = buffer + subband_width * subband_width * 3;
+	ll = buffer + 1ull * subband_width * subband_width * 3;
 	hl = buffer;
 	l_dst = idwt;
 	rfx_dwt_2d_decode_block_horiz_sse2(ll, hl, l_dst, subband_width);
-	lh = buffer + subband_width * subband_width;
-	hh = buffer + subband_width * subband_width * 2;
-	h_dst = idwt + subband_width * subband_width * 2;
+	lh = buffer + 1ull * subband_width * subband_width;
+	hh = buffer + 1ull * subband_width * subband_width * 2;
+	h_dst = idwt + 1ull * subband_width * subband_width * 2;
 	rfx_dwt_2d_decode_block_horiz_sse2(lh, hh, h_dst, subband_width);
 	/* Inverse DWT in vertical direction, results are stored in original buffer. */
 	rfx_dwt_2d_decode_block_vert_sse2(l_dst, h_dst, buffer, subband_width);
@@ -344,15 +344,15 @@ rfx_dwt_2d_encode_block_vert_sse2(INT16* src, INT16* l, INT16* h, int subband_wi
 	__m128i l_n;
 	total_width = subband_width << 1;
 
-	for (int n = 0; n < subband_width; n++)
+	for (size_t n = 0; n < subband_width; n++)
 	{
-		for (int x = 0; x < total_width; x += 8)
+		for (size_t x = 0; x < total_width; x += 8)
 		{
 			src_2n = _mm_load_si128((__m128i*)src);
 			src_2n_1 = _mm_load_si128((__m128i*)(src + total_width));
 
 			if (n < subband_width - 1)
-				src_2n_2 = _mm_load_si128((__m128i*)(src + 2 * total_width));
+				src_2n_2 = _mm_load_si128((__m128i*)(src + 2ull * total_width));
 			else
 				src_2n_2 = src_2n;
 
@@ -440,19 +440,19 @@ rfx_dwt_2d_encode_block_sse2(INT16* buffer, INT16* dwt, int subband_width)
 	INT16* ll = NULL;
 	INT16* l_src = NULL;
 	INT16* h_src = NULL;
-	_mm_prefetch_buffer((char*)dwt, subband_width * 4 * sizeof(INT16));
+	_mm_prefetch_buffer((char*)dwt, subband_width * 4ull * sizeof(INT16));
 	/* DWT in vertical direction, results in 2 sub-bands in L, H order in tmp buffer dwt. */
 	l_src = dwt;
-	h_src = dwt + subband_width * subband_width * 2;
+	h_src = dwt + 2ull * subband_width * subband_width;
 	rfx_dwt_2d_encode_block_vert_sse2(buffer, l_src, h_src, subband_width);
 	/* DWT in horizontal direction, results in 4 sub-bands in HL(0), LH(1), HH(2), LL(3) order,
 	 * stored in original buffer. */
 	/* The lower part L generates LL(3) and HL(0). */
 	/* The higher part H generates LH(1) and HH(2). */
-	ll = buffer + subband_width * subband_width * 3;
+	ll = buffer + 1ull * subband_width * subband_width * 3;
 	hl = buffer;
-	lh = buffer + subband_width * subband_width;
-	hh = buffer + subband_width * subband_width * 2;
+	lh = buffer + 1ull * subband_width * subband_width;
+	hh = buffer + 1ull * subband_width * subband_width * 2;
 	rfx_dwt_2d_encode_block_horiz_sse2(l_src, ll, hl, subband_width);
 	rfx_dwt_2d_encode_block_horiz_sse2(h_src, lh, hh, subband_width);
 }

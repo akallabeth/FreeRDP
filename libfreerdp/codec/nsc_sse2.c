@@ -61,13 +61,13 @@ static BOOL nsc_encode_argb_to_aycocg_sse2(NSC_CONTEXT* context, const BYTE* dat
 
 	for (; y < context->height; y++)
 	{
-		src = data + (context->height - 1 - y) * scanline;
-		yplane = context->priv->PlaneBuffers[0] + y * rw;
-		coplane = context->priv->PlaneBuffers[1] + y * rw;
-		cgplane = context->priv->PlaneBuffers[2] + y * rw;
-		aplane = context->priv->PlaneBuffers[3] + y * context->width;
+		src = data + 1ull * (context->height - 1 - y) * scanline;
+		yplane = context->priv->PlaneBuffers[0] + 1ull * y * rw;
+		coplane = context->priv->PlaneBuffers[1] + 1ull * y * rw;
+		cgplane = context->priv->PlaneBuffers[2] + 1ull * y * rw;
+		aplane = context->priv->PlaneBuffers[3] + 1ull * y * context->width;
 
-		for (UINT16 x = 0; x < context->width; x += 8)
+		for (size_t x = 0; x < context->width; x += 8)
 		{
 			switch (context->format)
 			{
@@ -236,27 +236,30 @@ static BOOL nsc_encode_argb_to_aycocg_sse2(NSC_CONTEXT* context, const BYTE* dat
 
 				case PIXEL_FORMAT_RGB8:
 				{
-					r_val = _mm_set_epi16(
-					    context->palette[(*(src + 7)) * 3], context->palette[(*(src + 6)) * 3],
-					    context->palette[(*(src + 5)) * 3], context->palette[(*(src + 4)) * 3],
-					    context->palette[(*(src + 3)) * 3], context->palette[(*(src + 2)) * 3],
-					    context->palette[(*(src + 1)) * 3], context->palette[(*src) * 3]);
-					g_val = _mm_set_epi16(context->palette[(*(src + 7)) * 3 + 1],
-					                      context->palette[(*(src + 6)) * 3 + 1],
-					                      context->palette[(*(src + 5)) * 3 + 1],
-					                      context->palette[(*(src + 4)) * 3 + 1],
-					                      context->palette[(*(src + 3)) * 3 + 1],
-					                      context->palette[(*(src + 2)) * 3 + 1],
-					                      context->palette[(*(src + 1)) * 3 + 1],
-					                      context->palette[(*src) * 3 + 1]);
-					b_val = _mm_set_epi16(context->palette[(*(src + 7)) * 3 + 2],
-					                      context->palette[(*(src + 6)) * 3 + 2],
-					                      context->palette[(*(src + 5)) * 3 + 2],
-					                      context->palette[(*(src + 4)) * 3 + 2],
-					                      context->palette[(*(src + 3)) * 3 + 2],
-					                      context->palette[(*(src + 2)) * 3 + 2],
-					                      context->palette[(*(src + 1)) * 3 + 2],
-					                      context->palette[(*src) * 3 + 2]);
+					r_val = _mm_set_epi16(context->palette[(*(src + 7ull)) * 3ull],
+					                      context->palette[(*(src + 6ull)) * 3ull],
+					                      context->palette[(*(src + 5ull)) * 3ull],
+					                      context->palette[(*(src + 4ull)) * 3ull],
+					                      context->palette[(*(src + 3ull)) * 3ull],
+					                      context->palette[(*(src + 2ull)) * 3ull],
+					                      context->palette[(*(src + 1ull)) * 3ull],
+					                      context->palette[(*src) * 3ull]);
+					g_val = _mm_set_epi16(context->palette[(*(src + 7ull)) * 3ull + 1ull],
+					                      context->palette[(*(src + 6ull)) * 3ull + 1ull],
+					                      context->palette[(*(src + 5ull)) * 3ull + 1ull],
+					                      context->palette[(*(src + 4ull)) * 3ull + 1ull],
+					                      context->palette[(*(src + 3ull)) * 3ull + 1ull],
+					                      context->palette[(*(src + 2ull)) * 3ull + 1ull],
+					                      context->palette[(*(src + 1ull)) * 3ull + 1ull],
+					                      context->palette[(*src) * 3ull + 1ull]);
+					b_val = _mm_set_epi16(context->palette[(*(src + 7ull)) * 3ull + 2ull],
+					                      context->palette[(*(src + 6ull)) * 3ull + 2ull],
+					                      context->palette[(*(src + 5ull)) * 3ull + 2ull],
+					                      context->palette[(*(src + 4ull)) * 3ull + 2ull],
+					                      context->palette[(*(src + 3ull)) * 3ull + 2ull],
+					                      context->palette[(*(src + 2ull)) * 3ull + 2ull],
+					                      context->palette[(*(src + 1ull)) * 3ull + 2ull],
+					                      context->palette[(*src) * 3ull + 2ull]);
 					src += 8;
 				}
 
@@ -303,9 +306,9 @@ static BOOL nsc_encode_argb_to_aycocg_sse2(NSC_CONTEXT* context, const BYTE* dat
 
 	if (context->ChromaSubsamplingLevel > 0 && (y % 2) == 1)
 	{
-		yplane = context->priv->PlaneBuffers[0] + y * rw;
-		coplane = context->priv->PlaneBuffers[1] + y * rw;
-		cgplane = context->priv->PlaneBuffers[2] + y * rw;
+		yplane = context->priv->PlaneBuffers[0] + 1ull * y * rw;
+		coplane = context->priv->PlaneBuffers[1] + 1ull * y * rw;
+		cgplane = context->priv->PlaneBuffers[2] + 1ull * y * rw;
 		CopyMemory(yplane, yplane - rw, rw);
 		CopyMemory(coplane, coplane - rw, rw);
 		CopyMemory(cgplane, cgplane - rw, rw);
@@ -330,7 +333,7 @@ static void nsc_encode_subsampling_sse2(NSC_CONTEXT* context)
 	tempWidth = ROUND_UP_TO(context->width, 8);
 	tempHeight = ROUND_UP_TO(context->height, 2);
 
-	for (UINT32 y = 0; y < tempHeight >> 1; y++)
+	for (size_t y = 0; y < tempHeight >> 1; y++)
 	{
 		co_dst = context->priv->PlaneBuffers[1] + y * (tempWidth >> 1);
 		cg_dst = context->priv->PlaneBuffers[2] + y * (tempWidth >> 1);

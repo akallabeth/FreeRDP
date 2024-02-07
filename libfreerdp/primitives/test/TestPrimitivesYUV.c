@@ -182,8 +182,8 @@ static BOOL TestPrimitiveYUVCombine(primitives_t* prims, prim_size_t roi)
 		const BYTE** cpv;
 		BYTE** pv;
 	} cnv;
-	UINT32 awidth = 0;
-	UINT32 aheight = 0;
+	size_t awidth = 0;
+	size_t aheight = 0;
 	BOOL rc = FALSE;
 	BYTE* luma[3] = { 0 };
 	BYTE* chroma[3] = { 0 };
@@ -200,7 +200,7 @@ static BOOL TestPrimitiveYUVCombine(primitives_t* prims, prim_size_t roi)
 	awidth = roi.width + 16 - roi.width % 16;
 	aheight = roi.height + 16 - roi.height % 16;
 	fprintf(stderr,
-	        "Running YUVCombine on frame size %" PRIu32 "x%" PRIu32 " [%" PRIu32 "x%" PRIu32 "]\n",
+	        "Running YUVCombine on frame size %" PRIu32 "x%" PRIu32 " [%" PRIuz "x%" PRIuz "]\n",
 	        roi.width, roi.height, awidth, aheight);
 	PROFILER_CREATE(yuvCombine, "YUV420CombineToYUV444")
 	PROFILER_CREATE(yuvSplit, "YUV444SplitToYUV420")
@@ -212,10 +212,10 @@ static BOOL TestPrimitiveYUVCombine(primitives_t* prims, prim_size_t roi)
 	if (!prims || !prims->YUV420CombineToYUV444)
 		goto fail;
 
-	for (UINT32 x = 0; x < 3; x++)
+	for (size_t x = 0; x < 3; x++)
 	{
 		size_t halfStride = ((x > 0) ? awidth / 2 : awidth);
-		size_t size = aheight * awidth;
+		size_t size = 1ull * aheight * awidth;
 		size_t halfSize = ((x > 0) ? halfStride * aheight / 2 : awidth * aheight);
 		yuvStride[x] = awidth;
 
@@ -277,7 +277,7 @@ static BOOL TestPrimitiveYUVCombine(primitives_t* prims, prim_size_t roi)
 
 	PROFILER_EXIT(yuvCombine)
 
-	for (UINT32 x = 0; x < 3; x++)
+	for (size_t x = 0; x < 3; x++)
 	{
 		size_t halfStride = ((x > 0) ? awidth / 2 : awidth);
 		size_t size = aheight * awidth;
@@ -305,7 +305,7 @@ static BOOL TestPrimitiveYUVCombine(primitives_t* prims, prim_size_t roi)
 
 	PROFILER_EXIT(yuvSplit)
 
-	for (UINT32 x = 0; x < 3; x++)
+	for (size_t x = 0; x < 3; x++)
 	{
 		size_t halfStride = ((x > 0) ? awidth / 2 : awidth);
 		size_t size = aheight * awidth;
@@ -321,9 +321,9 @@ static BOOL TestPrimitiveYUVCombine(primitives_t* prims, prim_size_t roi)
 			goto fail;
 	}
 
-	for (UINT32 i = 0; i < 3; i++)
+	for (size_t i = 0; i < 3; i++)
 	{
-		for (UINT32 y = 0; y < roi.height; y++)
+		for (size_t y = 0; y < roi.height; y++)
 		{
 			UINT32 w = roi.width;
 			UINT32 lstride = lumaStride[i];
@@ -388,8 +388,8 @@ static BOOL TestPrimitiveYUV(primitives_t* prims, prim_size_t roi, BOOL use444)
 		BYTE** pv;
 	} cnv;
 	BOOL res = FALSE;
-	UINT32 awidth = 0;
-	UINT32 aheight = 0;
+	size_t awidth = 0;
+	size_t aheight = 0;
 	BYTE* yuv[3] = { 0 };
 	UINT32 yuv_step[3];
 	BYTE* rgb = NULL;
@@ -397,7 +397,7 @@ static BOOL TestPrimitiveYUV(primitives_t* prims, prim_size_t roi, BOOL use444)
 	size_t size = 0;
 	size_t uvsize = 0;
 	size_t uvwidth = 0;
-	size_t padding = 100 * 16;
+	size_t padding = 100ull * 16;
 	UINT32 stride = 0;
 	const UINT32 formats[] = { PIXEL_FORMAT_XRGB32, PIXEL_FORMAT_XBGR32, PIXEL_FORMAT_ARGB32,
 		                       PIXEL_FORMAT_ABGR32, PIXEL_FORMAT_RGBA32, PIXEL_FORMAT_RGBX32,
@@ -448,11 +448,11 @@ static BOOL TestPrimitiveYUV(primitives_t* prims, prim_size_t roi, BOOL use444)
 	if (!(yuv[2] = set_padding(uvsize, padding)))
 		goto fail;
 
-	for (UINT32 y = 0; y < roi.height; y++)
+	for (size_t y = 0; y < roi.height; y++)
 	{
 		BYTE* line = &rgb[y * stride];
 
-		for (UINT32 x = 0; x < roi.width; x++)
+		for (size_t x = 0; x < roi.width; x++)
 		{
 			line[x * 4 + 0] = 0x81;
 			line[x * 4 + 1] = 0x33;
@@ -562,7 +562,7 @@ static BOOL TestPrimitiveYUV(primitives_t* prims, prim_size_t roi, BOOL use444)
 		    (!check_padding(yuv[2], uvsize, padding, "V")))
 			goto fail;
 
-		for (UINT32 y = 0; y < roi.height; y++)
+		for (size_t y = 0; y < roi.height; y++)
 		{
 			BYTE* srgb = &rgb[y * stride];
 			BYTE* drgb = &rgb_dst[y * stride];
@@ -589,9 +589,9 @@ fail:
 
 static BOOL allocate_yuv420(BYTE** planes, UINT32 width, UINT32 height, UINT32 padding)
 {
-	const size_t size = width * height;
-	const size_t uvwidth = (width + 1) / 2;
-	const size_t uvsize = (height + 1) / 2 * uvwidth;
+	const size_t size = 1ull * width * height;
+	const size_t uvwidth = (width + 1ull) / 2ull;
+	const size_t uvsize = (height + 1ull) / 2ull * uvwidth;
 
 	if (!(planes[0] = set_padding(size, padding)))
 		goto fail;
@@ -622,7 +622,7 @@ static void free_yuv420(BYTE** planes, UINT32 padding)
 	planes[1] = NULL;
 	planes[2] = NULL;
 }
-static BOOL check_yuv420(BYTE** planes, UINT32 width, UINT32 height, UINT32 padding)
+static BOOL check_yuv420(BYTE** planes, size_t width, size_t height, size_t padding)
 {
 	const size_t size = width * height;
 	const size_t uvwidth = (width + 1) / 2;
@@ -652,8 +652,8 @@ static BOOL check_for_mismatches(const BYTE* planeA, const BYTE* planeB, UINT32 
 	return rc;
 }
 
-static BOOL compare_yuv420(BYTE** planesA, BYTE** planesB, UINT32 width, UINT32 height,
-                           UINT32 padding)
+static BOOL compare_yuv420(BYTE** planesA, BYTE** planesB, size_t width, size_t height,
+                           size_t padding)
 {
 	BOOL rc = TRUE;
 	const size_t size = width * height;
@@ -684,8 +684,8 @@ static BOOL compare_yuv420(BYTE** planesA, BYTE** planesB, UINT32 width, UINT32 
 static BOOL TestPrimitiveRgbToLumaChroma(primitives_t* prims, prim_size_t roi, UINT32 version)
 {
 	BOOL res = FALSE;
-	UINT32 awidth = 0;
-	UINT32 aheight = 0;
+	size_t awidth = 0;
+	size_t aheight = 0;
 	BYTE* luma[3] = { 0 };
 	BYTE* chroma[3] = { 0 };
 	BYTE* lumaGeneric[3] = { 0 };
@@ -693,7 +693,6 @@ static BOOL TestPrimitiveRgbToLumaChroma(primitives_t* prims, prim_size_t roi, U
 	UINT32 yuv_step[3];
 	BYTE* rgb = NULL;
 	size_t size = 0;
-	size_t uvsize = 0;
 	size_t uvwidth = 0;
 	const size_t padding = 0x1000;
 	UINT32 stride = 0;
@@ -717,8 +716,7 @@ static BOOL TestPrimitiveRgbToLumaChroma(primitives_t* prims, prim_size_t roi, U
 
 	stride = awidth * sizeof(UINT32);
 	size = awidth * aheight;
-	uvwidth = (awidth + 1) / 2;
-	uvsize = (aheight + 1) / 2 * uvwidth;
+	uvwidth = (awidth + 1ull) / 2ull;
 
 	if (!prims || !generic)
 		return FALSE;
@@ -761,11 +759,11 @@ static BOOL TestPrimitiveRgbToLumaChroma(primitives_t* prims, prim_size_t roi, U
 	if (!allocate_yuv420(chromaGeneric, awidth, aheight, padding))
 		goto fail;
 
-	for (UINT32 y = 0; y < roi.height; y++)
+	for (size_t y = 0; y < roi.height; y++)
 	{
 		BYTE* line = &rgb[y * stride];
 
-		for (UINT32 x = 0; x < roi.width; x++)
+		for (size_t x = 0; x < roi.width; x++)
 		{
 #if 1
 			line[x * 4 + 0] = rand();

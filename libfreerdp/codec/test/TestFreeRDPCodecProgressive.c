@@ -156,7 +156,7 @@ static void test_fill_image_alpha_channel(BYTE* data, int width, int height, BYT
 	{
 		for (int j = 0; j < width; j++)
 		{
-			pixel = (UINT32*)&data[((i * width) + j) * 4];
+			pixel = (UINT32*)&data[((i * width) + j) * 4ul];
 			*pixel = ((*pixel & 0x00FFFFFF) | (value << 24));
 		}
 	}
@@ -553,7 +553,7 @@ static BYTE* test_progressive_load_bitmap(char* path, char* file, size_t* size, 
 		return NULL;
 
 	buffer = image->data;
-	*size = image->height * image->scanline;
+	*size = 1ull * image->height * image->scanline;
 	test_fill_image_alpha_channel(image->data, image->width, image->height, 0xFF);
 	test_image_fill_unused_quarters(image->data, image->scanline, image->width, image->height,
 	                                quarter, 0xFF000000);
@@ -943,7 +943,7 @@ static int test_progressive_ms_sample(char* ms_sample_path)
 
 	count = 4;
 	progressive = progressive_context_new(FALSE);
-	g_DstData = winpr_aligned_malloc(g_DstStep * g_Height, 16);
+	g_DstData = winpr_aligned_malloc(1ull * g_DstStep * g_Height, 16);
 	progressive_create_surface_context(progressive, 0, g_Width, g_Height);
 
 	/* image 1 */
@@ -1075,11 +1075,11 @@ static BOOL test_encode_decode(const char* path)
 		dstImage->data = resultData;
 		winpr_image_write(dstImage, "/tmp/test.bmp");
 	}
-	for (UINT32 y = 0; y < image->height; y++)
+	for (size_t y = 0; y < image->height; y++)
 	{
 		const BYTE* orig = &image->data[y * image->scanline];
 		const BYTE* dec = &resultData[y * image->scanline];
-		for (UINT32 x = 0; x < image->width; x++)
+		for (size_t x = 0; x < image->width; x++)
 		{
 			const BYTE* po = &orig[x * 4];
 			const BYTE* pd = &dec[x * 4];
