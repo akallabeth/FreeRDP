@@ -19,8 +19,8 @@
 
 #include "sdl_input.hpp"
 
-#include <assert.h>
-#include <stdbool.h>
+#include <cassert>
+
 #include <string>
 
 #include <SDL.h>

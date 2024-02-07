@@ -19,7 +19,7 @@
 
 #include <vector>
 #include <string>
-#include <assert.h>
+#include <cassert>
 
 #include <freerdp/log.h>
 #include <freerdp/utils/smartcardlogon.h>

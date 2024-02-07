@@ -22,7 +22,6 @@
 #include <winpr/synch.h>
 #include <winpr/wlog.h>
 
-#include <stdbool.h>
 #include <SDL.h>
 
 class CriticalSection

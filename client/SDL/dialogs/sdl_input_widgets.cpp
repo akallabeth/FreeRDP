@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <cassert>
 #include <algorithm>
 
 #include "sdl_input_widgets.hpp"

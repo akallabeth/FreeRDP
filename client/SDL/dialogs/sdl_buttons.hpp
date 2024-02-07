@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <stdint.h>
+#include <cstdint>
 
 #include "sdl_button.hpp"
 
