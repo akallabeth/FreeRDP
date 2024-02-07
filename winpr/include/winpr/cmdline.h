@@ -86,12 +86,17 @@
 /* Command-Line Macros */
 
 #define CommandLineSwitchStart(_arg) \
-	if (0)                           \
+	do                               \
 	{                                \
-	}
+		if (0)                       \
+		{                            \
+		}
 #define CommandLineSwitchCase(_arg, _name) else if (strcmp(_arg->Name, _name) == 0)
 #define CommandLineSwitchDefault(_arg) else
-#define CommandLineSwitchEnd(_arg)
+#define CommandLineSwitchEnd(_arg) \
+	}                              \
+	while (0)                      \
+		;
 
 #define BoolValueTrue ((LPSTR)1)
 #define BoolValueFalse ((LPSTR)0)
