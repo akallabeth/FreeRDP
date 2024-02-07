@@ -87,14 +87,14 @@ static BOOL sdl_is_monitor_id_active(SdlContext* sdl, UINT32 id)
 	WINPR_ASSERT(settings);
 
 	const UINT32 NumMonitorIds = freerdp_settings_get_uint32(settings, FreeRDP_NumMonitorIds);
-	if (!NumMonitorIds)
+	if (NumMonitorIds == 0u)
 		return TRUE;
 
 	for (UINT32 index = 0; index < NumMonitorIds; index++)
 	{
 		auto cur = static_cast<const UINT32*>(
 		    freerdp_settings_get_pointer_array(settings, FreeRDP_MonitorIds, index));
-		if (cur && (*cur == id))
+		if ((cur != nullptr) && (*cur == id))
 			return TRUE;
 	}
 
@@ -118,12 +118,12 @@ static BOOL sdl_apply_max_size(SdlContext* sdl, UINT32* pMaxWidth, UINT32* pMaxH
 		auto monitor = static_cast<const rdpMonitor*>(
 		    freerdp_settings_get_pointer_array(settings, FreeRDP_MonitorDefArray, x));
 
-		if (freerdp_settings_get_bool(settings, FreeRDP_Fullscreen))
+		if (freerdp_settings_get_bool(settings, FreeRDP_Fullscreen) != 0)
 		{
 			*pMaxWidth = monitor->width;
 			*pMaxHeight = monitor->height;
 		}
-		else if (freerdp_settings_get_bool(settings, FreeRDP_Workarea))
+		else if (freerdp_settings_get_bool(settings, FreeRDP_Workarea) != 0)
 		{
 			SDL_Rect rect = {};
 			SDL_GetDisplayUsableBounds(monitor->orig_screen, &rect);
@@ -138,16 +138,16 @@ static BOOL sdl_apply_max_size(SdlContext* sdl, UINT32* pMaxWidth, UINT32* pMaxH
 			*pMaxWidth = rect.w;
 			*pMaxHeight = rect.h;
 
-			if (freerdp_settings_get_bool(settings, FreeRDP_PercentScreenUseWidth))
+			if (freerdp_settings_get_bool(settings, FreeRDP_PercentScreenUseWidth) != 0)
 				*pMaxWidth =
 				    (rect.w * freerdp_settings_get_uint32(settings, FreeRDP_PercentScreen)) / 100;
 
-			if (freerdp_settings_get_bool(settings, FreeRDP_PercentScreenUseHeight))
+			if (freerdp_settings_get_bool(settings, FreeRDP_PercentScreenUseHeight) != 0)
 				*pMaxHeight =
 				    (rect.h * freerdp_settings_get_uint32(settings, FreeRDP_PercentScreen)) / 100;
 		}
-		else if (freerdp_settings_get_uint32(settings, FreeRDP_DesktopWidth) &&
-		         freerdp_settings_get_uint32(settings, FreeRDP_DesktopHeight))
+		else if ((freerdp_settings_get_uint32(settings, FreeRDP_DesktopWidth) != 0u) &&
+		         (freerdp_settings_get_uint32(settings, FreeRDP_DesktopHeight) != 0u))
 		{
 			*pMaxWidth = freerdp_settings_get_uint32(settings, FreeRDP_DesktopWidth);
 			*pMaxHeight = freerdp_settings_get_uint32(settings, FreeRDP_DesktopHeight);
@@ -182,9 +182,9 @@ static BOOL sdl_apply_display_properties(SdlContext* sdl)
 	WINPR_ASSERT(settings);
 
 	const UINT32 numIds = freerdp_settings_get_uint32(settings, FreeRDP_NumMonitorIds);
-	if (!freerdp_settings_set_pointer_len(settings, FreeRDP_MonitorDefArray, nullptr, numIds))
+	if (freerdp_settings_set_pointer_len(settings, FreeRDP_MonitorDefArray, nullptr, numIds) == 0)
 		return FALSE;
-	if (!freerdp_settings_set_uint32(settings, FreeRDP_MonitorCount, numIds))
+	if (freerdp_settings_set_uint32(settings, FreeRDP_MonitorCount, numIds) == 0)
 		return FALSE;
 
 	for (UINT32 x = 0; x < numIds; x++)
@@ -253,7 +253,7 @@ static BOOL sdl_apply_display_properties(SdlContext* sdl)
 		monitor->y = rect.y;
 		monitor->width = rect.w;
 		monitor->height = rect.h;
-		monitor->is_primary = x == 0;
+		monitor->is_primary = static_cast<UINT32>(x == 0);
 		monitor->attributes.desktopScaleFactor = factor;
 		monitor->attributes.deviceScaleFactor = 100;
 		monitor->attributes.orientation = rdp_orientation;
@@ -272,10 +272,10 @@ static BOOL sdl_detect_single_window(SdlContext* sdl, UINT32* pMaxWidth, UINT32*
 	rdpSettings* settings = sdl->context()->settings;
 	WINPR_ASSERT(settings);
 
-	if ((!freerdp_settings_get_bool(settings, FreeRDP_UseMultimon) &&
-	     !freerdp_settings_get_bool(settings, FreeRDP_SpanMonitors)) ||
-	    (freerdp_settings_get_bool(settings, FreeRDP_Workarea) &&
-	     !freerdp_settings_get_bool(settings, FreeRDP_RemoteApplicationMode)))
+	if (((freerdp_settings_get_bool(settings, FreeRDP_UseMultimon) == 0) &&
+	     (freerdp_settings_get_bool(settings, FreeRDP_SpanMonitors) == 0)) ||
+	    ((freerdp_settings_get_bool(settings, FreeRDP_Workarea) != 0) &&
+	     (freerdp_settings_get_bool(settings, FreeRDP_RemoteApplicationMode) == 0)))
 	{
 		/* If no monitors were specified on the command-line then set the current monitor as active
 		 */
@@ -283,7 +283,7 @@ static BOOL sdl_detect_single_window(SdlContext* sdl, UINT32* pMaxWidth, UINT32*
 		{
 			const size_t id =
 			    (sdl->windows.size() > 0) ? SDL_GetWindowDisplayIndex(sdl->windows[0].window()) : 0;
-			if (!freerdp_settings_set_pointer_len(settings, FreeRDP_MonitorIds, &id, 1))
+			if (freerdp_settings_set_pointer_len(settings, FreeRDP_MonitorIds, &id, 1) == 0)
 				return FALSE;
 		}
 		else
@@ -293,12 +293,12 @@ static BOOL sdl_detect_single_window(SdlContext* sdl, UINT32* pMaxWidth, UINT32*
 			 * If the monitor is invalid then we will default back to current monitor
 			 * later as a fallback. So, there is no need to validate command-line entry here.
 			 */
-			if (!freerdp_settings_set_uint32(settings, FreeRDP_NumMonitorIds, 1))
+			if (freerdp_settings_set_uint32(settings, FreeRDP_NumMonitorIds, 1) == 0)
 				return FALSE;
 		}
 
 		// TODO: Fill monitor struct
-		if (!sdl_apply_display_properties(sdl))
+		if (sdl_apply_display_properties(sdl) == 0)
 			return FALSE;
 		return sdl_apply_max_size(sdl, pMaxWidth, pMaxHeight);
 	}
@@ -315,16 +315,16 @@ BOOL sdl_detect_monitors(SdlContext* sdl, UINT32* pMaxWidth, UINT32* pMaxHeight)
 	WINPR_ASSERT(settings);
 
 	const int numDisplays = SDL_GetNumVideoDisplays();
-	if (!freerdp_settings_set_pointer_len(settings, FreeRDP_MonitorIds, nullptr, numDisplays))
+	if (freerdp_settings_set_pointer_len(settings, FreeRDP_MonitorIds, nullptr, numDisplays) == 0)
 		return FALSE;
 
 	for (size_t x = 0; x < numDisplays; x++)
 	{
-		if (!freerdp_settings_set_pointer_array(settings, FreeRDP_MonitorIds, x, &x))
+		if (freerdp_settings_set_pointer_array(settings, FreeRDP_MonitorIds, x, &x) == 0)
 			return FALSE;
 	}
 
-	if (!sdl_apply_display_properties(sdl))
+	if (sdl_apply_display_properties(sdl) == 0)
 		return FALSE;
 
 	return sdl_detect_single_window(sdl, pMaxWidth, pMaxHeight);

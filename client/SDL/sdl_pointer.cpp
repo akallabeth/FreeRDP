@@ -44,7 +44,7 @@ static BOOL sdl_Pointer_New(rdpContext* context, rdpPointer* pointer)
 	auto ptr = reinterpret_cast<sdlPointer*>(pointer);
 
 	WINPR_ASSERT(context);
-	if (!ptr)
+	if (ptr == nullptr)
 		return FALSE;
 
 	rdpGdi* gdi = context->gdi;
@@ -53,14 +53,14 @@ static BOOL sdl_Pointer_New(rdpContext* context, rdpPointer* pointer)
 	ptr->size = pointer->width * pointer->height * 4ULL;
 	ptr->data = winpr_aligned_malloc(ptr->size, 16);
 
-	if (!ptr->data)
+	if (ptr->data == nullptr)
 		return FALSE;
 
 	auto data = static_cast<BYTE*>(ptr->data);
-	if (!freerdp_image_copy_from_pointer_data(
+	if (freerdp_image_copy_from_pointer_data(
 	        data, gdi->dstFormat, 0, 0, 0, pointer->width, pointer->height, pointer->xorMaskData,
 	        pointer->lengthXorMask, pointer->andMaskData, pointer->lengthAndMask, pointer->xorBpp,
-	        &context->gdi->palette))
+	        &context->gdi->palette) == FALSE)
 	{
 		winpr_aligned_free(ptr->data);
 		return FALSE;
@@ -83,7 +83,7 @@ static void sdl_Pointer_Free(rdpContext* context, rdpPointer* pointer)
 	auto ptr = reinterpret_cast<sdlPointer*>(pointer);
 	WINPR_UNUSED(context);
 
-	if (ptr)
+	if (ptr != nullptr)
 	{
 		sdl_Pointer_Clear(ptr);
 		winpr_aligned_free(ptr->data);
@@ -95,14 +95,14 @@ static BOOL sdl_Pointer_SetDefault(rdpContext* context)
 {
 	WINPR_UNUSED(context);
 
-	return sdl_push_user_event(SDL_USEREVENT_POINTER_DEFAULT);
+	return sdl_push_user_event(SDL_USEREVENT_POINTER_DEFAULT) ? TRUE : FALSE;
 }
 
 static BOOL sdl_Pointer_Set(rdpContext* context, rdpPointer* pointer)
 {
 	auto sdl = get_context(context);
 
-	return sdl_push_user_event(SDL_USEREVENT_POINTER_SET, pointer, sdl);
+	return sdl_push_user_event(SDL_USEREVENT_POINTER_SET, pointer, sdl) ? TRUE : FALSE;
 }
 
 BOOL sdl_Pointer_Set_Process(SDL_UserEvent* uptr)
@@ -134,13 +134,13 @@ BOOL sdl_Pointer_Set_Process(SDL_UserEvent* uptr)
 	sh = h = static_cast<INT32>(pointer->height);
 
 	SDL_Window* window = SDL_GetMouseFocus();
-	if (!window)
+	if (window == nullptr)
 		return sdl_Pointer_SetDefault(context);
 
 	const Uint32 id = SDL_GetWindowID(window);
 
-	if (!sdl_scale_coordinates(sdl, id, &x, &y, FALSE, FALSE) ||
-	    !sdl_scale_coordinates(sdl, id, &sw, &sh, FALSE, FALSE))
+	if ((sdl_scale_coordinates(sdl, id, &x, &y, FALSE, FALSE) == FALSE) ||
+	    (sdl_scale_coordinates(sdl, id, &sw, &sh, FALSE, FALSE) == FALSE))
 		return FALSE;
 
 	sdl_Pointer_Clear(ptr);
@@ -148,7 +148,7 @@ BOOL sdl_Pointer_Set_Process(SDL_UserEvent* uptr)
 	const DWORD bpp = FreeRDPGetBitsPerPixel(gdi->dstFormat);
 	ptr->image =
 	    SDL_CreateRGBSurfaceWithFormat(0, sw, sh, static_cast<int>(bpp), sdl->sdl_pixel_format);
-	if (!ptr->image)
+	if (ptr->image == nullptr)
 		return FALSE;
 
 	SDL_LockSurface(ptr->image);
@@ -159,11 +159,11 @@ BOOL sdl_Pointer_Set_Process(SDL_UserEvent* uptr)
 	    static_cast<UINT32>(ptr->image->w), static_cast<UINT32>(ptr->image->h), data,
 	    gdi->dstFormat, 0, 0, 0, static_cast<UINT32>(w), static_cast<UINT32>(h));
 	SDL_UnlockSurface(ptr->image);
-	if (!rc)
+	if (rc == FALSE)
 		return FALSE;
 
 	ptr->cursor = SDL_CreateColorCursor(ptr->image, x, y);
-	if (!ptr->cursor)
+	if (ptr->cursor == nullptr)
 		return FALSE;
 
 	SDL_SetCursor(ptr->cursor);
@@ -175,7 +175,7 @@ static BOOL sdl_Pointer_SetNull(rdpContext* context)
 {
 	WINPR_UNUSED(context);
 
-	return sdl_push_user_event(SDL_USEREVENT_POINTER_NULL);
+	return sdl_push_user_event(SDL_USEREVENT_POINTER_NULL) ? TRUE : FALSE;
 }
 
 static BOOL sdl_Pointer_SetPosition(rdpContext* context, UINT32 x, UINT32 y)
@@ -183,7 +183,7 @@ static BOOL sdl_Pointer_SetPosition(rdpContext* context, UINT32 x, UINT32 y)
 	auto sdl = get_context(context);
 	WINPR_ASSERT(sdl);
 
-	return sdl_push_user_event(SDL_USEREVENT_POINTER_POSITION, x, y);
+	return sdl_push_user_event(SDL_USEREVENT_POINTER_POSITION, x, y) ? TRUE : FALSE;
 }
 
 BOOL sdl_register_pointer(rdpGraphics* graphics)

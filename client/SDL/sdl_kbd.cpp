@@ -366,7 +366,7 @@ BOOL sdlInput::keyboard_set_indicators(rdpContext* context, UINT16 led_flags)
 BOOL sdlInput::keyboard_set_ime_status(rdpContext* context, UINT16 imeId, UINT32 imeState,
                                        UINT32 imeConvMode)
 {
-	if (!context)
+	if (context == nullptr)
 		return FALSE;
 
 	WLog_WARN(TAG,
@@ -435,33 +435,34 @@ BOOL sdlInput::keyboard_handle_event(const SDL_KeyboardEvent* ev)
 			switch (ev->keysym.scancode)
 			{
 				case SDL_SCANCODE_RETURN:
-					_sdl->update_fullscreen(!_sdl->fullscreen);
+					_sdl->update_fullscreen(static_cast<BOOL>(!_sdl->fullscreen));
 					return TRUE;
 				case SDL_SCANCODE_R:
-					_sdl->update_resizeable(!_sdl->resizeable);
+					_sdl->update_resizeable(static_cast<BOOL>(!_sdl->resizeable));
 					return TRUE;
 				case SDL_SCANCODE_G:
 					keyboard_grab(ev->windowID, _sdl->grab_kbd ? SDL_FALSE : SDL_TRUE);
 					return TRUE;
 				case SDL_SCANCODE_D:
 					freerdp_abort_connect_context(_sdl->context());
-					return true;
+					return 1;
 				default:
 					break;
 			}
 		}
 	}
-	return freerdp_input_send_keyboard_event_ex(_sdl->context()->input, ev->type == SDL_KEYDOWN,
+	return freerdp_input_send_keyboard_event_ex(_sdl->context()->input,
+	                                            static_cast<BOOL>(ev->type == SDL_KEYDOWN),
 	                                            ev->repeat, rdp_scancode);
 }
 
 BOOL sdlInput::keyboard_grab(Uint32 windowID, SDL_bool enable)
 {
 	SDL_Window* window = SDL_GetWindowFromID(windowID);
-	if (!window)
+	if (window == nullptr)
 		return FALSE;
 #if SDL_VERSION_ATLEAST(2, 0, 16)
-	_sdl->grab_kbd = enable;
+	_sdl->grab_kbd = (enable != 0u);
 	SDL_SetWindowKeyboardGrab(window, enable);
 	return TRUE;
 #else
@@ -476,7 +477,7 @@ BOOL sdlInput::mouse_focus(Uint32 windowID)
 	{
 		_lastWindowID = windowID;
 		SDL_Window* window = SDL_GetWindowFromID(windowID);
-		if (!window)
+		if (window == nullptr)
 			return FALSE;
 
 		SDL_RaiseWindow(window);
@@ -487,10 +488,10 @@ BOOL sdlInput::mouse_focus(Uint32 windowID)
 BOOL sdlInput::mouse_grab(Uint32 windowID, SDL_bool enable)
 {
 	SDL_Window* window = SDL_GetWindowFromID(windowID);
-	if (!window)
+	if (window == nullptr)
 		return FALSE;
 #if SDL_VERSION_ATLEAST(2, 0, 16)
-	_sdl->grab_mouse = enable;
+	_sdl->grab_mouse = (enable != 0u);
 	SDL_SetWindowMouseGrab(window, enable);
 	return TRUE;
 #else

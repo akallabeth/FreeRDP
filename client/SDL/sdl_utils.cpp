@@ -130,21 +130,21 @@ const char* sdl_error_string(Uint32 res)
 	return SDL_GetError();
 }
 
-BOOL sdl_log_error_ex(Uint32 res, wLog* log, const char* what, const char* file, size_t line,
+bool sdl_log_error_ex(Uint32 res, wLog* log, const char* what, const char* file, size_t line,
                       const char* fkt)
 {
 	const char* msg = sdl_error_string(res);
 
 	WINPR_UNUSED(file);
 
-	if (!msg)
-		return FALSE;
+	if (msg == nullptr)
+		return false;
 
 	WLog_Print(log, WLOG_ERROR, "[%s:%" PRIuz "][%s]: %s", fkt, line, what, msg);
-	return TRUE;
+	return true;
 }
 
-BOOL sdl_push_user_event(Uint32 type, ...)
+bool sdl_push_user_event(Uint32 type, ...)
 {
 	SDL_Event ev = {};
 	SDL_UserEvent* event = &ev.user;
@@ -223,10 +223,10 @@ BOOL sdl_push_user_event(Uint32 type, ...)
 			break;
 		default:
 			va_end(ap);
-			return FALSE;
+			return false;
 	}
 	va_end(ap);
-	return SDL_PushEvent(&ev) == 1;
+	return (SDL_PushEvent(&ev) == 1);
 }
 
 CriticalSection::CriticalSection()

@@ -86,10 +86,10 @@ BOOL sdlDispContext::sendResize()
 	DISPLAY_CONTROL_MONITOR_LAYOUT layout = {};
 	auto settings = _sdl->context()->settings;
 
-	if (!settings)
+	if (settings == nullptr)
 		return FALSE;
 
-	if (!_activated || !_disp)
+	if ((_activated == 0) || (_disp == nullptr))
 		return TRUE;
 
 	if (GetTickCount64() - _lastSentDate < RESIZE_MIN_DELAY)
@@ -97,7 +97,7 @@ BOOL sdlDispContext::sendResize()
 
 	_lastSentDate = GetTickCount64();
 
-	if (!settings_changed())
+	if (settings_changed() == 0)
 		return TRUE;
 
 	const UINT32 mcount = freerdp_settings_get_uint32(settings, FreeRDP_MonitorCount);
@@ -138,12 +138,12 @@ BOOL sdlDispContext::set_window_resizable()
 static BOOL sdl_disp_check_context(void* context, SdlContext** ppsdl, sdlDispContext** ppsdlDisp,
                                    rdpSettings** ppSettings)
 {
-	if (!context)
+	if (context == nullptr)
 		return FALSE;
 
 	auto sdl = get_context(context);
 
-	if (!sdl->context()->settings)
+	if (sdl->context()->settings == nullptr)
 		return FALSE;
 
 	*ppsdl = sdl;
@@ -158,16 +158,17 @@ void sdlDispContext::OnActivated(void* context, const ActivatedEventArgs* e)
 	sdlDispContext* sdlDisp = nullptr;
 	rdpSettings* settings = nullptr;
 
-	if (!sdl_disp_check_context(context, &sdl, &sdlDisp, &settings))
+	if (sdl_disp_check_context(context, &sdl, &sdlDisp, &settings) == 0)
 		return;
 
 	sdlDisp->_waitingResize = FALSE;
 
-	if (sdlDisp->_activated && !freerdp_settings_get_bool(settings, FreeRDP_Fullscreen))
+	if ((sdlDisp->_activated != 0) &&
+	    (freerdp_settings_get_bool(settings, FreeRDP_Fullscreen) == 0))
 	{
 		sdlDisp->set_window_resizable();
 
-		if (e->firstActivation)
+		if (e->firstActivation != 0)
 			return;
 
 		sdlDisp->addTimer();
@@ -181,12 +182,13 @@ void sdlDispContext::OnGraphicsReset(void* context, const GraphicsResetEventArgs
 	rdpSettings* settings = nullptr;
 
 	WINPR_UNUSED(e);
-	if (!sdl_disp_check_context(context, &sdl, &sdlDisp, &settings))
+	if (sdl_disp_check_context(context, &sdl, &sdlDisp, &settings) == 0)
 		return;
 
 	sdlDisp->_waitingResize = FALSE;
 
-	if (sdlDisp->_activated && !freerdp_settings_get_bool(settings, FreeRDP_Fullscreen))
+	if ((sdlDisp->_activated != 0) &&
+	    (freerdp_settings_get_bool(settings, FreeRDP_Fullscreen) == 0))
 	{
 		sdlDisp->set_window_resizable();
 		sdlDisp->addTimer();
@@ -196,23 +198,24 @@ void sdlDispContext::OnGraphicsReset(void* context, const GraphicsResetEventArgs
 Uint32 sdlDispContext::OnTimer(Uint32 interval, void* param)
 {
 	auto ctx = static_cast<sdlDispContext*>(param);
-	if (!ctx)
+	if (ctx == nullptr)
 		return 0;
 
 	SdlContext* sdl = ctx->_sdl;
 	sdlDispContext* sdlDisp = nullptr;
 	rdpSettings* settings = nullptr;
 
-	if (!sdl_disp_check_context(sdl->context(), &sdl, &sdlDisp, &settings))
+	if (sdl_disp_check_context(sdl->context(), &sdl, &sdlDisp, &settings) == 0)
 		return 0;
 
 	WLog_Print(sdl->log, WLOG_TRACE, "checking for display changes...");
-	if (!sdlDisp->_activated || freerdp_settings_get_bool(settings, FreeRDP_Fullscreen))
+	if ((sdlDisp->_activated == 0) ||
+	    (freerdp_settings_get_bool(settings, FreeRDP_Fullscreen) != 0))
 		return 0;
 	else
 	{
 		auto rc = sdlDisp->sendResize();
-		if (!rc)
+		if (rc == 0)
 			WLog_Print(sdl->log, WLOG_TRACE, "sent new display layout, result %d", rc);
 	}
 	if (sdlDisp->_timer_retries++ >= MAX_RETRIES)
@@ -243,7 +246,7 @@ UINT sdlDispContext::sendLayout(const rdpMonitor* monitors, size_t nmonitors)
 		auto monitor = &monitors[i];
 		auto layout = &layouts[i];
 
-		layout->Flags = (monitor->is_primary ? DISPLAY_CONTROL_MONITOR_PRIMARY : 0);
+		layout->Flags = (monitor->is_primary != 0u ? DISPLAY_CONTROL_MONITOR_PRIMARY : 0);
 		layout->Left = monitor->x;
 		layout->Top = monitor->y;
 		layout->Width = monitor->width;
@@ -333,11 +336,11 @@ BOOL sdlDispContext::handle_window_event(const SDL_WindowEvent* ev)
 {
 	WINPR_ASSERT(ev);
 
-	auto bordered = freerdp_settings_get_bool(_sdl->context()->settings, FreeRDP_Decorations)
+	auto bordered = freerdp_settings_get_bool(_sdl->context()->settings, FreeRDP_Decorations) != 0
 	                    ? SDL_TRUE
 	                    : SDL_FALSE;
 	auto window = SDL_GetWindowFromID(ev->windowID);
-	if (window)
+	if (window != nullptr)
 		SDL_SetWindowBordered(window, bordered);
 
 	switch (ev->event)
@@ -401,27 +404,27 @@ UINT sdlDispContext::DisplayControlCaps(UINT32 maxNumMonitors, UINT32 maxMonitor
 	         maxNumMonitors, maxMonitorAreaFactorA, maxMonitorAreaFactorB);
 	_activated = TRUE;
 
-	if (freerdp_settings_get_bool(settings, FreeRDP_Fullscreen))
+	if (freerdp_settings_get_bool(settings, FreeRDP_Fullscreen) != 0)
 		return CHANNEL_RC_OK;
 
 	WLog_DBG(TAG, "DisplayControlCapsPdu: setting the window as resizable");
-	return set_window_resizable() ? CHANNEL_RC_OK : CHANNEL_RC_NO_MEMORY;
+	return set_window_resizable() != 0 ? CHANNEL_RC_OK : CHANNEL_RC_NO_MEMORY;
 }
 
 BOOL sdlDispContext::init(DispClientContext* disp)
 {
-	if (!disp)
+	if (disp == nullptr)
 		return FALSE;
 
 	auto settings = _sdl->context()->settings;
 
-	if (!settings)
+	if (settings == nullptr)
 		return FALSE;
 
 	_disp = disp;
 	disp->custom = this;
 
-	if (freerdp_settings_get_bool(settings, FreeRDP_DynamicResolutionUpdate))
+	if (freerdp_settings_get_bool(settings, FreeRDP_DynamicResolutionUpdate) != 0)
 	{
 		disp->DisplayControlCaps = sdlDispContext::DisplayControlCaps;
 	}
@@ -432,7 +435,7 @@ BOOL sdlDispContext::init(DispClientContext* disp)
 
 BOOL sdlDispContext::uninit(DispClientContext* disp)
 {
-	if (!disp)
+	if (disp == nullptr)
 		return FALSE;
 
 	_disp = nullptr;
