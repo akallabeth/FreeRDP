@@ -2014,8 +2014,6 @@ static VOID VCAPITYPE rdpdr_virtual_channel_open_event_ex(LPVOID lpUserParam, DW
 	if (error && rdpdr && rdpdr->rdpcontext)
 		setChannelError(rdpdr->rdpcontext, error,
 		                "rdpdr_virtual_channel_open_event_ex reported an error");
-
-	return;
 }
 
 static DWORD WINAPI rdpdr_virtual_channel_client_thread(LPVOID arg)
