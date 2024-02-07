@@ -110,7 +110,7 @@ static INLINE BOOL HashTable_IsProbablePrime(size_t oddNumber)
 	{
 		if (oddNumber == i)
 			return TRUE;
-		else if (oddNumber % i == 0)
+		if (oddNumber % i == 0)
 			return FALSE;
 	}
 

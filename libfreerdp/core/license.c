@@ -435,8 +435,7 @@ state_run_t license_recv(rdpLicense* license, wStream* s)
 
 	if (freerdp_settings_get_bool(license->rdp->settings, FreeRDP_ServerMode))
 		return license_server_recv(license, s);
-	else
-		return license_client_recv(license, s);
+	return license_client_recv(license, s);
 }
 
 static BOOL license_check_stream_length(wStream* s, SSIZE_T expect, const char* where)

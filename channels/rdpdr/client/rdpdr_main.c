@@ -754,7 +754,7 @@ static BOOL isAutomountLocation(const char* path)
 			 * base path or the base path itself. */
 			if (*rest == '\0')
 				return TRUE;
-			else if (*rest == '/')
+			if (*rest == '/')
 			{
 				const char* token = strstr(&rest[1], "/");
 

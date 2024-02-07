@@ -728,7 +728,7 @@ BOOL freerdp_client_add_device_channel(rdpSettings* settings, size_t count, cons
 
 		return rc;
 	}
-	else if (option_equals(params[0], "printer"))
+	if (option_equals(params[0], "printer"))
 	{
 		RDPDR_DEVICE* printer = NULL;
 
@@ -4057,33 +4057,31 @@ static int freerdp_client_settings_parse_command_line_arguments_int(
 		WLog_WARN(TAG, "FreeRDP 1.0 style syntax was dropped with version 3!");
 		return -1;
 	}
-	else
+
+	if (allowUnknown)
+		flags |= COMMAND_LINE_IGN_UNKNOWN_KEYWORD;
+
+	if (ext)
 	{
-		if (allowUnknown)
-			flags |= COMMAND_LINE_IGN_UNKNOWN_KEYWORD;
-
-		if (ext)
-		{
-			if (freerdp_client_settings_parse_connection_file(settings, argv[1]))
-				return COMMAND_LINE_ERROR_UNEXPECTED_VALUE;
-		}
-
-		if (assist)
-		{
-			if (freerdp_client_settings_parse_assistance_file(settings, argc, argv) < 0)
-				return COMMAND_LINE_ERROR_UNEXPECTED_VALUE;
-		}
-
-		CommandLineClearArgumentsA(largs);
-		status = CommandLineParseArgumentsA(argc, argv, largs, flags, settings,
-		                                    freerdp_client_command_line_pre_filter,
-		                                    freerdp_client_command_line_post_filter);
-
-		if (status < 0)
-			return status;
-
-		prepare_default_settings(settings, largs, ext);
+		if (freerdp_client_settings_parse_connection_file(settings, argv[1]))
+			return COMMAND_LINE_ERROR_UNEXPECTED_VALUE;
 	}
+
+	if (assist)
+	{
+		if (freerdp_client_settings_parse_assistance_file(settings, argc, argv) < 0)
+			return COMMAND_LINE_ERROR_UNEXPECTED_VALUE;
+	}
+
+	CommandLineClearArgumentsA(largs);
+	status = CommandLineParseArgumentsA(argc, argv, largs, flags, settings,
+	                                    freerdp_client_command_line_pre_filter,
+	                                    freerdp_client_command_line_post_filter);
+
+	if (status < 0)
+		return status;
+
+	prepare_default_settings(settings, largs, ext);
 
 	CommandLineFindArgumentA(largs, "v");
 	arg = largs;

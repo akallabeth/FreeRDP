@@ -185,13 +185,11 @@ static BOOL drive_file_init(DRIVE_FILE* file)
 
 			return TRUE;
 		}
-		else
+
+		if (file->CreateOptions & FILE_DIRECTORY_FILE)
 		{
-			if (file->CreateOptions & FILE_DIRECTORY_FILE)
-			{
-				SetLastError(ERROR_DIRECTORY);
-				return FALSE;
-			}
+			SetLastError(ERROR_DIRECTORY);
+			return FALSE;
 		}
 	}
 	else

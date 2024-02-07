@@ -956,11 +956,9 @@ BOOL arm_resolve_endpoint(rdpContext* context, DWORD timeout)
 			arm->gateway_retry++;
 			if (delay <= 0)
 				break; /* error or no retry desired, abort loop */
-			else
-			{
-				WLog_DBG(TAG, "Delay for %" PRIdz "ms before next attempt", delay);
-				Sleep(delay);
-			}
+
+			WLog_DBG(TAG, "Delay for %" PRIdz "ms before next attempt", delay);
+			Sleep(delay);
 		}
 		rc = arm_handle_request(arm, &retry, timeout);
 

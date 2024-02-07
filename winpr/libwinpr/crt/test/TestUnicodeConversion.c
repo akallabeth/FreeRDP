@@ -67,8 +67,7 @@ static BOOL check_short_buffer(const char* prefix, int rc, size_t buffersize,
 		        prefix, rc, buffersize, err);
 		return FALSE;
 	}
-	else
-		return TRUE;
+	return TRUE;
 }
 
 #define compare_utf16(what, buffersize, rc, inputlen, test) \

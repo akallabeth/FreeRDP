@@ -675,7 +675,7 @@ static int recv_socks_reply(BIO* bufferedBio, BYTE* buf, int len, char* reason, 
 		{
 			break;
 		}
-		else if (status < 0)
+		if (status < 0)
 		{
 			/* Error? */
 			if (BIO_should_retry(bufferedBio))

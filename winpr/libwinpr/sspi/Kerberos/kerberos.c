@@ -659,7 +659,7 @@ static BOOL kerberos_rd_tgt_token(const sspi_gss_data* token, char** target, krb
 		strcpy(buf, str);
 		return TRUE;
 	}
-	else if (val == KRB_TGT_REP)
+	if (val == KRB_TGT_REP)
 	{
 		if (!ticket)
 			return FALSE;

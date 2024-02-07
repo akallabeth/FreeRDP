@@ -776,7 +776,7 @@ UwacReturnCode UwacNextEvent(UwacDisplay* display, UwacEvent* event)
 
 		if (ret < 0)
 			return UWAC_ERROR_INTERNAL;
-		else if (ret == 0)
+		if (ret == 0)
 			return UWAC_ERROR_CLOSED;
 	}
 

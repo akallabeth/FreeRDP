@@ -646,7 +646,7 @@ size_t ber_write_integer(wStream* s, UINT32 value)
 		Stream_Write_UINT8(s, value);
 		return 3;
 	}
-	else if (value < 0x8000)
+	if (value < 0x8000)
 	{
 		ber_write_universal_tag(s, BER_TAG_INTEGER, FALSE);
 		ber_write_length(s, 2);
@@ -701,7 +701,7 @@ size_t ber_sizeof_integer(UINT32 value)
 	{
 		return 3;
 	}
-	else if (value < 0x8000)
+	if (value < 0x8000)
 	{
 		return 4;
 	}

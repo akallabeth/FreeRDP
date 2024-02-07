@@ -536,10 +536,8 @@ static void ClipboardInitLocalFileSubsystem(wClipboard* clipboard)
 		WLog_DBG(TAG, "initialized synthetic local file subsystem");
 		return;
 	}
-	else
-	{
-		WLog_WARN(TAG, "failed to initialize synthetic local file subsystem");
-	}
+
+	WLog_WARN(TAG, "failed to initialize synthetic local file subsystem");
 
 	WLog_INFO(TAG, "failed to initialize local file subsystem, file transfer not available");
 }
@@ -654,11 +652,9 @@ char* parse_uri_to_local_file(const char* uri, size_t uri_len)
 				localLen = uri_len - prefixLen;
 				break;
 			}
-			else
-			{
-				WLog_ERR(TAG, "URI format are not supported: %s", uri);
-				return NULL;
-			}
+
+			WLog_ERR(TAG, "URI format are not supported: %s", uri);
+			return NULL;
 		}
 
 		/*

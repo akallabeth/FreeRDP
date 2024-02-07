@@ -59,24 +59,22 @@ DWORD GetCurrentDirectoryA(DWORD nBufferLength, LPSTR lpBuffer)
 
 		return (DWORD)length;
 	}
-	else
+
+	if (lpBuffer == NULL)
 	{
-		if (lpBuffer == NULL)
-		{
-			free(cwd);
-			return 0;
-		}
-
-		if ((length + 1) > nBufferLength)
-		{
-			free(cwd);
-			return (DWORD)(length + 1);
-		}
-
-		memcpy(lpBuffer, cwd, length + 1);
 		free(cwd);
-		return (DWORD)length;
+		return 0;
 	}
+
+	if ((length + 1) > nBufferLength)
+	{
+		free(cwd);
+		return (DWORD)(length + 1);
+	}
+
+	memcpy(lpBuffer, cwd, length + 1);
+	free(cwd);
+	return (DWORD)length;
 }
 
 DWORD GetCurrentDirectoryW(DWORD nBufferLength, LPWSTR lpBuffer)

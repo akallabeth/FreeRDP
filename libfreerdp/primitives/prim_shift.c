@@ -85,8 +85,7 @@ static INLINE pstatus_t general_shiftC_16s(const INT16* pSrc, INT32 val, INT16* 
 
 	if (val < 0)
 		return general_rShiftC_16s(pSrc, -val, pDst, len);
-	else
-		return general_lShiftC_16s(pSrc, val, pDst, len);
+	return general_lShiftC_16s(pSrc, val, pDst, len);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -97,8 +96,7 @@ static INLINE pstatus_t general_shiftC_16u(const UINT16* pSrc, INT32 val, UINT16
 
 	if (val < 0)
 		return general_rShiftC_16u(pSrc, -val, pDst, len);
-	else
-		return general_lShiftC_16u(pSrc, val, pDst, len);
+	return general_lShiftC_16u(pSrc, val, pDst, len);
 }
 
 /* ------------------------------------------------------------------------- */

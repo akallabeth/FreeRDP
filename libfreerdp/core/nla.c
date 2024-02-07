@@ -892,8 +892,7 @@ int nla_authenticate(rdpNla* nla)
 
 	if (nla->server)
 		return nla_server_authenticate(nla);
-	else
-		return nla_client_authenticate(nla);
+	return nla_client_authenticate(nla);
 }
 
 static void ap_integer_increment_le(BYTE* number, size_t size)
@@ -907,11 +906,9 @@ static void ap_integer_increment_le(BYTE* number, size_t size)
 			number[index]++;
 			break;
 		}
-		else
-		{
-			number[index] = 0;
-			continue;
-		}
+
+		number[index] = 0;
+		continue;
 	}
 }
 
@@ -926,11 +923,9 @@ static void ap_integer_decrement_le(BYTE* number, size_t size)
 			number[index]--;
 			break;
 		}
-		else
-		{
-			number[index] = 0xFF;
-			continue;
-		}
+
+		number[index] = 0xFF;
+		continue;
 	}
 }
 
@@ -1856,8 +1851,7 @@ int nla_recv_pdu(rdpNla* nla, wStream* s)
 			freerdp_set_last_error_log(nla->rdpcontext, code);
 			return -1;
 		}
-		else
-			WLog_DBG(TAG, "Early User Auth active: SUCCESS");
+		WLog_DBG(TAG, "Early User Auth active: SUCCESS");
 	}
 	else
 	{

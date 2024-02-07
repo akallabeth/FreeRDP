@@ -50,7 +50,7 @@ static UCHAR _vtime(ULONG Ti)
 	 * do the compiler do the optimization */
 	if (Ti == 0)
 		return 0;
-	else if (Ti < 100)
+	if (Ti < 100)
 		return 1;
 	else if (Ti > 25500)
 		return 255; /* 0xFF */
@@ -510,7 +510,7 @@ BOOL CommWriteFile(HANDLE hDevice, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite
 					/* keep on */
 					continue;
 				}
-				else if (errno == EBADF)
+				if (errno == EBADF)
 				{
 					SetLastError(ERROR_BAD_DEVICE); /* STATUS_INVALID_DEVICE_REQUEST */
 					goto return_false;

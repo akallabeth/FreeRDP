@@ -480,7 +480,7 @@ static BOOL ffmpeg_encode_frame(AVCodecContext* context, AVFrame* in, AVPacket* 
 
 		if ((ret == AVERROR(EAGAIN)) || (ret == AVERROR_EOF))
 			return TRUE;
-		else if (ret < 0)
+		if (ret < 0)
 		{
 			const char* err = av_err2str(ret);
 			WLog_ERR(TAG, "Error during encoding %s [%d]", err, ret);
@@ -550,7 +550,7 @@ static BOOL ffmpeg_decode(AVCodecContext* dec_ctx, AVPacket* pkt, AVFrame* frame
 
 		if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
 			return TRUE;
-		else if (ret < 0)
+		if (ret < 0)
 		{
 			const char* err = av_err2str(ret);
 			WLog_ERR(TAG, "Error during decoding %s [%d]", err, ret);
@@ -620,8 +620,7 @@ BOOL freerdp_dsp_ffmpeg_supports_format(const AUDIO_FORMAT* format, BOOL encode)
 
 	if (encode)
 		return avcodec_find_encoder(id) != NULL;
-	else
-		return avcodec_find_decoder(id) != NULL;
+	return avcodec_find_decoder(id) != NULL;
 }
 
 FREERDP_DSP_CONTEXT* freerdp_dsp_ffmpeg_context_new(BOOL encode)
@@ -787,20 +786,19 @@ BOOL freerdp_dsp_ffmpeg_encode(FREERDP_DSP_CONTEXT* context, const AUDIO_FORMAT*
 	{
 		return ffmpeg_encode_frame(context->context, context->resampled, context->packet, out);
 	}
-	else
+
+	int copied = 0;
+	int rest = context->resampled->nb_samples;
+
+	do
 	{
-		int copied = 0;
-		int rest = context->resampled->nb_samples;
+		int inSamples = rest;
 
-		do
-		{
-			int inSamples = rest;
+		if ((inSamples < 0) || (context->bufferedSamples > (UINT32)(INT_MAX - inSamples)))
+			return FALSE;
 
-			if ((inSamples < 0) || (context->bufferedSamples > (UINT32)(INT_MAX - inSamples)))
-				return FALSE;
-
-			if (inSamples + (int)context->bufferedSamples > context->context->frame_size)
-				inSamples = context->context->frame_size - (int)context->bufferedSamples;
+		if (inSamples + (int)context->bufferedSamples > context->context->frame_size)
+			inSamples = context->context->frame_size - (int)context->bufferedSamples;
 
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 28, 100)
 			const int channels = context->context->channels;
@@ -822,10 +820,9 @@ BOOL freerdp_dsp_ffmpeg_encode(FREERDP_DSP_CONTEXT* context, const AUDIO_FORMAT*
 
 				context->bufferedSamples = 0;
 			}
-		} while (rest > 0);
+	} while (rest > 0);
 
-		return TRUE;
-	}
+	return TRUE;
 }
 
 BOOL freerdp_dsp_ffmpeg_decode(FREERDP_DSP_CONTEXT* context, const AUDIO_FORMAT* srcFormat,

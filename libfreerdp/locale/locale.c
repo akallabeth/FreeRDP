@@ -826,7 +826,7 @@ int freerdp_detect_keyboard_layout_from_system_locale(DWORD* keyboardLayoutId)
 				{
 					continue; /* Skip, try to get a more localized keyboard layout */
 				}
-				else if (current->keyboardLayouts[j] == 0)
+				if (current->keyboardLayouts[j] == 0)
 				{
 					/*
 					 * If we skip the ENGLISH_UNITED_STATES keyboard layout but there are no

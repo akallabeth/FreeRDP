@@ -678,49 +678,47 @@ static SECURITY_STATUS SEC_ENTRY ntlm_InitializeSecurityContextW(
 
 		return SEC_E_OUT_OF_SEQUENCE;
 	}
-	else
+
+	if (!input_buffer)
+		return SEC_E_INVALID_TOKEN;
+
+	if (input_buffer->cbBuffer < 1)
+		return SEC_E_INVALID_TOKEN;
+
+	channel_bindings = sspi_FindSecBuffer(pInput, SECBUFFER_CHANNEL_BINDINGS);
+
+	if (channel_bindings)
 	{
-		if (!input_buffer)
-			return SEC_E_INVALID_TOKEN;
-
-		if (input_buffer->cbBuffer < 1)
-			return SEC_E_INVALID_TOKEN;
-
-		channel_bindings = sspi_FindSecBuffer(pInput, SECBUFFER_CHANNEL_BINDINGS);
-
-		if (channel_bindings)
-		{
-			context->Bindings.BindingsLength = channel_bindings->cbBuffer;
-			context->Bindings.Bindings = (SEC_CHANNEL_BINDINGS*)channel_bindings->pvBuffer;
-		}
-
-		if (ntlm_get_state(context) == NTLM_STATE_CHALLENGE)
-		{
-			status = ntlm_read_ChallengeMessage(context, input_buffer);
-
-			if (status != SEC_I_CONTINUE_NEEDED)
-				return status;
-
-			if (!pOutput)
-				return SEC_E_INVALID_TOKEN;
-
-			if (pOutput->cBuffers < 1)
-				return SEC_E_INVALID_TOKEN;
-
-			output_buffer = sspi_FindSecBuffer(pOutput, SECBUFFER_TOKEN);
-
-			if (!output_buffer)
-				return SEC_E_INVALID_TOKEN;
-
-			if (output_buffer->cbBuffer < 1)
-				return SEC_E_INSUFFICIENT_MEMORY;
-
-			if (ntlm_get_state(context) == NTLM_STATE_AUTHENTICATE)
-				return ntlm_write_AuthenticateMessage(context, output_buffer);
-		}
-
-		return SEC_E_OUT_OF_SEQUENCE;
+		context->Bindings.BindingsLength = channel_bindings->cbBuffer;
+		context->Bindings.Bindings = (SEC_CHANNEL_BINDINGS*)channel_bindings->pvBuffer;
 	}
+
+	if (ntlm_get_state(context) == NTLM_STATE_CHALLENGE)
+	{
+		status = ntlm_read_ChallengeMessage(context, input_buffer);
+
+		if (status != SEC_I_CONTINUE_NEEDED)
+			return status;
+
+		if (!pOutput)
+			return SEC_E_INVALID_TOKEN;
+
+		if (pOutput->cBuffers < 1)
+			return SEC_E_INVALID_TOKEN;
+
+		output_buffer = sspi_FindSecBuffer(pOutput, SECBUFFER_TOKEN);
+
+		if (!output_buffer)
+			return SEC_E_INVALID_TOKEN;
+
+		if (output_buffer->cbBuffer < 1)
+			return SEC_E_INSUFFICIENT_MEMORY;
+
+		if (ntlm_get_state(context) == NTLM_STATE_AUTHENTICATE)
+			return ntlm_write_AuthenticateMessage(context, output_buffer);
+	}
+
+	return SEC_E_OUT_OF_SEQUENCE;
 
 	return SEC_E_OUT_OF_SEQUENCE;
 }
@@ -835,7 +833,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_QueryContextAttributesW(PCtxtHandle phCont
 		                            contrary to Kerberos */
 		return SEC_E_OK;
 	}
-	else if (ulAttribute == SECPKG_ATTR_AUTH_IDENTITY)
+	if (ulAttribute == SECPKG_ATTR_AUTH_IDENTITY)
 	{
 		SSPI_CREDENTIALS* credentials = NULL;
 		const SecPkgContext_AuthIdentity empty = { 0 };
@@ -933,7 +931,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_SetContextAttributesW(PCtxtHandle phContex
 
 		return SEC_E_OK;
 	}
-	else if (ulAttribute == SECPKG_ATTR_AUTH_NTLM_MESSAGE)
+	if (ulAttribute == SECPKG_ATTR_AUTH_NTLM_MESSAGE)
 	{
 		SecPkgContext_AuthNtlmMessage* AuthNtlmMessage = (SecPkgContext_AuthNtlmMessage*)pBuffer;
 

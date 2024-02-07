@@ -699,7 +699,7 @@ state_run_t peer_recv_pdu(freerdp_peer* client, wStream* s)
 
 	if (rc > 0)
 		return peer_recv_tpkt_pdu(client, s);
-	else if (rc == 0)
+	if (rc == 0)
 		return peer_recv_fastpath_pdu(client, s);
 	else
 		return STATE_RUN_FAILED;

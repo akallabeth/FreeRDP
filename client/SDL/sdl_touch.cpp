@@ -278,7 +278,7 @@ BOOL sdl_handle_mouse_button(SdlContext* sdl, const SDL_MouseButtonEvent* ev)
 	sdl_scale_coordinates(sdl, ev->windowID, &x, &y, TRUE, TRUE);
 	if ((flags & (~PTR_FLAGS_DOWN)) != 0)
 		return freerdp_client_send_button_event(sdl->common(), relative, flags, x, y);
-	else if ((xflags & (~PTR_XFLAGS_DOWN)) != 0)
+	if ((xflags & (~PTR_XFLAGS_DOWN)) != 0)
 		return freerdp_client_send_extended_button_event(sdl->common(), relative, xflags, x, y);
 	else
 		return FALSE;

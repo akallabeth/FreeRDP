@@ -2794,13 +2794,11 @@ static UINT rdpdr_server_drive_query_directory_callback2(RdpdrServerContext* con
 		return rdpdr_server_send_device_query_directory_request(context, irp->DeviceId, irp->FileId,
 		                                                        irp->CompletionId, NULL);
 	}
-	else
-	{
-		/* Invoke the query directory completion routine. */
-		context->OnDriveQueryDirectoryComplete(context, irp->CallbackData, ioStatus, NULL);
-		/* Destroy the IRP. */
-		rdpdr_server_irp_free(irp);
-	}
+
+	/* Invoke the query directory completion routine. */
+	context->OnDriveQueryDirectoryComplete(context, irp->CallbackData, ioStatus, NULL);
+	/* Destroy the IRP. */
+	rdpdr_server_irp_free(irp);
 
 	return CHANNEL_RC_OK;
 }

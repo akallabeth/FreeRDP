@@ -220,7 +220,7 @@ int persistent_cache_read_entry(rdpPersistentCache* persistent, PERSISTENT_CACHE
 
 	if (persistent->version == 3)
 		return persistent_cache_read_entry_v3(persistent, entry);
-	else if (persistent->version == 2)
+	if (persistent->version == 2)
 		return persistent_cache_read_entry_v2(persistent, entry);
 
 	return -1;
@@ -234,7 +234,7 @@ int persistent_cache_write_entry(rdpPersistentCache* persistent,
 
 	if (persistent->version == 3)
 		return persistent_cache_write_entry_v3(persistent, entry);
-	else if (persistent->version == 2)
+	if (persistent->version == 2)
 		return persistent_cache_write_entry_v2(persistent, entry);
 
 	return -1;

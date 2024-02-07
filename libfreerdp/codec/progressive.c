@@ -759,8 +759,7 @@ static INLINE size_t progressive_rfx_get_band_h_count(size_t level)
 {
 	if (level == 1)
 		return (64 >> 1) - 1;
-	else
-		return (64 + (1 << (level - 1))) >> level;
+	return (64 + (1 << (level - 1))) >> level;
 }
 
 static INLINE void progressive_rfx_dwt_2d_decode_block(INT16* buffer, INT16* temp, size_t level)
@@ -1086,24 +1085,22 @@ static INLINE INT16 progressive_rfx_srl_read(RFX_PROGRESSIVE_UPGRADE_STATE* stat
 			state->nz--;
 			return 0;
 		}
-		else
+
+		/* '1' bit, nz < (1 << k), nz = next k bits */
+		state->nz = 0;
+		state->mode = 1; /* unary encoding is next */
+
+		if (k)
 		{
-			/* '1' bit, nz < (1 << k), nz = next k bits */
-			state->nz = 0;
-			state->mode = 1; /* unary encoding is next */
+			bs->mask = ((1 << k) - 1);
+			state->nz = ((bs->accumulator >> (32u - k)) & bs->mask);
+			BitStream_Shift(bs, k);
+		}
 
-			if (k)
-			{
-				bs->mask = ((1 << k) - 1);
-				state->nz = ((bs->accumulator >> (32u - k)) & bs->mask);
-				BitStream_Shift(bs, k);
-			}
-
-			if (state->nz)
-			{
-				state->nz--;
-				return 0;
-			}
+		if (state->nz)
+		{
+			state->nz--;
+			return 0;
 		}
 	}
 

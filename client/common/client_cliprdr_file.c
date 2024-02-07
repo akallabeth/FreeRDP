@@ -594,8 +594,7 @@ UINT cliprdr_file_context_notify_new_server_format_list(CliprdrFileContext* file
 
 	if (does_server_support_clipdata_locking(file_context))
 		return prepare_clip_data_entry_with_id(file_context);
-	else
-		return prepare_clip_data_entry_without_id(file_context);
+	return prepare_clip_data_entry_without_id(file_context);
 #else
 	return CHANNEL_RC_OK;
 #endif
@@ -1338,13 +1337,11 @@ static CliprdrLocalFile* file_info_for_request(CliprdrFileContext* file, UINT32 
 			CliprdrLocalFile* f = &cur->files[listIndex];
 			return f;
 		}
-		else
-		{
-			writelog(file->log, WLOG_WARN, __FILE__, __func__, __LINE__,
-			         "invalid entry index for lockID %" PRIu32 ", index %" PRIu32 " [count %" PRIu32
-			         "] [locked %d]",
-			         lockId, listIndex, cur->count, cur->locked);
-		}
+
+		writelog(file->log, WLOG_WARN, __FILE__, __func__, __LINE__,
+		         "invalid entry index for lockID %" PRIu32 ", index %" PRIu32 " [count %" PRIu32
+		         "] [locked %d]",
+		         lockId, listIndex, cur->count, cur->locked);
 	}
 	else
 	{

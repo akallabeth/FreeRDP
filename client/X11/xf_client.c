@@ -1249,7 +1249,7 @@ static BOOL xf_process_pipe(rdpContext* context, const char* pipe)
 			         winpr_strerror(errno, ebuffer, sizeof(ebuffer)), errno);
 			break;
 		}
-		else if (rd < 0)
+		if (rd < 0)
 		{
 			char ebuffer[256] = { 0 };
 			WLog_ERR(TAG, "pipe '%s' read returned %s [%d]", pipe,
@@ -1659,7 +1659,7 @@ DWORD xf_exit_code_from_disconnect_reason(DWORD reason)
 	    (reason >= XF_EXIT_PARSE_ARGUMENTS && reason <= XF_EXIT_CONNECT_NO_OR_MISSING_CREDENTIALS))
 		return reason;
 	/* License error set */
-	else if (reason >= 0x100 && reason <= 0x10A)
+	if (reason >= 0x100 && reason <= 0x10A)
 		reason -= 0x100 + XF_EXIT_LICENSE_INTERNAL;
 	/* RDP protocol error set */
 	else if (reason >= 0x10c9 && reason <= 0x1193)

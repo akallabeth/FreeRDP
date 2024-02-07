@@ -701,11 +701,9 @@ static BOOL xf_event_ClientMessage(xfContext* xfc, const XClientMessageEvent* ev
 
 			return TRUE;
 		}
-		else
-		{
-			DEBUG_X11("Main window closed");
-			return FALSE;
-		}
+
+		DEBUG_X11("Main window closed");
+		return FALSE;
 	}
 
 	return TRUE;

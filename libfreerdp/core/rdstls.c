@@ -861,8 +861,7 @@ int rdstls_authenticate(rdpRdstls* rdstls)
 
 	if (rdstls->server)
 		return rdstls_server_authenticate(rdstls);
-	else
-		return rdstls_client_authenticate(rdstls);
+	return rdstls_client_authenticate(rdstls);
 }
 
 static SSIZE_T rdstls_parse_pdu_data_type(wLog* log, UINT16 dataType, wStream* s)

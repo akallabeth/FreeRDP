@@ -71,8 +71,7 @@ void* LinkedList_First(wLinkedList* list)
 	WINPR_ASSERT(list);
 	if (list->head)
 		return list->head->value;
-	else
-		return NULL;
+	return NULL;
 }
 
 /**
@@ -84,8 +83,7 @@ void* LinkedList_Last(wLinkedList* list)
 	WINPR_ASSERT(list);
 	if (list->tail)
 		return list->tail->value;
-	else
-		return NULL;
+	return NULL;
 }
 
 /**
@@ -324,8 +322,7 @@ void* LinkedList_Enumerator_Current(wLinkedList* list)
 
 	if (list->current)
 		return list->current->value;
-	else
-		return NULL;
+	return NULL;
 }
 
 /*

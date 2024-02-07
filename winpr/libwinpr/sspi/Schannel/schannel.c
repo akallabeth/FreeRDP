@@ -99,7 +99,7 @@ static SECURITY_STATUS SEC_ENTRY schannel_QueryCredentialsAttributesW(PCredHandl
 		SupportedAlgs->palgSupportedAlgs = (ALG_ID*)schannel_SupportedAlgs;
 		return SEC_E_OK;
 	}
-	else if (ulAttribute == SECPKG_ATTR_CIPHER_STRENGTHS)
+	if (ulAttribute == SECPKG_ATTR_CIPHER_STRENGTHS)
 	{
 		PSecPkgCred_CipherStrengths CipherStrengths = (PSecPkgCred_CipherStrengths)pBuffer;
 		CipherStrengths->dwMinimumCipherStrength = 40;
@@ -148,7 +148,7 @@ static SECURITY_STATUS SEC_ENTRY schannel_AcquireCredentialsHandleW(
 		sspi_SecureHandleSetUpperPointer(phCredential, (void*)SCHANNEL_PACKAGE_NAME);
 		return SEC_E_OK;
 	}
-	else if (fCredentialUse == SECPKG_CRED_INBOUND)
+	if (fCredentialUse == SECPKG_CRED_INBOUND)
 	{
 		credentials = schannel_CredentialsNew();
 		credentials->fCredentialUse = fCredentialUse;
@@ -314,7 +314,7 @@ static SECURITY_STATUS SEC_ENTRY schannel_QueryContextAttributes(PCtxtHandle phC
 		Sizes->cbSecurityTrailer = 16;
 		return SEC_E_OK;
 	}
-	else if (ulAttribute == SECPKG_ATTR_STREAM_SIZES)
+	if (ulAttribute == SECPKG_ATTR_STREAM_SIZES)
 	{
 		SecPkgContext_StreamSizes* StreamSizes = (SecPkgContext_StreamSizes*)pBuffer;
 		StreamSizes->cbHeader = 5;

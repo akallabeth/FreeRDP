@@ -564,7 +564,7 @@ static BOOL rdpsnd_detect_overrun(rdpsndPlugin* rdpsnd, const AUDIO_FORMAT* form
 		rdpsnd->totalPlaySize = size;
 		return FALSE;
 	}
-	else if (now - rdpsnd->startPlayTime > totalDuration + 10)
+	if (now - rdpsnd->startPlayTime > totalDuration + 10)
 	{
 		/* Buffer underrun */
 		WLog_Print(rdpsnd->log, WLOG_DEBUG, "%s Buffer underrun by %u ms",

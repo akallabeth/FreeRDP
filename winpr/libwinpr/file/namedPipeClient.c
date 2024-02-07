@@ -89,8 +89,7 @@ static int NamedPipeClientGetFd(HANDLE handle)
 
 	if (file->ServerMode)
 		return file->serverfd;
-	else
-		return file->clientfd;
+	return file->clientfd;
 }
 
 static HANDLE_OPS ops = {

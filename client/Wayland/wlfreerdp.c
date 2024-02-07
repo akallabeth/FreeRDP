@@ -546,15 +546,13 @@ static int wlfreerdp_run(freerdp* instance)
 		{
 			if (client_auto_reconnect_ex(instance, handle_window_events))
 				continue;
-			else
-			{
-				/*
-				 * Indicate an unsuccessful connection attempt if reconnect
-				 * did not succeed and no other error was specified.
-				 */
-				if (freerdp_error_info(instance) == 0)
-					status = 42;
-			}
+
+			/*
+			 * Indicate an unsuccessful connection attempt if reconnect
+			 * did not succeed and no other error was specified.
+			 */
+			if (freerdp_error_info(instance) == 0)
+				status = 42;
 
 			if (freerdp_get_last_error(instance->context) == FREERDP_ERROR_SUCCESS)
 				WLog_Print(context->log, WLOG_ERROR, "Failed to check FreeRDP file descriptor");

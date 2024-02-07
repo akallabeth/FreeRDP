@@ -526,23 +526,21 @@ static UINT rdpsnd_server_send_wave_pdu(RdpsndServerContext* context, UINT16 wTi
 
 	if (!freerdp_dsp_encode(context->priv->dsp_context, context->src_format, src, length, s))
 		return ERROR_INTERNAL_ERROR;
-	else
+
+	/* Set stream size */
+	if (!rdpsnd_server_align_wave_pdu(s, format->nBlockAlign))
+		return ERROR_INTERNAL_ERROR;
+
+	end = Stream_GetPosition(s);
+	Stream_SetPosition(s, 2);
+	Stream_Write_UINT16(s, end - start + 8);
+	Stream_SetPosition(s, end);
+
+	if (!WTSVirtualChannelWrite(context->priv->ChannelHandle, (PCHAR)Stream_Buffer(s), start + 4,
+	                            &written))
 	{
-		/* Set stream size */
-		if (!rdpsnd_server_align_wave_pdu(s, format->nBlockAlign))
-			return ERROR_INTERNAL_ERROR;
-
-		end = Stream_GetPosition(s);
-		Stream_SetPosition(s, 2);
-		Stream_Write_UINT16(s, end - start + 8);
-		Stream_SetPosition(s, end);
-
-		if (!WTSVirtualChannelWrite(context->priv->ChannelHandle, (PCHAR)Stream_Buffer(s),
-		                            start + 4, &written))
-		{
-			WLog_ERR(TAG, "WTSVirtualChannelWrite failed!");
-			error = ERROR_INTERNAL_ERROR;
-		}
+		WLog_ERR(TAG, "WTSVirtualChannelWrite failed!");
+		error = ERROR_INTERNAL_ERROR;
 	}
 
 	if (error != CHANNEL_RC_OK)
@@ -673,8 +671,7 @@ static UINT rdpsnd_server_send_audio_pdu(RdpsndServerContext* context, UINT16 wT
 	if (context->clientVersion >= CHANNEL_VERSION_WIN_8)
 		return rdpsnd_server_send_wave2_pdu(context, context->selected_client_format, src, length,
 		                                    FALSE, wTimestamp, wTimestamp);
-	else
-		return rdpsnd_server_send_wave_pdu(context, wTimestamp);
+	return rdpsnd_server_send_wave_pdu(context, wTimestamp);
 }
 
 /**

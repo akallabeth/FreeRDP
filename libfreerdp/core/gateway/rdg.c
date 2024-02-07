@@ -1705,8 +1705,7 @@ static int rdg_write_data_packet(rdpRdg* rdg, const BYTE* buf, int isize)
 			return -1;
 		return rdg_write_websocket_data_packet(rdg, buf, isize);
 	}
-	else
-		return rdg_write_chunked_data_packet(rdg, buf, isize);
+	return rdg_write_chunked_data_packet(rdg, buf, isize);
 }
 
 static BOOL rdg_process_close_packet(rdpRdg* rdg, wStream* s)
@@ -1964,7 +1963,7 @@ static int rdg_bio_write(BIO* bio, const char* buf, int num)
 		BIO_clear_flags(bio, BIO_FLAGS_SHOULD_RETRY);
 		return -1;
 	}
-	else if (status < num)
+	if (status < num)
 	{
 		BIO_set_flags(bio, BIO_FLAGS_WRITE);
 		WSASetLastError(WSAEWOULDBLOCK);
@@ -1988,7 +1987,7 @@ static int rdg_bio_read(BIO* bio, char* buf, int size)
 		BIO_clear_retry_flags(bio);
 		return -1;
 	}
-	else if (status == 0)
+	if (status == 0)
 	{
 		BIO_set_retry_read(bio);
 		WSASetLastError(WSAEWOULDBLOCK);
@@ -2056,7 +2055,7 @@ static long rdg_bio_ctrl(BIO* in_bio, int cmd, long arg1, void* arg2)
 
 		if (BIO_read_blocked(cbio))
 			return BIO_wait_read(cbio, timeout);
-		else if (BIO_write_blocked(cbio))
+		if (BIO_write_blocked(cbio))
 			return BIO_wait_write(cbio, timeout);
 		else
 			status = 1;

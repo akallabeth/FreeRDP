@@ -405,8 +405,7 @@ DWORD freerdp_keyboard_get_x11_keycode_from_rdp_scancode(DWORD scancode, BOOL ex
 
 	if (extended)
 		return x11[1];
-	else
-		return x11[0];
+	return x11[0];
 }
 
 const char* freerdp_keyboard_scancode_name(DWORD scancode)

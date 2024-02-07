@@ -931,7 +931,7 @@ int xf_input_handle_event(xfContext* xfc, const XEvent* event)
 	{
 		return xf_input_handle_event_remote(xfc, event);
 	}
-	else if (freerdp_settings_get_bool(settings, FreeRDP_MultiTouchGestures))
+	if (freerdp_settings_get_bool(settings, FreeRDP_MultiTouchGestures))
 	{
 		return xf_input_handle_event_local(xfc, event);
 	}

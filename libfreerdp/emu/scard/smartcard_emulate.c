@@ -155,12 +155,10 @@ static UINT32 scard_copy_strings(SCardContext* ctx, void* dst, UINT32 dstSize, c
 		*((void**)dst) = tmp;
 		return srcSize;
 	}
-	else
-	{
-		UINT32 min = MIN(dstSize, srcSize);
-		memcpy(dst, src, min);
-		return min;
-	}
+
+	UINT32 min = MIN(dstSize, srcSize);
+	memcpy(dst, src, min);
+	return min;
 }
 
 static void scard_context_free(void* context)

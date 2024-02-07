@@ -176,7 +176,7 @@ static DWORD WINAPI audin_alsa_thread_func(LPVOID arg)
 			snd_pcm_recover(capture_handle, error, 0);
 			continue;
 		}
-		else if (error < 0)
+		if (error < 0)
 		{
 			WLog_Print(alsa->log, WLOG_ERROR, "snd_pcm_readi (%s)", snd_strerror(error));
 			break;

@@ -413,11 +413,9 @@ SECURITY_STATUS schannel_openssl_client_process_tokens(SCHANNEL_OPENSSL* context
 			pBuffer->cbBuffer = status;
 			return (context->connected) ? SEC_E_OK : SEC_I_CONTINUE_NEEDED;
 		}
-		else
-		{
-			pBuffer->cbBuffer = 0;
-			return (context->connected) ? SEC_E_OK : SEC_I_CONTINUE_NEEDED;
-		}
+
+		pBuffer->cbBuffer = 0;
+		return (context->connected) ? SEC_E_OK : SEC_I_CONTINUE_NEEDED;
 	}
 
 	return SEC_E_OK;
@@ -482,11 +480,9 @@ SECURITY_STATUS schannel_openssl_server_process_tokens(SCHANNEL_OPENSSL* context
 			pBuffer->cbBuffer = status;
 			return (context->connected) ? SEC_E_OK : SEC_I_CONTINUE_NEEDED;
 		}
-		else
-		{
-			pBuffer->cbBuffer = 0;
-			return (context->connected) ? SEC_E_OK : SEC_I_CONTINUE_NEEDED;
-		}
+
+		pBuffer->cbBuffer = 0;
+		return (context->connected) ? SEC_E_OK : SEC_I_CONTINUE_NEEDED;
 	}
 
 	return SEC_E_OK;

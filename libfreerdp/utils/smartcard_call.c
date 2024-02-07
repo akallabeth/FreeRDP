@@ -2014,6 +2014,5 @@ BOOL smartcard_call_context_signal_stop(scard_call_context* ctx, BOOL reset)
 
 	if (reset)
 		return ResetEvent(ctx->stopEvent);
-	else
-		return SetEvent(ctx->stopEvent);
+	return SetEvent(ctx->stopEvent);
 }

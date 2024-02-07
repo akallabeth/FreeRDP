@@ -99,8 +99,7 @@ static BOOL udevman_has_next(IUDEVMAN* idevman)
 
 	if (!udevman || !udevman->idev)
 		return FALSE;
-	else
-		return TRUE;
+	return TRUE;
 }
 
 static IUDEVICE* udevman_get_next(IUDEVMAN* idevman)

@@ -1088,7 +1088,7 @@ BOOL client_cli_get_access_token(freerdp* instance, AccessTokenType tokenType, c
 				         count);
 				return FALSE;
 			}
-			else if (count > 2)
+			if (count > 2)
 				WLog_WARN(TAG,
 				          "ACCESS_TOKEN_TYPE_AAD expected 2 additional arguments, but got %" PRIuz
 				          ", ignoring",
@@ -2049,7 +2049,7 @@ BOOL freerdp_client_handle_pen(rdpClientContext* cctx, UINT32 flags, INT32 devic
 		                                normalizedpressure, rotation, tiltX, tiltY);
 		return rc == CHANNEL_RC_OK;
 	}
-	else if ((flags & FREERDP_PEN_MOTION) != 0)
+	if ((flags & FREERDP_PEN_MOTION) != 0)
 	{
 		UINT rc = ERROR_INTERNAL_ERROR;
 		if (pen->pressed)

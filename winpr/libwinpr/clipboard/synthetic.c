@@ -54,8 +54,8 @@ static void* clipboard_synthesize_cf_text(wClipboard* clipboard, UINT32 formatId
 		*pSize = size;
 		return pDstData;
 	}
-	else if ((formatId == CF_TEXT) || (formatId == CF_OEMTEXT) ||
-	         (formatId == ClipboardGetFormatId(clipboard, mime_text_plain)))
+	if ((formatId == CF_TEXT) || (formatId == CF_OEMTEXT) ||
+	    (formatId == ClipboardGetFormatId(clipboard, mime_text_plain)))
 	{
 		size = *pSize;
 		pDstData = ConvertLineEndingToCRLF(data, &size);
@@ -165,8 +165,8 @@ static void* clipboard_synthesize_utf8_string(wClipboard* clipboard, UINT32 form
 		*pSize = (UINT32)size;
 		return pDstData;
 	}
-	else if ((formatId == CF_TEXT) || (formatId == CF_OEMTEXT) ||
-	         (formatId == ClipboardGetFormatId(clipboard, mime_text_plain)))
+	if ((formatId == CF_TEXT) || (formatId == CF_OEMTEXT) ||
+	    (formatId == ClipboardGetFormatId(clipboard, mime_text_plain)))
 	{
 		int rc = 0;
 		size = *pSize;
@@ -297,7 +297,7 @@ static void* clipboard_synthesize_image_bmp(wClipboard* clipboard, UINT32 format
 		*pSize = DstSize;
 		return pDstData;
 	}
-	else if (formatId == CF_DIBV5)
+	if (formatId == CF_DIBV5)
 	{
 	}
 

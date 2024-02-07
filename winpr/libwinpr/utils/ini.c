@@ -143,8 +143,7 @@ static FILE* IniFile_Open_File(wIniFile* ini, const char* filename)
 
 	if (ini->readOnly)
 		return winpr_fopen(filename, "rb");
-	else
-		return winpr_fopen(filename, "w+b");
+	return winpr_fopen(filename, "w+b");
 }
 
 static BOOL IniFile_Load_File(wIniFile* ini, const char* filename)

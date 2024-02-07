@@ -64,22 +64,20 @@ static const char* call_to_string_none(BOOL client, UINT32 interfaceId, UINT32 f
 
 	if (client)
 		return "RIM_EXCHANGE_CAPABILITY_RESPONSE  [none |client]";
-	else
+
+	switch (functionId)
 	{
-		switch (functionId)
-		{
-			case RIM_EXCHANGE_CAPABILITY_REQUEST:
-				return "RIM_EXCHANGE_CAPABILITY_REQUEST   [none |server]";
+		case RIM_EXCHANGE_CAPABILITY_REQUEST:
+			return "RIM_EXCHANGE_CAPABILITY_REQUEST   [none |server]";
 
-			case RIMCALL_RELEASE:
-				return "RIMCALL_RELEASE                   [none |server]";
+		case RIMCALL_RELEASE:
+			return "RIMCALL_RELEASE                   [none |server]";
 
-			case RIMCALL_QUERYINTERFACE:
-				return "RIMCALL_QUERYINTERFACE            [none |server]";
+		case RIMCALL_QUERYINTERFACE:
+			return "RIMCALL_QUERYINTERFACE            [none |server]";
 
-			default:
-				return "UNKNOWN                           [none |server]";
-		}
+		default:
+			return "UNKNOWN                           [none |server]";
 	}
 }
 

@@ -645,7 +645,7 @@ static DWORD WINAPI printer_thread_func(LPVOID arg)
 
 		if (rc == WAIT_OBJECT_0 + 1)
 			break;
-		else if (rc != WAIT_OBJECT_0)
+		if (rc != WAIT_OBJECT_0)
 			continue;
 
 		ResetEvent(printer_dev->event);

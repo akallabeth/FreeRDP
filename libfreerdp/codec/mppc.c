@@ -165,7 +165,7 @@ int mppc_decompress(MPPC_CONTEXT* mppc, const BYTE* pSrcData, UINT32 SrcSize,
 			BitStream_Shift(bs, 8);
 			continue;
 		}
-		else if ((accumulator & 0xC0000000) == 0x80000000)
+		if ((accumulator & 0xC0000000) == 0x80000000)
 		{
 			/**
 			 * Literal, greater than 0x7F

@@ -1187,10 +1187,8 @@ static BOOL xf_cliprdr_process_selection_notify(xfClipboard* clipboard,
 
 		return TRUE;
 	}
-	else
-	{
-		return xf_cliprdr_get_requested_data(clipboard, xevent->target);
-	}
+
+	return xf_cliprdr_get_requested_data(clipboard, xevent->target);
 }
 
 void xf_cliprdr_clear_cached_data(xfClipboard* clipboard)

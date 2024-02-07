@@ -282,7 +282,7 @@ int _wcscmp(const WCHAR* string1, const WCHAR* string2)
 
 		if (w1 != w2)
 			return (int)w1 - w2;
-		else if ((w1 == '\0') || (w2 == '\0'))
+		if ((w1 == '\0') || (w2 == '\0'))
 			return (int)w1 - w2;
 	}
 }
@@ -299,7 +299,7 @@ int _wcsncmp(const WCHAR* string1, const WCHAR* string2, size_t count)
 
 		if (a != b)
 			return (int)a - b;
-		else if ((a == '\0') || (b == '\0'))
+		if ((a == '\0') || (b == '\0'))
 			return (int)a - b;
 	}
 	return 0;
@@ -610,16 +610,14 @@ BOOL IsCharAlphaA(CHAR ch)
 {
 	if (((ch >= 'a') && (ch <= 'z')) || ((ch >= 'A') && (ch <= 'Z')))
 		return 1;
-	else
-		return 0;
+	return 0;
 }
 
 BOOL IsCharAlphaW(WCHAR ch)
 {
 	if (((ch >= L'a') && (ch <= L'z')) || ((ch >= L'A') && (ch <= L'Z')))
 		return 1;
-	else
-		return 0;
+	return 0;
 }
 
 BOOL IsCharAlphaNumericA(CHAR ch)
@@ -627,8 +625,7 @@ BOOL IsCharAlphaNumericA(CHAR ch)
 	if (((ch >= 'a') && (ch <= 'z')) || ((ch >= 'A') && (ch <= 'Z')) ||
 	    ((ch >= '0') && (ch <= '9')))
 		return 1;
-	else
-		return 0;
+	return 0;
 }
 
 BOOL IsCharAlphaNumericW(WCHAR ch)
@@ -636,40 +633,35 @@ BOOL IsCharAlphaNumericW(WCHAR ch)
 	if (((ch >= L'a') && (ch <= L'z')) || ((ch >= L'A') && (ch <= L'Z')) ||
 	    ((ch >= L'0') && (ch <= L'9')))
 		return 1;
-	else
-		return 0;
+	return 0;
 }
 
 BOOL IsCharUpperA(CHAR ch)
 {
 	if ((ch >= 'A') && (ch <= 'Z'))
 		return 1;
-	else
-		return 0;
+	return 0;
 }
 
 BOOL IsCharUpperW(WCHAR ch)
 {
 	if ((ch >= L'A') && (ch <= L'Z'))
 		return 1;
-	else
-		return 0;
+	return 0;
 }
 
 BOOL IsCharLowerA(CHAR ch)
 {
 	if ((ch >= 'a') && (ch <= 'z'))
 		return 1;
-	else
-		return 0;
+	return 0;
 }
 
 BOOL IsCharLowerW(WCHAR ch)
 {
 	if ((ch >= L'a') && (ch <= L'z'))
 		return 1;
-	else
-		return 0;
+	return 0;
 }
 
 #endif

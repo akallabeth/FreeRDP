@@ -391,16 +391,14 @@ static BOOL per_check_oid_and_log_mismatch(const BYTE* got, const BYTE* expect, 
 	{
 		return TRUE;
 	}
-	else
-	{
-		char* got_str = winpr_BinToHexString(got, length, TRUE);
-		char* expect_str = winpr_BinToHexString(expect, length, TRUE);
 
-		WLog_WARN(TAG, "PER OID mismatch, got %s, expected %s", got_str, expect_str);
-		free(got_str);
-		free(expect_str);
-		return FALSE;
-	}
+	char* got_str = winpr_BinToHexString(got, length, TRUE);
+	char* expect_str = winpr_BinToHexString(expect, length, TRUE);
+
+	WLog_WARN(TAG, "PER OID mismatch, got %s, expected %s", got_str, expect_str);
+	free(got_str);
+	free(expect_str);
+	return FALSE;
 }
 
 /**

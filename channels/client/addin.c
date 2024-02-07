@@ -417,7 +417,7 @@ FREERDP_ADDIN** freerdp_channels_list_addins(LPCSTR pszName, LPCSTR pszSubsystem
 {
 	if (dwFlags & FREERDP_ADDIN_STATIC)
 		return freerdp_channels_list_client_static_addins(pszName, pszSubsystem, pszType, dwFlags);
-	else if (dwFlags & FREERDP_ADDIN_DYNAMIC)
+	if (dwFlags & FREERDP_ADDIN_DYNAMIC)
 		return freerdp_channels_list_dynamic_addins(pszName, pszSubsystem, pszType, dwFlags);
 
 	return NULL;

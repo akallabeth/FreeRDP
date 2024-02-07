@@ -394,7 +394,7 @@ static BOOL ntlm_compute_ntlm_v2_hash(NTLM_CONTEXT* context, BYTE* hash)
 
 	if (!credentials)
 		return FALSE;
-	else if (memcmp(context->NtlmHash, NTLM_NULL_BUFFER, 16) != 0)
+	if (memcmp(context->NtlmHash, NTLM_NULL_BUFFER, 16) != 0)
 	{
 		NTOWFv2FromHashW(context->NtlmHash, (LPWSTR)credentials->identity.User,
 		                 credentials->identity.UserLength * 2, (LPWSTR)credentials->identity.Domain,

@@ -432,7 +432,7 @@ DWORD WLog_GetLogLevel(wLog* log)
 
 	if (log->FilterLevel > WLOG_FILTER_NOT_FILTERED)
 		return (DWORD)log->FilterLevel;
-	else if (log->Level == WLOG_LEVEL_INHERIT)
+	if (log->Level == WLOG_LEVEL_INHERIT)
 		log->Level = WLog_GetLogLevel(log->Parent);
 
 	return log->Level;

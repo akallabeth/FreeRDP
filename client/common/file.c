@@ -667,11 +667,9 @@ static BOOL freerdp_client_parse_rdp_file_integer(rdpFile* file, const char* nam
 			WLog_WARN(TAG, "Integer option %s has invalid value %s, using default", name, value);
 			return TRUE;
 		}
-		else
-		{
-			WLog_ERR(TAG, "Failed to convert RDP file integer option %s [value=%s]", name, value);
-			return FALSE;
-		}
+
+		WLog_ERR(TAG, "Failed to convert RDP file integer option %s [value=%s]", name, value);
+		return FALSE;
 	}
 
 	return freerdp_client_rdp_file_set_integer(file, name, ivalue);

@@ -41,7 +41,7 @@ static INLINE UINT16 IN_PIXEL16(const void* in_ptr, UINT32 in_x, UINT32 in_y, UI
 {
 	if (in_ptr == 0)
 		return 0;
-	else if (in_x < in_w)
+	if (in_x < in_w)
 		return GETPIXEL16(in_ptr, in_x, in_y, in_w);
 	else
 		return in_last_pixel;
@@ -53,7 +53,7 @@ static INLINE UINT32 IN_PIXEL32(const void* in_ptr, UINT32 in_x, UINT32 in_y, UI
 {
 	if (in_ptr == 0)
 		return 0;
-	else if (in_x < in_w)
+	if (in_x < in_w)
 		return GETPIXEL32(in_ptr, in_x, in_y, in_w);
 	else
 		return in_last_pixel;

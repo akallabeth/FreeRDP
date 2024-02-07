@@ -87,8 +87,7 @@ static UINT urb_write_completion(IUDEVICE* pdev, GENERIC_CHANNEL_CALLBACK* callb
 
 	if (!noAck)
 		return stream_write_and_free(callback->plugin, callback->channel, out);
-	else
-		Stream_Free(out, TRUE);
+	Stream_Free(out, TRUE);
 
 	return ERROR_SUCCESS;
 }
@@ -525,8 +524,7 @@ static UINT urb_select_configuration(IUDEVICE* pdev, GENERIC_CHANNEL_CALLBACK* c
 
 	if (!noAck)
 		return stream_write_and_free(callback->plugin, callback->channel, out);
-	else
-		Stream_Free(out, TRUE);
+	Stream_Free(out, TRUE);
 
 	return ERROR_SUCCESS;
 }
@@ -616,8 +614,7 @@ static UINT urb_select_interface(IUDEVICE* pdev, GENERIC_CHANNEL_CALLBACK* callb
 
 	if (!noAck)
 		return stream_write_and_free(callback->plugin, callback->channel, out);
-	else
-		Stream_Free(out, TRUE);
+	Stream_Free(out, TRUE);
 
 	return ERROR_SUCCESS;
 }
@@ -1339,8 +1336,7 @@ static UINT urb_get_current_frame_number(IUDEVICE* pdev, GENERIC_CHANNEL_CALLBAC
 
 	if (!noAck)
 		return stream_write_and_free(callback->plugin, callback->channel, out);
-	else
-		Stream_Free(out, TRUE);
+	Stream_Free(out, TRUE);
 
 	return ERROR_SUCCESS;
 }

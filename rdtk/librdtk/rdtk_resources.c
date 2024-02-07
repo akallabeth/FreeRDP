@@ -3898,7 +3898,7 @@ SSIZE_T rdtk_get_embedded_resource_file(const char* filename, const uint8_t** pD
 		*pData = source_serif_pro_regular_12_png;
 		return ARRAYSIZE(source_serif_pro_regular_12_png);
 	}
-	else if (strcmp(filename, "btn_default_normal.9.png") == 0)
+	if (strcmp(filename, "btn_default_normal.9.png") == 0)
 	{
 		*pData = btn_default_normal_9_png;
 		return ARRAYSIZE(btn_default_normal_9_png);

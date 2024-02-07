@@ -207,7 +207,7 @@ DWORD WaitForSingleObjectEx(HANDLE hHandle, DWORD dwMilliseconds, BOOL bAlertabl
 				process->dwExitCode = (DWORD)process->status;
 				return WAIT_OBJECT_0;
 			}
-			else if (ret < 0)
+			if (ret < 0)
 			{
 				char ebuffer[256] = { 0 };
 				WLog_ERR(TAG, "waitpid failure [%d] %s", errno,

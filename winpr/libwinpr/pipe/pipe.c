@@ -383,16 +383,15 @@ BOOL NamedPipeWrite(PVOID Object, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite,
 		*lpNumberOfBytesWritten = (DWORD)io_status;
 		return status;
 	}
-	else
-	{
-		/* Overlapped I/O */
-		if (!lpOverlapped)
-			return FALSE;
 
-		if (pipe->clientfd == -1)
-			return FALSE;
+	/* Overlapped I/O */
+	if (!lpOverlapped)
+		return FALSE;
 
-		pipe->lpOverlapped = lpOverlapped;
+	if (pipe->clientfd == -1)
+		return FALSE;
+
+	pipe->lpOverlapped = lpOverlapped;
 #ifdef WINPR_HAVE_SYS_AIO_H
 		{
 			struct aiocb cb = { 0 };
@@ -428,9 +427,8 @@ BOOL NamedPipeWrite(PVOID Object, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite,
 		}
 		SetEvent(lpOverlapped->hEvent);
 #endif
-	}
 
-	return TRUE;
+	    return TRUE;
 }
 
 static HANDLE_OPS namedOps = { NamedPipeIsHandled,

@@ -78,8 +78,7 @@ int tpkt_verify_header(wStream* s)
 
 	if (version == 3)
 		return 1;
-	else
-		return 0;
+	return 0;
 }
 
 /**

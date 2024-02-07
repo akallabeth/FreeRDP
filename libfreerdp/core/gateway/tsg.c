@@ -2871,7 +2871,7 @@ static int transport_bio_tsg_write(BIO* bio, const char* buf, int num)
 		BIO_clear_flags(bio, BIO_FLAGS_SHOULD_RETRY);
 		return -1;
 	}
-	else if (status == 0)
+	if (status == 0)
 	{
 		BIO_set_flags(bio, BIO_FLAGS_WRITE);
 		WSASetLastError(WSAEWOULDBLOCK);
@@ -2903,7 +2903,7 @@ static int transport_bio_tsg_read(BIO* bio, char* buf, int size)
 		BIO_clear_flags(bio, BIO_FLAGS_SHOULD_RETRY);
 		return -1;
 	}
-	else if (status == 0)
+	if (status == 0)
 	{
 		BIO_set_flags(bio, BIO_FLAGS_READ);
 		WSASetLastError(WSAEWOULDBLOCK);
@@ -2981,7 +2981,7 @@ static long transport_bio_tsg_ctrl(BIO* bio, int cmd, long arg1, void* arg2)
 
 			if (BIO_read_blocked(cbio))
 				return BIO_wait_read(cbio, timeout);
-			else if (BIO_write_blocked(cbio))
+			if (BIO_write_blocked(cbio))
 				return BIO_wait_write(cbio, timeout);
 			else
 				status = 1;

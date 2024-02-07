@@ -761,15 +761,13 @@ static int libusb_udev_select_configuration(IUDEVICE* idev, UINT32 bConfiguratio
 		func_claim_all_interface(urbdrc, libusb_handle, (*LibusbConfig)->bNumInterfaces);
 		return -1;
 	}
-	else
-	{
-		ret = libusb_get_active_config_descriptor(libusb_dev, LibusbConfig);
 
-		if (log_libusb_result(urbdrc->log, WLOG_ERROR, "libusb_set_configuration", ret))
-		{
-			func_claim_all_interface(urbdrc, libusb_handle, (*LibusbConfig)->bNumInterfaces);
-			return -1;
-		}
+	ret = libusb_get_active_config_descriptor(libusb_dev, LibusbConfig);
+
+	if (log_libusb_result(urbdrc->log, WLOG_ERROR, "libusb_set_configuration", ret))
+	{
+		func_claim_all_interface(urbdrc, libusb_handle, (*LibusbConfig)->bNumInterfaces);
+		return -1;
 	}
 
 	func_claim_all_interface(urbdrc, libusb_handle, (*LibusbConfig)->bNumInterfaces);

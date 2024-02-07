@@ -545,7 +545,7 @@ static int wst_bio_write(BIO* bio, const char* buf, int num)
 		BIO_clear_flags(bio, BIO_FLAGS_SHOULD_RETRY);
 		return -1;
 	}
-	else if (status < num)
+	if (status < num)
 	{
 		BIO_set_flags(bio, BIO_FLAGS_WRITE);
 		WSASetLastError(WSAEWOULDBLOCK);
@@ -583,7 +583,7 @@ static int wst_bio_read(BIO* bio, char* buf, int size)
 		BIO_clear_retry_flags(bio);
 		return -1;
 	}
-	else if (status == 0)
+	if (status == 0)
 	{
 		BIO_set_retry_read(bio);
 		WSASetLastError(WSAEWOULDBLOCK);
@@ -732,8 +732,7 @@ static BOOL wst_parse_url(rdpWst* wst, const char* url)
 			WLog_ERR(TAG, "Websocket URL is invalid. Only wss:// or https:// URLs are supported");
 			return FALSE;
 		}
-		else
-			hostStart = url + 8;
+		hostStart = url + 8;
 	}
 	else
 		hostStart = url + 6;

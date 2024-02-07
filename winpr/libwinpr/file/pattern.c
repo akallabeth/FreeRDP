@@ -53,7 +53,7 @@ LPSTR FilePatternFindNextWildcardA(LPCSTR lpPattern, DWORD* pFlags)
 			*pFlags = WILDCARD_STAR;
 			return lpWildcard;
 		}
-		else if (*lpWildcard == '?')
+		if (*lpWildcard == '?')
 		{
 			*pFlags = WILDCARD_QM;
 			return lpWildcard;
@@ -137,7 +137,7 @@ static BOOL FilePatternMatchSubExpressionA(LPCSTR lpFileName, size_t cchFileName
 		*ppMatchEnd = &lpMatch[cchY];
 		return TRUE;
 	}
-	else if (*lpWildcard == '?')
+	if (*lpWildcard == '?')
 	{
 		/**
 		 *                     X     S     Y
@@ -333,32 +333,29 @@ BOOL FilePatternMatchA(LPCSTR lpFileName, LPCSTR lpPattern)
 			                                       cchY, lpWildcard, &lpMatchEnd);
 			return match;
 		}
-		else
+
+		while (lpNextWildcard)
 		{
-			while (lpNextWildcard)
-			{
-				cchSubFileName = cchFileName - (lpSubFileName - lpFileName);
-				cchNextWildcard = ((dwNextFlags & WILDCARD_DOS) ? 2 : 1);
-				lpX = lpSubPattern;
-				cchX = (lpWildcard - lpSubPattern);
-				lpY = &lpSubPattern[cchX + cchWildcard];
-				cchY = (lpNextWildcard - lpWildcard) - cchWildcard;
-				match = FilePatternMatchSubExpressionA(lpSubFileName, cchSubFileName, lpX, cchX,
-				                                       lpY, cchY, lpWildcard, &lpMatchEnd);
+			cchSubFileName = cchFileName - (lpSubFileName - lpFileName);
+			cchNextWildcard = ((dwNextFlags & WILDCARD_DOS) ? 2 : 1);
+			lpX = lpSubPattern;
+			cchX = (lpWildcard - lpSubPattern);
+			lpY = &lpSubPattern[cchX + cchWildcard];
+			cchY = (lpNextWildcard - lpWildcard) - cchWildcard;
+			match = FilePatternMatchSubExpressionA(lpSubFileName, cchSubFileName, lpX, cchX, lpY,
+			                                       cchY, lpWildcard, &lpMatchEnd);
 
-				if (!match)
-					return FALSE;
+			if (!match)
+				return FALSE;
 
-				lpSubFileName = lpMatchEnd;
-				cchWildcard = cchNextWildcard;
-				lpWildcard = lpNextWildcard;
-				dwFlags = dwNextFlags;
-				lpNextWildcard =
-				    FilePatternFindNextWildcardA(&lpWildcard[cchWildcard], &dwNextFlags);
-			}
-
-			return TRUE;
+			lpSubFileName = lpMatchEnd;
+			cchWildcard = cchNextWildcard;
+			lpWildcard = lpNextWildcard;
+			dwFlags = dwNextFlags;
+			lpNextWildcard = FilePatternFindNextWildcardA(&lpWildcard[cchWildcard], &dwNextFlags);
 		}
+
+		return TRUE;
 	}
 	else
 	{

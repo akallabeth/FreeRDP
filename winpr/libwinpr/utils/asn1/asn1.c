@@ -529,7 +529,7 @@ static size_t asn1IntegerLen(WinPrAsn1_INTEGER value)
 {
 	if (value <= 127 && value >= -128)
 		return 2;
-	else if (value <= 32767 && value >= -32768)
+	if (value <= 32767 && value >= -32768)
 		return 3;
 	else
 		return 5;

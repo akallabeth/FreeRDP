@@ -409,7 +409,7 @@ SSIZE_T ConvertWCharNToUtf8(const WCHAR* wstr, size_t wlen, char* str, size_t le
 	    WideCharToMultiByte(CP_UTF8, 0, wstr, (int)iwlen, str, MIN(INT32_MAX, len), NULL, NULL);
 	if ((rc <= 0) || ((len > 0) && ((size_t)rc > len)))
 		return -1;
-	else if (!isNullTerminated)
+	if (!isNullTerminated)
 	{
 		if (str && ((size_t)rc < len))
 			str[rc] = '\0';
@@ -487,7 +487,7 @@ SSIZE_T ConvertUtf8NToWChar(const char* str, size_t len, WCHAR* wstr, size_t wle
 			wstr[rc] = '\0';
 		return rc;
 	}
-	else if (rc == iwlen)
+	if (rc == iwlen)
 	{
 		if (wstr && (wstr[rc - 1] != '\0'))
 			return rc;

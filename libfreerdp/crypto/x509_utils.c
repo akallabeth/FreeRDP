@@ -120,12 +120,10 @@ static const char* general_name_type_label(int general_name_type)
 	{
 		return general_name_type_labels[general_name_type];
 	}
-	else
-	{
-		static char buffer[80];
-		sprintf(buffer, "Unknown general name type (%d)", general_name_type);
-		return buffer;
-	}
+
+	static char buffer[80];
+	sprintf(buffer, "Unknown general name type (%d)", general_name_type);
+	return buffer;
 }
 
 /*
@@ -976,7 +974,7 @@ BOOL x509_utils_verify(X509* xcert, STACK_OF(X509) * chain, const char* certific
 			status = TRUE;
 			break;
 		}
-		else if (err != X509_V_ERR_INVALID_PURPOSE)
+		if (err != X509_V_ERR_INVALID_PURPOSE)
 			break;
 	}
 

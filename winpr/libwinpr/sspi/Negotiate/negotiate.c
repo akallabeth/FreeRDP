@@ -176,7 +176,7 @@ static const char* negotiate_mech_name(const WinPrAsn1_OID* oid)
 {
 	if (sspi_gss_oid_compare(oid, &spnego_OID))
 		return "SPNEGO (1.3.6.1.5.5.2)";
-	else if (sspi_gss_oid_compare(oid, &kerberos_u2u_OID))
+	if (sspi_gss_oid_compare(oid, &kerberos_u2u_OID))
 		return "Kerberos user to user (1.2.840.113554.1.2.2.3)";
 	else if (sspi_gss_oid_compare(oid, &kerberos_OID))
 		return "Kerberos (1.2.840.113554.1.2.2)";

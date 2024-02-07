@@ -720,8 +720,7 @@ static INT64 timespec_compare(const struct timespec* tspec1, const struct timesp
 	WINPR_ASSERT(tspec2);
 	if (tspec1->tv_sec == tspec2->tv_sec)
 		return (tspec1->tv_nsec - tspec2->tv_nsec);
-	else
-		return (tspec1->tv_sec - tspec2->tv_sec);
+	return (tspec1->tv_sec - tspec2->tv_sec);
 }
 
 static void timespec_copy(struct timespec* dst, struct timespec* src)

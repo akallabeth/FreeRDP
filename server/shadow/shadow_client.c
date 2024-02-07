@@ -2483,12 +2483,10 @@ BOOL shadow_client_accepted(freerdp_listener* listener, freerdp_peer* peer)
 		freerdp_peer_context_free(peer);
 		return FALSE;
 	}
-	else
-	{
-		/* Close the thread handle to make it detached. */
-		CloseHandle(client->thread);
-		client->thread = NULL;
-	}
+
+	/* Close the thread handle to make it detached. */
+	CloseHandle(client->thread);
+	client->thread = NULL;
 
 	return TRUE;
 }
@@ -2529,12 +2527,10 @@ static BOOL shadow_client_dispatch_msg(rdpShadowClient* client, wMessage* messag
 	WINPR_ASSERT(client->MsgQueue);
 	if (MessageQueue_Dispatch(client->MsgQueue, message))
 		return TRUE;
-	else
-	{
-		/* Release the reference since post failed */
-		shadow_msg_out_release(message);
-		return FALSE;
-	}
+
+	/* Release the reference since post failed */
+	shadow_msg_out_release(message);
+	return FALSE;
 }
 
 BOOL shadow_client_post_msg(rdpShadowClient* client, void* context, UINT32 type,

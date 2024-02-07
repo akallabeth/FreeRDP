@@ -258,15 +258,13 @@ static Window xf_Pointer_get_window(xfContext* xfc)
 		}
 		return xfc->appWindow->handle;
 	}
-	else
+
+	if (!xfc->window)
 	{
-		if (!xfc->window)
-		{
-			WLog_WARN(TAG, "xf_Pointer: Invalid window");
-			return 0;
-		}
-		return xfc->window->handle;
+		WLog_WARN(TAG, "xf_Pointer: Invalid window");
+		return 0;
 	}
+	return xfc->window->handle;
 }
 
 BOOL xf_pointer_update_scale(xfContext* xfc)

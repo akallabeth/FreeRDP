@@ -1913,8 +1913,7 @@ BOOL rdp_is_active_state(const rdpRdp* rdp)
 	const CONNECTION_STATE state = rdp_get_state(rdp);
 	if (freerdp_settings_get_bool(rdp->context->settings, FreeRDP_ServerMode))
 		return rdp_is_active_peer_state(state);
-	else
-		return rdp_is_active_client_state(state);
+	return rdp_is_active_client_state(state);
 }
 
 BOOL rdp_server_transition_to_state(rdpRdp* rdp, CONNECTION_STATE state)

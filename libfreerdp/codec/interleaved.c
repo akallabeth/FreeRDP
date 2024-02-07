@@ -184,7 +184,7 @@ static INLINE UINT32 ExtractCodeId(BYTE bOrderHdr)
 		 */
 		return bOrderHdr >> 5;
 	}
-	else if ((bOrderHdr & 0xF0U) == 0xF0U)
+	if ((bOrderHdr & 0xF0U) == 0xF0U)
 	{
 		/* MEGA and SPECIAL orders (0xF*) */
 		return bOrderHdr;

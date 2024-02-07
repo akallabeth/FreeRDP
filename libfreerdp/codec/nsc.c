@@ -142,7 +142,7 @@ static BOOL nsc_rle_decode(const BYTE* in, size_t inSize, BYTE* out, UINT32 outS
 
 			if (inSize < 1)
 				return FALSE;
-			else if (*in < 0xFF)
+			if (*in < 0xFF)
 			{
 				inSize--;
 				len = (UINT32)*in++;

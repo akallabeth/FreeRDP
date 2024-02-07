@@ -201,16 +201,14 @@ static BOOL check_order_activated(wLog* log, rdpSettings* settings, const char* 
 				WLog_Print(log, WLOG_WARN, "%s", extendedMessage);
 			return TRUE;
 		}
-		else
-		{
-			WLog_Print(log, WLOG_ERROR,
-			           "%s - SERVER BUG: The support for this feature was not announced! Use "
-			           "/relax-order-checks to ignore",
-			           orderName);
-			if (extendedMessage)
-				WLog_Print(log, WLOG_WARN, "%s", extendedMessage);
-			return FALSE;
-		}
+
+		WLog_Print(log, WLOG_ERROR,
+		           "%s - SERVER BUG: The support for this feature was not announced! Use "
+		           "/relax-order-checks to ignore",
+		           orderName);
+		if (extendedMessage)
+			WLog_Print(log, WLOG_WARN, "%s", extendedMessage);
+		return FALSE;
 	}
 
 	return TRUE;

@@ -129,7 +129,7 @@ static RDPINPUT_CONTACT_POINT* rdpei_contact(RDPEI_PLUGIN* rdpei, INT32 external
 
 		if (!contactPoint->active && active)
 			continue;
-		else if (!contactPoint->active && !active)
+		if (!contactPoint->active && !active)
 		{
 			contactPoint->contactId = i;
 			contactPoint->externalId = externalId;

@@ -509,7 +509,7 @@ static BOOL pf_config_load_certificates(wIniFile* ini, proxyConfig* config)
 		         section_certificates, key_cert_file, section_certificates, key_cert_content);
 		return FALSE;
 	}
-	else if (!tmp1 && !tmp2)
+	if (!tmp1 && !tmp2)
 	{
 		WLog_ERR(TAG,
 		         "%s/%s or %s/%s are "
@@ -559,7 +559,7 @@ static BOOL pf_config_load_certificates(wIniFile* ini, proxyConfig* config)
 		         key_private_key_content);
 		return FALSE;
 	}
-	else if (!tmp1 && !tmp2)
+	if (!tmp1 && !tmp2)
 	{
 		WLog_ERR(TAG,
 		         "%s/%s or %s/%s are "

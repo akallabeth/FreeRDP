@@ -200,7 +200,7 @@ static NCryptKeyGetPropertyEnum propertyStringToEnum(LPCWSTR pszProperty)
 	{
 		return NCRYPT_PROPERTY_CERTIFICATE;
 	}
-	else if (_wcscmp(pszProperty, NCRYPT_READER_PROPERTY) == 0)
+	if (_wcscmp(pszProperty, NCRYPT_READER_PROPERTY) == 0)
 	{
 		return NCRYPT_PROPERTY_READER;
 	}

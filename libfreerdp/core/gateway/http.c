@@ -1265,7 +1265,7 @@ HttpResponse* http_response_recv(rdpTls* tls, BOOL readContentLength)
 
 		if (position < 4)
 			continue;
-		else if (position > RESPONSE_SIZE_LIMIT)
+		if (position > RESPONSE_SIZE_LIMIT)
 		{
 			WLog_ERR(TAG, "Request header too large! (%" PRIdz " bytes) Aborting!", bodyLength);
 			goto out_error;
@@ -1336,8 +1336,7 @@ HttpResponse* http_response_recv(rdpTls* tls, BOOL readContentLength)
 
 					break;
 				}
-				else
-					readContentLength = FALSE; /* prevent chunked read */
+				readContentLength = FALSE; /* prevent chunked read */
 
 				cur = strchr(cur, ';');
 			}

@@ -54,8 +54,7 @@ static BOOL WLog_CallbackAppender_WriteMessage(wLog* log, wLogAppender* appender
 
 	if (callbackAppender->callbacks && callbackAppender->callbacks->message)
 		return callbackAppender->callbacks->message(message);
-	else
-		return FALSE;
+	return FALSE;
 }
 
 static BOOL WLog_CallbackAppender_WriteDataMessage(wLog* log, wLogAppender* appender,
@@ -73,8 +72,7 @@ static BOOL WLog_CallbackAppender_WriteDataMessage(wLog* log, wLogAppender* appe
 	callbackAppender = (wLogCallbackAppender*)appender;
 	if (callbackAppender->callbacks && callbackAppender->callbacks->data)
 		return callbackAppender->callbacks->data(message);
-	else
-		return FALSE;
+	return FALSE;
 }
 
 static BOOL WLog_CallbackAppender_WriteImageMessage(wLog* log, wLogAppender* appender,
@@ -92,8 +90,7 @@ static BOOL WLog_CallbackAppender_WriteImageMessage(wLog* log, wLogAppender* app
 	callbackAppender = (wLogCallbackAppender*)appender;
 	if (callbackAppender->callbacks && callbackAppender->callbacks->image)
 		return callbackAppender->callbacks->image(message);
-	else
-		return FALSE;
+	return FALSE;
 }
 
 static BOOL WLog_CallbackAppender_WritePacketMessage(wLog* log, wLogAppender* appender,
@@ -111,8 +108,7 @@ static BOOL WLog_CallbackAppender_WritePacketMessage(wLog* log, wLogAppender* ap
 	callbackAppender = (wLogCallbackAppender*)appender;
 	if (callbackAppender->callbacks && callbackAppender->callbacks->package)
 		return callbackAppender->callbacks->package(message);
-	else
-		return FALSE;
+	return FALSE;
 }
 
 static BOOL WLog_CallbackAppender_Set(wLogAppender* appender, const char* setting, void* value)

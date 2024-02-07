@@ -1243,10 +1243,9 @@ BOOL nego_process_negotiation_request(rdpNego* nego, wStream* s)
 			         "RDP_NEG_REQ::flags REDIRECTED_AUTHENTICATION_MODE_REQUIRED but disabled");
 			return FALSE;
 		}
-		else
-		{
-			WLog_INFO(TAG, "RDP_NEG_REQ::flags REDIRECTED_AUTHENTICATION_MODE_REQUIRED");
-		}
+
+		WLog_INFO(TAG, "RDP_NEG_REQ::flags REDIRECTED_AUTHENTICATION_MODE_REQUIRED");
+
 		nego->RemoteCredsGuardActive = TRUE;
 	}
 

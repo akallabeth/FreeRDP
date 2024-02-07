@@ -171,6 +171,5 @@ BOOL WLog_ConfigureAppender(wLogAppender* appender, const char* setting, void* v
 
 	if (appender->Set)
 		return appender->Set(appender, setting, value);
-	else
-		return FALSE;
+	return FALSE;
 }

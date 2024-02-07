@@ -455,7 +455,7 @@ BYTE rpc_auth_pkg_to_security_provider(const char* name)
 {
 	if (strcmp(name, CREDSSP_AUTH_PKG_SPNEGO) == 0)
 		return RPC_C_AUTHN_GSS_NEGOTIATE;
-	else if (strcmp(name, CREDSSP_AUTH_PKG_NTLM) == 0)
+	if (strcmp(name, CREDSSP_AUTH_PKG_NTLM) == 0)
 		return RPC_C_AUTHN_WINNT;
 	else if (strcmp(name, CREDSSP_AUTH_PKG_KERBEROS) == 0)
 		return RPC_C_AUTHN_GSS_KERBEROS;

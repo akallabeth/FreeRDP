@@ -1749,7 +1749,7 @@ static state_run_t rdp_recv_pdu(rdpRdp* rdp, wStream* s)
 	const int rc = tpkt_verify_header(s);
 	if (rc > 0)
 		return rdp_recv_tpkt_pdu(rdp, s);
-	else if (rc == 0)
+	if (rc == 0)
 		return rdp_recv_fastpath_pdu(rdp, s);
 	else
 		return STATE_RUN_FAILED;

@@ -508,19 +508,17 @@ static BOOL convertKeyType(CK_KEY_TYPE k, LPWSTR dest, DWORD len, DWORD* outlen)
 			dest[0] = 0;
 		return FALSE;
 	}
-	else
-	{
-		if (retLen + 1 < len)
-		{
-			WLog_ERR(TAG, "target buffer is too small for algo name");
-			return FALSE;
-		}
 
-		if (dest)
-		{
-			memcpy(dest, r, retLen * 2ull);
-			dest[retLen] = 0;
-		}
+	if (retLen + 1 < len)
+	{
+		WLog_ERR(TAG, "target buffer is too small for algo name");
+		return FALSE;
+	}
+
+	if (dest)
+	{
+		memcpy(dest, r, retLen * 2ull);
+		dest[retLen] = 0;
 	}
 
 	return TRUE;
@@ -928,7 +926,7 @@ static SECURITY_STATUS check_for_piv_container_name(NCryptP11KeyHandle* key, BYT
 			*pcbResult = (PIV_CONTAINER_NAME_LEN + 1) * sizeof(WCHAR);
 			if (!pbOutput)
 				return ERROR_SUCCESS;
-			else if (cbOutput < (PIV_CONTAINER_NAME_LEN + 1) * sizeof(WCHAR))
+			if (cbOutput < (PIV_CONTAINER_NAME_LEN + 1) * sizeof(WCHAR))
 				return NTE_NO_MEMORY;
 			else
 				return get_piv_container_name(key, cur->tag, pbOutput, cbOutput);

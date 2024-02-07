@@ -74,19 +74,17 @@ static BOOL checkResult(size_t index, char** actual, size_t actualCount)
 	{
 		return (actual == NULL);
 	}
-	else
+
+	if (!actual)
+		return FALSE;
+
+	for (size_t x = 0; x < actualCount; x++)
 	{
-		if (!actual)
+		const char* a = result[x];
+		const char* b = actual[x];
+
+		if (strcmp(a, b) != 0)
 			return FALSE;
-
-		for (size_t x = 0; x < actualCount; x++)
-		{
-			const char* a = result[x];
-			const char* b = actual[x];
-
-			if (strcmp(a, b) != 0)
-				return FALSE;
-		}
 	}
 
 	return TRUE;
