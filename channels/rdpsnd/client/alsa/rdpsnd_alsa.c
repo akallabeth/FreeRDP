@@ -60,7 +60,7 @@ typedef struct
 #define SND_PCM_CHECK(_func, _status)                  \
 	do                                                 \
 	{                                                  \
-		if (_status < 0)                               \
+		if ((_status) < 0)                             \
 		{                                              \
 			WLog_ERR(TAG, "%s: %d\n", _func, _status); \
 			return -1;                                 \

@@ -51,11 +51,11 @@
 	do                           \
 	{                            \
 		UINT32 _v = _val;        \
-		_nbits = 0;              \
+		(_nbits) = 0;            \
 		while (_v)               \
 		{                        \
 			_v >>= 1;            \
-			_nbits++;            \
+			(_nbits)++;          \
 		}                        \
 	} while (0)
 
@@ -66,12 +66,12 @@
 #define UpdateParam(_param, _deltaP, _k) \
 	do                                   \
 	{                                    \
-		_param += _deltaP;               \
-		if (_param > KPMAX)              \
-			_param = KPMAX;              \
-		if (_param < 0)                  \
-			_param = 0;                  \
-		_k = (_param >> LSGR);           \
+		(_param) += (_deltaP);           \
+		if ((_param) > KPMAX)            \
+			(_param) = KPMAX;            \
+		if ((_param) < 0)                \
+			(_param) = 0;                \
+		(_k) = ((_param) >> LSGR);       \
 	} while (0)
 
 static BOOL g_LZCNT = FALSE;
@@ -568,18 +568,18 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* WINPR_RESTRICT pSrcData, UINT32 
 }
 
 /* Returns the next coefficient (a signed int) to encode, from the input stream */
-#define GetNextInput(_n)   \
-	do                     \
-	{                      \
-		if (data_size > 0) \
-		{                  \
-			_n = *data++;  \
-			data_size--;   \
-		}                  \
-		else               \
-		{                  \
-			_n = 0;        \
-		}                  \
+#define GetNextInput(_n)    \
+	do                      \
+	{                       \
+		if (data_size > 0)  \
+		{                   \
+			(_n) = *data++; \
+			data_size--;    \
+		}                   \
+		else                \
+		{                   \
+			(_n) = 0;       \
+		}                   \
 	} while (0)
 
 /* Emit bitPattern to the output bitstream */
@@ -589,7 +589,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* WINPR_RESTRICT pSrcData, UINT32 
 #define OutputBit(count, bit)                                    \
 	do                                                           \
 	{                                                            \
-		UINT16 _b = (bit ? 0xFFFF : 0);                          \
+		UINT16 _b = ((bit) ? 0xFFFF : 0);                        \
 		int _c = (count);                                        \
 		for (; _c > 0; _c -= 16)                                 \
 			rfx_bitstream_put_bits(bs, _b, (_c > 16 ? 16 : _c)); \

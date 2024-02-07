@@ -43,10 +43,10 @@
 #define ATTRIBUTES __gnu_inline__, __always_inline__
 #endif
 
-#define _mm_between_epi16(_val, _min, _max)                    \
-	do                                                         \
-	{                                                          \
-		_val = _mm_min_epi16(_max, _mm_max_epi16(_val, _min)); \
+#define _mm_between_epi16(_val, _min, _max)                      \
+	do                                                           \
+	{                                                            \
+		(_val) = _mm_min_epi16(_max, _mm_max_epi16(_val, _min)); \
 	} while (0)
 
 static __inline void __attribute__((ATTRIBUTES)) _mm_prefetch_buffer(char* buffer, int num_bytes)

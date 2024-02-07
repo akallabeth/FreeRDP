@@ -67,7 +67,7 @@ typedef struct
 #define OSS_LOG_ERR(_text, _error)                                      \
 	do                                                                  \
 	{                                                                   \
-		if (_error != 0)                                                \
+		if ((_error) != 0)                                              \
 		{                                                               \
 			char ebuffer[256] = { 0 };                                  \
 			WLog_ERR(TAG, "%s: %i - %s", _text, _error,                 \

@@ -44,10 +44,10 @@ static primitives_t* generic = NULL;
 
 #define CACHE_LINE_BYTES 64
 
-#define _mm_between_epi16(_val, _min, _max)                    \
-	do                                                         \
-	{                                                          \
-		_val = _mm_min_epi16(_max, _mm_max_epi16(_val, _min)); \
+#define _mm_between_epi16(_val, _min, _max)                      \
+	do                                                           \
+	{                                                            \
+		(_val) = _mm_min_epi16(_max, _mm_max_epi16(_val, _min)); \
 	} while (0)
 
 #ifdef DO_PREFETCH

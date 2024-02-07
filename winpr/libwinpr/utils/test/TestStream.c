@@ -259,14 +259,14 @@ fail:
 		if (_a != _b)                                                 \
 		{                                                             \
 			printf("%s: test1 " #_t "_LE failed\n", __func__);        \
-			_r = FALSE;                                               \
+			(_r) = FALSE;                                             \
 		}                                                             \
 		for (size_t _i = 0; _i < sizeof(_t); _i++)                    \
 		{                                                             \
 			if (((_a >> (_i * 8)) & 0xFF) != _p[_i])                  \
 			{                                                         \
 				printf("%s: test2 " #_t "_LE failed\n", __func__);    \
-				_r = FALSE;                                           \
+				(_r) = FALSE;                                         \
 				break;                                                \
 			}                                                         \
 		}                                                             \
@@ -277,14 +277,14 @@ fail:
 		if (_a != _b)                                                 \
 		{                                                             \
 			printf("%s: test1 " #_t "_BE failed\n", __func__);        \
-			_r = FALSE;                                               \
+			(_r) = FALSE;                                             \
 		}                                                             \
 		for (size_t _i = 0; _i < sizeof(_t); _i++)                    \
 		{                                                             \
 			if (((_a >> (_i * 8)) & 0xFF) != _p[sizeof(_t) - _i - 1]) \
 			{                                                         \
 				printf("%s: test2 " #_t "_BE failed\n", __func__);    \
-				_r = FALSE;                                           \
+				(_r) = FALSE;                                         \
 				break;                                                \
 			}                                                         \
 		}                                                             \

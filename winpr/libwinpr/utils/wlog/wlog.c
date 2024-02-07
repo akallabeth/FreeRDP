@@ -44,8 +44,8 @@ typedef struct
 	size_t NameCount;
 } wLogFilter;
 
-#define WLOG_FILTER_NOT_FILTERED -1
-#define WLOG_FILTER_NOT_INITIALIZED -2
+#define WLOG_FILTER_NOT_FILTERED (-1)
+#define WLOG_FILTER_NOT_INITIALIZED (-2)
 /**
  * References for general logging concepts:
  *
