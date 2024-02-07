@@ -718,7 +718,7 @@ rdpSettings* freerdp_settings_new(DWORD flags)
 		/* For default FreeRDP continue using same config directory
 		 * as in old releases.
 		 * Custom builds use <Vendor>/<Product> as config folder. */
-		if (_stricmp(FREERDP_VENDOR_STRING, FREERDP_PRODUCT_STRING))
+		if (_stricmp(FREERDP_VENDOR_STRING, FREERDP_PRODUCT_STRING) != 0)
 		{
 			BOOL res = TRUE;
 			base = GetKnownSubPath(KNOWN_PATH_XDG_CONFIG_HOME, FREERDP_VENDOR_STRING);

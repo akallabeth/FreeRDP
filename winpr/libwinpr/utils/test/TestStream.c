@@ -174,7 +174,7 @@ static BOOL TestStream_Create(size_t count, BOOL selfAlloc)
 		{
 			memset(buffer, i % 256, cap);
 
-			if (memcmp(buffer, Stream_Buffer(s), cap))
+			if (memcmp(buffer, Stream_Buffer(s), cap) != 0)
 			{
 				printf("%s: buffer memory corruption\n", __func__);
 				goto fail;

@@ -115,7 +115,7 @@ static BOOL WLog_CallbackAppender_Set(wLogAppender* appender, const char* settin
 {
 	wLogCallbackAppender* callbackAppender = (wLogCallbackAppender*)appender;
 
-	if (!value || strcmp(setting, "callbacks"))
+	if (!value || strcmp(setting, "callbacks") != 0)
 		return FALSE;
 
 	if (!(callbackAppender->callbacks = calloc(1, sizeof(wLogCallbacks))))
