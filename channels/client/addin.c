@@ -48,7 +48,7 @@ static void* freerdp_channels_find_static_entry_in_table(const STATIC_ENTRY_TABL
                                                          const char* identifier)
 {
 	size_t index = 0;
-	const STATIC_ENTRY* pEntry = (const STATIC_ENTRY*)&table->table[index++];
+	const STATIC_ENTRY* pEntry = &table->table[index++];
 
 	while (pEntry->entry != NULL)
 	{
@@ -57,7 +57,7 @@ static void* freerdp_channels_find_static_entry_in_table(const STATIC_ENTRY_TABL
 			return (void*)pEntry->entry;
 		}
 
-		pEntry = (const STATIC_ENTRY*)&table->table[index++];
+		pEntry = &table->table[index++];
 	}
 
 	return NULL;
@@ -116,7 +116,7 @@ static FREERDP_ADDIN** freerdp_channels_list_client_static_addins(LPCSTR pszName
 		pAddin->dwFlags |= FREERDP_ADDIN_STATIC;
 		pAddin->dwFlags |= FREERDP_ADDIN_NAME;
 		ppAddins[nAddins++] = pAddin;
-		subsystems = (const STATIC_SUBSYSTEM_ENTRY*)CLIENT_STATIC_ADDIN_TABLE[i].table;
+		subsystems = CLIENT_STATIC_ADDIN_TABLE[i].table;
 
 		for (size_t j = 0; subsystems[j].name != NULL; j++)
 		{

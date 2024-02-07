@@ -123,7 +123,7 @@ static wLogAppender* WLog_Appender_New(wLog* log, DWORD logAppenderType)
 			break;
 #endif
 		case WLOG_APPENDER_UDP:
-			appender = (wLogAppender*)WLog_UdpAppender_New(log);
+			appender = WLog_UdpAppender_New(log);
 			break;
 		default:
 			fprintf(stderr, "%s: unknown handler type %" PRIu32 "\n", __func__, logAppenderType);
@@ -132,7 +132,7 @@ static wLogAppender* WLog_Appender_New(wLog* log, DWORD logAppenderType)
 	}
 
 	if (!appender)
-		appender = (wLogAppender*)WLog_ConsoleAppender_New(log);
+		appender = WLog_ConsoleAppender_New(log);
 
 	if (!appender)
 		return NULL;

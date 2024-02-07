@@ -65,7 +65,7 @@ int TestArrayList(int argc, char* argv[])
 		}
 	}
 
-	rc = ArrayList_IndexOf(arrayList, (void*)(size_t)elemsToInsert, -1, -1);
+	rc = ArrayList_IndexOf(arrayList, (void*)elemsToInsert, -1, -1);
 	printf("ArrayList index: %d\n", rc);
 	if (rc != -1)
 		return -1;

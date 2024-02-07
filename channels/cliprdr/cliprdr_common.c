@@ -208,7 +208,7 @@ wStream* cliprdr_packet_format_list_new(const CLIPRDR_FORMAT_LIST* formatList,
 		for (UINT32 index = 0; index < formatList->numFormats; index++)
 		{
 			size_t formatNameLength = 0;
-			format = (CLIPRDR_FORMAT*)&(formatList->formats[index]);
+			format = &(formatList->formats[index]);
 			Stream_Write_UINT32(s, format->formatId); /* formatId (4 bytes) */
 			formatNameSize = 0;
 
@@ -248,7 +248,7 @@ wStream* cliprdr_packet_format_list_new(const CLIPRDR_FORMAT_LIST* formatList,
 				formatNameSize *= sizeof(WCHAR);
 
 				if (wszFormatName)
-					Stream_Write(s, wszFormatName, (size_t)formatNameSize);
+					Stream_Write(s, wszFormatName, formatNameSize);
 
 				Stream_Zero(s, (size_t)(32 - formatNameSize));
 				free(wszFormatName);
@@ -260,7 +260,7 @@ wStream* cliprdr_packet_format_list_new(const CLIPRDR_FORMAT_LIST* formatList,
 		length = 0;
 		for (UINT32 index = 0; index < formatList->numFormats; index++)
 		{
-			format = (CLIPRDR_FORMAT*)&(formatList->formats[index]);
+			format = &(formatList->formats[index]);
 			length += 4;
 			formatNameSize = sizeof(WCHAR);
 
@@ -285,7 +285,7 @@ wStream* cliprdr_packet_format_list_new(const CLIPRDR_FORMAT_LIST* formatList,
 
 		for (UINT32 index = 0; index < formatList->numFormats; index++)
 		{
-			format = (CLIPRDR_FORMAT*)&(formatList->formats[index]);
+			format = &(formatList->formats[index]);
 			Stream_Write_UINT32(s, format->formatId); /* formatId (4 bytes) */
 
 			if (format->formatName)

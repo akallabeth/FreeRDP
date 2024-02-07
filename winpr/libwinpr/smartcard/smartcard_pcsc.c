@@ -992,8 +992,7 @@ static LONG WINAPI PCSC_SCardListReadersW(SCARDCONTEXT hContext, LPCWSTR mszGrou
 			return SCARD_E_NO_MEMORY;
 	}
 
-	status =
-	    PCSC_SCardListReaders_Internal(hContext, mszGroupsA, (LPSTR*)&mszReadersA, pcchReaders);
+	status = PCSC_SCardListReaders_Internal(hContext, mszGroupsA, &mszReadersA, pcchReaders);
 	if (status == SCARD_S_SUCCESS)
 	{
 		size_t size = 0;
@@ -2098,10 +2097,10 @@ static LONG WINAPI PCSC_SCardState(SCARDHANDLE hCard, LPDWORD pdwState, LPDWORD 
 	if (mszReaderNames)
 		PCSC_SCardFreeMemory_Internal(hContext, mszReaderNames);
 
-	*pdwState = (DWORD)pcsc_dwState;
-	*pdwProtocol = PCSC_ConvertProtocolsToWinSCard((DWORD)pcsc_dwProtocol);
+	*pdwState = pcsc_dwState;
+	*pdwProtocol = PCSC_ConvertProtocolsToWinSCard(pcsc_dwProtocol);
 	if (pcbAtrLen)
-		*pcbAtrLen = (DWORD)pcsc_cbAtrLen;
+		*pcbAtrLen = pcsc_cbAtrLen;
 	return PCSC_MapErrorCodeToWinSCard(status);
 }
 

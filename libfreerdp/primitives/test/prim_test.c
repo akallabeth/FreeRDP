@@ -54,7 +54,7 @@ float _delta_time(const struct timespec* t0, const struct timespec* t1)
 		nsecs += 1000000000;
 	}
 
-	retval = (double)secs + (double)nsecs / (double)1000000000.0;
+	retval = (double)secs + (double)nsecs / 1000000000.0;
 	return (retval < 0.0) ? 0.0 : (float)retval;
 }
 #endif

@@ -384,7 +384,7 @@ static INLINE INT32 planar_decompress_plane_rle(const BYTE* pSrcData, UINT32 Src
 
 	for (INT32 y = beg; y != end; y += inc)
 	{
-		BYTE* dstp = &pDstData[((nYDst + y) * (INT32)nDstStep) + (nXDst * 4) + nChannel];
+		BYTE* dstp = &pDstData[((nYDst + y) * nDstStep) + (nXDst * 4) + nChannel];
 		pixel = 0;
 		currentScanline = dstp;
 
@@ -511,7 +511,7 @@ static INLINE INT32 planar_set_plane(BYTE bValue, BYTE* pDstData, INT32 nDstStep
 
 	for (INT32 y = beg; y != end; y += inc)
 	{
-		BYTE* dstp = &pDstData[((nYDst + y) * (INT32)nDstStep) + (nXDst * 4) + nChannel];
+		BYTE* dstp = &pDstData[((nYDst + y) * nDstStep) + (nXDst * 4) + nChannel];
 
 		for (INT32 x = 0; x < (INT32)nWidth; ++x)
 		{
@@ -1186,7 +1186,7 @@ static INLINE UINT32 freerdp_bitmap_planar_write_rle_bytes(const BYTE* pInBuffer
 		outBufferSize--;
 		*pOutput = controlByte;
 		pOutput++;
-		nBytesToWrite = (int)(controlByte >> 4);
+		nBytesToWrite = (controlByte >> 4);
 
 		if (nBytesToWrite)
 		{
