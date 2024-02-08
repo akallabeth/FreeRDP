@@ -174,9 +174,9 @@
  * Asynchronous I/O User Guide:
  * http://code.google.com/p/kernel/wiki/AIOUserGuide
  */
-static wArrayList* _HandleCreators;
+static wArrayList* g_HandleCreators;
 
-static pthread_once_t _HandleCreatorsInitialized = PTHREAD_ONCE_INIT;
+static pthread_once_t g_HandleCreatorsInitialized = PTHREAD_ONCE_INIT;
 
 extern HANDLE_CREATOR* GetNamedPipeClientHandleCreator(void);
 
@@ -184,22 +184,22 @@ extern HANDLE_CREATOR* GetNamedPipeClientHandleCreator(void);
 #include "../comm/comm.h"
 #endif /* __linux__ && !defined ANDROID */
 
-static void _HandleCreatorsInit(void)
+static void s_HandleCreatorsInit(void)
 {
-	WINPR_ASSERT(_HandleCreators == NULL);
-	_HandleCreators = ArrayList_New(TRUE);
+	WINPR_ASSERT(g_HandleCreators == NULL);
+	g_HandleCreators = ArrayList_New(TRUE);
 
-	if (!_HandleCreators)
+	if (!g_HandleCreators)
 		return;
 
 	/*
 	 * Register all file handle creators.
 	 */
-	ArrayList_Append(_HandleCreators, GetNamedPipeClientHandleCreator());
+	ArrayList_Append(g_HandleCreators, GetNamedPipeClientHandleCreator());
 #if defined __linux__ && !defined ANDROID
-	ArrayList_Append(_HandleCreators, GetCommHandleCreator());
+	ArrayList_Append(g_HandleCreators, GetCommHandleCreator());
 #endif /* __linux__ && !defined ANDROID */
-	ArrayList_Append(_HandleCreators, GetFileHandleCreator());
+	ArrayList_Append(g_HandleCreators, GetFileHandleCreator());
 }
 
 #ifdef WINPR_HAVE_AIO_H
@@ -236,35 +236,35 @@ HANDLE CreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
 	if (!lpFileName)
 		return INVALID_HANDLE_VALUE;
 
-	if (pthread_once(&_HandleCreatorsInitialized, _HandleCreatorsInit) != 0)
+	if (pthread_once(&g_HandleCreatorsInitialized, s_HandleCreatorsInit) != 0)
 	{
 		SetLastError(ERROR_DLL_INIT_FAILED);
 		return INVALID_HANDLE_VALUE;
 	}
 
-	if (_HandleCreators == NULL)
+	if (g_HandleCreators == NULL)
 	{
 		SetLastError(ERROR_DLL_INIT_FAILED);
 		return INVALID_HANDLE_VALUE;
 	}
 
-	ArrayList_Lock(_HandleCreators);
+	ArrayList_Lock(g_HandleCreators);
 
-	for (size_t i = 0; i <= ArrayList_Count(_HandleCreators); i++)
+	for (size_t i = 0; i <= ArrayList_Count(g_HandleCreators); i++)
 	{
-		HANDLE_CREATOR* creator = ArrayList_GetItem(_HandleCreators, i);
+		HANDLE_CREATOR* creator = ArrayList_GetItem(g_HandleCreators, i);
 
 		if (creator && creator->IsHandled(lpFileName))
 		{
 			HANDLE newHandle =
 			    creator->CreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
 			                         dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-			ArrayList_Unlock(_HandleCreators);
+			ArrayList_Unlock(g_HandleCreators);
 			return newHandle;
 		}
 	}
 
-	ArrayList_Unlock(_HandleCreators);
+	ArrayList_Unlock(g_HandleCreators);
 	return INVALID_HANDLE_VALUE;
 }
 

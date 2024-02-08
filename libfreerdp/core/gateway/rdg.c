@@ -116,7 +116,7 @@ typedef struct
 {
 	TRANSFER_ENCODING httpTransferEncoding;
 	BOOL isWebsocketTransport;
-	union _context
+	union u_context
 	{
 		http_encoding_chunked_context chunked;
 		websocket_context websocket;

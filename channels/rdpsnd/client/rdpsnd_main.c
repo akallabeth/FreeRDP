@@ -1329,7 +1329,7 @@ static UINT rdpsnd_virtual_channel_event_disconnected(rdpsndPlugin* rdpsnd)
 	return CHANNEL_RC_OK;
 }
 
-static void _queue_free(void* obj)
+static void s_queue_free(void* obj)
 {
 	wMessage* msg = obj;
 	if (!msg)
@@ -1433,7 +1433,7 @@ static UINT rdpsnd_virtual_channel_event_initialized(rdpsndPlugin* rdpsnd)
 	{
 		wObject obj = { 0 };
 
-		obj.fnObjectFree = _queue_free;
+		obj.fnObjectFree = s_queue_free;
 		rdpsnd->queue = MessageQueue_New(&obj);
 		if (!rdpsnd->queue)
 			return CHANNEL_RC_NO_MEMORY;

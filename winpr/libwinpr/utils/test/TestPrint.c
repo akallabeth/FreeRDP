@@ -15,8 +15,6 @@
  * http://www.codingunit.com/printf-format-specifiers-format-conversions-and-formatted-output
  */
 
-#define _printf printf
-
 static BOOL test_bin_tohex_string(void)
 {
 	BOOL rc = FALSE;
@@ -320,12 +318,12 @@ int TestPrint(int argc, char* argv[])
 
 	a = 15;
 	b = a / 2;
-	_printf("%d\n", b);
-	_printf("%3d\n", b);
-	_printf("%03d\n", b);
+	printf("%d\n", b);
+	printf("%3d\n", b);
+	printf("%03d\n", b);
 	c = 15.3f;
 	d = c / 3.0f;
-	_printf("%3.2f\n", d);
+	printf("%3.2f\n", d);
 
 	/**
 	 *   0 -17.778
@@ -347,7 +345,7 @@ int TestPrint(int argc, char* argv[])
 	 */
 
 	for (int a = 0; a <= 300; a = a + 20)
-		_printf("%3d %06.3f\n", a, (5.0 / 9.0) * (a - 32));
+		printf("%3d %06.3f\n", a, (5.0 / 9.0) * (a - 32));
 
 	/**
 	 * The color: blue
@@ -361,15 +359,15 @@ int TestPrint(int argc, char* argv[])
 	 * Just print the percentage sign %
 	 */
 
-	_printf("The color: %s\n", "blue");
-	_printf("First number: %d\n", 12345);
-	_printf("Second number: %04d\n", 25);
-	_printf("Third number: %i\n", 1234);
-	_printf("Float number: %3.2f\n", 3.14159);
-	_printf("Hexadecimal: %x/%X\n", 255, 255);
-	_printf("Octal: %o\n", 255);
-	_printf("Unsigned value: %u\n", 150);
-	_printf("Just print the percentage sign %%\n");
+	printf("The color: %s\n", "blue");
+	printf("First number: %d\n", 12345);
+	printf("Second number: %04d\n", 25);
+	printf("Third number: %i\n", 1234);
+	printf("Float number: %3.2f\n", 3.14159);
+	printf("Hexadecimal: %x/%X\n", 255, 255);
+	printf("Octal: %o\n", 255);
+	printf("Unsigned value: %u\n", 150);
+	printf("Just print the percentage sign %%\n");
 
 	/**
 	 * :Hello, world!:
@@ -382,14 +380,14 @@ int TestPrint(int argc, char* argv[])
 	 * :Hello, wor     :
 	 */
 
-	_printf(":%s:\n", "Hello, world!");
-	_printf(":%15s:\n", "Hello, world!");
-	_printf(":%.10s:\n", "Hello, world!");
-	_printf(":%-10s:\n", "Hello, world!");
-	_printf(":%-15s:\n", "Hello, world!");
-	_printf(":%.15s:\n", "Hello, world!");
-	_printf(":%15.10s:\n", "Hello, world!");
-	_printf(":%-15.10s:\n", "Hello, world!");
+	printf(":%s:\n", "Hello, world!");
+	printf(":%15s:\n", "Hello, world!");
+	printf(":%.10s:\n", "Hello, world!");
+	printf(":%-10s:\n", "Hello, world!");
+	printf(":%-15s:\n", "Hello, world!");
+	printf(":%.15s:\n", "Hello, world!");
+	printf(":%15.10s:\n", "Hello, world!");
+	printf(":%-15.10s:\n", "Hello, world!");
 
 	if (!test_bin_tohex_string())
 		return -1;

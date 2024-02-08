@@ -74,7 +74,7 @@ typedef struct
 	IRP* irp;
 } IRP_THREAD_DATA;
 
-static UINT32 _GetLastErrorToIoStatus(SERIAL_DEVICE* serial)
+static UINT32 s_GetLastErrorToIoStatus(SERIAL_DEVICE* serial)
 {
 	/* http://msdn.microsoft.com/en-us/library/ff547466%28v=vs.85%29.aspx#generic_status_values_for_serial_device_control_requests
 	 */
@@ -266,7 +266,7 @@ static UINT serial_process_irp_read(SERIAL_DEVICE* serial, IRP* irp)
 		WLog_Print(serial->log, WLOG_DEBUG,
 		           "read failure to %s, nbRead=%" PRIu32 ", last-error: 0x%08" PRIX32 "",
 		           serial->device.name, nbRead, GetLastError());
-		irp->IoStatus = _GetLastErrorToIoStatus(serial);
+		irp->IoStatus = s_GetLastErrorToIoStatus(serial);
 	}
 
 	WLog_Print(serial->log, WLOG_DEBUG, "%" PRIu32 " bytes read from %s", nbRead,
@@ -326,7 +326,7 @@ static UINT serial_process_irp_write(SERIAL_DEVICE* serial, IRP* irp)
 		WLog_Print(serial->log, WLOG_DEBUG,
 		           "write failure to %s, nbWritten=%" PRIu32 ", last-error: 0x%08" PRIX32 "",
 		           serial->device.name, nbWritten, GetLastError());
-		irp->IoStatus = _GetLastErrorToIoStatus(serial);
+		irp->IoStatus = s_GetLastErrorToIoStatus(serial);
 	}
 
 	WLog_Print(serial->log, WLOG_DEBUG, "%" PRIu32 " bytes written to %s", nbWritten,
@@ -397,7 +397,7 @@ static UINT serial_process_irp_device_control(SERIAL_DEVICE* serial, IRP* irp)
 		           "CommDeviceIoControl failure: IoControlCode=[0x%" PRIX32
 		           "] %s, last-error: 0x%08" PRIX32 "",
 		           IoControlCode, _comm_serial_ioctl_name(IoControlCode), GetLastError());
-		irp->IoStatus = _GetLastErrorToIoStatus(serial);
+		irp->IoStatus = s_GetLastErrorToIoStatus(serial);
 	}
 
 error_handle:

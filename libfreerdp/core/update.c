@@ -375,8 +375,8 @@ fail:
 	return NULL;
 }
 
-static BOOL _update_read_pointer_color(wStream* s, POINTER_COLOR_UPDATE* pointer_color, BYTE xorBpp,
-                                       UINT32 flags)
+static BOOL s_update_read_pointer_color(wStream* s, POINTER_COLOR_UPDATE* pointer_color,
+                                        BYTE xorBpp, UINT32 flags)
 {
 	BYTE* newMask = NULL;
 	UINT32 scanlineSize = 0;
@@ -512,8 +512,8 @@ POINTER_COLOR_UPDATE* update_read_pointer_color(rdpUpdate* update, wStream* s, B
 	if (!pointer_color)
 		goto fail;
 
-	if (!_update_read_pointer_color(s, pointer_color, xorBpp,
-	                                update->context->settings->LargePointerFlag))
+	if (!s_update_read_pointer_color(s, pointer_color, xorBpp,
+	                                 update->context->settings->LargePointerFlag))
 		goto fail;
 
 	return pointer_color;
@@ -525,7 +525,7 @@ fail:
 	return NULL;
 }
 
-static BOOL _update_read_pointer_large(wStream* s, POINTER_LARGE_UPDATE* pointer)
+static BOOL s_update_read_pointer_large(wStream* s, POINTER_LARGE_UPDATE* pointer)
 {
 	BYTE* newMask = NULL;
 	UINT32 scanlineSize = 0;
@@ -642,7 +642,7 @@ POINTER_LARGE_UPDATE* update_read_pointer_large(rdpUpdate* update, wStream* s)
 	if (!pointer)
 		goto fail;
 
-	if (!_update_read_pointer_large(s, pointer))
+	if (!s_update_read_pointer_large(s, pointer))
 		goto fail;
 
 	return pointer;
@@ -674,8 +674,9 @@ POINTER_NEW_UPDATE* update_read_pointer_new(rdpUpdate* update, wStream* s)
 		goto fail;
 	}
 
-	if (!_update_read_pointer_color(s, &pointer_new->colorPtrAttr, pointer_new->xorBpp,
-	                                update->context->settings->LargePointerFlag)) /* colorPtrAttr */
+	if (!s_update_read_pointer_color(
+	        s, &pointer_new->colorPtrAttr, pointer_new->xorBpp,
+	        update->context->settings->LargePointerFlag)) /* colorPtrAttr */
 		goto fail;
 
 	return pointer_new;
@@ -971,7 +972,7 @@ void update_post_disconnect(rdpUpdate* update)
 	up->initialState = TRUE;
 }
 
-static BOOL _update_begin_paint(rdpContext* context)
+static BOOL s_update_begin_paint(rdpContext* context)
 {
 	wStream* s = NULL;
 	WINPR_ASSERT(context);
@@ -998,7 +999,7 @@ static BOOL _update_begin_paint(rdpContext* context)
 	return TRUE;
 }
 
-static BOOL _update_end_paint(rdpContext* context)
+static BOOL s_update_end_paint(rdpContext* context)
 {
 	wStream* s = NULL;
 	WINPR_ASSERT(context);
@@ -3111,8 +3112,8 @@ void update_register_server_callbacks(rdpUpdate* update)
 {
 	WINPR_ASSERT(update);
 
-	update->BeginPaint = _update_begin_paint;
-	update->EndPaint = _update_end_paint;
+	update->BeginPaint = s_update_begin_paint;
+	update->EndPaint = s_update_end_paint;
 	update->SetBounds = update_set_bounds;
 	update->Synchronize = update_send_synchronize;
 	update->DesktopResize = update_send_desktop_resize;
