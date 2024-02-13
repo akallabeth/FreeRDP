@@ -68,9 +68,11 @@ extern const EVP_MD* winpr_openssl_get_evp_md(WINPR_MD_TYPE md);
 const EVP_MD* winpr_openssl_get_evp_md(WINPR_MD_TYPE md)
 {
 	const char* name = winpr_md_type_to_string(md);
-	if (!name)
-		return NULL;
-	return EVP_get_digestbyname(name);
+	EVP_MD* evp = NULL;
+	if (name)
+		evp = EVP_get_digestbyname(name);
+	WLog_INFO(TAG, "md=%d -> name=%s -> evp=%p", md, name, evp);
+	return evp;
 }
 #endif
 
