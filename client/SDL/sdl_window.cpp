@@ -129,12 +129,20 @@ void SdlWindow::resizeable(bool use)
 	SDL_SetWindowResizable(_window, use ? SDL_TRUE : SDL_FALSE);
 }
 
+bool SdlWindow::isFullscreen() const
+{
+	auto curFlags = SDL_GetWindowFlags(_window);
+	return curFlags & SDL_WINDOW_FULLSCREEN;
+}
+
 void SdlWindow::fullscreen(bool enter)
 {
 	auto curFlags = SDL_GetWindowFlags(_window);
 
 	if (enter)
 	{
+		SDL_SetWindowFullscreen(_window, SDL_TRUE);
+
 		if (!(curFlags & SDL_WINDOW_BORDERLESS))
 		{
 			auto idx = SDL_GetWindowDisplayIndex(_window);
@@ -154,6 +162,8 @@ void SdlWindow::fullscreen(bool enter)
 	}
 	else
 	{
+		SDL_SetWindowFullscreen(_window, SDL_FALSE);
+
 		if (curFlags & SDL_WINDOW_BORDERLESS)
 		{
 

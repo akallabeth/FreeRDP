@@ -46,6 +46,8 @@ class SdlWindow
 	void setBordered(bool bordered);
 	void raise();
 	void resizeable(bool use);
+
+	bool isFullscreen() const;
 	void fullscreen(bool use);
 
 	bool fill(Uint8 r = 0x00, Uint8 g = 0x00, Uint8 b = 0x00, Uint8 a = 0xff);

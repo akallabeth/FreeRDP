@@ -333,14 +333,6 @@ BOOL sdlDispContext::handle_window_event(const SDL_WindowEvent* ev)
 {
 	WINPR_ASSERT(ev);
 
-	auto bordered = freerdp_settings_get_bool(_sdl->context()->settings, FreeRDP_Decorations)
-	                    ? SDL_TRUE
-	                    : SDL_FALSE;
-
-	auto it = _sdl->windows.find(ev->windowID);
-	if (it != _sdl->windows.end())
-		it->second.setBordered(bordered);
-
 	switch (ev->event)
 	{
 		case SDL_WINDOWEVENT_HIDDEN:
@@ -353,8 +345,21 @@ BOOL sdlDispContext::handle_window_event(const SDL_WindowEvent* ev)
 		case SDL_WINDOWEVENT_SHOWN:
 		case SDL_WINDOWEVENT_MAXIMIZED:
 		case SDL_WINDOWEVENT_RESTORED:
+		{
 			gdi_send_suppress_output(_sdl->context()->gdi, FALSE);
+			auto it = _sdl->windows.find(ev->windowID);
+			if (it != _sdl->windows.end())
+			{
+				auto bordered =
+				    freerdp_settings_get_bool(_sdl->context()->settings, FreeRDP_Decorations)
+				        ? SDL_TRUE
+				        : SDL_FALSE;
+				if (it->second.isFullscreen())
+					bordered = SDL_FALSE;
+				it->second.setBordered(bordered);
+			}
 			return TRUE;
+		}
 
 		case SDL_WINDOWEVENT_RESIZED:
 		case SDL_WINDOWEVENT_SIZE_CHANGED:
