@@ -250,6 +250,34 @@ ninja -C openh264 install
 
 for ARCH in $DEPLOYMENT_ARCH;
 do
+  mkdir -p $BUILD/pkcs11-helper/$ARCH
+  cd $BUILD/pkcs11-helper/$ARCH
+  FFCFLAGS="-arch $ARCH -mmacosx-version-min=$DEPLOYMENT_TARGET"
+  FINSTPATH=$BUILD/pkcs11-helper/install/$ARCH
+  CFLAGS=$FFCFLAGS LDFLAGS=$FFCFLAGS $SRC/pkcs11-helper/configure --prefix=$FINSTPATH --disable-crypto-engine-gnutls \
+    --disable-crypto-engine-nss --disable-crypto-engine-polarssl --disable-crypto-engine-mbedtls --disable-crypto-engine-cryptoapi \
+    --enable-cross-compile $LIB_CFLAGS
+  CFLAGS=$FFCFLAGS LDFLAGS=$FFCFLAGS make -j
+  CFLAGS=$FFCFLAGS LDFLAGS=$FFCFLAGS make -j install
+  fix_rpath "$FINSTPATH/lib"
+done
+
+BASE_ARCH="${DEPLOYMENT_ARCH%% *}"
+
+cd $BUILD/pkcs11-helper/install/$ARCH
+cp -r include/* $INSTALL/include/
+find lib -type l -exec cp -P {} $INSTALL/lib/ \;
+BASE_LIBS=$(find lib -type f -name "*.dylib" -exec basename {} \;)
+
+cd $BUILD/pkcs11-helper/install
+for LIB in $BASE_LIBS;
+do
+  LIBS=$(find . -name $LIB)
+  lipo $LIBS -output $INSTALL/lib/$LIB -create
+done
+
+for ARCH in $DEPLOYMENT_ARCH;
+do
   mkdir -p $BUILD/FFmpeg/$ARCH
   cd $BUILD/FFmpeg/$ARCH
   FFCFLAGS="-arch $ARCH -mmacosx-version-min=$DEPLOYMENT_TARGET"
