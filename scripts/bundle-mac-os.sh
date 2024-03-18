@@ -11,11 +11,12 @@ BINDIR=MacOS
 LIBDIR=Frameworks
 DATADIR=Resources
 
+BUILD_LIB_TYPE_SHARED=true
 DEPLOYMENT_ARCH='arm64 x86_64'
 DEPLOYMENT_TARGET=12
 
 usage () {
-  echo "${BASH_SOURCE[0]} [-a|--arch 'arch1 arch2 ...'] [-t|--target target][-h|--help]"
+  echo "${BASH_SOURCE[0]} [-a|--arch 'arch1 arch2 ...'] [-s|--static] [-t|--target target][-h|--help]"
   echo ""
   echo "default options:"
   echo "arch   [$DEPLOYMENT_ARCH]"
@@ -34,7 +35,11 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
-    -t|--target)
+    -s|--static)
+      BUILD_LIB_TYPE_SHARED=false
+      shift # past argument
+      ;;
+    -h|--help)
       usage
       exit 0
       ;;
@@ -108,7 +113,7 @@ CMAKE_ARGS="-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON \
 	-DCMAKE_VERBOSE_MAKEFILE=ON \
 	-DCMAKE_BUILD_TYPE=Release \
  	-DWITH_MANPAGES=OFF \
-	-DBUILD_SHARED_LIBS=ON \
+	-DBUILD_SHARED_LIBS=$BUILD_LIB_TYPE_SHARED \
 	-DCMAKE_OSX_ARCHITECTURES=$CMAKE_ARCHS \
 	-DCMAKE_OSX_DEPLOYMENT_TARGET=$DEPLOYMENT_TARGET \
 	-DCMAKE_INSTALL_PREFIX='$INSTALL' \
@@ -125,22 +130,37 @@ if [ ! -d $SRC ];
 then
 	mkdir -p $SRC
 	cd $SRC
-	git clone -b openssl-3.2.0 https://github.com/openssl/openssl.git
-	git clone --depth 1 -b v1.3 https://github.com/madler/zlib.git
+	git clone -b openssl-3.2.1 https://github.com/openssl/openssl.git
+	git clone --depth 1 -b v1.3.1 https://github.com/madler/zlib.git
 	git clone --depth 1 -b uriparser-0.9.7 https://github.com/uriparser/uriparser.git
-	git clone --depth 1 -b v1.7.16 https://github.com/DaveGamble/cJSON.git
-	git clone --depth 1 -b release-2.28.1 https://github.com/libsdl-org/SDL.git
-	git clone --depth 1 --shallow-submodules --recurse-submodules -b release-2.20.2 https://github.com/libsdl-org/SDL_ttf.git
-	git clone --depth 1 --shallow-submodules --recurse-submodules -b release-2.8.1 https://github.com/libsdl-org/SDL_image.git
-	git clone --depth 1 --shallow-submodules --recurse-submodules -b v1.0.26 https://github.com/libusb/libusb-cmake.git
-	git clone --depth 1 -b n6.0 https://github.com/FFmpeg/FFmpeg.git
-	git clone --depth 1 -b v2.4.0 https://github.com/cisco/openh264.git
-	git clone --depth 1 -b v1.4 https://gitlab.xiph.org/xiph/opus.git
+	git clone --depth 1 -b v1.7.17 https://github.com/DaveGamble/cJSON.git
+	git clone --depth 1 -b release-2.30.1 https://github.com/libsdl-org/SDL.git
+	git clone --depth 1 --shallow-submodules --recurse-submodules -b release-2.22.0 https://github.com/libsdl-org/SDL_ttf.git
+	git clone --depth 1 --shallow-submodules --recurse-submodules -b release-2.8.2 https://github.com/libsdl-org/SDL_image.git
+	git clone --depth 1 --shallow-submodules --recurse-submodules -b v1.0.27 https://github.com/libusb/libusb-cmake.git
+	git clone --depth 1 -b n6.1.1 https://github.com/FFmpeg/FFmpeg.git
+	git clone --depth 1 -b v2.4.1 https://github.com/cisco/openh264.git
+	git clone --depth 1 -b v1.5.1 https://gitlab.xiph.org/xiph/opus.git
 	git clone --depth 1 -b 2.11.1 https://github.com/knik0/faad2.git
 	git clone --depth 1 -b 1.18.0 https://gitlab.freedesktop.org/cairo/cairo.git
 	git clone --depth 1 -b 1_30 https://github.com/knik0/faac.git
-	cd faac
-	./bootstrap
+    (
+        cd faac
+        ./bootstrap
+    )
+    git clone --depth 1 -b pkcs11-helper-1.30.0 https://github.com/OpenSC/pkcs11-helper.git
+    (
+        cd pkcs11-helper
+        aclocal -I .
+        autoheader
+        if test "`uname -s`" = Darwin; then
+            glibtoolize --automake
+        else
+            libtoolize --automake
+        fi
+        automake --add-missing
+        autoconf
+    )
 fi
 
 if [ -d $INSTALL ];
@@ -165,11 +185,11 @@ cmake -GNinja -Buriparser -S$SRC/uriparser $CMAKE_ARGS -DURIPARSER_BUILD_DOCS=OF
 cmake --build uriparser
 cmake --install uriparser
 
-cmake -GNinja -BcJSON -S$SRC/cJSON $CMAKE_ARGS -DENABLE_CJSON_TEST=OFF -DBUILD_SHARED_AND_STATIC_LIBS=OFF
+cmake -GNinja -BcJSON -S$SRC/cJSON $CMAKE_ARGS -DENABLE_CJSON_TEST=OFF
 cmake --build cJSON
 cmake --install cJSON
 
-cmake -GNinja -Bopus -S$SRC/opus $CMAKE_ARGS -DOPUS_BUILD_SHARED_LIBRARY=ON
+cmake -GNinja -Bopus -S$SRC/opus $CMAKE_ARGS
 cmake --build opus
 cmake --install opus
 
@@ -191,30 +211,39 @@ cmake --build SDL_image
 cmake --install SDL_image
 
 cmake -GNinja -Blibusb-cmake -S$SRC/libusb-cmake $CMAKE_ARGS -DLIBUSB_BUILD_EXAMPLES=OFF -DLIBUSB_BUILD_TESTING=OFF \
-	-DLIBUSB_ENABLE_DEBUG_LOGGING=OFF -DLIBUSB_BUILD_SHARED_LIBS=ON
+	-DLIBUSB_ENABLE_DEBUG_LOGGING=OFF
 cmake --build libusb-cmake
 cmake --install libusb-cmake
 
+if [[ $BUILD_LIB_TYPE_SHARED ]];
+	LIB_CFLAGS="--enable-shared --disable-static"
+    LIB_MESON="-Ddefault_library=shared"
+    LIB_SSL_CFLAGS="no-shared"
+else
+	LIB_CFLAGS="--disable-shared --enable-static"
+    LIB_MESON="-Ddefault_library=static"
+    LIB_SSL_CFLAGS="shared"
+fi
 mkdir -p openssl
 cd openssl
 
-CFLAGS=$OSSL_FLAGS LDFLAGS=$OSSL_FLAGS $SRC/openssl/config --prefix=$INSTALL --libdir=lib no-asm no-tests no-docs no-apps zlib
+CFLAGS=$OSSL_FLAGS LDFLAGS=$OSSL_FLAGS $SRC/openssl/config --prefix=$INSTALL --libdir=lib no-asm no-tests no-docs no-apps zlib $LIB_SSL_CFLAGS
 CFLAGS=$OSSL_FLAGS LDFLAGS=$OSSL_FLAGS make -j build_sw
 CFLAGS=$OSSL_FLAGS LDFLAGS=$OSSL_FLAGS make -j install_sw
 
 cd $BUILD
 mkdir -p faac
 cd faac
+
 # undefine __SSE2__, symbol clashes with universal build
-CFLAGS="$OSSL_FLAGS -U__SSE2__" LDFLAGS=$OSSL_FLAGS $SRC/faac/configure --prefix=$INSTALL --libdir="$INSTALL/lib" \
-	--enable-shared --disable-static
+CFLAGS="$OSSL_FLAGS -U__SSE2__" LDFLAGS=$OSSL_FLAGS $SRC/faac/configure --prefix=$INSTALL --libdir="$INSTALL/lib $LIB_CFLAGS"
 CFLAGS="$OSSL_FLAGS -U__SSE2__" LDFLAGS=$OSSL_FLAGS make -j
 CFLAGS="$OSSL_FLAGS -U__SSE2__" LDFLAGS=$OSSL_FLAGS make -j install
 
 cd $BUILD
 
 meson setup --prefix="$INSTALL" -Doptimization=3 -Db_lto=true -Db_pie=true -Dc_args="$OSSL_FLAGS" -Dc_link_args="$OSSL_FLAGS" \
-	-Dcpp_args="$OSSL_FLAGS" -Dcpp_link_args="$OSSL_FLAGS" -Dpkgconfig.relocatable=true -Dtests=disabled \
+	-Dcpp_args="$OSSL_FLAGS" -Dcpp_link_args="$OSSL_FLAGS" -Dpkgconfig.relocatable=true -Dtests=disabled $LIB_MESON \
        	-Dlibdir=lib openh264 $SRC/openh264
 ninja -C openh264 install
 
@@ -225,8 +254,8 @@ do
 	FFCFLAGS="-arch $ARCH -mmacosx-version-min=$DEPLOYMENT_TARGET"
 	FINSTPATH=$BUILD/FFmpeg/install/$ARCH
 	CFLAGS=$FFCFLAGS LDFLAGS=$FFCFLAGS $SRC/FFmpeg/configure --prefix=$FINSTPATH --disable-all \
-		--enable-shared --disable-static --enable-swscale --disable-asm --disable-libxcb \
-		--disable-securetransport --disable-xlib --enable-cross-compile
+		--enable-swscale --disable-asm --disable-libxcb \
+		--disable-securetransport --disable-xlib --enable-cross-compile $LIB_CFLAGS
 	CFLAGS=$FFCFLAGS LDFLAGS=$FFCFLAGS make -j
 	CFLAGS=$FFCFLAGS LDFLAGS=$FFCFLAGS make -j install
 	fix_rpath "$FINSTPATH/lib"
