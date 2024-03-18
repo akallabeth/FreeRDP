@@ -17,16 +17,30 @@ if (WITH_WEBVIEW)
   )
 
   if (WITH_WEBVIEW_QT)
-    find_package(Qt5 COMPONENTS WebEngineWidgets REQUIRED)
+      option(WITH_WEBVIEW_QT6 "Build with Qt6 instead of Qt5" OFF)
+      if (WITH_WEBVIEW_QT6)
+        find_package(Qt6 COMPONENTS WebEngineWidgets REQUIRED)
 
-    list(APPEND SRCS
-      qt/webview_impl.cpp
-    )
+        list(APPEND SRCS
+          qt/webview_impl.cpp
+        )
 
-    list(APPEND LIBS
-      Qt5::WebEngineWidgets
-    )
-    set(WEBVIEW_BACKEND "Qt5::WebEngineWidgets")
+        list(APPEND LIBS
+          Qt6::WebEngineWidgets
+        )
+        set(WEBVIEW_BACKEND "Qt6::WebEngineWidgets")
+    else()
+        find_package(Qt6 COMPONENTS WebEngineWidgets REQUIRED)
+
+        list(APPEND SRCS
+          qt/webview_impl.cpp
+        )
+
+        list(APPEND LIBS
+          Qt5::WebEngineWidgets
+        )
+        set(WEBVIEW_BACKEND "Qt5::WebEngineWidgets")
+    endif()
   else()
     list(APPEND SRCS
       wrapper/webview.h
