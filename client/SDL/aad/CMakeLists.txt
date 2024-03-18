@@ -26,6 +26,7 @@ if (WITH_WEBVIEW)
     list(APPEND LIBS
       Qt5::WebEngineWidgets
     )
+    set(WEBVIEW_BACKEND "Qt5::WebEngineWidgets")
   else()
     list(APPEND SRCS
       wrapper/webview.h
@@ -37,14 +38,22 @@ if (WITH_WEBVIEW)
       list(APPEND LIBS
         unofficial::webview2::webview2
       )
+      set(WEBVIEW_BACKEND "Win32::WebView2")
     elseif(APPLE)
       find_library(WEBKIT Webkit REQUIRED)
       list(APPEND LIBS
         ${WEBKIT}
       )
+      set(WEBVIEW_BACKEND "Apple::WebKit")
     else()
       find_package(PkgConfig REQUIRED)
-      pkg_check_modules(WEBVIEW_GTK webkit2gtk-4.0 REQUIRED)
+      pkg_check_modules(WEBVIEW_GTK webkit2gtk-4.1)
+      set(WEBVIEW_BACKEND "Gtk::WebKit2Gtk-4.1")
+      if (NOT WEBVIEW_GTK_FOUND)
+          pkg_check_modules(WEBVIEW_GTK webkit2gtk-4.0 REQUIRED)
+          set(WEBVIEW_BACKEND "Gtk::WebKit2Gtk-4.0")
+      endif()
+
       include_directories(${WEBVIEW_GTK_INCLUDE_DIRS})
       list(APPEND LIBS
         ${WEBVIEW_GTK_LIBRARIES}
@@ -55,7 +64,10 @@ else()
   set(SRCS
     dummy.cpp
   )
+  set(WEBVIEW_BACKEND "dummy::dummy")
 endif()
+
+message("[WEBVIEW] Using backend ${WEBVIEW_BACKEND}")
 
 configure_file(sdl_config.hpp.in sdl_config.hpp @ONLY)
 
