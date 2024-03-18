@@ -55,95 +55,95 @@ while [[ $# -gt 0 ]]; do
 done
 
 fix_rpath() {
-	SEARCH_PATH=$1
-	FIX_PATH=$1
-	EXT=".dylib"
-	if [ "$#" -gt 1 ];
-	then
-		FIX_PATH=$2
-	fi
-	if [ "$#" -gt 2 ];
-	then
-		EXT=$3
-	fi
+  SEARCH_PATH=$1
+  FIX_PATH=$1
+  EXT=".dylib"
+  if [ "$#" -gt 1 ];
+  then
+    FIX_PATH=$2
+  fi
+  if [ "$#" -gt 2 ];
+  then
+    EXT=$3
+  fi
 
   # some build systems do not handle @rpath on mac os correctly.
   # do check that and fix it.
   DYLIB_ABS_NAMES=$(find $SEARCH_PATH -type f -name "*$EXT")
   for DYLIB_ABS in $DYLIB_ABS_NAMES;
   do
-  	DYLIB_NAME=$(basename $DYLIB_ABS)
-  	install_name_tool -id @rpath/$DYLIB_NAME $DYLIB_ABS
+    DYLIB_NAME=$(basename $DYLIB_ABS)
+    install_name_tool -id @rpath/$DYLIB_NAME $DYLIB_ABS
 
-  	for DYLIB_DEP in $(otool -L $DYLIB_ABS | grep "$FIX_PATH" | cut -d' ' -f1);
-  	do
-  		if [[ $DYLIB_DEP == $DYLIB_ABS ]];
-  		then
-  			continue
-  		elif [[ $DYLIB_DEP == $FIX_PATH/* ]];
-  		then
-  			DEP_BASE=$(basename $DYLIB_DEP)
-  			install_name_tool -change $DYLIB_DEP @rpath/$DEP_BASE $DYLIB_ABS
-  		fi
-  	done
+    for DYLIB_DEP in $(otool -L $DYLIB_ABS | grep "$FIX_PATH" | cut -d' ' -f1);
+    do
+      if [[ $DYLIB_DEP == $DYLIB_ABS ]];
+      then
+        continue
+      elif [[ $DYLIB_DEP == $FIX_PATH/* ]];
+      then
+        DEP_BASE=$(basename $DYLIB_DEP)
+        install_name_tool -change $DYLIB_DEP @rpath/$DEP_BASE $DYLIB_ABS
+      fi
+    done
   done
 }
 
 replace_rpath() {
-	FILE=$1
-	for PTH in $(otool -l $FILE | grep -A2 LC_RPATH  | grep path | xargs -J ' ' | cut -d ' ' -f2);
-	do
-		install_name_tool -delete_rpath $PTH $FILE
-	done
-	install_name_tool -add_rpath @loader_path/../$LIBDIR $FILE
+  FILE=$1
+  for PTH in $(otool -l $FILE | grep -A2 LC_RPATH  | grep path | xargs -J ' ' | cut -d ' ' -f2);
+  do
+    install_name_tool -delete_rpath $PTH $FILE
+  done
+  install_name_tool -add_rpath @loader_path/../$LIBDIR $FILE
 }
 
 CMAKE_ARCHS=
 OSSL_FLAGS="-mmacosx-version-min=$DEPLOYMENT_TARGET -I$INSTALL/include -L$INSTALL/lib"
 for ARCH in $DEPLOYMENT_ARCH;
 do
-	OSSL_FLAGS="$OSSL_FLAGS -arch $ARCH"
-	CMAKE_ARCHS="$ARCH;$CMAKE_ARCHS"
+  OSSL_FLAGS="$OSSL_FLAGS -arch $ARCH"
+  CMAKE_ARCHS="$ARCH;$CMAKE_ARCHS"
 done
 
 echo "build arch   [$DEPLOYMENT_ARCH]"
 echo "build target [$DEPLOYMENT_TARGET]"
 
 CMAKE_ARGS="-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON \
-	-DCMAKE_VERBOSE_MAKEFILE=ON \
-	-DCMAKE_BUILD_TYPE=Release \
- 	-DWITH_MANPAGES=OFF \
-	-DBUILD_SHARED_LIBS=$BUILD_LIB_TYPE_SHARED \
-	-DCMAKE_OSX_ARCHITECTURES=$CMAKE_ARCHS \
-	-DCMAKE_OSX_DEPLOYMENT_TARGET=$DEPLOYMENT_TARGET \
-	-DCMAKE_INSTALL_PREFIX='$INSTALL' \
-	-DCMAKE_INSTALL_LIBDIR='lib' \
-	-DCMAKE_INSTALL_BINDIR='bin' \
-	-DCMAKE_INSTALL_DATADIR='$DATADIR' \
-	-DINSTALL_LIB_DIR='$INSTALL/lib' \
-	-DINSTALL_BIN_DIR='$INSTALL/bin' \
-	-DCMAKE_PREFIX_PATH='$INSTALL;$INSTALL/lib;$INSTALL/lib/cmake' \
-	-DCMAKE_IGNORE_PATH='/opt/local;/usr/local;/opt/homebrew;/Library;~/Library'
-	"
+  -DCMAKE_VERBOSE_MAKEFILE=ON \
+  -DCMAKE_BUILD_TYPE=Release \
+   -DWITH_MANPAGES=OFF \
+  -DBUILD_SHARED_LIBS=$BUILD_LIB_TYPE_SHARED \
+  -DCMAKE_OSX_ARCHITECTURES=$CMAKE_ARCHS \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET=$DEPLOYMENT_TARGET \
+  -DCMAKE_INSTALL_PREFIX='$INSTALL' \
+  -DCMAKE_INSTALL_LIBDIR='lib' \
+  -DCMAKE_INSTALL_BINDIR='bin' \
+  -DCMAKE_INSTALL_DATADIR='$DATADIR' \
+  -DINSTALL_LIB_DIR='$INSTALL/lib' \
+  -DINSTALL_BIN_DIR='$INSTALL/bin' \
+  -DCMAKE_PREFIX_PATH='$INSTALL;$INSTALL/lib;$INSTALL/lib/cmake' \
+  -DCMAKE_IGNORE_PATH='/opt/local;/usr/local;/opt/homebrew;/Library;~/Library'
+  "
 
 if [ ! -d $SRC ];
 then
-	mkdir -p $SRC
-	cd $SRC
-	git clone -b openssl-3.2.1 https://github.com/openssl/openssl.git
-	git clone --depth 1 -b v1.3.1 https://github.com/madler/zlib.git
-	git clone --depth 1 -b uriparser-0.9.7 https://github.com/uriparser/uriparser.git
-	git clone --depth 1 -b v1.7.17 https://github.com/DaveGamble/cJSON.git
-	git clone --depth 1 -b release-2.30.1 https://github.com/libsdl-org/SDL.git
-	git clone --depth 1 --shallow-submodules --recurse-submodules -b release-2.22.0 https://github.com/libsdl-org/SDL_ttf.git
-	git clone --depth 1 --shallow-submodules --recurse-submodules -b release-2.8.2 https://github.com/libsdl-org/SDL_image.git
-	git clone --depth 1 --shallow-submodules --recurse-submodules -b v1.0.27 https://github.com/libusb/libusb-cmake.git
-	git clone --depth 1 -b n6.1.1 https://github.com/FFmpeg/FFmpeg.git
-	git clone --depth 1 -b v2.4.1 https://github.com/cisco/openh264.git
-	git clone --depth 1 -b v1.5.1 https://gitlab.xiph.org/xiph/opus.git
-	git clone --depth 1 -b 2.11.1 https://github.com/knik0/faad2.git
-	git clone --depth 1 -b 1.18.0 https://gitlab.freedesktop.org/cairo/cairo.git
-	git clone --depth 1 -b 1_30 https://github.com/knik0/faac.git
+  mkdir -p $SRC
+  cd $SRC
+  git clone -b openssl-3.2.1 https://github.com/openssl/openssl.git
+  git clone --depth 1 -b v1.3.1 https://github.com/madler/zlib.git
+  git clone --depth 1 -b uriparser-0.9.7 https://github.com/uriparser/uriparser.git
+  git clone --depth 1 -b v1.7.17 https://github.com/DaveGamble/cJSON.git
+  git clone --depth 1 -b release-2.30.1 https://github.com/libsdl-org/SDL.git
+  git clone --depth 1 --shallow-submodules --recurse-submodules -b release-2.22.0 https://github.com/libsdl-org/SDL_ttf.git
+  git clone --depth 1 --shallow-submodules --recurse-submodules -b release-2.8.2 https://github.com/libsdl-org/SDL_image.git
+  git clone --depth 1 --shallow-submodules --recurse-submodules -b v1.0.27 https://github.com/libusb/libusb-cmake.git
+  git clone --depth 1 -b n6.1.1 https://github.com/FFmpeg/FFmpeg.git
+  git clone --depth 1 -b v2.4.1 https://github.com/cisco/openh264.git
+  git clone --depth 1 -b v1.5.1 https://gitlab.xiph.org/xiph/opus.git
+  git clone --depth 1 -b 2.11.1 https://github.com/knik0/faad2.git
+  git clone --depth 1 -b 1.18.0 https://gitlab.freedesktop.org/cairo/cairo.git
+  git clone --depth 1 -b 1_30 https://github.com/knik0/faac.git
     (
         cd faac
         ./bootstrap
@@ -165,12 +165,12 @@ fi
 
 if [ -d $INSTALL ];
 then
-	rm -rf $INSTALL
+  rm -rf $INSTALL
 fi
 
 if [ -d $BUILD ];
 then
-	rm -rf $BUILD
+  rm -rf $BUILD
 fi
 
 mkdir -p $BUILD
@@ -181,7 +181,7 @@ cmake --build zlib
 cmake --install zlib
 
 cmake -GNinja -Buriparser -S$SRC/uriparser $CMAKE_ARGS -DURIPARSER_BUILD_DOCS=OFF -DURIPARSER_BUILD_TESTS=OFF \
-	-DURIPARSER_BUILD_TOOLS=OFF
+  -DURIPARSER_BUILD_TOOLS=OFF
 cmake --build uriparser
 cmake --install uriparser
 
@@ -211,16 +211,17 @@ cmake --build SDL_image
 cmake --install SDL_image
 
 cmake -GNinja -Blibusb-cmake -S$SRC/libusb-cmake $CMAKE_ARGS -DLIBUSB_BUILD_EXAMPLES=OFF -DLIBUSB_BUILD_TESTING=OFF \
-	-DLIBUSB_ENABLE_DEBUG_LOGGING=OFF
+  -DLIBUSB_ENABLE_DEBUG_LOGGING=OFF
 cmake --build libusb-cmake
 cmake --install libusb-cmake
 
 if [[ $BUILD_LIB_TYPE_SHARED ]];
-	LIB_CFLAGS="--enable-shared --disable-static"
+then
+  LIB_CFLAGS="--enable-shared --disable-static"
     LIB_MESON="-Ddefault_library=shared"
     LIB_SSL_CFLAGS="no-shared"
 else
-	LIB_CFLAGS="--disable-shared --enable-static"
+  LIB_CFLAGS="--disable-shared --enable-static"
     LIB_MESON="-Ddefault_library=static"
     LIB_SSL_CFLAGS="shared"
 fi
@@ -243,22 +244,22 @@ CFLAGS="$OSSL_FLAGS -U__SSE2__" LDFLAGS=$OSSL_FLAGS make -j install
 cd $BUILD
 
 meson setup --prefix="$INSTALL" -Doptimization=3 -Db_lto=true -Db_pie=true -Dc_args="$OSSL_FLAGS" -Dc_link_args="$OSSL_FLAGS" \
-	-Dcpp_args="$OSSL_FLAGS" -Dcpp_link_args="$OSSL_FLAGS" -Dpkgconfig.relocatable=true -Dtests=disabled $LIB_MESON \
-       	-Dlibdir=lib openh264 $SRC/openh264
+  -Dcpp_args="$OSSL_FLAGS" -Dcpp_link_args="$OSSL_FLAGS" -Dpkgconfig.relocatable=true -Dtests=disabled $LIB_MESON \
+         -Dlibdir=lib openh264 $SRC/openh264
 ninja -C openh264 install
 
 for ARCH in $DEPLOYMENT_ARCH;
 do
-	mkdir -p $BUILD/FFmpeg/$ARCH
-	cd $BUILD/FFmpeg/$ARCH
-	FFCFLAGS="-arch $ARCH -mmacosx-version-min=$DEPLOYMENT_TARGET"
-	FINSTPATH=$BUILD/FFmpeg/install/$ARCH
-	CFLAGS=$FFCFLAGS LDFLAGS=$FFCFLAGS $SRC/FFmpeg/configure --prefix=$FINSTPATH --disable-all \
-		--enable-swscale --disable-asm --disable-libxcb \
-		--disable-securetransport --disable-xlib --enable-cross-compile $LIB_CFLAGS
-	CFLAGS=$FFCFLAGS LDFLAGS=$FFCFLAGS make -j
-	CFLAGS=$FFCFLAGS LDFLAGS=$FFCFLAGS make -j install
-	fix_rpath "$FINSTPATH/lib"
+  mkdir -p $BUILD/FFmpeg/$ARCH
+  cd $BUILD/FFmpeg/$ARCH
+  FFCFLAGS="-arch $ARCH -mmacosx-version-min=$DEPLOYMENT_TARGET"
+  FINSTPATH=$BUILD/FFmpeg/install/$ARCH
+  CFLAGS=$FFCFLAGS LDFLAGS=$FFCFLAGS $SRC/FFmpeg/configure --prefix=$FINSTPATH --disable-all \
+    --enable-swscale --disable-asm --disable-libxcb \
+    --disable-securetransport --disable-xlib --enable-cross-compile $LIB_CFLAGS
+  CFLAGS=$FFCFLAGS LDFLAGS=$FFCFLAGS make -j
+  CFLAGS=$FFCFLAGS LDFLAGS=$FFCFLAGS make -j install
+  fix_rpath "$FINSTPATH/lib"
 done
 
 BASE_ARCH="${DEPLOYMENT_ARCH%% *}"
@@ -271,25 +272,25 @@ BASE_LIBS=$(find lib -type f -name "*.dylib" -exec basename {} \;)
 cd $BUILD/FFmpeg/install
 for LIB in $BASE_LIBS;
 do
-	LIBS=$(find . -name $LIB)
-	lipo $LIBS -output $INSTALL/lib/$LIB -create
+  LIBS=$(find . -name $LIB)
+  lipo $LIBS -output $INSTALL/lib/$LIB -create
 done
 
 cd $BUILD
 cmake -GNinja -Bfreerdp -S"$SCRIPT_PATH/.." \
-	$CMAKE_ARGS \
-	-DWITH_PLATFORM_SERVER=OFF \
-	-DWITH_NEON=OFF \
-	-DWITH_SSE=OFF \
-	-DWITH_FFMPEG=OFF \
-	-DWITH_SWSCALE=ON \
-	-DWITH_OPUS=ON \
-	-DWITH_WEBVIEW=OFF \
-	-DWITH_FAAD2=ON \
-	-DWITH_FAAC=ON \
-	-DWITH_INTERNAL_RC4=ON \
-	-DWITH_INTERNAL_MD4=ON \
-	-DWITH_INTERNAL_MD5=ON
+  $CMAKE_ARGS \
+  -DWITH_PLATFORM_SERVER=OFF \
+  -DWITH_NEON=OFF \
+  -DWITH_SSE=OFF \
+  -DWITH_FFMPEG=OFF \
+  -DWITH_SWSCALE=ON \
+  -DWITH_OPUS=ON \
+  -DWITH_WEBVIEW=OFF \
+  -DWITH_FAAD2=ON \
+  -DWITH_FAAC=ON \
+  -DWITH_INTERNAL_RC4=ON \
+  -DWITH_INTERNAL_MD4=ON \
+  -DWITH_INTERNAL_MD5=ON
 cmake --build freerdp
 cmake --install freerdp
 
@@ -309,12 +310,12 @@ mv bin $BINDIR
 # update RPATH
 for LIB in $(find $LIBDIR -type f -name "*.dylib");
 do
-	replace_rpath $LIB
+  replace_rpath $LIB
 done
 
 for BIN in $(find $BINDIR -type f);
 do
-	replace_rpath $BIN
+  replace_rpath $BIN
 done
 
 # clean up unused data
