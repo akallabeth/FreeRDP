@@ -919,6 +919,7 @@ BOOL freerdp_input_send_synchronize_event(rdpInput* input, UINT32 flags)
 	if (!input || !input->context)
 		return FALSE;
 
+	WLog_INFO(TAG, "flags=0x%08" PRIx32, flags);
 	if (freerdp_settings_get_bool(input->context->settings, FreeRDP_SuspendInput))
 		return TRUE;
 
@@ -930,6 +931,7 @@ BOOL freerdp_input_send_keyboard_event(rdpInput* input, UINT16 flags, UINT8 code
 	if (!input || !input->context)
 		return FALSE;
 
+	WLog_INFO(TAG, "flags=0x%08" PRIx16 ", code=0x%02" PRIx8, flags, code);
 	if (freerdp_settings_get_bool(input->context->settings, FreeRDP_SuspendInput))
 		return TRUE;
 
@@ -947,6 +949,7 @@ BOOL freerdp_input_send_keyboard_event_ex(rdpInput* input, BOOL down, BOOL repea
 	else if (!down)
 		flags |= KBD_FLAGS_RELEASE;
 
+	WLog_INFO(TAG, "flags=0x%08" PRIx16 ", code=0x%08" PRIx32, flags, rdp_scancode);
 	return freerdp_input_send_keyboard_event(input, flags, RDP_SCANCODE_CODE(rdp_scancode));
 }
 
@@ -960,6 +963,7 @@ BOOL freerdp_input_send_unicode_keyboard_event(rdpInput* input, UINT16 flags, UI
 
 	input_update_last_event(input, FALSE, 0, 0);
 
+	WLog_INFO(TAG, "flags=0x%08" PRIx16 ", code=0x%04" PRIx16, flags, code);
 	return IFCALLRESULT(TRUE, input->UnicodeKeyboardEvent, input, flags, code);
 }
 
@@ -975,6 +979,7 @@ BOOL freerdp_input_send_mouse_event(rdpInput* input, UINT16 flags, UINT16 x, UIN
 	    input, flags & (PTR_FLAGS_MOVE | PTR_FLAGS_BUTTON1 | PTR_FLAGS_BUTTON2 | PTR_FLAGS_BUTTON3),
 	    x, y);
 
+	WLog_INFO(TAG, "flags=0x%08" PRIx16 ", x=%" PRIu16 ", y=%" PRIu16, flags, x, y);
 	return IFCALLRESULT(TRUE, input->MouseEvent, input, flags, x, y);
 }
 
@@ -986,6 +991,7 @@ BOOL freerdp_input_send_rel_mouse_event(rdpInput* input, UINT16 flags, INT16 xDe
 	if (freerdp_settings_get_bool(input->context->settings, FreeRDP_SuspendInput))
 		return TRUE;
 
+	WLog_INFO(TAG, "flags=0x%08" PRIx16 ", dx=%" PRId16 ", dy=%" PRId16, flags, xDelta, yDelta);
 	return IFCALLRESULT(TRUE, input->RelMouseEvent, input, flags, xDelta, yDelta);
 }
 
@@ -1007,6 +1013,7 @@ BOOL freerdp_input_send_extended_mouse_event(rdpInput* input, UINT16 flags, UINT
 
 	input_update_last_event(input, TRUE, x, y);
 
+	WLog_INFO(TAG, "flags=0x%08" PRIx16 ", x=%" PRIu16 ", y=%" PRIu16, flags, x, y);
 	return IFCALLRESULT(TRUE, input->ExtendedMouseEvent, input, flags, x, y);
 }
 
@@ -1018,6 +1025,7 @@ BOOL freerdp_input_send_focus_in_event(rdpInput* input, UINT16 toggleStates)
 	if (freerdp_settings_get_bool(input->context->settings, FreeRDP_SuspendInput))
 		return TRUE;
 
+	WLog_INFO(TAG, "states=0x%08" PRIx16, toggleStates);
 	return IFCALLRESULT(TRUE, input->FocusInEvent, input, toggleStates);
 }
 
@@ -1026,6 +1034,7 @@ BOOL freerdp_input_send_keyboard_pause_event(rdpInput* input)
 	if (!input || !input->context)
 		return FALSE;
 
+	WLog_INFO(TAG, "xxx");
 	if (freerdp_settings_get_bool(input->context->settings, FreeRDP_SuspendInput))
 		return TRUE;
 
