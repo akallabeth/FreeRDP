@@ -27,29 +27,13 @@ if (WITH_WEBVIEW)
       Qt5::WebEngineWidgets
     )
   else()
+    include(ExternalProjectWebview)
     list(APPEND SRCS
-      wrapper/webview.h
       wrapper/webview_impl.cpp
     )
-
-    if (WIN32)
-      find_package(unofficial-webview2 CONFIG REQUIRED)
-      list(APPEND LIBS
-        unofficial::webview2::webview2
-      )
-    elseif(APPLE)
-      find_library(WEBKIT Webkit REQUIRED)
-      list(APPEND LIBS
-        ${WEBKIT}
-      )
-    else()
-      find_package(PkgConfig REQUIRED)
-      pkg_check_modules(WEBVIEW_GTK webkit2gtk-4.0 REQUIRED)
-      include_directories(${WEBVIEW_GTK_INCLUDE_DIRS})
-      list(APPEND LIBS
-        ${WEBVIEW_GTK_LIBRARIES}
-      )
-    endif()
+    list(APPEND LIBS
+      webview
+    )
   endif()
 else()
   set(SRCS

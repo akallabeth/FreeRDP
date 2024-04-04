@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-#include "webview.h"
+#include <webview.h>
 
 #include <assert.h>
 #include <string>
@@ -74,8 +74,8 @@ bool webview_impl_run(const std::string& title, const std::string& url, std::str
 	w.set_size(640, 480, WEBVIEW_HINT_NONE);
 
 	std::string scheme;
-	w.add_scheme_handler("ms-appx-web", fkt, &scheme);
-	w.add_navigate_listener(fkt, &code);
+	//w.add_scheme_handler("ms-appx-web", fkt, &scheme);
+	//w.add_navigate_listener(fkt, &code);
 	w.navigate(url);
 	w.run();
 	return !code.empty();
