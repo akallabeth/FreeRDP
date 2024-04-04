@@ -24,6 +24,11 @@ if (NOT webview_POPULATED)
             SHA256=82bb13e2365e1e5ee7d0975618dcf90b279427de8a7ecb338b9b78bfc457d51b
             SHOW_PROGRESS
         )
+        add_custom_target(webview-lib
+           COMMAND ${CMAKE_CURRENT_BINARY_DIR}/nuget.exe install Microsoft.Web.Webview2 -Verbosity quiet -Version "1.0.1150.38" -OutputDirectory "${CMAKE_CURRENT_BINARY_DIR}/libs"
+           DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/nuget.exe
+        )
+        add_dependencies(webview webview-lib)
 
         target_compile_definitions(webview INTERFACE WEBVIEW_EDGE)
         # See: https://github.com/webview/webview/blob/master/script/build.bat
