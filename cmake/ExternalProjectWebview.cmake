@@ -5,11 +5,6 @@ FetchContent_Declare(
         GIT_REPOSITORY https://github.com/webview/webview.git
         GIT_TAG adbb85d0f54537b8034ece0bab67c7d1438e3cda
 )
-FetchContent_Declare(
-    nuget
-    URL https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
-    URL_HASH SHA256=82bb13e2365e1e5ee7d0975618dcf90b279427de8a7ecb338b9b78bfc457d51b
-)
 
 FetchContent_GetProperties(webview)
 if (NOT webview_POPULATED)
@@ -23,7 +18,13 @@ if (NOT webview_POPULATED)
     # Set compile options
     # See: https://github.com/webview/webview/blob/master/script/build.sh
     if (WIN32)
-        FetchContent_MakeAvailable(nuget)
+        file(DOWNLOAD
+            https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+            ${CMAKE_CURRENT_BINARY_DIR}/nuget.exe
+            SHA256=82bb13e2365e1e5ee7d0975618dcf90b279427de8a7ecb338b9b78bfc457d51b
+            SHOW_PROGRESS
+        )
+
         target_compile_definitions(webview INTERFACE WEBVIEW_EDGE)
         # See: https://github.com/webview/webview/blob/master/script/build.bat
         # TODO: fix path or directly fetch lib.
