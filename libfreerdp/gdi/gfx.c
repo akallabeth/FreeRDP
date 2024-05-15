@@ -32,6 +32,8 @@
 
 #define TAG FREERDP_TAG("gdi")
 
+#define FULLSCREEN_UPDATE
+
 static BOOL is_rect_valid(const RECTANGLE_16* rect, size_t width, size_t height)
 {
 	if (!rect)
@@ -435,9 +437,17 @@ static UINT gdi_SurfaceCommand_RemoteFX(rdpGdi* gdi, RdpgfxClientContext* contex
 	if (status != CHANNEL_RC_OK)
 		goto fail;
 
+#if defined(FULLSCREEN_UPDATE)
 	for (UINT32 x = 0; x < nrRects; x++)
 		region16_union_rect(&surface->invalidRegion, &surface->invalidRegion, &rects[x]);
-
+#else
+	{
+		RECTANGLE_16 rect = { 0 };
+		rect.right = surface->width;
+		rect.bottom = surface->height;
+		region16_union_rect(&surface->invalidRegion, &surface->invalidRegion, &rect);
+	}
+#endif
 	if (!gdi->inGfxFrame)
 	{
 		status = CHANNEL_RC_NOT_INITIALIZED;
@@ -625,6 +635,7 @@ static UINT gdi_SurfaceCommand_AVC420(rdpGdi* gdi, RdpgfxClientContext* context,
 		return CHANNEL_RC_OK;
 	}
 
+#if defined(FULLSCREEN_UPDATE)
 	for (UINT32 i = 0; i < meta->numRegionRects; i++)
 	{
 		region16_union_rect(&(surface->invalidRegion), &(surface->invalidRegion),
@@ -636,7 +647,20 @@ static UINT gdi_SurfaceCommand_AVC420(rdpGdi* gdi, RdpgfxClientContext* context,
 
 	if (status != CHANNEL_RC_OK)
 		goto fail;
+#else
+	{
+		RECTANGLE_16 rect = { 0 };
+		rect.right = surface->width;
+		rect.bottom = surface->height;
+		region16_union_rect(&surface->invalidRegion, &surface->invalidRegion, &rect);
 
+		status = IFCALLRESULT(CHANNEL_RC_OK, context->UpdateSurfaceArea, context,
+		                      surface->surfaceId, 1, &rect);
+
+		if (status != CHANNEL_RC_OK)
+			goto fail;
+	}
+#endif
 	if (!gdi->inGfxFrame)
 	{
 		status = CHANNEL_RC_NOT_INITIALIZED;
@@ -718,6 +742,7 @@ static UINT gdi_SurfaceCommand_AVC444(rdpGdi* gdi, RdpgfxClientContext* context,
 		return CHANNEL_RC_OK;
 	}
 
+#if defined(FULLSCREEN_UPDATE)
 	for (UINT32 i = 0; i < meta1->numRegionRects; i++)
 	{
 		region16_union_rect(&(surface->invalidRegion), &(surface->invalidRegion),
@@ -741,7 +766,20 @@ static UINT gdi_SurfaceCommand_AVC444(rdpGdi* gdi, RdpgfxClientContext* context,
 
 	if (status != CHANNEL_RC_OK)
 		goto fail;
+#else
+	{
+		RECTANGLE_16 rect = { 0 };
+		rect.right = surface->width;
+		rect.bottom = surface->height;
+		region16_union_rect(&surface->invalidRegion, &surface->invalidRegion, &rect);
 
+		status = IFCALLRESULT(CHANNEL_RC_OK, context->UpdateSurfaceArea, context,
+		                      surface->surfaceId, 1, &rect);
+
+		if (status != CHANNEL_RC_OK)
+			goto fail;
+	}
+#endif
 	if (!gdi->inGfxFrame)
 	{
 		status = CHANNEL_RC_NOT_INITIALIZED;
@@ -994,9 +1032,17 @@ static UINT gdi_SurfaceCommand_Progressive(rdpGdi* gdi, RdpgfxClientContext* con
 	if (status != CHANNEL_RC_OK)
 		goto fail;
 
+#if defined(FULLSCREEN_UPDATE)
 	for (UINT32 x = 0; x < nrRects; x++)
 		region16_union_rect(&surface->invalidRegion, &surface->invalidRegion, &rects[x]);
-
+#else
+	{
+		RECTANGLE_16 rect = { 0 };
+		rect.right = surface->width;
+		rect.bottom = surface->height;
+		region16_union_rect(&surface->invalidRegion, &surface->invalidRegion, &rect);
+	}
+#endif
 	region16_uninit(&invalidRegion);
 
 	if (!gdi->inGfxFrame)
