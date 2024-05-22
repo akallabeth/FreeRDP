@@ -188,9 +188,9 @@ void region16_clear(REGION16* region)
 	ZeroMemory(&region->extents, sizeof(region->extents));
 }
 
-static INLINE REGION16_DATA* allocateRegion(long nbItems)
+static INLINE REGION16_DATA* allocateRegion(size_t nbItems)
 {
-	long allocSize = sizeof(REGION16_DATA) + (nbItems * sizeof(RECTANGLE_16));
+	size_t allocSize = sizeof(REGION16_DATA) + (nbItems * sizeof(RECTANGLE_16));
 	REGION16_DATA* ret = (REGION16_DATA*)malloc(allocSize);
 
 	if (!ret)

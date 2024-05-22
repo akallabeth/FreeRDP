@@ -879,22 +879,41 @@ BOOL freerdp_image_copy(BYTE* pDstData, DWORD DstFormat, UINT32 nDstStep, UINT32
 	if (nSrcStep == 0)
 		nSrcStep = nWidth * FreeRDPGetBytesPerPixel(SrcFormat);
 
-	const size_t dstoff = nXDst * FreeRDPGetBytesPerPixel(DstFormat) + nYDst * nDstStep;
-	const size_t srcoff = nXSrc * FreeRDPGetBytesPerPixel(SrcFormat) + nYSrc * nSrcStep;
-	cairo_format_t format = CAIRO_FORMAT_ARGB32;
-	cairo_surface_t* src =
-	    cairo_image_surface_create_for_data(&pDstData[dstoff], format, nWidth, nHeight, nSrcStep);
-	cairo_surface_t* dst =
-	    cairo_image_surface_create_for_data(&pSrcData[srcoff], format, nWidth, nHeight, nDstStep);
+	cairo_format_t sformat =
+	    FreeRDPColorHasAlpha(SrcFormat) ? CAIRO_FORMAT_ARGB32 : CAIRO_FORMAT_RGB24;
+	cairo_format_t dformat =
+	    FreeRDPColorHasAlpha(DstFormat) ? CAIRO_FORMAT_ARGB32 : CAIRO_FORMAT_RGB24;
+	cairo_surface_t* src = cairo_image_surface_create_for_data(pSrcData, sformat, nWidth + nXSrc,
+	                                                           nHeight + nYSrc, nSrcStep);
+	cairo_surface_t* dst = cairo_image_surface_create_for_data(pDstData, dformat, nWidth + nXDst,
+	                                                           nHeight + nYDst, nDstStep);
 
 	cairo_t* cr = cairo_create(dst);
-	cairo_set_source_surface(cr, src, 0, 0);
-	// cairo_rectangle(cr, 0, 0, nWidth, nHeight);
-	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
-	cairo_paint(cr);
+	cairo_rectangle(cr, nXDst, nYDst, nWidth, nHeight);
+
+	cairo_set_source_surface(cr, src, nXDst - nXSrc, nYDst - nYSrc);
+
+#if 1
+	if (flags & FREERDP_KEEP_DST_ALPHA)
+		cairo_set_operator(cr, CAIRO_OPERATOR_DEST);
+	else
+		cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
+#endif
+
+	if (flags & (FREERDP_FLIP_VERTICAL | FREERDP_FLIP_HORIZONTAL))
+	{
+		cairo_matrix_t x_reflection_matrix = { 0 };
+		cairo_matrix_init_identity(&x_reflection_matrix);
+		if (flags & FREERDP_FLIP_VERTICAL)
+			x_reflection_matrix.yy = -1.0;
+		if (flags & FREERDP_FLIP_HORIZONTAL)
+			x_reflection_matrix.xx = -1.0;
+		cairo_translate(cr, 0, nHeight);
+	}
+
+	cairo_fill(cr);
 
 	cairo_destroy(cr);
-	cairo_surface_finish(dst);
 	cairo_surface_destroy(src);
 	cairo_surface_destroy(dst);
 	return TRUE;
