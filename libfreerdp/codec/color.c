@@ -555,6 +555,7 @@ BOOL freerdp_image_copy_from_pointer_data(BYTE* WINPR_RESTRICT pDstData, UINT32 
 	}
 }
 
+#if !defined(WITH_CAIRO)
 static INLINE BOOL overlapping(const BYTE* pDstData, UINT32 nXDst, UINT32 nYDst, UINT32 nDstStep,
                                UINT32 dstBytesPerPixel, const BYTE* pSrcData, UINT32 nXSrc,
                                UINT32 nYSrc, UINT32 nSrcStep, UINT32 srcBytesPerPixel,
@@ -866,7 +867,39 @@ BOOL freerdp_image_copy(BYTE* pDstData, DWORD DstFormat, UINT32 nDstStep, UINT32
 	                                     nHeight, pSrcData, SrcFormat, nSrcStep, nXSrc, nYSrc,
 	                                     palette, flags);
 }
+#else
+BOOL freerdp_image_copy(BYTE* pDstData, DWORD DstFormat, UINT32 nDstStep, UINT32 nXDst,
+                        UINT32 nYDst, UINT32 nWidth, UINT32 nHeight, const BYTE* pSrcData,
+                        DWORD SrcFormat, UINT32 nSrcStep, UINT32 nXSrc, UINT32 nYSrc,
+                        const gdiPalette* palette, UINT32 flags)
+{
+	if (nDstStep == 0)
+		nDstStep = nWidth * FreeRDPGetBytesPerPixel(DstFormat);
 
+	if (nSrcStep == 0)
+		nSrcStep = nWidth * FreeRDPGetBytesPerPixel(SrcFormat);
+
+	const size_t dstoff = nXDst * FreeRDPGetBytesPerPixel(DstFormat) + nYDst * nDstStep;
+	const size_t srcoff = nXSrc * FreeRDPGetBytesPerPixel(SrcFormat) + nYSrc * nSrcStep;
+	cairo_format_t format = CAIRO_FORMAT_ARGB32;
+	cairo_surface_t* src =
+	    cairo_image_surface_create_for_data(&pDstData[dstoff], format, nWidth, nHeight, nSrcStep);
+	cairo_surface_t* dst =
+	    cairo_image_surface_create_for_data(&pSrcData[srcoff], format, nWidth, nHeight, nDstStep);
+
+	cairo_t* cr = cairo_create(dst);
+	cairo_set_source_surface(cr, src, 0, 0);
+	// cairo_rectangle(cr, 0, 0, nWidth, nHeight);
+	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+	cairo_paint(cr);
+
+	cairo_destroy(cr);
+	cairo_surface_finish(dst);
+	cairo_surface_destroy(src);
+	cairo_surface_destroy(dst);
+	return TRUE;
+}
+#endif
 BOOL freerdp_image_fill(BYTE* WINPR_RESTRICT pDstData, DWORD DstFormat, UINT32 nDstStep,
                         UINT32 nXDst, UINT32 nYDst, UINT32 nWidth, UINT32 nHeight, UINT32 color)
 {
@@ -941,9 +974,9 @@ BOOL freerdp_image_scale(BYTE* WINPR_RESTRICT pDstData, DWORD DstFormat, UINT32 
 	/* direct copy is much faster than scaling, so check if we can simply copy... */
 	if ((nDstWidth == nSrcWidth) && (nDstHeight == nSrcHeight))
 	{
-		return freerdp_image_copy_no_overlap(pDstData, DstFormat, nDstStep, nXDst, nYDst, nDstWidth,
-		                                     nDstHeight, pSrcData, SrcFormat, nSrcStep, nXSrc,
-		                                     nYSrc, NULL, FREERDP_FLIP_NONE);
+		return freerdp_image_copy(pDstData, DstFormat, nDstStep, nXDst, nYDst, nDstWidth,
+		                          nDstHeight, pSrcData, SrcFormat, nSrcStep, nXSrc, nYSrc, NULL,
+		                          FREERDP_FLIP_NONE);
 	}
 	else
 #if defined(WITH_SWSCALE)
