@@ -45,7 +45,7 @@ typedef struct
 	BOOL suspendFrameAcks;
 	BOOL sendFrameAcks;
 
-	wHashTable* SurfaceTable;
+	void* SurfaceTable[0x10000];
 
 	UINT16 MaxCacheSlots;
 	void* CacheSlots[25600];

@@ -45,14 +45,13 @@
 
 #define TAG CHANNELS_TAG("rdpgfx.client")
 
-static BOOL delete_surface(const void* key, void* value, void* arg)
+static BOOL delete_surface(const UINT16 id, void* value, void* arg)
 {
-	const UINT16 id = (UINT16)(uintptr_t)(key);
 	RdpgfxClientContext* context = arg;
 	RDPGFX_DELETE_SURFACE_PDU pdu = { 0 };
 
 	WINPR_UNUSED(value);
-	pdu.surfaceId = id - 1;
+	pdu.surfaceId = id;
 
 	if (context)
 	{
@@ -67,9 +66,13 @@ static BOOL delete_surface(const void* key, void* value, void* arg)
 	return TRUE;
 }
 
-static void free_surfaces(RdpgfxClientContext* context, wHashTable* SurfaceTable)
+static void free_surfaces(RdpgfxClientContext* context, void** SurfaceTable, size_t count)
 {
-	HashTable_Foreach(SurfaceTable, delete_surface, context);
+	for (size_t x = 0; x < count; x++)
+	{
+		if (SurfaceTable[x])
+			delete_surface(x, SurfaceTable[x], context);
+	}
 }
 
 static void evict_cache_slots(RdpgfxClientContext* context, UINT16 MaxCacheSlots, void** CacheSlots)
@@ -2178,7 +2181,7 @@ static UINT rdpgfx_on_close(IWTSVirtualChannelCallback* pChannelCallback)
 		           "rdpgfx_save_persistent_cache failed with error %" PRIu32 "", error);
 	}
 
-	free_surfaces(context, gfx->SurfaceTable);
+	free_surfaces(context, gfx->SurfaceTable, ARRAYSIZE(gfx->SurfaceTable));
 	evict_cache_slots(context, gfx->MaxCacheSlots, gfx->CacheSlots);
 
 	free(callback);
@@ -2211,19 +2214,11 @@ static void terminate_plugin_cb(GENERIC_DYNVC_PLUGIN* base)
  */
 static UINT rdpgfx_set_surface_data(RdpgfxClientContext* context, UINT16 surfaceId, void* pData)
 {
-	ULONG_PTR key = 0;
 	WINPR_ASSERT(context);
 	RDPGFX_PLUGIN* gfx = (RDPGFX_PLUGIN*)context->handle;
 	WINPR_ASSERT(gfx);
-	key = ((ULONG_PTR)surfaceId) + 1;
 
-	if (pData)
-	{
-		if (!HashTable_Insert(gfx->SurfaceTable, (void*)key, pData))
-			return ERROR_BAD_ARGUMENTS;
-	}
-	else
-		HashTable_Remove(gfx->SurfaceTable, (void*)key);
+	gfx->SurfaceTable[surfaceId] = pData;
 
 	return CHANNEL_RC_OK;
 }
@@ -2236,37 +2231,28 @@ static UINT rdpgfx_set_surface_data(RdpgfxClientContext* context, UINT16 surface
 static UINT rdpgfx_get_surface_ids(RdpgfxClientContext* context, UINT16** ppSurfaceIds,
                                    UINT16* count_out)
 {
-	size_t count = 0;
-	UINT16* pSurfaceIds = NULL;
-	ULONG_PTR* pKeys = NULL;
+	UINT16 count = 0;
 	WINPR_ASSERT(context);
 	RDPGFX_PLUGIN* gfx = (RDPGFX_PLUGIN*)context->handle;
 	WINPR_ASSERT(gfx);
-	count = HashTable_GetKeys(gfx->SurfaceTable, &pKeys);
 
 	WINPR_ASSERT(ppSurfaceIds);
 	WINPR_ASSERT(count_out);
-	if (count < 1)
-	{
-		*count_out = 0;
-		return CHANNEL_RC_OK;
-	}
 
-	pSurfaceIds = (UINT16*)calloc(count, sizeof(UINT16));
+	UINT16* pSurfaceIds = (UINT16*)calloc(UINT16_MAX, sizeof(UINT16));
 
 	if (!pSurfaceIds)
 	{
 		WLog_Print(gfx->log, WLOG_ERROR, "calloc failed!");
-		free(pKeys);
 		return CHANNEL_RC_NO_MEMORY;
 	}
 
-	for (size_t index = 0; index < count; index++)
+	for (size_t index = 0; index < ARRAYSIZE(gfx->SurfaceTable); index++)
 	{
-		pSurfaceIds[index] = (UINT16)(pKeys[index] - 1);
+		if (gfx->SurfaceTable[index])
+			pSurfaceIds[count++] = index;
 	}
 
-	free(pKeys);
 	*ppSurfaceIds = pSurfaceIds;
 	*count_out = (UINT16)count;
 	return CHANNEL_RC_OK;
@@ -2274,14 +2260,10 @@ static UINT rdpgfx_get_surface_ids(RdpgfxClientContext* context, UINT16** ppSurf
 
 static void* rdpgfx_get_surface_data(RdpgfxClientContext* context, UINT16 surfaceId)
 {
-	ULONG_PTR key = 0;
-	void* pData = NULL;
 	WINPR_ASSERT(context);
 	RDPGFX_PLUGIN* gfx = (RDPGFX_PLUGIN*)context->handle;
 	WINPR_ASSERT(gfx);
-	key = ((ULONG_PTR)surfaceId) + 1;
-	pData = HashTable_GetItemValue(gfx->SurfaceTable, (void*)key);
-	return pData;
+	return gfx->SurfaceTable[surfaceId];
 }
 
 /**
@@ -2334,34 +2316,16 @@ static UINT init_plugin_cb(GENERIC_DYNVC_PLUGIN* base, rdpContext* rcontext, rdp
 	gfx->rdpcontext = rcontext;
 	gfx->log = WLog_Get(TAG);
 
-	gfx->SurfaceTable = HashTable_New(TRUE);
-	if (!gfx->SurfaceTable)
-	{
-		WLog_ERR(TAG, "HashTable_New for surfaces failed !");
-		return CHANNEL_RC_NO_MEMORY;
-	}
-
 	gfx->MaxCacheSlots =
 	    freerdp_settings_get_bool(gfx->rdpcontext->settings, FreeRDP_GfxSmallCache) ? 4096 : 25600;
 
 	context = (RdpgfxClientContext*)calloc(1, sizeof(RdpgfxClientContext));
 	if (!context)
-	{
-		WLog_ERR(TAG, "context calloc failed!");
-		HashTable_Free(gfx->SurfaceTable);
-		gfx->SurfaceTable = NULL;
-		return CHANNEL_RC_NO_MEMORY;
-	}
+		goto fail;
 
 	gfx->zgfx = zgfx_context_new(FALSE);
 	if (!gfx->zgfx)
-	{
-		WLog_ERR(TAG, "zgfx_context_new failed!");
-		HashTable_Free(gfx->SurfaceTable);
-		gfx->SurfaceTable = NULL;
-		free(context);
-		return CHANNEL_RC_NO_MEMORY;
-	}
+		goto fail;
 
 	context->handle = (void*)gfx;
 	context->GetSurfaceIds = rdpgfx_get_surface_ids;
@@ -2377,6 +2341,9 @@ static UINT init_plugin_cb(GENERIC_DYNVC_PLUGIN* base, rdpContext* rcontext, rdp
 	gfx->base.iface.pInterface = (void*)context;
 	gfx->context = context;
 	return CHANNEL_RC_OK;
+fail:
+	rdpgfx_client_context_free(context);
+	return ERROR_INTERNAL_ERROR;
 }
 
 void rdpgfx_client_context_free(RdpgfxClientContext* context)
@@ -2389,7 +2356,7 @@ void rdpgfx_client_context_free(RdpgfxClientContext* context)
 
 	gfx = (RDPGFX_PLUGIN*)context->handle;
 
-	free_surfaces(context, gfx->SurfaceTable);
+	free_surfaces(context, gfx->SurfaceTable, ARRAYSIZE(gfx->SurfaceTable));
 	evict_cache_slots(context, gfx->MaxCacheSlots, gfx->CacheSlots);
 
 	if (gfx->zgfx)
@@ -2398,7 +2365,6 @@ void rdpgfx_client_context_free(RdpgfxClientContext* context)
 		gfx->zgfx = NULL;
 	}
 
-	HashTable_Free(gfx->SurfaceTable);
 	free(context);
 }
 
