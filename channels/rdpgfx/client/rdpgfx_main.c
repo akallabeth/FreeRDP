@@ -45,6 +45,18 @@
 
 #define TAG CHANNELS_TAG("rdpgfx.client")
 
+static void mark_changed(RDPGFX_PLUGIN* gfx, UINT16 id)
+{
+	WINPR_ASSERT(gfx);
+	for (size_t x = 0; x < gfx->ChangedSurfaceIdsCount; x++)
+	{
+		if (gfx->ChangedSurfaceIds[x] == id)
+			return;
+	}
+
+	gfx->ChangedSurfaceIds[gfx->ChangedSurfaceIdsCount++] = id;
+}
+
 static BOOL delete_surface(const UINT16 id, void* value, void* arg)
 {
 	RdpgfxClientContext* context = arg;
@@ -1148,6 +1160,7 @@ static UINT rdpgfx_recv_start_frame_pdu(GENERIC_CHANNEL_CALLBACK* callback, wStr
 	             pdu.frameId, pdu.timestamp);
 	gfx->StartDecodingTime = GetTickCount64();
 
+	gfx->ChangedSurfaceIdsCount = 0;
 	if (context)
 	{
 		IFCALLRET(context->StartFrame, error, context, &pdu);
@@ -2258,11 +2271,28 @@ static UINT rdpgfx_get_surface_ids(RdpgfxClientContext* context, UINT16** ppSurf
 	return CHANNEL_RC_OK;
 }
 
+static UINT rdpgfx_get_changed_surface_ids(RdpgfxClientContext* context,
+                                           const UINT16** ppSurfaceIds, UINT16* count_out)
+{
+	WINPR_ASSERT(context);
+	RDPGFX_PLUGIN* gfx = (RDPGFX_PLUGIN*)context->handle;
+	WINPR_ASSERT(gfx);
+
+	WINPR_ASSERT(ppSurfaceIds);
+	WINPR_ASSERT(count_out);
+
+	*ppSurfaceIds = gfx->ChangedSurfaceIds;
+	*count_out = (UINT16)gfx->ChangedSurfaceIdsCount;
+	return CHANNEL_RC_OK;
+}
+
 static void* rdpgfx_get_surface_data(RdpgfxClientContext* context, UINT16 surfaceId)
 {
 	WINPR_ASSERT(context);
 	RDPGFX_PLUGIN* gfx = (RDPGFX_PLUGIN*)context->handle;
 	WINPR_ASSERT(gfx);
+
+	mark_changed(gfx, surfaceId);
 	return gfx->SurfaceTable[surfaceId];
 }
 
@@ -2329,6 +2359,7 @@ static UINT init_plugin_cb(GENERIC_DYNVC_PLUGIN* base, rdpContext* rcontext, rdp
 
 	context->handle = (void*)gfx;
 	context->GetSurfaceIds = rdpgfx_get_surface_ids;
+	context->GetChangedSurfaceIds = rdpgfx_get_changed_surface_ids;
 	context->SetSurfaceData = rdpgfx_set_surface_data;
 	context->GetSurfaceData = rdpgfx_get_surface_data;
 	context->SetCacheSlotData = rdpgfx_set_cache_slot_data;

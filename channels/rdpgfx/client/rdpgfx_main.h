@@ -46,6 +46,8 @@ typedef struct
 	BOOL sendFrameAcks;
 
 	void* SurfaceTable[0x10000];
+	UINT16 ChangedSurfaceIds[0x10000];
+	size_t ChangedSurfaceIdsCount;
 
 	UINT16 MaxCacheSlots;
 	void* CacheSlots[25600];

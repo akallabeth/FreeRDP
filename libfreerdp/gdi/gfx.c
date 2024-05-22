@@ -242,7 +242,7 @@ static UINT gdi_UpdateSurfaces(RdpgfxClientContext* context)
 {
 	UINT16 count = 0;
 	UINT status = ERROR_INTERNAL_ERROR;
-	UINT16* pSurfaceIds = NULL;
+	const UINT16* pSurfaceIds = NULL;
 	rdpGdi* gdi = NULL;
 
 	WINPR_ASSERT(context);
@@ -253,7 +253,7 @@ static UINT gdi_UpdateSurfaces(RdpgfxClientContext* context)
 	EnterCriticalSection(&context->mux);
 
 	WINPR_ASSERT(context->GetSurfaceIds);
-	context->GetSurfaceIds(context, &pSurfaceIds, &count);
+	context->GetChangedSurfaceIds(context, &pSurfaceIds, &count);
 	status = CHANNEL_RC_OK;
 
 	for (UINT32 index = 0; index < count; index++)
@@ -281,7 +281,6 @@ static UINT gdi_UpdateSurfaces(RdpgfxClientContext* context)
 			break;
 	}
 
-	free(pSurfaceIds);
 	LeaveCriticalSection(&context->mux);
 	return status;
 }

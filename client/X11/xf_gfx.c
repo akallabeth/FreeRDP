@@ -134,7 +134,7 @@ static UINT xf_UpdateSurfaces(RdpgfxClientContext* context)
 {
 	UINT16 count = 0;
 	UINT status = CHANNEL_RC_OK;
-	UINT16* pSurfaceIds = NULL;
+	const UINT16* pSurfaceIds = NULL;
 	rdpGdi* gdi = (rdpGdi*)context->custom;
 	xfContext* xfc = NULL;
 
@@ -146,7 +146,7 @@ static UINT xf_UpdateSurfaces(RdpgfxClientContext* context)
 
 	xfc = (xfContext*)gdi->context;
 	EnterCriticalSection(&context->mux);
-	context->GetSurfaceIds(context, &pSurfaceIds, &count);
+	context->GetChangedSurfaceIds(context, &pSurfaceIds, &count);
 
 	for (UINT32 index = 0; index < count; index++)
 	{
@@ -171,7 +171,6 @@ static UINT xf_UpdateSurfaces(RdpgfxClientContext* context)
 			break;
 	}
 
-	free(pSurfaceIds);
 	LeaveCriticalSection(&context->mux);
 	return status;
 }
@@ -182,7 +181,7 @@ UINT xf_OutputExpose(xfContext* xfc, UINT32 x, UINT32 y, UINT32 width, UINT32 he
 	UINT status = ERROR_INTERNAL_ERROR;
 	RECTANGLE_16 invalidRect = { 0 };
 	RECTANGLE_16 intersection = { 0 };
-	UINT16* pSurfaceIds = NULL;
+	const UINT16* pSurfaceIds = NULL;
 	RdpgfxClientContext* context = NULL;
 
 	WINPR_ASSERT(xfc);
@@ -195,16 +194,14 @@ UINT xf_OutputExpose(xfContext* xfc, UINT32 x, UINT32 y, UINT32 width, UINT32 he
 	invalidRect.top = y;
 	invalidRect.right = x + width;
 	invalidRect.bottom = y + height;
-	status = context->GetSurfaceIds(context, &pSurfaceIds, &count);
+	status = context->GetChangedSurfaceIds(context, &pSurfaceIds, &count);
 
 	if (status != CHANNEL_RC_OK)
 		goto fail;
 
 	if (!TryEnterCriticalSection(&context->mux))
-	{
-		free(pSurfaceIds);
 		return CHANNEL_RC_OK;
-	}
+
 	for (UINT32 index = 0; index < count; index++)
 	{
 		RECTANGLE_16 surfaceRect = { 0 };
@@ -230,7 +227,6 @@ UINT xf_OutputExpose(xfContext* xfc, UINT32 x, UINT32 y, UINT32 width, UINT32 he
 		}
 	}
 
-	free(pSurfaceIds);
 	LeaveCriticalSection(&context->mux);
 	IFCALLRET(context->UpdateSurfaces, status, context);
 

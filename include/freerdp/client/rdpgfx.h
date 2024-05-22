@@ -91,6 +91,8 @@ extern "C"
 	typedef void* (*pcRdpgfxGetSurfaceData)(RdpgfxClientContext* context, UINT16 surfaceId);
 	typedef UINT (*pcRdpgfxGetSurfaceIds)(RdpgfxClientContext* context, UINT16** ppSurfaceIds,
 	                                      UINT16* count);
+	typedef UINT (*pcRdpgfxGetChangedSurfaceIds)(RdpgfxClientContext* context,
+	                                             const UINT16** ppSurfaceIds, UINT16* count);
 	typedef UINT (*pcRdpgfxSetCacheSlotData)(RdpgfxClientContext* context, UINT16 cacheSlot,
 	                                         void* pData);
 	typedef void* (*pcRdpgfxGetCacheSlotData)(RdpgfxClientContext* context, UINT16 cacheSlot);
@@ -175,6 +177,8 @@ extern "C"
 		CRITICAL_SECTION mux;
 		rdpCodecs* codecs;
 		PROFILER_DEFINE(SurfaceProfiler)
+
+		pcRdpgfxGetChangedSurfaceIds GetChangedSurfaceIds;
 	};
 
 	FREERDP_API void rdpgfx_client_context_free(RdpgfxClientContext* context);
