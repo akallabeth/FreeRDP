@@ -645,13 +645,22 @@ static BOOL freerdp_image_copy_no_overlap(BYTE* WINPR_RESTRICT pDstData, DWORD D
 	}
 	else if (FreeRDPAreColorFormatsEqualNoAlpha(SrcFormat, DstFormat))
 	{
-		for (SSIZE_T y = 0; y < nHeight; y++)
+		if (!vSrcVFlip && (nDstStep == nSrcStep))
 		{
-			const BYTE* WINPR_RESTRICT srcLine =
-			    &pSrcData[srcVMultiplier * (y + nYSrc) * nSrcStep + srcVOffset];
-			BYTE* WINPR_RESTRICT dstLine =
-			    &pDstData[dstVMultiplier * (y + nYDst) * nDstStep + dstVOffset];
-			memcpy(&dstLine[xDstOffset], &srcLine[xSrcOffset], copyDstWidth);
+			const void* src = &pSrcData[xSrcOffset + nYSrc * nSrcStep];
+			void* dst = &pDstData[xDstOffset + nYDst * nDstStep];
+			memcpy(dst, src, nDstStep * nHeight - xDstOffset);
+		}
+		else
+		{
+			for (SSIZE_T y = 0; y < nHeight; y++)
+			{
+				const BYTE* WINPR_RESTRICT srcLine =
+				    &pSrcData[srcVMultiplier * (y + nYSrc) * nSrcStep + srcVOffset];
+				BYTE* WINPR_RESTRICT dstLine =
+				    &pDstData[dstVMultiplier * (y + nYDst) * nDstStep + dstVOffset];
+				memcpy(&dstLine[xDstOffset], &srcLine[xSrcOffset], copyDstWidth);
+			}
 		}
 	}
 	else
