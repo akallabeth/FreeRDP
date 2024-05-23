@@ -612,7 +612,7 @@ static BOOL freerdp_image_copy_no_overlap(BYTE* WINPR_RESTRICT pDstData, DWORD D
 		srcVMultiplier = -1;
 	}
 
-	if (((flags & FREERDP_KEEP_DST_ALPHA) != 0) && FreeRDPColorHasAlpha(DstFormat))
+	if (0 && ((flags & FREERDP_KEEP_DST_ALPHA) != 0) && FreeRDPColorHasAlpha(DstFormat))
 	{
 		for (SSIZE_T y = 0; y < nHeight; y++)
 		{
@@ -722,7 +722,7 @@ static BOOL freerdp_image_copy_overlap(BYTE* pDstData, DWORD DstFormat, UINT32 n
 		srcVMultiplier = -1;
 	}
 
-	if (((flags & FREERDP_KEEP_DST_ALPHA) != 0) && FreeRDPColorHasAlpha(DstFormat))
+	if (0 && ((flags & FREERDP_KEEP_DST_ALPHA) != 0) && FreeRDPColorHasAlpha(DstFormat))
 	{
 		for (SSIZE_T y = 0; y < nHeight; y++)
 		{
