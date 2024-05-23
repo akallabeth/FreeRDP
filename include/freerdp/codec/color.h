@@ -377,6 +377,16 @@ typedef struct gdi_palette gdiPalette;
 	                                    UINT32 nXSrc, UINT32 nYSrc, const gdiPalette* palette,
 	                                    UINT32 flags);
 
+	FREERDP_API BOOL freerdp_image_copy_overlap(
+	    BYTE* WINPR_RESTRICT pDstData, DWORD DstFormat, UINT32 nDstStep, UINT32 nXDst, UINT32 nYDst,
+	    UINT32 nWidth, UINT32 nHeight, const BYTE* WINPR_RESTRICT pSrcData, DWORD SrcFormat,
+	    UINT32 nSrcStep, UINT32 nXSrc, UINT32 nYSrc, const gdiPalette* WINPR_RESTRICT palette,
+	    UINT32 flags);
+	FREERDP_API BOOL freerdp_image_copy_no_overlap(
+	    BYTE* WINPR_RESTRICT pDstData, DWORD DstFormat, UINT32 nDstStep, UINT32 nXDst, UINT32 nYDst,
+	    UINT32 nWidth, UINT32 nHeight, const BYTE* WINPR_RESTRICT pSrcData, DWORD SrcFormat,
+	    UINT32 nSrcStep, UINT32 nXSrc, UINT32 nYSrc, const gdiPalette* WINPR_RESTRICT palette,
+	    UINT32 flags);
 	/***
 	 *
 	 * @param pDstData   destination buffer
