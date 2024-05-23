@@ -310,11 +310,15 @@ static UINT xf_CreateSurface(RdpgfxClientContext* context,
 			goto out_free;
 	}
 
+#if 0
 	surface->gdi.scanline = surface->gdi.width * FreeRDPGetBytesPerPixel(surface->gdi.format);
 	surface->gdi.scanline = x11_pad_scanline(surface->gdi.scanline, xfc->scanline_pad);
 	size = 1ull * surface->gdi.scanline * surface->gdi.height;
 	surface->gdi.data = (BYTE*)winpr_aligned_malloc(size, 16);
-
+#else
+	surface->gdi.scanline = gdi->stride;
+	surface->gdi.data = gdi->primary_buffer;
+#endif
 	if (!surface->gdi.data)
 	{
 		WLog_ERR(TAG, "unable to allocate GDI data");
@@ -378,7 +382,7 @@ error_set_surface_data:
 error_surface_image:
 	winpr_aligned_free(surface->stage);
 out_free_gdidata:
-	winpr_aligned_free(surface->gdi.data);
+	//winpr_aligned_free(surface->gdi.data);
 out_free:
 	free(surface);
 	return ret;
@@ -408,7 +412,7 @@ static UINT xf_DeleteSurface(RdpgfxClientContext* context,
 #endif
 		surface->image->data = NULL;
 		XDestroyImage(surface->image);
-		winpr_aligned_free(surface->gdi.data);
+	//	winpr_aligned_free(surface->gdi.data);
 		winpr_aligned_free(surface->stage);
 		region16_uninit(&surface->gdi.invalidRegion);
 		codecs = surface->gdi.codecs;
@@ -458,7 +462,7 @@ void xf_graphics_pipeline_init(xfContext* xfc, RdpgfxClientContext* gfx)
 
 	if (!freerdp_settings_get_bool(settings, FreeRDP_SoftwareGdi))
 	{
-		gfx->UpdateSurfaces = xf_UpdateSurfaces;
+		gfx->UpdateSurfaces = NULL; // xf_UpdateSurfaces;
 		gfx->CreateSurface = xf_CreateSurface;
 		gfx->DeleteSurface = xf_DeleteSurface;
 	}
