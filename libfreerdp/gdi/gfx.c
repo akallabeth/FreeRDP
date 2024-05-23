@@ -325,6 +325,19 @@ static UINT gdi_EndFrame(RdpgfxClientContext* context, const RDPGFX_END_FRAME_PD
 	return status;
 }
 
+static UINT gdi_interFrameUpdate(rdpGdi* gdi, RdpgfxClientContext* context)
+{
+	WINPR_ASSERT(gdi);
+	UINT status = CHANNEL_RC_OK;
+	if (!gdi->inGfxFrame)
+	{
+		WINPR_ASSERT(context);
+		status = CHANNEL_RC_NOT_INITIALIZED;
+		IFCALLRET(context->UpdateSurfaces, status, context);
+	}
+	return status;
+}
+
 /**
  * Function description
  *
@@ -379,11 +392,7 @@ static UINT gdi_SurfaceCommand_Uncompressed(rdpGdi* gdi, RdpgfxClientContext* co
 	if (status != CHANNEL_RC_OK)
 		goto fail;
 
-	if (!gdi->inGfxFrame)
-	{
-		status = CHANNEL_RC_NOT_INITIALIZED;
-		IFCALLRET(context->UpdateSurfaces, status, context);
-	}
+	status = gdi_interFrameUpdate(gdi, context);
 
 fail:
 	return status;
@@ -438,11 +447,7 @@ static UINT gdi_SurfaceCommand_RemoteFX(rdpGdi* gdi, RdpgfxClientContext* contex
 	for (UINT32 x = 0; x < nrRects; x++)
 		region16_union_rect(&surface->invalidRegion, &surface->invalidRegion, &rects[x]);
 
-	if (!gdi->inGfxFrame)
-	{
-		status = CHANNEL_RC_NOT_INITIALIZED;
-		IFCALLRET(context->UpdateSurfaces, status, context);
-	}
+	status = gdi_interFrameUpdate(gdi, context);
 
 fail:
 	region16_uninit(&invalidRegion);
@@ -497,11 +502,7 @@ static UINT gdi_SurfaceCommand_ClearCodec(rdpGdi* gdi, RdpgfxClientContext* cont
 	if (status != CHANNEL_RC_OK)
 		goto fail;
 
-	if (!gdi->inGfxFrame)
-	{
-		status = CHANNEL_RC_NOT_INITIALIZED;
-		IFCALLRET(context->UpdateSurfaces, status, context);
-	}
+	status = gdi_interFrameUpdate(gdi, context);
 
 fail:
 	return status;
@@ -554,11 +555,7 @@ static UINT gdi_SurfaceCommand_Planar(rdpGdi* gdi, RdpgfxClientContext* context,
 	if (status != CHANNEL_RC_OK)
 		goto fail;
 
-	if (!gdi->inGfxFrame)
-	{
-		status = CHANNEL_RC_NOT_INITIALIZED;
-		IFCALLRET(context->UpdateSurfaces, status, context);
-	}
+	status = gdi_interFrameUpdate(gdi, context);
 
 fail:
 	return status;
@@ -918,11 +915,7 @@ static UINT gdi_SurfaceCommand_Alpha(rdpGdi* gdi, RdpgfxClientContext* context,
 	if (status != CHANNEL_RC_OK)
 		goto fail;
 
-	if (!gdi->inGfxFrame)
-	{
-		status = CHANNEL_RC_NOT_INITIALIZED;
-		IFCALLRET(context->UpdateSurfaces, status, context);
-	}
+	status = gdi_interFrameUpdate(gdi, context);
 
 fail:
 	return status;
@@ -999,11 +992,7 @@ static UINT gdi_SurfaceCommand_Progressive(rdpGdi* gdi, RdpgfxClientContext* con
 
 	region16_uninit(&invalidRegion);
 
-	if (!gdi->inGfxFrame)
-	{
-		status = CHANNEL_RC_NOT_INITIALIZED;
-		IFCALLRET(context->UpdateSurfaces, status, context);
-	}
+	status = gdi_interFrameUpdate(gdi, context);
 
 fail:
 	return status;
@@ -1297,13 +1286,7 @@ static UINT gdi_SolidFill(RdpgfxClientContext* context, const RDPGFX_SOLID_FILL_
 
 	LeaveCriticalSection(&context->mux);
 
-	if (!gdi->inGfxFrame)
-	{
-		status = CHANNEL_RC_NOT_INITIALIZED;
-		IFCALLRET(context->UpdateSurfaces, status, context);
-	}
-
-	return status;
+	return gdi_interFrameUpdate(gdi, context);
 fail:
 	LeaveCriticalSection(&context->mux);
 	return status;
@@ -1375,13 +1358,7 @@ static UINT gdi_SurfaceToSurface(RdpgfxClientContext* context,
 
 	LeaveCriticalSection(&context->mux);
 
-	if (!gdi->inGfxFrame)
-	{
-		status = CHANNEL_RC_NOT_INITIALIZED;
-		IFCALLRET(context->UpdateSurfaces, status, context);
-	}
-
-	return status;
+	return gdi_interFrameUpdate(gdi, context);
 fail:
 	LeaveCriticalSection(&context->mux);
 	return status;
@@ -1527,12 +1504,7 @@ static UINT gdi_CacheToSurface(RdpgfxClientContext* context,
 
 	LeaveCriticalSection(&context->mux);
 
-	if (!gdi->inGfxFrame)
-		status = IFCALLRESULT(CHANNEL_RC_NOT_INITIALIZED, context->UpdateSurfaces, context);
-	else
-		status = CHANNEL_RC_OK;
-
-	return status;
+	return gdi_interFrameUpdate(gdi, context);
 
 fail:
 	LeaveCriticalSection(&context->mux);
