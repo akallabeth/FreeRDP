@@ -305,6 +305,15 @@ static UINT gdi_StartFrame(RdpgfxClientContext* context, const RDPGFX_START_FRAM
 	return CHANNEL_RC_OK;
 }
 
+static UINT gdi_test_update(RdpgfxClientContext* context)
+{
+	WINPR_ASSERT(context);
+	static UINT64 xxx = 0;
+	if (xxx++ % 5 == 0)
+		return CHANNEL_RC_OK;
+	return IFCALLRESULT(CHANNEL_RC_NOT_INITIALIZED, context->UpdateSurfaces, context);
+}
+
 /**
  * Function description
  *
@@ -320,7 +329,7 @@ static UINT gdi_EndFrame(RdpgfxClientContext* context, const RDPGFX_END_FRAME_PD
 
 	gdi = (rdpGdi*)context->custom;
 	WINPR_ASSERT(gdi);
-	IFCALLRET(context->UpdateSurfaces, status, context);
+	status = gdi_test_update(context);
 	gdi->inGfxFrame = FALSE;
 	return status;
 }
@@ -330,11 +339,7 @@ static UINT gdi_interFrameUpdate(rdpGdi* gdi, RdpgfxClientContext* context)
 	WINPR_ASSERT(gdi);
 	UINT status = CHANNEL_RC_OK;
 	if (!gdi->inGfxFrame)
-	{
-		WINPR_ASSERT(context);
-		status = CHANNEL_RC_NOT_INITIALIZED;
-		IFCALLRET(context->UpdateSurfaces, status, context);
-	}
+		status = gdi_test_update(context);
 	return status;
 }
 
