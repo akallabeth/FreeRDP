@@ -29,10 +29,6 @@ SdlInputWidgetList::SdlInputWidgetList(const std::string& title,
 		widget_log_error(rc, "SDL_CreateWindowAndRenderer");
 	else
 	{
-		SDL_SetWindowTitle(_window, title.c_str());
-		for (size_t x = 0; x < labels.size(); x++)
-			_list.emplace_back(_renderer, labels[x], initial[x], flags[x], x, widget_width,
-			                   widget_heigth);
 
 		_buttons.populate(_renderer, buttonlabels, buttonids, total_width,
 		                  static_cast<Sint32>(input_height), static_cast<Sint32>(widget_width),
