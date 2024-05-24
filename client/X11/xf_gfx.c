@@ -90,28 +90,10 @@ static UINT xf_OutputUpdate(xfContext* xfc, xfGfxSurface* surface)
 				goto fail;
 		}
 
-		if (xfc->remote_app)
-		{
-			XPutImage(xfc->display, xfc->primary, xfc->gc, surface->image, nXSrc, nYSrc, nXDst,
-			          nYDst, dwidth, dheight);
-			xf_lock_x11(xfc);
-			xf_rail_paint_surface(xfc, surface->gdi.windowId, rect);
-			xf_unlock_x11(xfc);
-		}
-		else
-#ifdef WITH_XRENDER
-		    if (freerdp_settings_get_bool(settings, FreeRDP_SmartSizing) ||
-		        freerdp_settings_get_bool(settings, FreeRDP_MultiTouchGestures))
 		{
 			XPutImage(xfc->display, xfc->primary, xfc->gc, surface->image, nXSrc, nYSrc, nXDst,
 			          nYDst, dwidth, dheight);
 			xf_draw_screen(xfc, nXDst, nYDst, dwidth, dheight);
-		}
-		else
-#endif
-		{
-			XPutImage(xfc->display, xfc->drawable, xfc->gc, surface->image, nXSrc, nYSrc, nXDst,
-			          nYDst, dwidth, dheight);
 		}
 	}
 
@@ -462,7 +444,7 @@ void xf_graphics_pipeline_init(xfContext* xfc, RdpgfxClientContext* gfx)
 
 	if (!freerdp_settings_get_bool(settings, FreeRDP_SoftwareGdi))
 	{
-		gfx->UpdateSurfaces = NULL; // xf_UpdateSurfaces;
+		gfx->UpdateSurfaces = xf_UpdateSurfaces;
 		gfx->CreateSurface = xf_CreateSurface;
 		gfx->DeleteSurface = xf_DeleteSurface;
 	}
