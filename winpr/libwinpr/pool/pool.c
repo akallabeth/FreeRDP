@@ -210,7 +210,7 @@ VOID winpr_CloseThreadpool(PTP_POOL ptpp)
 
 BOOL winpr_SetThreadpoolThreadMinimum(PTP_POOL ptpp, DWORD cthrdMic)
 {
-	HANDLE thread = NULL;
+	BOOL rc = FALSE;
 #ifdef _WIN32
 	InitOnceExecuteOnce(&init_once_module, init_module, NULL, NULL);
 	if (pSetThreadpoolThreadMinimum)
@@ -218,21 +218,25 @@ BOOL winpr_SetThreadpoolThreadMinimum(PTP_POOL ptpp, DWORD cthrdMic)
 #endif
 	ptpp->Minimum = cthrdMic;
 
+	ArrayList_Lock(ptpp->Threads);
 	while (ArrayList_Count(ptpp->Threads) < ptpp->Minimum)
 	{
-		if (!(thread = CreateThread(NULL, 0, thread_pool_work_func, (void*)ptpp, 0, NULL)))
-		{
-			return FALSE;
-		}
+		HANDLE thread = CreateThread(NULL, 0, thread_pool_work_func, (void*)ptpp, 0, NULL);
+		if (!thread)
+			goto fail;
 
 		if (!ArrayList_Append(ptpp->Threads, thread))
 		{
 			CloseHandle(thread);
-			return FALSE;
+			goto fail;
 		}
 	}
 
-	return TRUE;
+	rc = TRUE;
+fail:
+	ArrayList_Unlock(ptpp->Threads);
+
+	return rc;
 }
 
 VOID winpr_SetThreadpoolThreadMaximum(PTP_POOL ptpp, DWORD cthrdMost)
