@@ -57,9 +57,6 @@ struct S_YUV_CONTEXT
 	UINT32 nthreads;
 	UINT32 heightStep;
 
-	PTP_POOL threadPool;
-	TP_CALLBACK_ENVIRON ThreadPoolEnv;
-
 	UINT32 work_object_count;
 	PTP_WORK* work_objects;
 	YUV_ENCODE_WORK_PARAM* work_enc_params;
@@ -235,27 +232,10 @@ YUV_CONTEXT* yuv_context_new(BOOL encoder, UINT32 ThreadingFlags)
 		GetNativeSystemInfo(&sysInfos);
 		ret->useThreads = (sysInfos.dwNumberOfProcessors > 1);
 		if (ret->useThreads)
-		{
 			ret->nthreads = sysInfos.dwNumberOfProcessors;
-			ret->threadPool = CreateThreadpool(NULL);
-			if (!ret->threadPool)
-			{
-				goto error_threadpool;
-			}
-
-			InitializeThreadpoolEnvironment(&ret->ThreadPoolEnv);
-			SetThreadpoolCallbackPool(&ret->ThreadPoolEnv, ret->threadPool);
-		}
 	}
 
 	return ret;
-
-error_threadpool:
-	WINPR_PRAGMA_DIAG_PUSH
-	WINPR_PRAGMA_DIAG_IGNORED_MISMATCHED_DEALLOC
-	yuv_context_free(ret);
-	WINPR_PRAGMA_DIAG_POP
-	return NULL;
 }
 
 void yuv_context_free(YUV_CONTEXT* context)
@@ -264,9 +244,6 @@ void yuv_context_free(YUV_CONTEXT* context)
 		return;
 	if (context->useThreads)
 	{
-		if (context->threadPool)
-			CloseThreadpool(context->threadPool);
-		DestroyThreadpoolEnvironment(&context->ThreadPoolEnv);
 		winpr_aligned_free(context->work_objects);
 		winpr_aligned_free(context->work_combined_params);
 		winpr_aligned_free(context->work_enc_params);
@@ -322,7 +299,7 @@ static BOOL submit_object(PTP_WORK* work_object, PTP_WORK_CALLBACK cb, const voi
 	if (!param || !context)
 		return FALSE;
 
-	*work_object = CreateThreadpoolWork(cb, cnv.pv, &context->ThreadPoolEnv);
+	*work_object = CreateThreadpoolWork(cb, cnv.pv, NULL);
 	if (!*work_object)
 		return FALSE;
 

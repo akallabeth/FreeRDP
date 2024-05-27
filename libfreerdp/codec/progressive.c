@@ -1790,8 +1790,7 @@ static INLINE SSIZE_T progressive_process_tiles(PROGRESSIVE_CONTEXT* progressive
 		if (progressive->rfx_context->priv->UseThreads)
 		{
 			if (!(work_objects[idx] = CreateThreadpoolWork(
-			          progressive_process_tiles_tile_work_callback, (void*)&params[idx],
-			          &progressive->rfx_context->priv->ThreadPoolEnv)))
+			          progressive_process_tiles_tile_work_callback, (void*)&params[idx], NULL)))
 			{
 				WLog_Print(progressive->log, WLOG_ERROR,
 				           "Failed to create ThreadpoolWork for tile %" PRIu32, idx);

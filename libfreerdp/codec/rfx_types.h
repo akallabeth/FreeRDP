@@ -72,9 +72,6 @@ struct S_RFX_CONTEXT_PRIV
 	DWORD MinThreadCount;
 	DWORD MaxThreadCount;
 
-	PTP_POOL ThreadPool;
-	TP_CALLBACK_ENVIRON ThreadPoolEnv;
-
 	wBufferPool* BufferPool;
 
 	/* profilers */

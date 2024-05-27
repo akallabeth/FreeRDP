@@ -723,33 +723,6 @@ static INLINE BOOL copy_no_overlap_linecopy(const FreeRDPImageCopyThreadArg* tar
 	return TRUE;
 }
 
-static INIT_ONCE copy_threadpool_once = INIT_ONCE_STATIC_INIT;
-static PTP_POOL copy_threadpool = NULL;
-
-static void copy_threadpool_cleanup(void)
-{
-	if (copy_threadpool)
-		CloseThreadpool(copy_threadpool);
-	copy_threadpool = NULL;
-}
-
-static BOOL CALLBACK copy_threadpool_setup(PINIT_ONCE once, PVOID param, PVOID* context)
-{
-	WINPR_UNUSED(once);
-	WINPR_UNUSED(param);
-	WINPR_UNUSED(context);
-
-	SYSTEM_INFO info = { 0 };
-	GetSystemInfo(&info);
-
-	copy_threadpool = CreateThreadpool(NULL);
-
-	SetThreadpoolThreadMinimum(copy_threadpool, info.dwNumberOfProcessors);
-	SetThreadpoolThreadMaximum(copy_threadpool, info.dwNumberOfProcessors);
-	atexit(copy_threadpool_cleanup);
-	return TRUE;
-}
-
 static void CALLBACK copy_WorkCallback(PTP_CALLBACK_INSTANCE instance, void* context, PTP_WORK work)
 {
 	WINPR_UNUSED(instance);
@@ -761,8 +734,6 @@ static void CALLBACK copy_WorkCallback(PTP_CALLBACK_INSTANCE instance, void* con
 
 static BOOL spawn(FreeRDPImageCopyArg* arg, BOOL (*copy_routine)(const FreeRDPImageCopyThreadArg*))
 {
-	InitOnceExecuteOnce(&copy_threadpool_once, copy_threadpool_setup, NULL, NULL);
-
 	arg->step = 64;
 	const size_t jobs = (arg->nHeight + arg->step - 1) / arg->step;
 	FreeRDPImageCopyThreadArg* work_array = calloc(jobs, sizeof(FreeRDPImageCopyThreadArg));

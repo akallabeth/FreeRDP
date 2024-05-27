@@ -309,20 +309,6 @@ RFX_CONTEXT* rfx_context_new_ex(BOOL encoder, UINT32 ThreadingFlags)
 		/* from multiple threads. This call will initialize all function pointers correctly     */
 		/* before any decoding threads are started */
 		primitives_get();
-		priv->ThreadPool = CreateThreadpool(NULL);
-
-		if (!priv->ThreadPool)
-			goto fail;
-
-		InitializeThreadpoolEnvironment(&priv->ThreadPoolEnv);
-		SetThreadpoolCallbackPool(&priv->ThreadPoolEnv, priv->ThreadPool);
-
-		if (priv->MinThreadCount)
-			if (!SetThreadpoolThreadMinimum(priv->ThreadPool, priv->MinThreadCount))
-				goto fail;
-
-		if (priv->MaxThreadCount)
-			SetThreadpoolThreadMaximum(priv->ThreadPool, priv->MaxThreadCount);
 	}
 
 	/* initialize the default pixel format */
@@ -374,9 +360,6 @@ void rfx_context_free(RFX_CONTEXT* context)
 		ObjectPool_Free(priv->TilePool);
 		if (priv->UseThreads)
 		{
-			if (priv->ThreadPool)
-				CloseThreadpool(priv->ThreadPool);
-			DestroyThreadpoolEnvironment(&priv->ThreadPoolEnv);
 			winpr_aligned_free(priv->workObjects);
 			winpr_aligned_free(priv->tileWorkParams);
 #ifdef WITH_PROFILER
@@ -1073,9 +1056,8 @@ static BOOL rfx_process_message_tileset(RFX_CONTEXT* context, RFX_MESSAGE* messa
 				params[i].context = context;
 				params[i].tile = message->tiles[i];
 
-				if (!(work_objects[i] =
-				          CreateThreadpoolWork(rfx_process_message_tile_work_callback,
-				                               (void*)&params[i], &context->priv->ThreadPoolEnv)))
+				if (!(work_objects[i] = CreateThreadpoolWork(rfx_process_message_tile_work_callback,
+				                                             (void*)&params[i], NULL)))
 				{
 					WLog_Print(context->priv->log, WLOG_ERROR, "CreateThreadpoolWork failed.");
 					rc = FALSE;
@@ -1784,8 +1766,7 @@ RFX_MESSAGE* rfx_encode_message(RFX_CONTEXT* context, const RFX_RECT* rects, siz
 					workParam->tile = tile;
 
 					if (!(*workObject = CreateThreadpoolWork(rfx_compose_message_tile_work_callback,
-					                                         (void*)workParam,
-					                                         &context->priv->ThreadPoolEnv)))
+					                                         (void*)workParam, NULL)))
 					{
 						goto skip_encoding_loop;
 					}
