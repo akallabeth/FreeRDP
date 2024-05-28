@@ -1,3 +1,5 @@
+#include <errno.h>
+
 #include <winpr/wtypes.h>
 #include <winpr/crt.h>
 #include <winpr/path.h>
@@ -8,6 +10,8 @@
 #include <winpr/file.h>
 
 #include <freerdp/codec/region.h>
+
+#include <freerdp/codecs.h>
 
 #include <freerdp/codec/progressive.h>
 #include <freerdp/channels/rdpgfx.h>
@@ -1166,21 +1170,32 @@ static void free_cmd(RDPGFX_SURFACE_COMMAND* cmd)
 	free(cmd->data);
 }
 
+static WINPR_NORETURN(void usage(const char* name))
+{
+	FILE* fp = stdout;
+	fprintf(fp, "%s <directory> <width> <height>\n", name);
+	exit(-1);
+}
+
 static int test_dump(int argc, char* argv[])
 {
-	if (argc < 2)
-		return -1;
+	if (argc < 4)
+		usage(argv[0]);
 
 	const char* path = argv[1];
+	const unsigned long width = strtoul(argv[2], NULL, 0);
+	if ((errno != 0) || (width <= 0))
+		usage(argv[0]);
+	const unsigned long height = strtoul(argv[3], NULL, 0);
+	if ((errno != 0) || (height <= 0))
+		usage(argv[0]);
 
 	PROGRESSIVE_CONTEXT* ctx = progressive_context_new(FALSE);
 	if (!ctx)
 		return -2;
 
 	UINT32 DstFormat = PIXEL_FORMAT_BGRA32;
-	const UINT32 width = 3840;
 	const UINT32 stride = (width + 16) * FreeRDPGetBytesPerPixel(DstFormat);
-	const UINT32 height = 2160;
 
 	BYTE* dst = calloc(stride, height);
 	BYTE* output = calloc(stride, height);
@@ -1208,20 +1223,30 @@ static int test_dump(int argc, char* argv[])
 			REGION16 invalid = { 0 };
 			region16_init(&invalid);
 
+			switch (cmd.codecId)
 			{
-				const UINT64 start = winpr_GetTickCount64NS();
-				success = progressive_create_surface_context(ctx, cmd.surfaceId, width, height);
-				if (success >= 0)
-					success =
-					    progressive_decompress(ctx, cmd.data, cmd.length, dst, DstFormat, 0,
-					                           cmd.left, cmd.top, &invalid, cmd.surfaceId, frameId);
-				const UINT64 end = winpr_GetTickCount64NS();
-				const UINT64 diff = end - start;
-				const double ddiff = diff / 1000000.0;
-				fprintf(stderr, "frame %" PRIu32 " took %lf ms\n", frameId, ddiff);
-				dectime += diff;
+				case FREERDP_CODEC_PROGRESSIVE:
+				{
+					const UINT64 start = winpr_GetTickCount64NS();
+					success = progressive_create_surface_context(ctx, cmd.surfaceId, width, height);
+					if (success >= 0)
+						success = progressive_decompress(ctx, cmd.data, cmd.length, dst, DstFormat,
+						                                 0, cmd.left, cmd.top, &invalid,
+						                                 cmd.surfaceId, frameId);
+					const UINT64 end = winpr_GetTickCount64NS();
+					const UINT64 diff = end - start;
+					const double ddiff = diff / 1000000.0;
+					fprintf(stderr, "frame %" PRIu32 " took %lf ms\n", frameId, ddiff);
+					dectime += diff;
+				}
+				break;
+				default:
+					fprintf(stderr, "unexpected codec 0x%0x" PRIx32, cmd.codecId);
+					success = -1;
+					break;
 			}
 
+			if (success >= 0)
 			{
 				UINT32 nbRects = 0;
 				const UINT64 start = winpr_GetTickCount64NS();
@@ -1232,9 +1257,10 @@ static int test_dump(int argc, char* argv[])
 					RECTANGLE_16* rect = &rects[x];
 					const UINT32 w = rect->right - rect->left;
 					const UINT32 h = rect->bottom - rect->top;
-					freerdp_image_copy_no_overlap(output, DstFormat, stride, rect->left, rect->top,
-					                              w, h, dst, DstFormat, stride, rect->left,
-					                              rect->top, NULL, 0);
+					if (!freerdp_image_copy_no_overlap(output, DstFormat, stride, rect->left,
+					                                   rect->top, w, h, dst, DstFormat, stride,
+					                                   rect->left, rect->top, NULL, 0))
+						success = -42;
 				}
 				const UINT64 end = winpr_GetTickCount64NS();
 				const UINT64 diff = end - start;
