@@ -64,9 +64,10 @@ struct S_YUV_CONTEXT
 	YUV_COMBINE_WORK_PARAM* work_combined_params;
 };
 
-static INLINE BOOL avc420_yuv_to_rgb(const BYTE* pYUVData[3], const UINT32 iStride[3],
-                                     const RECTANGLE_16* rect, UINT32 nDstStep, BYTE* pDstData,
-                                     DWORD DstFormat)
+static INLINE BOOL avc420_yuv_to_rgb(const BYTE* WINPR_RESTRICT pYUVData[3],
+                                     const UINT32 iStride[3],
+                                     const RECTANGLE_16* WINPR_RESTRICT rect, UINT32 nDstStep,
+                                     BYTE* WINPR_RESTRICT pDstData, DWORD DstFormat)
 {
 	primitives_t* prims = primitives_get();
 	prim_size_t roi;
@@ -96,9 +97,10 @@ static INLINE BOOL avc420_yuv_to_rgb(const BYTE* pYUVData[3], const UINT32 iStri
 	return TRUE;
 }
 
-static INLINE BOOL avc444_yuv_to_rgb(const BYTE* pYUVData[3], const UINT32 iStride[3],
-                                     const RECTANGLE_16* rect, UINT32 nDstStep, BYTE* pDstData,
-                                     DWORD DstFormat)
+static INLINE BOOL avc444_yuv_to_rgb(const BYTE* WINPR_RESTRICT pYUVData[3],
+                                     const UINT32 iStride[3],
+                                     const RECTANGLE_16* WINPR_RESTRICT rect, UINT32 nDstStep,
+                                     BYTE* WINPR_RESTRICT pDstData, DWORD DstFormat)
 {
 	primitives_t* prims = primitives_get();
 	prim_size_t roi;
