@@ -10,6 +10,8 @@
 #include <freerdp/codec/region.h>
 
 #include <freerdp/codec/progressive.h>
+#include <freerdp/channels/rdpgfx.h>
+#include <freerdp/crypto/crypto.h>
 
 #include "../progressive.h"
 
@@ -1106,8 +1108,163 @@ fail:
 	return res;
 }
 
+static BOOL measured_decode(cmd)
+{
+}
+
+static BOOL read_cmd(FILE* fp, RDPGFX_SURFACE_COMMAND* cmd, UINT32* frameId)
+{
+	WINPR_ASSERT(fp);
+	WINPR_ASSERT(cmd);
+	WINPR_ASSERT(frameId);
+
+	if (1 != fscanf(fp, "frameid: %" PRIu32 "\n", frameId))
+		return FALSE;
+	if (1 != fscanf(fp, "surfaceId: %" PRIu32 "\n", &cmd->surfaceId))
+		return FALSE;
+	if (1 != fscanf(fp, "codecId: %" PRIu32 "\n", &cmd->codecId))
+		return FALSE;
+	if (1 != fscanf(fp, "contextId: %" PRIu32 "\n", &cmd->contextId))
+		return FALSE;
+	if (1 != fscanf(fp, "format: %" PRIu32 "\n", &cmd->format))
+		return FALSE;
+	if (1 != fscanf(fp, "left: %" PRIu32 "\n", &cmd->left))
+		return FALSE;
+	if (1 != fscanf(fp, "top: %" PRIu32 "\n", &cmd->top))
+		return FALSE;
+	if (1 != fscanf(fp, "right: %" PRIu32 "\n", &cmd->right))
+		return FALSE;
+	if (1 != fscanf(fp, "bottom: %" PRIu32 "\n", &cmd->bottom))
+		return FALSE;
+	if (1 != fscanf(fp, "width: %" PRIu32 "\n", &cmd->width))
+		return FALSE;
+	if (1 != fscanf(fp, "height: %" PRIu32 "\n", &cmd->height))
+		return FALSE;
+	if (1 != fscanf(fp, "length: %" PRIu32 "\n", &cmd->length))
+		return FALSE;
+
+	char* data = NULL;
+
+	size_t dlen = SIZE_MAX;
+	ssize_t slen = getline(&data, &slen, fp);
+	if (slen < 0)
+		return FALSE;
+
+	if (slen >= 7)
+	{
+		const char* b64 = &data[6];
+		slen -= 7;
+		crypto_base64_decode(b64, slen, &cmd->data, &dlen);
+	}
+	free(data);
+
+	return cmd->length == dlen;
+}
+
+static void free_cmd(RDPGFX_SURFACE_COMMAND* cmd)
+{
+	free(cmd->data);
+}
+
+static int test_dump(int argc, char* argv[])
+{
+	if (argc < 2)
+		return -1;
+
+	const char* path = argv[1];
+
+	PROGRESSIVE_CONTEXT* ctx = progressive_context_new(FALSE);
+	if (!ctx)
+		return -2;
+
+	UINT32 DstFormat = PIXEL_FORMAT_BGRA32;
+	const UINT32 width = 3840;
+	const UINT32 stride = (width + 16) * FreeRDPGetBytesPerPixel(DstFormat);
+	const UINT32 height = 2160;
+
+	BYTE* dst = calloc(stride, height);
+	BYTE* output = calloc(stride, height);
+	UINT32 count = 0;
+	int success = 0;
+
+	UINT64 dectime = 0;
+	UINT64 copytime = 0;
+	while (success >= 0)
+	{
+		char* fname = NULL;
+		size_t flen = 0;
+		winpr_asprintf(&fname, &flen, "%s/%08" PRIx32 ".raw", path, count++);
+		FILE* fp = fopen(fname, "r");
+		free(fname);
+
+		if (!fp)
+			break;
+
+		UINT32 frameId = 0;
+		RDPGFX_SURFACE_COMMAND cmd = { 0 };
+
+		if (read_cmd(fp, &cmd, &frameId))
+		{
+			REGION16 invalid = { 0 };
+			region16_init(&invalid);
+
+			{
+				const UINT64 start = winpr_GetTickCount64NS();
+				success = progressive_create_surface_context(ctx, cmd.surfaceId, width, height);
+				if (success >= 0)
+					success =
+					    progressive_decompress(ctx, cmd.data, cmd.length, dst, DstFormat, 0,
+					                           cmd.left, cmd.top, &invalid, cmd.surfaceId, frameId);
+				const UINT64 end = winpr_GetTickCount64NS();
+				const UINT64 diff = end - start;
+				const double ddiff = diff / 1000000.0;
+				fprintf(stderr, "frame %" PRIu32 " took %lf ms\n", frameId, ddiff);
+				dectime += diff;
+			}
+
+			{
+				UINT32 nbRects = 0;
+				const UINT64 start = winpr_GetTickCount64NS();
+
+				const RECTANGLE_16* rects = region16_rects(&invalid, &nbRects);
+				for (size_t x = 0; x < nbRects; x++)
+				{
+					RECTANGLE_16* rect = &rects[x];
+					const UINT32 w = rect->right - rect->left;
+					const UINT32 h = rect->bottom - rect->top;
+					freerdp_image_copy_no_overlap(output, DstFormat, stride, rect->left, rect->top,
+					                              w, h, dst, DstFormat, stride, rect->left,
+					                              rect->top, NULL, 0);
+				}
+				const UINT64 end = winpr_GetTickCount64NS();
+				const UINT64 diff = end - start;
+				const double ddiff = diff / 1000000.0;
+				fprintf(stderr, "frame %" PRIu32 " copy took %lf ms\n", frameId, ddiff);
+				copytime += diff;
+			}
+			region16_clear(&invalid);
+		}
+		free_cmd(&cmd);
+		fclose(fp);
+	}
+
+	progressive_context_free(ctx);
+	free(output);
+	free(dst);
+
+	const double dectimems = dectime / 1000000.0;
+	fprintf(stderr, "took %lf ms to decode\n", dectimems);
+
+	const double copytimems = copytime / 1000000.0;
+	fprintf(stderr, "took %lf ms to copy\n", copytimems);
+	return success;
+}
+
 int TestFreeRDPCodecProgressive(int argc, char* argv[])
 {
+	if (argc > 1)
+		return test_dump(argc, argv);
+
 	int rc = -1;
 	char* ms_sample_path = NULL;
 	char name[8192];

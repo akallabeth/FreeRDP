@@ -912,6 +912,36 @@ fail:
 	return status;
 }
 
+static void dump_cmd(const RDPGFX_SURFACE_COMMAND* cmd, UINT32 frameId)
+{
+	static UINT64 xxx = 0;
+	const char* path = "/tmp/dump/";
+	WINPR_ASSERT(cmd);
+	char* fname[1024] = { 0 };
+
+	snprintf(fname, sizeof(fname), "%s/%08" PRIx32 ".raw", path, xxx++);
+	FILE* fp = fopen(fname, "w");
+	if (!fp)
+		return;
+	fprintf(fp, "frameid: %" PRIu32 "\n", frameId);
+	fprintf(fp, "surfaceId: %" PRIu32 "\n", cmd->surfaceId);
+	fprintf(fp, "codecId: %" PRIu32 "\n", cmd->codecId);
+	fprintf(fp, "contextId: %" PRIu32 "\n", cmd->contextId);
+	fprintf(fp, "format: %" PRIu32 "\n", cmd->format);
+	fprintf(fp, "left: %" PRIu32 "\n", cmd->left);
+	fprintf(fp, "top: %" PRIu32 "\n", cmd->top);
+	fprintf(fp, "right: %" PRIu32 "\n", cmd->right);
+	fprintf(fp, "bottom: %" PRIu32 "\n", cmd->bottom);
+	fprintf(fp, "width: %" PRIu32 "\n", cmd->width);
+	fprintf(fp, "height: %" PRIu32 "\n", cmd->height);
+	fprintf(fp, "length: %" PRIu32 "\n", cmd->length);
+
+	char* bdata = crypto_base64_encode_ex(cmd->data, cmd->length, FALSE);
+	fprintf(fp, "data: %s\n", bdata);
+	free(bdata);
+	fclose(fp);
+}
+
 /**
  * Function description
  *
@@ -935,6 +965,8 @@ static UINT gdi_SurfaceCommand_Progressive(rdpGdi* gdi, RdpgfxClientContext* con
 	WINPR_ASSERT(context);
 	WINPR_ASSERT(cmd);
 	const UINT16 surfaceId = (UINT16)MIN(UINT16_MAX, cmd->surfaceId);
+
+	// dump_cmd(cmd, gdi->frameId);
 
 	WINPR_ASSERT(context->GetSurfaceData);
 	surface = (gdiGfxSurface*)context->GetSurfaceData(context, surfaceId);
