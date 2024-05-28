@@ -912,6 +912,7 @@ fail:
 	return status;
 }
 
+#if defined(WITH_GFX_FRAME_DUMP)
 static void dump_cmd(const RDPGFX_SURFACE_COMMAND* cmd, UINT32 frameId)
 {
 	static UINT64 xxx = 0;
@@ -941,6 +942,7 @@ static void dump_cmd(const RDPGFX_SURFACE_COMMAND* cmd, UINT32 frameId)
 	free(bdata);
 	fclose(fp);
 }
+#endif
 
 /**
  * Function description
@@ -965,8 +967,6 @@ static UINT gdi_SurfaceCommand_Progressive(rdpGdi* gdi, RdpgfxClientContext* con
 	WINPR_ASSERT(context);
 	WINPR_ASSERT(cmd);
 	const UINT16 surfaceId = (UINT16)MIN(UINT16_MAX, cmd->surfaceId);
-
-	// dump_cmd(cmd, gdi->frameId);
 
 	WINPR_ASSERT(context->GetSurfaceData);
 	surface = (gdiGfxSurface*)context->GetSurfaceData(context, surfaceId);
@@ -1046,6 +1046,9 @@ static UINT gdi_SurfaceCommand(RdpgfxClientContext* context, const RDPGFX_SURFAC
 	           cmd->contextId, FreeRDPGetColorFormatName(cmd->format), cmd->left, cmd->top,
 	           cmd->right, cmd->bottom, cmd->width, cmd->height, cmd->length, (void*)cmd->data,
 	           (void*)cmd->extra);
+#if defined(WITH_GFX_FRAME_DUMP)
+	dump_cmd(cmd, gdi->frameId);
+#endif
 
 	switch (cmd->codecId)
 	{
