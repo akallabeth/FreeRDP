@@ -1643,14 +1643,6 @@ static INLINE BOOL progressive_tile_read(PROGRESSIVE_CONTEXT* WINPR_RESTRICT pro
 	return progressive_surface_tile_replace(surface, region, &tile, FALSE);
 }
 
-typedef struct
-{
-	PROGRESSIVE_CONTEXT* progressive;
-	PROGRESSIVE_BLOCK_REGION* region;
-	const PROGRESSIVE_BLOCK_CONTEXT* context;
-	RFX_PROGRESSIVE_TILE* tile;
-} PROGRESSIVE_TILE_PROCESS_WORK_PARAM;
-
 static void CALLBACK progressive_process_tiles_tile_work_callback(PTP_CALLBACK_INSTANCE instance,
                                                                   void* context, PTP_WORK work)
 {
@@ -1691,8 +1683,6 @@ static INLINE SSIZE_T progressive_process_tiles(
 	UINT16 blockType = 0;
 	UINT32 blockLen = 0;
 	UINT32 count = 0;
-	PTP_WORK work_objects[0x10000] = { 0 };
-	PROGRESSIVE_TILE_PROCESS_WORK_PARAM params[0x10000] = { 0 };
 	UINT16 close_cnt = 0;
 
 	WINPR_ASSERT(progressive);
@@ -1778,7 +1768,7 @@ static INLINE SSIZE_T progressive_process_tiles(
 	for (UINT32 idx = 0; idx < region->numTiles; idx++)
 	{
 		RFX_PROGRESSIVE_TILE* tile = region->tiles[idx];
-		PROGRESSIVE_TILE_PROCESS_WORK_PARAM* param = &params[idx];
+		PROGRESSIVE_TILE_PROCESS_WORK_PARAM* param = &region->params[idx];
 		param->progressive = progressive;
 		param->region = region;
 		param->context = context;
@@ -1786,8 +1776,9 @@ static INLINE SSIZE_T progressive_process_tiles(
 
 		if (progressive->rfx_context->priv->UseThreads)
 		{
-			if (!(work_objects[idx] = CreateThreadpoolWork(
-			          progressive_process_tiles_tile_work_callback, (void*)&params[idx], NULL)))
+			if (!(region->work_objects[idx] =
+			          CreateThreadpoolWork(progressive_process_tiles_tile_work_callback,
+			                               (void*)&region->params[idx], NULL)))
 			{
 				WLog_Print(progressive->log, WLOG_ERROR,
 				           "Failed to create ThreadpoolWork for tile %" PRIu32, idx);
@@ -1795,12 +1786,12 @@ static INLINE SSIZE_T progressive_process_tiles(
 				break;
 			}
 
-			SubmitThreadpoolWork(work_objects[idx]);
+			SubmitThreadpoolWork(region->work_objects[idx]);
 			close_cnt = idx + 1;
 		}
 		else
 		{
-			progressive_process_tiles_tile_work_callback(0, &params[idx], 0);
+			progressive_process_tiles_tile_work_callback(0, &region->params[idx], 0);
 		}
 
 		if (status < 0)
@@ -1815,8 +1806,8 @@ static INLINE SSIZE_T progressive_process_tiles(
 	{
 		for (UINT32 idx = 0; idx < close_cnt; idx++)
 		{
-			WaitForThreadpoolWorkCallbacks(work_objects[idx], FALSE);
-			CloseThreadpoolWork(work_objects[idx]);
+			WaitForThreadpoolWorkCallbacks(region->work_objects[idx], FALSE);
+			CloseThreadpoolWork(region->work_objects[idx]);
 		}
 	}
 
