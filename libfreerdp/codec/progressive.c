@@ -764,15 +764,15 @@ static INLINE size_t progressive_rfx_get_band_h_count(size_t level)
 		return (64 + (1 << (level - 1))) >> level;
 }
 
-static INLINE void progressive_rfx_dwt_2d_decode_block(const INT16* WINPR_RESTRICT buffer,
+static INLINE void progressive_rfx_dwt_2d_decode_block(INT16* WINPR_RESTRICT buffer,
                                                        INT16* WINPR_RESTRICT temp, size_t level)
 {
 	size_t nDstStepX = 0;
 	size_t nDstStepY = 0;
-	INT16* WINPR_RESTRICT HL = NULL;
-	INT16* WINPR_RESTRICT LH = NULL;
-	INT16* WINPR_RESTRICT HH = NULL;
-	INT16* WINPR_RESTRICT LL = NULL;
+	const INT16* WINPR_RESTRICT HL = NULL;
+	const INT16* WINPR_RESTRICT LH = NULL;
+	const INT16* WINPR_RESTRICT HH = NULL;
+	const INT16* WINPR_RESTRICT LL = NULL;
 	INT16* WINPR_RESTRICT L = NULL;
 	INT16* WINPR_RESTRICT H = NULL;
 	INT16* WINPR_RESTRICT LLx = NULL;
