@@ -1676,8 +1676,8 @@ static INLINE SSIZE_T progressive_process_tiles(PROGRESSIVE_CONTEXT* progressive
 	UINT16 blockType = 0;
 	UINT32 blockLen = 0;
 	UINT32 count = 0;
-	PTP_WORK* work_objects = NULL;
-	PROGRESSIVE_TILE_PROCESS_WORK_PARAM* params = NULL;
+	PTP_WORK work_objects[0x10000] = { 0 };
+	PROGRESSIVE_TILE_PROCESS_WORK_PARAM params[0x10000] = { 0 };
 	UINT16 close_cnt = 0;
 
 	WINPR_ASSERT(progressive);
@@ -1760,24 +1760,6 @@ static INLINE SSIZE_T progressive_process_tiles(PROGRESSIVE_CONTEXT* progressive
 		return -1044;
 	}
 
-	{
-		size_t tcount = 1;
-		if (progressive->rfx_context->priv->UseThreads)
-			tcount = region->numTiles;
-
-		work_objects = (PTP_WORK*)winpr_aligned_calloc(tcount, sizeof(PTP_WORK), 32);
-		if (!work_objects)
-			return -1;
-	}
-
-	params = (PROGRESSIVE_TILE_PROCESS_WORK_PARAM*)winpr_aligned_calloc(
-	    region->numTiles, sizeof(PROGRESSIVE_TILE_PROCESS_WORK_PARAM), 32);
-	if (!params)
-	{
-		winpr_aligned_free(work_objects);
-		return -1;
-	}
-
 	for (UINT32 idx = 0; idx < region->numTiles; idx++)
 	{
 		RFX_PROGRESSIVE_TILE* tile = region->tiles[idx];
@@ -1824,9 +1806,6 @@ static INLINE SSIZE_T progressive_process_tiles(PROGRESSIVE_CONTEXT* progressive
 	}
 
 fail:
-	winpr_aligned_free(work_objects);
-	winpr_aligned_free(params);
-
 	if (status < 0)
 		return -1;
 
