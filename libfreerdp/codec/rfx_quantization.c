@@ -62,7 +62,7 @@ static INLINE void rfx_quantization_decode_block(INT16* WINPR_RESTRICT buffer, U
 	general_lShiftC_16s(buffer, factor, buffer, buffer_size);
 }
 
-void rfx_quantization_decode(INT16* buffer, const UINT32* WINPR_RESTRICT quantVals)
+void rfx_quantization_decode(INT16* WINPR_RESTRICT buffer, const UINT32* WINPR_RESTRICT quantVals)
 {
 	WINPR_ASSERT(buffer);
 	WINPR_ASSERT(quantVals);
@@ -79,7 +79,8 @@ void rfx_quantization_decode(INT16* buffer, const UINT32* WINPR_RESTRICT quantVa
 	rfx_quantization_decode_block(&buffer[4032], 64, quantVals[0] - 1);   /* LL3 */
 }
 
-static INLINE void rfx_quantization_encode_block(INT16* buffer, size_t buffer_size, UINT32 factor)
+static INLINE void rfx_quantization_encode_block(INT16* WINPR_RESTRICT buffer, size_t buffer_size,
+                                                 UINT32 factor)
 {
 	INT16 half = 0;
 
@@ -94,7 +95,8 @@ static INLINE void rfx_quantization_encode_block(INT16* buffer, size_t buffer_si
 	}
 }
 
-void rfx_quantization_encode(INT16* buffer, const UINT32* WINPR_RESTRICT quantization_values)
+void rfx_quantization_encode(INT16* WINPR_RESTRICT buffer,
+                             const UINT32* WINPR_RESTRICT quantization_values)
 {
 	WINPR_ASSERT(buffer);
 	WINPR_ASSERT(quantization_values);
