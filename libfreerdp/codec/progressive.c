@@ -55,8 +55,11 @@ typedef struct
 	BOOL mode;
 } RFX_PROGRESSIVE_UPGRADE_STATE;
 
-static INLINE void progressive_component_codec_quant_read(wStream* s,
-                                                          RFX_COMPONENT_CODEC_QUANT* quantVal)
+static void progressive_surface_context_free(PROGRESSIVE_SURFACE_CONTEXT* WINPR_RESTRICT surface);
+
+static INLINE void
+progressive_component_codec_quant_read(wStream* s,
+                                       RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT quantVal)
 {
 	BYTE b = 0;
 	Stream_Read_UINT8(s, b);
@@ -76,7 +79,7 @@ static INLINE void progressive_component_codec_quant_read(wStream* s,
 	quantVal->HH1 = b >> 4;
 }
 
-static INLINE void progressive_rfx_quant_ladd(RFX_COMPONENT_CODEC_QUANT* q, int val)
+static INLINE void progressive_rfx_quant_ladd(RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q, int val)
 {
 	q->HL1 += val; /* HL1 */
 	q->LH1 += val; /* LH1 */
@@ -90,8 +93,8 @@ static INLINE void progressive_rfx_quant_ladd(RFX_COMPONENT_CODEC_QUANT* q, int 
 	q->LL3 += val; /* LL3 */
 }
 
-static INLINE void progressive_rfx_quant_add(const RFX_COMPONENT_CODEC_QUANT* q1,
-                                             const RFX_COMPONENT_CODEC_QUANT* q2,
+static INLINE void progressive_rfx_quant_add(const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q1,
+                                             const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q2,
                                              RFX_COMPONENT_CODEC_QUANT* dst)
 {
 	dst->HL1 = q1->HL1 + q2->HL1; /* HL1 */
@@ -106,7 +109,7 @@ static INLINE void progressive_rfx_quant_add(const RFX_COMPONENT_CODEC_QUANT* q1
 	dst->LL3 = q1->LL3 + q2->LL3; /* LL3 */
 }
 
-static INLINE void progressive_rfx_quant_lsub(RFX_COMPONENT_CODEC_QUANT* q, int val)
+static INLINE void progressive_rfx_quant_lsub(RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q, int val)
 {
 	q->HL1 -= val; /* HL1 */
 	q->LH1 -= val; /* LH1 */
@@ -120,8 +123,8 @@ static INLINE void progressive_rfx_quant_lsub(RFX_COMPONENT_CODEC_QUANT* q, int 
 	q->LL3 -= val; /* LL3 */
 }
 
-static INLINE void progressive_rfx_quant_sub(const RFX_COMPONENT_CODEC_QUANT* q1,
-                                             const RFX_COMPONENT_CODEC_QUANT* q2,
+static INLINE void progressive_rfx_quant_sub(const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q1,
+                                             const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q2,
                                              RFX_COMPONENT_CODEC_QUANT* dst)
 {
 	dst->HL1 = q1->HL1 - q2->HL1; /* HL1 */
@@ -136,8 +139,8 @@ static INLINE void progressive_rfx_quant_sub(const RFX_COMPONENT_CODEC_QUANT* q1
 	dst->LL3 = q1->LL3 - q2->LL3; /* LL3 */
 }
 
-static INLINE BOOL progressive_rfx_quant_lcmp_less_equal(const RFX_COMPONENT_CODEC_QUANT* q,
-                                                         int val)
+static INLINE BOOL
+progressive_rfx_quant_lcmp_less_equal(const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q, int val)
 {
 	if (q->HL1 > val)
 		return FALSE; /* HL1 */
@@ -172,8 +175,9 @@ static INLINE BOOL progressive_rfx_quant_lcmp_less_equal(const RFX_COMPONENT_COD
 	return TRUE;
 }
 
-static INLINE BOOL progressive_rfx_quant_cmp_less_equal(const RFX_COMPONENT_CODEC_QUANT* q1,
-                                                        const RFX_COMPONENT_CODEC_QUANT* q2)
+static INLINE BOOL
+progressive_rfx_quant_cmp_less_equal(const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q1,
+                                     const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q2)
 {
 	if (q1->HL1 > q2->HL1)
 		return FALSE; /* HL1 */
@@ -208,8 +212,8 @@ static INLINE BOOL progressive_rfx_quant_cmp_less_equal(const RFX_COMPONENT_CODE
 	return TRUE;
 }
 
-static INLINE BOOL progressive_rfx_quant_lcmp_greater_equal(const RFX_COMPONENT_CODEC_QUANT* q,
-                                                            int val)
+static INLINE BOOL
+progressive_rfx_quant_lcmp_greater_equal(const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q, int val)
 {
 	if (q->HL1 < val)
 		return FALSE; /* HL1 */
@@ -244,8 +248,9 @@ static INLINE BOOL progressive_rfx_quant_lcmp_greater_equal(const RFX_COMPONENT_
 	return TRUE;
 }
 
-static INLINE BOOL progressive_rfx_quant_cmp_greater_equal(const RFX_COMPONENT_CODEC_QUANT* q1,
-                                                           const RFX_COMPONENT_CODEC_QUANT* q2)
+static INLINE BOOL
+progressive_rfx_quant_cmp_greater_equal(const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q1,
+                                        const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q2)
 {
 	if (q1->HL1 < q2->HL1)
 		return FALSE; /* HL1 */
@@ -280,8 +285,9 @@ static INLINE BOOL progressive_rfx_quant_cmp_greater_equal(const RFX_COMPONENT_C
 	return TRUE;
 }
 
-static INLINE BOOL progressive_rfx_quant_cmp_equal(const RFX_COMPONENT_CODEC_QUANT* q1,
-                                                   const RFX_COMPONENT_CODEC_QUANT* q2)
+static INLINE BOOL
+progressive_rfx_quant_cmp_equal(const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q1,
+                                const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT q2)
 {
 	if (q1->HL1 != q2->HL1)
 		return FALSE; /* HL1 */
@@ -316,31 +322,25 @@ static INLINE BOOL progressive_rfx_quant_cmp_equal(const RFX_COMPONENT_CODEC_QUA
 	return TRUE;
 }
 
-static INLINE BOOL progressive_set_surface_data(PROGRESSIVE_CONTEXT* progressive, UINT16 surfaceId,
-                                                void* pData)
+static INLINE BOOL progressive_set_surface_data(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                                UINT16 surfaceId,
+                                                PROGRESSIVE_SURFACE_CONTEXT* WINPR_RESTRICT pData)
 {
-	ULONG_PTR key = 0;
-	key = ((ULONG_PTR)surfaceId) + 1;
-
-	if (pData)
-		return HashTable_Insert(progressive->SurfaceContexts, (void*)key, pData);
-
-	HashTable_Remove(progressive->SurfaceContexts, (void*)key);
+	progressive_surface_context_free(progressive->SurfaceContexts[surfaceId]);
+	progressive->SurfaceContexts[surfaceId] = pData;
 	return TRUE;
 }
 
 static INLINE PROGRESSIVE_SURFACE_CONTEXT*
-progressive_get_surface_data(PROGRESSIVE_CONTEXT* progressive, UINT16 surfaceId)
+progressive_get_surface_data(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive, UINT16 surfaceId)
 {
-	void* key = (void*)(((ULONG_PTR)surfaceId) + 1);
-
 	if (!progressive)
 		return NULL;
 
-	return HashTable_GetItemValue(progressive->SurfaceContexts, key);
+	return progressive->SurfaceContexts[surfaceId];
 }
 
-static void progressive_tile_free(RFX_PROGRESSIVE_TILE* tile)
+static void progressive_tile_free(RFX_PROGRESSIVE_TILE* WINPR_RESTRICT tile)
 {
 	if (tile)
 	{
@@ -351,10 +351,8 @@ static void progressive_tile_free(RFX_PROGRESSIVE_TILE* tile)
 	}
 }
 
-static void progressive_surface_context_free(void* ptr)
+void progressive_surface_context_free(PROGRESSIVE_SURFACE_CONTEXT* WINPR_RESTRICT surface)
 {
-	PROGRESSIVE_SURFACE_CONTEXT* surface = ptr;
-
 	if (!surface)
 		return;
 
@@ -383,7 +381,7 @@ static INLINE RFX_PROGRESSIVE_TILE* progressive_tile_new(void)
 	tile->stride = 4 * tile->width;
 
 	size_t dataLen = 1ull * tile->stride * tile->height;
-	tile->data = (BYTE*)winpr_aligned_malloc(dataLen, 16);
+	tile->data = (BYTE*)winpr_aligned_calloc(dataLen, sizeof(BYTE), 16);
 	if (!tile->data)
 		goto fail;
 	memset(tile->data, 0xFF, dataLen);
@@ -405,7 +403,8 @@ fail:
 	return NULL;
 }
 
-static BOOL progressive_allocate_tile_cache(PROGRESSIVE_SURFACE_CONTEXT* surface, size_t min)
+static BOOL progressive_allocate_tile_cache(PROGRESSIVE_SURFACE_CONTEXT* WINPR_RESTRICT surface,
+                                            size_t min)
 {
 	size_t oldIndex = 0;
 
@@ -468,9 +467,10 @@ static PROGRESSIVE_SURFACE_CONTEXT* progressive_surface_context_new(UINT16 surfa
 	return surface;
 }
 
-static BOOL progressive_surface_tile_replace(PROGRESSIVE_SURFACE_CONTEXT* surface,
-                                             PROGRESSIVE_BLOCK_REGION* region,
-                                             const RFX_PROGRESSIVE_TILE* tile, BOOL upgrade)
+static BOOL progressive_surface_tile_replace(PROGRESSIVE_SURFACE_CONTEXT* WINPR_RESTRICT surface,
+                                             PROGRESSIVE_BLOCK_REGION* WINPR_RESTRICT region,
+                                             const RFX_PROGRESSIVE_TILE* WINPR_RESTRICT tile,
+                                             BOOL upgrade)
 {
 	RFX_PROGRESSIVE_TILE* t = NULL;
 
@@ -550,8 +550,8 @@ static BOOL progressive_surface_tile_replace(PROGRESSIVE_SURFACE_CONTEXT* surfac
 	return TRUE;
 }
 
-INT32 progressive_create_surface_context(PROGRESSIVE_CONTEXT* progressive, UINT16 surfaceId,
-                                         UINT32 width, UINT32 height)
+INT32 progressive_create_surface_context(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                         UINT16 surfaceId, UINT32 width, UINT32 height)
 {
 	PROGRESSIVE_SURFACE_CONTEXT* surface = progressive_get_surface_data(progressive, surfaceId);
 
@@ -572,7 +572,8 @@ INT32 progressive_create_surface_context(PROGRESSIVE_CONTEXT* progressive, UINT1
 	return 1;
 }
 
-int progressive_delete_surface_context(PROGRESSIVE_CONTEXT* progressive, UINT16 surfaceId)
+int progressive_delete_surface_context(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                       UINT16 surfaceId)
 {
 	progressive_set_surface_data(progressive, surfaceId, NULL);
 
@@ -597,10 +598,10 @@ int progressive_delete_surface_context(PROGRESSIVE_CONTEXT* progressive, UINT16 
  * LL3      4015        9x9         81
  */
 
-static INLINE void progressive_rfx_idwt_x(const INT16* pLowBand, size_t nLowStep,
-                                          const INT16* pHighBand, size_t nHighStep, INT16* pDstBand,
-                                          size_t nDstStep, size_t nLowCount, size_t nHighCount,
-                                          size_t nDstCount)
+static INLINE void progressive_rfx_idwt_x(const INT16* WINPR_RESTRICT pLowBand, size_t nLowStep,
+                                          const INT16* WINPR_RESTRICT pHighBand, size_t nHighStep,
+                                          INT16* WINPR_RESTRICT pDstBand, size_t nDstStep,
+                                          size_t nLowCount, size_t nHighCount, size_t nDstCount)
 {
 	INT16 L0 = 0;
 	INT16 H0 = 0;
@@ -670,10 +671,10 @@ static INLINE void progressive_rfx_idwt_x(const INT16* pLowBand, size_t nLowStep
 	}
 }
 
-static INLINE void progressive_rfx_idwt_y(const INT16* pLowBand, size_t nLowStep,
-                                          const INT16* pHighBand, size_t nHighStep, INT16* pDstBand,
-                                          size_t nDstStep, size_t nLowCount, size_t nHighCount,
-                                          size_t nDstCount)
+static INLINE void progressive_rfx_idwt_y(const INT16* WINPR_RESTRICT pLowBand, size_t nLowStep,
+                                          const INT16* WINPR_RESTRICT pHighBand, size_t nHighStep,
+                                          INT16* WINPR_RESTRICT pDstBand, size_t nDstStep,
+                                          size_t nLowCount, size_t nHighCount, size_t nDstCount)
 {
 	INT16 L0 = 0;
 	INT16 H0 = 0;
@@ -763,7 +764,8 @@ static INLINE size_t progressive_rfx_get_band_h_count(size_t level)
 		return (64 + (1 << (level - 1))) >> level;
 }
 
-static INLINE void progressive_rfx_dwt_2d_decode_block(INT16* buffer, INT16* temp, size_t level)
+static INLINE void progressive_rfx_dwt_2d_decode_block(const INT16* WINPR_RESTRICT buffer,
+                                                       INT16* WINPR_RESTRICT temp, size_t level)
 {
 	size_t nDstStepX = 0;
 	size_t nDstStepY = 0;
@@ -814,9 +816,10 @@ void rfx_dwt_2d_extrapolate_decode(INT16* buffer, INT16* temp)
 	progressive_rfx_dwt_2d_decode_block(&buffer[0], temp, 1);
 }
 
-static INLINE int progressive_rfx_dwt_2d_decode(PROGRESSIVE_CONTEXT* progressive, INT16* buffer,
-                                                INT16* current, BOOL coeffDiff, BOOL extrapolate,
-                                                BOOL reverse)
+static INLINE int progressive_rfx_dwt_2d_decode(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                                INT16* WINPR_RESTRICT buffer,
+                                                INT16* WINPR_RESTRICT current, BOOL coeffDiff,
+                                                BOOL extrapolate, BOOL reverse)
 {
 	const primitives_t* prims = primitives_get();
 
@@ -856,8 +859,9 @@ static INLINE int progressive_rfx_dwt_2d_decode(PROGRESSIVE_CONTEXT* progressive
 	return 1;
 }
 
-static INLINE void progressive_rfx_decode_block(const primitives_t* prims, INT16* buffer,
-                                                UINT32 length, UINT32 shift)
+static INLINE void progressive_rfx_decode_block(const primitives_t* WINPR_RESTRICT prims,
+                                                INT16* WINPR_RESTRICT buffer, UINT32 length,
+                                                UINT32 shift)
 {
 	if (!shift)
 		return;
@@ -865,11 +869,11 @@ static INLINE void progressive_rfx_decode_block(const primitives_t* prims, INT16
 	prims->lShiftC_16s(buffer, shift, buffer, length);
 }
 
-static INLINE int progressive_rfx_decode_component(PROGRESSIVE_CONTEXT* progressive,
-                                                   const RFX_COMPONENT_CODEC_QUANT* shift,
-                                                   const BYTE* data, UINT32 length, INT16* buffer,
-                                                   INT16* current, INT16* sign, BOOL coeffDiff,
-                                                   BOOL subbandDiff, BOOL extrapolate)
+static INLINE int progressive_rfx_decode_component(
+    PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+    const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT shift, const BYTE* WINPR_RESTRICT data,
+    UINT32 length, INT16* WINPR_RESTRICT buffer, INT16* WINPR_RESTRICT current,
+    INT16* WINPR_RESTRICT sign, BOOL coeffDiff, BOOL subbandDiff, BOOL extrapolate)
 {
 	int status = 0;
 	const primitives_t* prims = primitives_get();
@@ -912,10 +916,11 @@ static INLINE int progressive_rfx_decode_component(PROGRESSIVE_CONTEXT* progress
 	                                     FALSE);
 }
 
-static INLINE int progressive_decompress_tile_first(PROGRESSIVE_CONTEXT* progressive,
-                                                    RFX_PROGRESSIVE_TILE* tile,
-                                                    PROGRESSIVE_BLOCK_REGION* region,
-                                                    const PROGRESSIVE_BLOCK_CONTEXT* context)
+static INLINE int
+progressive_decompress_tile_first(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                  RFX_PROGRESSIVE_TILE* WINPR_RESTRICT tile,
+                                  PROGRESSIVE_BLOCK_REGION* WINPR_RESTRICT region,
+                                  const PROGRESSIVE_BLOCK_CONTEXT* WINPR_RESTRICT context)
 {
 	int rc = 0;
 	BOOL diff = 0;
@@ -1051,7 +1056,8 @@ fail:
 	return rc;
 }
 
-static INLINE INT16 progressive_rfx_srl_read(RFX_PROGRESSIVE_UPGRADE_STATE* state, UINT32 numBits)
+static INLINE INT16 progressive_rfx_srl_read(RFX_PROGRESSIVE_UPGRADE_STATE* WINPR_RESTRICT state,
+                                             UINT32 numBits)
 {
 	UINT32 k = 0;
 	UINT32 bit = 0;
@@ -1138,7 +1144,8 @@ static INLINE INT16 progressive_rfx_srl_read(RFX_PROGRESSIVE_UPGRADE_STATE* stat
 	return sign ? -1 * mag : mag;
 }
 
-static INLINE int progressive_rfx_upgrade_state_finish(RFX_PROGRESSIVE_UPGRADE_STATE* state)
+static INLINE int
+progressive_rfx_upgrade_state_finish(RFX_PROGRESSIVE_UPGRADE_STATE* WINPR_RESTRICT state)
 {
 	UINT32 pad = 0;
 	wBitStream* srl = NULL;
@@ -1165,9 +1172,10 @@ static INLINE int progressive_rfx_upgrade_state_finish(RFX_PROGRESSIVE_UPGRADE_S
 	return 1;
 }
 
-static INLINE int progressive_rfx_upgrade_block(RFX_PROGRESSIVE_UPGRADE_STATE* state, INT16* buffer,
-                                                INT16* sign, UINT32 length, UINT32 shift,
-                                                UINT32 bitPos, UINT32 numBits)
+static INLINE int progressive_rfx_upgrade_block(RFX_PROGRESSIVE_UPGRADE_STATE* WINPR_RESTRICT state,
+                                                INT16* WINPR_RESTRICT buffer,
+                                                INT16* WINPR_RESTRICT sign, UINT32 length,
+                                                UINT32 shift, UINT32 bitPos, UINT32 numBits)
 {
 	INT16 input = 0;
 	wBitStream* raw = NULL;
@@ -1220,11 +1228,15 @@ static INLINE int progressive_rfx_upgrade_block(RFX_PROGRESSIVE_UPGRADE_STATE* s
 	return 1;
 }
 
-static INLINE int progressive_rfx_upgrade_component(
-    PROGRESSIVE_CONTEXT* progressive, const RFX_COMPONENT_CODEC_QUANT* shift,
-    const RFX_COMPONENT_CODEC_QUANT* bitPos, const RFX_COMPONENT_CODEC_QUANT* numBits,
-    INT16* buffer, INT16* current, INT16* sign, const BYTE* srlData, UINT32 srlLen,
-    const BYTE* rawData, UINT32 rawLen, BOOL coeffDiff, BOOL subbandDiff, BOOL extrapolate)
+static INLINE int
+progressive_rfx_upgrade_component(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                  const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT shift,
+                                  const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT bitPos,
+                                  const RFX_COMPONENT_CODEC_QUANT* WINPR_RESTRICT numBits,
+                                  INT16* WINPR_RESTRICT buffer, INT16* WINPR_RESTRICT current,
+                                  INT16* WINPR_RESTRICT sign, const BYTE* WINPR_RESTRICT srlData,
+                                  UINT32 srlLen, const BYTE* WINPR_RESTRICT rawData, UINT32 rawLen,
+                                  BOOL coeffDiff, BOOL subbandDiff, BOOL extrapolate)
 {
 	int rc = 0;
 	UINT32 aRawLen = 0;
@@ -1315,10 +1327,11 @@ static INLINE int progressive_rfx_upgrade_component(
 	                                     TRUE);
 }
 
-static INLINE int progressive_decompress_tile_upgrade(PROGRESSIVE_CONTEXT* progressive,
-                                                      RFX_PROGRESSIVE_TILE* tile,
-                                                      PROGRESSIVE_BLOCK_REGION* region,
-                                                      const PROGRESSIVE_BLOCK_CONTEXT* context)
+static INLINE int
+progressive_decompress_tile_upgrade(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                    RFX_PROGRESSIVE_TILE* WINPR_RESTRICT tile,
+                                    PROGRESSIVE_BLOCK_REGION* WINPR_RESTRICT region,
+                                    const PROGRESSIVE_BLOCK_CONTEXT* WINPR_RESTRICT context)
 {
 	int status = 0;
 	BOOL coeffDiff = 0;
@@ -1489,11 +1502,11 @@ fail:
 	return status;
 }
 
-static INLINE BOOL progressive_tile_read_upgrade(PROGRESSIVE_CONTEXT* progressive, wStream* s,
-                                                 UINT16 blockType, UINT32 blockLen,
-                                                 PROGRESSIVE_SURFACE_CONTEXT* surface,
-                                                 PROGRESSIVE_BLOCK_REGION* region,
-                                                 const PROGRESSIVE_BLOCK_CONTEXT* context)
+static INLINE BOOL progressive_tile_read_upgrade(
+    PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive, wStream* WINPR_RESTRICT s, UINT16 blockType,
+    UINT32 blockLen, PROGRESSIVE_SURFACE_CONTEXT* WINPR_RESTRICT surface,
+    PROGRESSIVE_BLOCK_REGION* WINPR_RESTRICT region,
+    const PROGRESSIVE_BLOCK_CONTEXT* WINPR_RESTRICT context)
 {
 	RFX_PROGRESSIVE_TILE tile = { 0 };
 	const size_t expect = 20;
@@ -1567,11 +1580,12 @@ static INLINE BOOL progressive_tile_read_upgrade(PROGRESSIVE_CONTEXT* progressiv
 	return progressive_surface_tile_replace(surface, region, &tile, TRUE);
 }
 
-static INLINE BOOL progressive_tile_read(PROGRESSIVE_CONTEXT* progressive, BOOL simple, wStream* s,
-                                         UINT16 blockType, UINT32 blockLen,
-                                         PROGRESSIVE_SURFACE_CONTEXT* surface,
-                                         PROGRESSIVE_BLOCK_REGION* region,
-                                         const PROGRESSIVE_BLOCK_CONTEXT* context)
+static INLINE BOOL progressive_tile_read(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                         BOOL simple, wStream* WINPR_RESTRICT s, UINT16 blockType,
+                                         UINT32 blockLen,
+                                         PROGRESSIVE_SURFACE_CONTEXT* WINPR_RESTRICT surface,
+                                         PROGRESSIVE_BLOCK_REGION* WINPR_RESTRICT region,
+                                         const PROGRESSIVE_BLOCK_CONTEXT* WINPR_RESTRICT context)
 {
 	RFX_PROGRESSIVE_TILE tile = { 0 };
 	size_t expect = simple ? 16 : 17;
@@ -1665,10 +1679,11 @@ static void CALLBACK progressive_process_tiles_tile_work_callback(PTP_CALLBACK_I
 	}
 }
 
-static INLINE SSIZE_T progressive_process_tiles(PROGRESSIVE_CONTEXT* progressive, wStream* s,
-                                                PROGRESSIVE_BLOCK_REGION* region,
-                                                PROGRESSIVE_SURFACE_CONTEXT* surface,
-                                                const PROGRESSIVE_BLOCK_CONTEXT* context)
+static INLINE SSIZE_T progressive_process_tiles(
+    PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive, wStream* WINPR_RESTRICT s,
+    PROGRESSIVE_BLOCK_REGION* WINPR_RESTRICT region,
+    PROGRESSIVE_SURFACE_CONTEXT* WINPR_RESTRICT surface,
+    const PROGRESSIVE_BLOCK_CONTEXT* WINPR_RESTRICT context)
 {
 	int status = 0;
 	size_t end = 0;
@@ -1812,12 +1827,13 @@ fail:
 	return (SSIZE_T)(end - start);
 }
 
-static INLINE SSIZE_T progressive_wb_sync(PROGRESSIVE_CONTEXT* progressive, wStream* s,
-                                          UINT16 blockType, UINT32 blockLen)
+static INLINE SSIZE_T progressive_wb_sync(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                          wStream* WINPR_RESTRICT s, UINT16 blockType,
+                                          UINT32 blockLen)
 {
 	const UINT32 magic = 0xCACCACCA;
 	const UINT16 version = 0x0100;
-	PROGRESSIVE_BLOCK_SYNC sync;
+	PROGRESSIVE_BLOCK_SYNC sync = { 0 };
 
 	sync.blockType = blockType;
 	sync.blockLen = blockLen;
@@ -1863,10 +1879,11 @@ static INLINE SSIZE_T progressive_wb_sync(PROGRESSIVE_CONTEXT* progressive, wStr
 	return 0;
 }
 
-static INLINE SSIZE_T progressive_wb_frame_begin(PROGRESSIVE_CONTEXT* progressive, wStream* s,
-                                                 UINT16 blockType, UINT32 blockLen)
+static INLINE SSIZE_T progressive_wb_frame_begin(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                                 wStream* WINPR_RESTRICT s, UINT16 blockType,
+                                                 UINT32 blockLen)
 {
-	PROGRESSIVE_BLOCK_FRAME_BEGIN frameBegin;
+	PROGRESSIVE_BLOCK_FRAME_BEGIN frameBegin = { 0 };
 
 	frameBegin.blockType = blockType;
 	frameBegin.blockLen = blockLen;
@@ -1914,10 +1931,11 @@ static INLINE SSIZE_T progressive_wb_frame_begin(PROGRESSIVE_CONTEXT* progressiv
 	return 0;
 }
 
-static INLINE SSIZE_T progressive_wb_frame_end(PROGRESSIVE_CONTEXT* progressive, wStream* s,
-                                               UINT16 blockType, UINT32 blockLen)
+static INLINE SSIZE_T progressive_wb_frame_end(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                               wStream* WINPR_RESTRICT s, UINT16 blockType,
+                                               UINT32 blockLen)
 {
-	PROGRESSIVE_BLOCK_FRAME_END frameEnd;
+	PROGRESSIVE_BLOCK_FRAME_END frameEnd = { 0 };
 
 	frameEnd.blockType = blockType;
 	frameEnd.blockLen = blockLen;
@@ -1951,8 +1969,9 @@ static INLINE SSIZE_T progressive_wb_frame_end(PROGRESSIVE_CONTEXT* progressive,
 	return 0;
 }
 
-static INLINE SSIZE_T progressive_wb_context(PROGRESSIVE_CONTEXT* progressive, wStream* s,
-                                             UINT16 blockType, UINT32 blockLen)
+static INLINE SSIZE_T progressive_wb_context(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                             wStream* WINPR_RESTRICT s, UINT16 blockType,
+                                             UINT32 blockLen)
 {
 	PROGRESSIVE_BLOCK_CONTEXT* context = &progressive->context;
 	context->blockType = blockType;
@@ -1998,14 +2017,14 @@ static INLINE SSIZE_T progressive_wb_context(PROGRESSIVE_CONTEXT* progressive, w
 	return 0;
 }
 
-static INLINE SSIZE_T progressive_wb_read_region_header(PROGRESSIVE_CONTEXT* progressive,
-                                                        wStream* s, UINT16 blockType,
-                                                        UINT32 blockLen,
-                                                        PROGRESSIVE_BLOCK_REGION* region)
+static INLINE SSIZE_T progressive_wb_read_region_header(
+    PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive, wStream* WINPR_RESTRICT s, UINT16 blockType,
+    UINT32 blockLen, PROGRESSIVE_BLOCK_REGION* WINPR_RESTRICT region)
 {
+	const PROGRESSIVE_BLOCK_REGION empty = { 0 };
 	SSIZE_T len = 0;
 
-	memset(region, 0, sizeof(PROGRESSIVE_BLOCK_REGION));
+	*region = empty;
 	if (!Stream_CheckAndLogRequiredLength(TAG, s, 12))
 		return -1011;
 
@@ -2077,8 +2096,9 @@ static INLINE SSIZE_T progressive_wb_read_region_header(PROGRESSIVE_CONTEXT* pro
 	return len;
 }
 
-static INLINE SSIZE_T progressive_wb_skip_region(PROGRESSIVE_CONTEXT* progressive, wStream* s,
-                                                 UINT16 blockType, UINT32 blockLen)
+static INLINE SSIZE_T progressive_wb_skip_region(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                                 wStream* WINPR_RESTRICT s, UINT16 blockType,
+                                                 UINT32 blockLen)
 {
 	SSIZE_T rc = 0;
 	size_t total = 0;
@@ -2098,10 +2118,11 @@ static INLINE SSIZE_T progressive_wb_skip_region(PROGRESSIVE_CONTEXT* progressiv
 	return rc;
 }
 
-static INLINE SSIZE_T progressive_wb_region(PROGRESSIVE_CONTEXT* progressive, wStream* s,
-                                            UINT16 blockType, UINT32 blockLen,
-                                            PROGRESSIVE_SURFACE_CONTEXT* surface,
-                                            PROGRESSIVE_BLOCK_REGION* region)
+static INLINE SSIZE_T progressive_wb_region(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                            wStream* WINPR_RESTRICT s, UINT16 blockType,
+                                            UINT32 blockLen,
+                                            PROGRESSIVE_SURFACE_CONTEXT* WINPR_RESTRICT surface,
+                                            PROGRESSIVE_BLOCK_REGION* WINPR_RESTRICT region)
 {
 	SSIZE_T rc = -1;
 	UINT16 boxLeft = 0;
@@ -2218,9 +2239,10 @@ static INLINE SSIZE_T progressive_wb_region(PROGRESSIVE_CONTEXT* progressive, wS
 	return (size_t)rc;
 }
 
-static SSIZE_T progressive_parse_block(PROGRESSIVE_CONTEXT* progressive, wStream* s,
-                                       PROGRESSIVE_SURFACE_CONTEXT* surface,
-                                       PROGRESSIVE_BLOCK_REGION* region)
+static SSIZE_T progressive_parse_block(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                                       wStream* WINPR_RESTRICT s,
+                                       PROGRESSIVE_SURFACE_CONTEXT* WINPR_RESTRICT surface,
+                                       PROGRESSIVE_BLOCK_REGION* WINPR_RESTRICT region)
 {
 	UINT16 blockType = 0;
 	UINT32 blockLen = 0;
@@ -2286,9 +2308,12 @@ static SSIZE_T progressive_parse_block(PROGRESSIVE_CONTEXT* progressive, wStream
 	return rc;
 }
 
-static BOOL update_tiles(PROGRESSIVE_CONTEXT* progressive, PROGRESSIVE_SURFACE_CONTEXT* surface,
-                         BYTE* pDstData, UINT32 DstFormat, UINT32 nDstStep, UINT32 nXDst,
-                         UINT32 nYDst, PROGRESSIVE_BLOCK_REGION* region, REGION16* invalidRegion)
+static BOOL update_tiles(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                         PROGRESSIVE_SURFACE_CONTEXT* WINPR_RESTRICT surface,
+                         BYTE* WINPR_RESTRICT pDstData, UINT32 DstFormat, UINT32 nDstStep,
+                         UINT32 nXDst, UINT32 nYDst,
+                         PROGRESSIVE_BLOCK_REGION* WINPR_RESTRICT region,
+                         REGION16* WINPR_RESTRICT invalidRegion)
 {
 	BOOL rc = TRUE;
 	REGION16 clippingRects = { 0 };
@@ -2362,10 +2387,11 @@ fail:
 	return rc;
 }
 
-INT32 progressive_decompress(PROGRESSIVE_CONTEXT* progressive, const BYTE* pSrcData, UINT32 SrcSize,
-                             BYTE* pDstData, UINT32 DstFormat, UINT32 nDstStep, UINT32 nXDst,
-                             UINT32 nYDst, REGION16* invalidRegion, UINT16 surfaceId,
-                             UINT32 frameId)
+INT32 progressive_decompress(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
+                             const BYTE* WINPR_RESTRICT pSrcData, UINT32 SrcSize,
+                             BYTE* WINPR_RESTRICT pDstData, UINT32 DstFormat, UINT32 nDstStep,
+                             UINT32 nXDst, UINT32 nYDst, REGION16* WINPR_RESTRICT invalidRegion,
+                             UINT16 surfaceId, UINT32 frameId)
 {
 	INT32 rc = 1;
 
@@ -2603,15 +2629,6 @@ PROGRESSIVE_CONTEXT* progressive_context_new_ex(BOOL Compressor, UINT32 Threadin
 	progressive->bufferPool = BufferPool_New(TRUE, (8192 + 32) * 3, 16);
 	if (!progressive->bufferPool)
 		goto fail;
-	progressive->SurfaceContexts = HashTable_New(TRUE);
-	if (!progressive->SurfaceContexts)
-		goto fail;
-
-	{
-		wObject* obj = HashTable_ValueObject(progressive->SurfaceContexts);
-		WINPR_ASSERT(obj);
-		obj->fnObjectFree = progressive_surface_context_free;
-	}
 	return progressive;
 fail:
 	WINPR_PRAGMA_DIAG_PUSH
@@ -2631,7 +2648,8 @@ void progressive_context_free(PROGRESSIVE_CONTEXT* progressive)
 	rfx_context_free(progressive->rfx_context);
 
 	BufferPool_Free(progressive->bufferPool);
-	HashTable_Free(progressive->SurfaceContexts);
+	for (size_t x = 0; x < ARRAYSIZE(progressive->SurfaceContexts); x++)
+		progressive_surface_context_free(progressive->SurfaceContexts[x]);
 
 	winpr_aligned_free(progressive);
 }

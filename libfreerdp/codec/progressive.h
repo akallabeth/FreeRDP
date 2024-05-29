@@ -211,7 +211,7 @@ struct S_PROGRESSIVE_CONTEXT
 	PROGRESSIVE_BLOCK_REGION region;
 	RFX_PROGRESSIVE_CODEC_QUANT quantProgValFull;
 
-	wHashTable* SurfaceContexts;
+	PROGRESSIVE_SURFACE_CONTEXT* SurfaceContexts[0x10000];
 	wLog* log;
 	wStream* buffer;
 	wStream* rects;
