@@ -40,35 +40,46 @@
  *
  * LL3		4032		8x8		64
  */
+static INLINE pstatus_t general_lShiftC_16s(const INT16* pSrc, UINT32 val, INT16* pDst, UINT32 len)
+{
+	if (val == 0)
+		return PRIMITIVES_SUCCESS;
+	if (val >= 16)
+		return -1;
 
-static void rfx_quantization_decode_block(const primitives_t* WINPR_RESTRICT prims, INT16* buffer,
-                                          UINT32 buffer_size, UINT32 factor)
+	while (len--)
+		*pDst++ = (INT16)((UINT16)*pSrc++ << val);
+
+	return PRIMITIVES_SUCCESS;
+}
+
+static INLINE void rfx_quantization_decode_block(INT16* WINPR_RESTRICT buffer, UINT32 buffer_size,
+                                                 UINT32 factor)
 {
 	if (factor == 0)
 		return;
 
-	prims->lShiftC_16s(buffer, factor, buffer, buffer_size);
+	general_lShiftC_16s(buffer, factor, buffer, buffer_size);
 }
 
 void rfx_quantization_decode(INT16* buffer, const UINT32* WINPR_RESTRICT quantVals)
 {
-	const primitives_t* prims = primitives_get();
 	WINPR_ASSERT(buffer);
 	WINPR_ASSERT(quantVals);
 
-	rfx_quantization_decode_block(prims, &buffer[0], 1024, quantVals[8] - 1);    /* HL1 */
-	rfx_quantization_decode_block(prims, &buffer[1024], 1024, quantVals[7] - 1); /* LH1 */
-	rfx_quantization_decode_block(prims, &buffer[2048], 1024, quantVals[9] - 1); /* HH1 */
-	rfx_quantization_decode_block(prims, &buffer[3072], 256, quantVals[5] - 1);  /* HL2 */
-	rfx_quantization_decode_block(prims, &buffer[3328], 256, quantVals[4] - 1);  /* LH2 */
-	rfx_quantization_decode_block(prims, &buffer[3584], 256, quantVals[6] - 1);  /* HH2 */
-	rfx_quantization_decode_block(prims, &buffer[3840], 64, quantVals[2] - 1);   /* HL3 */
-	rfx_quantization_decode_block(prims, &buffer[3904], 64, quantVals[1] - 1);   /* LH3 */
-	rfx_quantization_decode_block(prims, &buffer[3968], 64, quantVals[3] - 1);   /* HH3 */
-	rfx_quantization_decode_block(prims, &buffer[4032], 64, quantVals[0] - 1);   /* LL3 */
+	rfx_quantization_decode_block(&buffer[0], 1024, quantVals[8] - 1);    /* HL1 */
+	rfx_quantization_decode_block(&buffer[1024], 1024, quantVals[7] - 1); /* LH1 */
+	rfx_quantization_decode_block(&buffer[2048], 1024, quantVals[9] - 1); /* HH1 */
+	rfx_quantization_decode_block(&buffer[3072], 256, quantVals[5] - 1);  /* HL2 */
+	rfx_quantization_decode_block(&buffer[3328], 256, quantVals[4] - 1);  /* LH2 */
+	rfx_quantization_decode_block(&buffer[3584], 256, quantVals[6] - 1);  /* HH2 */
+	rfx_quantization_decode_block(&buffer[3840], 64, quantVals[2] - 1);   /* HL3 */
+	rfx_quantization_decode_block(&buffer[3904], 64, quantVals[1] - 1);   /* LH3 */
+	rfx_quantization_decode_block(&buffer[3968], 64, quantVals[3] - 1);   /* HH3 */
+	rfx_quantization_decode_block(&buffer[4032], 64, quantVals[0] - 1);   /* LL3 */
 }
 
-static void rfx_quantization_encode_block(INT16* buffer, size_t buffer_size, UINT32 factor)
+static INLINE void rfx_quantization_encode_block(INT16* buffer, size_t buffer_size, UINT32 factor)
 {
 	INT16 half = 0;
 
