@@ -1001,8 +1001,7 @@ static INLINE int progressive_rfx_dwt_2d_decode(PROGRESSIVE_CONTEXT* WINPR_RESTR
 	return 1;
 }
 
-static INLINE pstatus_t general_lShiftC_16s(const INT16* WINPR_RESTRICT pSrc, UINT32 val,
-                                            INT16* WINPR_RESTRICT pDst, UINT32 len)
+static INLINE pstatus_t general_lShiftC_16s(const INT16* pSrc, UINT32 val, INT16* pDst, UINT32 len)
 {
 	if (val == 0)
 		return PRIMITIVES_SUCCESS;
@@ -1032,7 +1031,6 @@ static INLINE int progressive_rfx_decode_component(
 {
 	int status = 0;
 
-	const primitives_t* prims = NULL; // primitives_get();
 	status = progressive->rfx_context->rlgr_decode(RLGR1, data, length, buffer, 4096);
 
 	if (status < 0)
