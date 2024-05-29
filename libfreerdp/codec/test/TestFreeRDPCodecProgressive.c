@@ -1445,6 +1445,7 @@ fail:
 	                          AVC444_dectime + AVC444v2_dectime + ALPHA_dectime;
 	print_codec_stats("surface copy", copytime);
 	print_codec_stats("total decode", decodetime);
+	print_codec_stats("total", decodetime + copytime);
 
 	return success;
 }
