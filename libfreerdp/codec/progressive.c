@@ -769,13 +769,13 @@ static INLINE void progressive_rfx_dwt_2d_decode_block(const INT16* WINPR_RESTRI
 {
 	size_t nDstStepX = 0;
 	size_t nDstStepY = 0;
-	INT16* HL = NULL;
-	INT16* LH = NULL;
-	INT16* HH = NULL;
-	INT16* LL = NULL;
-	INT16* L = NULL;
-	INT16* H = NULL;
-	INT16* LLx = NULL;
+	INT16* WINPR_RESTRICT HL = NULL;
+	INT16* WINPR_RESTRICT LH = NULL;
+	INT16* WINPR_RESTRICT HH = NULL;
+	INT16* WINPR_RESTRICT LL = NULL;
+	INT16* WINPR_RESTRICT L = NULL;
+	INT16* WINPR_RESTRICT H = NULL;
+	INT16* WINPR_RESTRICT LLx = NULL;
 
 	const size_t nBandL = progressive_rfx_get_band_l_count(level);
 	const size_t nBandH = progressive_rfx_get_band_h_count(level);
@@ -807,7 +807,7 @@ static INLINE void progressive_rfx_dwt_2d_decode_block(const INT16* WINPR_RESTRI
 	                       nBandL + nBandH);
 }
 
-void rfx_dwt_2d_extrapolate_decode(INT16* buffer, INT16* temp)
+void rfx_dwt_2d_extrapolate_decode(INT16* WINPR_RESTRICT buffer, INT16* WINPR_RESTRICT temp)
 {
 	WINPR_ASSERT(buffer);
 	WINPR_ASSERT(temp);
