@@ -39,6 +39,7 @@
 #include "rfx_constants.h"
 #include "rfx_types.h"
 #include "progressive.h"
+#include "../primitives/prim_internal.h"
 
 #define TAG FREERDP_TAG("codec.progressive")
 
@@ -54,6 +55,130 @@ typedef struct
 	int nz;
 	BOOL mode;
 } RFX_PROGRESSIVE_UPGRADE_STATE;
+
+static INLINE  pstatus_t general_add_16s(const INT16* WINPR_RESTRICT pSrc1, const INT16* WINPR_RESTRICT pSrc2, INT16* WINPR_RESTRICT pDst, UINT32 len)
+{
+	while (len--)
+	{
+		INT32 k = (INT32)(*pSrc1++) + (INT32)(*pSrc2++);
+
+		if (k > 32767)
+			*pDst++ = ((INT16)32767);
+		else if (k < -32768)
+			*pDst++ = ((INT16)-32768);
+		else
+			*pDst++ = (INT16)k;
+	}
+
+	return PRIMITIVES_SUCCESS;
+}
+
+
+static INLINE pstatus_t general_yCbCrToRGB_16s8u_P3AC4R_BGRX(const INT16* const WINPR_RESTRICT pSrc[3],
+                                                      UINT32 srcStep, BYTE* WINPR_RESTRICT pDst,
+                                                      UINT32 dstStep, UINT32 DstFormat,
+                                                      const prim_size_t* WINPR_RESTRICT roi)
+{
+	BYTE* pRGB = pDst;
+	const INT16* pY = pSrc[0];
+	const INT16* pCb = pSrc[1];
+	const INT16* pCr = pSrc[2];
+	const size_t srcPad = (srcStep - (roi->width * 2)) / 2;
+	const size_t dstPad = (dstStep - (roi->width * 4));
+	const DWORD formatSize = FreeRDPGetBytesPerPixel(DstFormat);
+
+	for (UINT32 y = 0; y < roi->height; y++)
+	{
+		for (UINT32 x = 0; x < roi->width; x++)
+		{
+			INT16 R = 0;
+			INT16 G = 0;
+			INT16 B = 0;
+			const INT32 divisor = 16;
+			const INT32 Y = (INT32)((UINT32)((*pY++) + 4096) << divisor);
+			const INT32 Cb = (*pCb++);
+			const INT32 Cr = (*pCr++);
+			const INT64 CrR = Cr * (INT64)(1.402525f * (1 << divisor)) * 1LL;
+			const INT64 CrG = Cr * (INT64)(0.714401f * (1 << divisor)) * 1LL;
+			const INT64 CbG = Cb * (INT64)(0.343730f * (1 << divisor)) * 1LL;
+			const INT64 CbB = Cb * (INT64)(1.769905f * (1 << divisor)) * 1LL;
+			R = ((INT16)((CrR + Y) >> divisor) >> 5);
+			G = ((INT16)((Y - CbG - CrG) >> divisor) >> 5);
+			B = ((INT16)((CbB + Y) >> divisor) >> 5);
+			pRGB = writePixelBGRX(pRGB, formatSize, DstFormat, CLIP(R), CLIP(G), CLIP(B), 0);
+		}
+
+		pY += srcPad;
+		pCb += srcPad;
+		pCr += srcPad;
+		pRGB += dstPad;
+	}
+
+	return PRIMITIVES_SUCCESS;
+}
+
+static INLINE pstatus_t general_yCbCrToRGB_16s8u_P3AC4R_general(const INT16* const WINPR_RESTRICT pSrc[3],
+                                                         UINT32 srcStep, BYTE* WINPR_RESTRICT pDst,
+                                                         UINT32 dstStep, UINT32 DstFormat,
+                                                         const prim_size_t* WINPR_RESTRICT roi)
+{
+	BYTE* pRGB = pDst;
+	const INT16* pY = pSrc[0];
+	const INT16* pCb = pSrc[1];
+	const INT16* pCr = pSrc[2];
+	const size_t srcPad = (srcStep - (roi->width * 2)) / 2;
+	const size_t dstPad = (dstStep - (roi->width * 4));
+	const fkt_writePixel writePixel = getPixelWriteFunction(DstFormat, FALSE);
+	const DWORD formatSize = FreeRDPGetBytesPerPixel(DstFormat);
+
+	for (UINT32 y = 0; y < roi->height; y++)
+	{
+		for (UINT32 x = 0; x < roi->width; x++)
+		{
+			INT64 R = 0;
+			INT64 G = 0;
+			INT64 B = 0;
+			const INT32 divisor = 16;
+			const INT32 Y = (INT32)((UINT32)((*pY++) + 4096) << divisor);
+			const INT32 Cb = (*pCb++);
+			const INT32 Cr = (*pCr++);
+			const INT64 CrR = Cr * (INT64)(1.402525f * (1 << divisor)) * 1LL;
+			const INT64 CrG = Cr * (INT64)(0.714401f * (1 << divisor)) * 1LL;
+			const INT64 CbG = Cb * (INT64)(0.343730f * (1 << divisor)) * 1LL;
+			const INT64 CbB = Cb * (INT64)(1.769905f * (1 << divisor)) * 1LL;
+			R = (INT64)((CrR + Y) >> (divisor + 5));
+			G = (INT64)((Y - CbG - CrG) >> (divisor + 5));
+			B = (INT64)((CbB + Y) >> (divisor + 5));
+			pRGB = writePixel(pRGB, formatSize, DstFormat, CLIP(R), CLIP(G), CLIP(B), 0);
+		}
+
+		pY += srcPad;
+		pCb += srcPad;
+		pCr += srcPad;
+		pRGB += dstPad;
+	}
+
+	return PRIMITIVES_SUCCESS;
+}
+
+static INLINE pstatus_t general_yCbCrToRGB_16s8u_P3AC4R(const INT16* const WINPR_RESTRICT pSrc[3],
+                                                 UINT32 srcStep, BYTE* WINPR_RESTRICT pDst,
+                                                 UINT32 dstStep, UINT32 DstFormat,
+                                                 const prim_size_t* WINPR_RESTRICT roi)
+{
+	return 0;
+	switch (DstFormat)
+	{
+		case PIXEL_FORMAT_BGRA32:
+		case PIXEL_FORMAT_BGRX32:
+			return general_yCbCrToRGB_16s8u_P3AC4R_BGRX(pSrc, srcStep, pDst, dstStep, DstFormat,
+			                                            roi);
+
+		default:
+			return general_yCbCrToRGB_16s8u_P3AC4R_general(pSrc, srcStep, pDst, dstStep, DstFormat,
+			                                               roi);
+	}
+}
 
 static void progressive_surface_context_free(PROGRESSIVE_SURFACE_CONTEXT* WINPR_RESTRICT surface);
 
@@ -840,8 +965,6 @@ static INLINE int progressive_rfx_dwt_2d_decode(PROGRESSIVE_CONTEXT* WINPR_RESTR
                                                 INT16* WINPR_RESTRICT current, BOOL coeffDiff,
                                                 BOOL extrapolate, BOOL reverse)
 {
-	const primitives_t* prims = primitives_get();
-
 	if (!progressive || !buffer || !current)
 		return -1;
 
@@ -908,6 +1031,7 @@ static INLINE int progressive_rfx_decode_component(
 {
 	int status = 0;
 
+	const primitives_t* prims = primitives_get();
 	status = progressive->rfx_context->rlgr_decode(RLGR1, data, length, buffer, 4096);
 
 	if (status < 0)
@@ -971,7 +1095,6 @@ progressive_decompress_tile_first(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressiv
 	RFX_COMPONENT_CODEC_QUANT* quantProgCr = NULL;
 	RFX_PROGRESSIVE_CODEC_QUANT* quantProgVal = NULL;
 	static const prim_size_t roi_64x64 = { 64, 64 };
-	const primitives_t* prims = primitives_get();
 
 	tile->pass = 1;
 	diff = tile->flags & RFX_TILE_DIFFERENCE;
@@ -1079,7 +1202,7 @@ progressive_decompress_tile_first(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressiv
 	if (rc < 0)
 		goto fail;
 
-	rc = prims->yCbCrToRGB_16s8u_P3AC4R((const INT16* const*)pSrcDst, 64 * 2, tile->data,
+	rc = general_yCbCrToRGB_16s8u_P3AC4R((const INT16* const*)pSrcDst, 64 * 2, tile->data,
 	                                    tile->stride, progressive->format, &roi_64x64);
 fail:
 	BufferPool_Return(progressive->bufferPool, pBuffer);
@@ -1388,7 +1511,6 @@ progressive_decompress_tile_upgrade(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progress
 	RFX_COMPONENT_CODEC_QUANT* quantProgCr = NULL;
 	RFX_PROGRESSIVE_CODEC_QUANT* quantProg = NULL;
 	static const prim_size_t roi_64x64 = { 64, 64 };
-	const primitives_t* prims = primitives_get();
 
 	coeffDiff = tile->flags & RFX_TILE_DIFFERENCE;
 	sub = context->flags & RFX_SUBBAND_DIFFING;
@@ -1525,7 +1647,7 @@ progressive_decompress_tile_upgrade(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progress
 	if (status < 0)
 		goto fail;
 
-	status = prims->yCbCrToRGB_16s8u_P3AC4R((const INT16* const*)pSrcDst, 64 * 2, tile->data,
+	status = general_yCbCrToRGB_16s8u_P3AC4R((const INT16* const*)pSrcDst, 64 * 2, tile->data,
 	                                        tile->stride, progressive->format, &roi_64x64);
 fail:
 	BufferPool_Return(progressive->bufferPool, pBuffer);
