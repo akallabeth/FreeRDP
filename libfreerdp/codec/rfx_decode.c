@@ -35,10 +35,10 @@
 
 #include "rfx_decode.h"
 
-void rfx_decode_component(RFX_CONTEXT* WINPR_RESTRICT context,
-                          const UINT32* WINPR_RESTRICT quantization_values,
-                          const BYTE* WINPR_RESTRICT data, size_t size,
-                          INT16* WINPR_RESTRICT buffer)
+static INLINE void rfx_decode_component(RFX_CONTEXT* WINPR_RESTRICT context,
+                                        const UINT32* WINPR_RESTRICT quantization_values,
+                                        const BYTE* WINPR_RESTRICT data, size_t size,
+                                        INT16* WINPR_RESTRICT buffer)
 {
 	INT16* dwt_buffer = NULL;
 	dwt_buffer = BufferPool_Take(context->priv->BufferPool, -1); /* dwt_buffer */
