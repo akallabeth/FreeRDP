@@ -941,25 +941,6 @@ void rfx_dwt_2d_extrapolate_decode(INT16* WINPR_RESTRICT buffer, INT16* WINPR_RE
 	progressive_rfx_dwt_2d_decode_block(&buffer[0], temp, 1);
 }
 
-static INLINE pstatus_t general_add_16s(const INT16* WINPR_RESTRICT pSrc1,
-                                        const INT16* WINPR_RESTRICT pSrc2,
-                                        INT16* WINPR_RESTRICT pDst, UINT32 len)
-{
-	while (len--)
-	{
-		INT32 k = (INT32)(*pSrc1++) + (INT32)(*pSrc2++);
-
-		if (k > 32767)
-			*pDst++ = ((INT16)32767);
-		else if (k < -32768)
-			*pDst++ = ((INT16)-32768);
-		else
-			*pDst++ = (INT16)k;
-	}
-
-	return PRIMITIVES_SUCCESS;
-}
-
 static INLINE int progressive_rfx_dwt_2d_decode(PROGRESSIVE_CONTEXT* WINPR_RESTRICT progressive,
                                                 INT16* WINPR_RESTRICT buffer,
                                                 INT16* WINPR_RESTRICT current, BOOL coeffDiff,
