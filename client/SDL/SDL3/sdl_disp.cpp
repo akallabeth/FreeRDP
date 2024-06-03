@@ -195,7 +195,11 @@ void sdlDispContext::OnGraphicsReset(void* context, const GraphicsResetEventArgs
 	}
 }
 
-Uint32 sdlDispContext::OnTimer(Uint32 interval, void* param)
+#if SDL_VERSION <= SDL_VERSIONNUM(3, 1, 2)
+Uint32 SDLCALL sdlDispContext::OnTimer(Uint32 interval, void* param)
+#else
+Uint32 SDLCALL sdlDispContext::OnTimer(void* param, SDL_TimerID timerID, Uint32 interval)
+#endif
 {
 	auto ctx = static_cast<sdlDispContext*>(param);
 	if (!ctx)

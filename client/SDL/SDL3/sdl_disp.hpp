@@ -57,7 +57,11 @@ class sdlDispContext
 	                               UINT32 maxMonitorAreaFactorA, UINT32 maxMonitorAreaFactorB);
 	static void OnActivated(void* context, const ActivatedEventArgs* e);
 	static void OnGraphicsReset(void* context, const GraphicsResetEventArgs* e);
+#if SDL_VERSION <= SDL_VERSIONNUM(3, 1, 2)
 	static Uint32 SDLCALL OnTimer(Uint32 interval, void* param);
+#else
+	static Uint32 SDLCALL OnTimer(void* userdata, SDL_TimerID timerID, Uint32 interval);
+#endif
 
   private:
 	SdlContext* _sdl = nullptr;

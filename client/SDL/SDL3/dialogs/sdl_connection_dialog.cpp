@@ -326,7 +326,7 @@ bool SDLConnectionDialog::createWindow()
 	const size_t widget_width = 600;
 	const size_t total_height = 300;
 
-	auto rc = SDL_CreateWindowAndRenderer(title.c_str(), widget_width, total_height,
+	auto rc = SDL_CreateWindowAndRenderer(_title.c_str(), widget_width, total_height,
 	                                      SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_MOUSE_FOCUS |
 	                                          SDL_WINDOW_INPUT_FOCUS,
 	                                      &_window, &_renderer);
@@ -478,9 +478,13 @@ void SDLConnectionDialog::resetTimer()
 	_running = false;
 }
 
-Uint32 SDLConnectionDialog::timeout(Uint32 intervalMS, void* pvthis)
+#if SDL_VERSION <= SDL_VERSIONNUM(3, 1, 2)
+Uint32 SDLCALL SDLConnectionDialog::timeout(Uint32 intervalMS, void* _this)
+#else
+Uint32 SDLCALL SDLConnectionDialog::timeout(void* _this, SDL_TimerID timerID, Uint32 intervalMS)
+#endif
 {
-	auto ths = static_cast<SDLConnectionDialog*>(pvthis);
+	auto ths = static_cast<SDLConnectionDialog*>(_this);
 	ths->hide();
 	ths->_running = false;
 	return 0;

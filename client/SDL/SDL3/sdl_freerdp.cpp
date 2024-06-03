@@ -1630,7 +1630,11 @@ int main(int argc, char* argv[])
 
 	SDL_SetLogOutputFunction(winpr_LogOutputFunction, sdl);
 	auto level = WLog_GetLogLevel(sdl->log);
+#if SDL_VERSION <= SDL_VERSIONNUM(3, 1, 2)
 	SDL_LogSetAllPriority(wloglevel2dl(level));
+#else
+	SDL_SetLogPriorities(wloglevel2dl(level));
+#endif
 
 	auto context = sdl->context();
 	WINPR_ASSERT(context);
