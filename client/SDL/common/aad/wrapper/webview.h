@@ -2225,6 +2225,37 @@ namespace webview
 				navigateCallbackArg = arg;
 			}
 
+			void STDMETHODCALLTYPE
+				add_scheme_handler(const std::string& scheme,
+					std::function<void(const std::string&, void*)> callback, void* arg) {
+				#if 0
+				Microsoft::WRL::ComPtr<ICoreWebView2EnvironmentOptions4> options4;
+				if (options.As(&options4) == S_OK)
+				{
+					const WCHAR* allowedOrigins[1] = { L"https://*.example.com" };
+
+					auto customSchemeRegistration =
+					    Microsoft::WRL::Make<CoreWebView2CustomSchemeRegistration>(
+					        L"custom-scheme");
+					customSchemeRegistration->SetAllowedOrigins(1, allowedOrigins);
+					auto customSchemeRegistration2 =
+					    Microsoft::WRL::Make<CoreWebView2CustomSchemeRegistration>(L"wv2rocks");
+					customSchemeRegistration2->put_TreatAsSecure(TRUE);
+					customSchemeRegistration2->SetAllowedOrigins(1, allowedOrigins);
+					customSchemeRegistration2->put_HasAuthorityComponent(TRUE);
+					auto customSchemeRegistration3 =
+					    Microsoft::WRL::Make<CoreWebView2CustomSchemeRegistration>(
+					        L"custom-scheme-not-in-allowed-origins");
+					ICoreWebView2CustomSchemeRegistration* registrations[3] = {
+						customSchemeRegistration.Get(), customSchemeRegistration2.Get(),
+						customSchemeRegistration3.Get()
+					};
+					options4->SetCustomSchemeRegistrations(
+					    2, static_cast<ICoreWebView2CustomSchemeRegistration**>(registrations));
+				}
+				#endif
+			}
+
 		  private:
 			HWND m_window;
 			msg_cb_t m_msgCb;
@@ -2335,6 +2366,10 @@ namespace webview
 				{
 					m_com_handler->Release();
 					m_com_handler = nullptr;
+				}
+				if (m_scheme_registration) {
+					m_scheme_registration->Release();
+					m_scheme_registration = nullptr;
 				}
 				if (m_webview)
 				{
@@ -2456,6 +2491,13 @@ namespace webview
 				m_com_handler->add_navigate_listener(callback, arg);
 			}
 
+			void add_scheme_handler(const std::string& scheme,
+			                        std::function<void(const std::string&, void*)> callback,
+			                        void* arg)
+			{
+				m_com_handler->add_scheme_handler(scheme, callback, arg);
+			}
+
 			void set_html(const std::string& html)
 			{
 				m_webview->NavigateToString(widen_string(html).c_str());
@@ -2567,6 +2609,7 @@ namespace webview
 			DWORD m_main_thread = GetCurrentThreadId();
 			ICoreWebView2* m_webview = nullptr;
 			ICoreWebView2Controller* m_controller = nullptr;
+			ICoreWebView2CustomSchemeRegistration* m_scheme_registration = nullptr;
 			webview2_com_handler* m_com_handler = nullptr;
 			mswebview2::loader m_webview2_loader;
 		};
