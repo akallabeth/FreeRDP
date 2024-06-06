@@ -30,7 +30,6 @@
 static primitives_t* generic = NULL;
 
 #ifdef WITH_SSE2
-#if defined(ALL_PRIMITIVES_VERSIONS)
 /* ------------------------------------------------------------------------- */
 SSE3_SCD_ROUTINE(sse2_lShiftC_16s, INT16, generic->lShiftC_16s, _mm_slli_epi16,
                  *dptr++ = (INT16)((UINT16)*sptr++ << val))
@@ -45,17 +44,12 @@ SSE3_SCD_ROUTINE(sse2_rShiftC_16u, UINT16, generic->rShiftC_16u, _mm_srli_epi16,
                  *dptr++ = *sptr++ >> val)
 #endif
 
-/* Note: the IPP version will have to call ippLShiftC_16s or ippRShiftC_16s
- * depending on the sign of val.  To avoid using the deprecated inplace
- * routines, a wrapper can use the src for the dest.
- */
-
 /* ------------------------------------------------------------------------- */
 void primitives_init_shift_opt(primitives_t* WINPR_RESTRICT prims)
 {
 	generic = primitives_get_generic();
 	primitives_init_shift(prims);
-#elif defined(WITH_SSE2)
+#if defined(WITH_SSE2)
 
 	if (IsProcessorFeaturePresent(PF_SSE2_INSTRUCTIONS_AVAILABLE) &&
 	    IsProcessorFeaturePresent(PF_SSE3_INSTRUCTIONS_AVAILABLE))

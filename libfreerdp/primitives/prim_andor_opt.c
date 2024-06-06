@@ -30,12 +30,10 @@
 static primitives_t* generic = NULL;
 
 #ifdef WITH_SSE2
-#if defined(ALL_PRIMITIVES_VERSIONS)
 /* ------------------------------------------------------------------------- */
 SSE3_SCD_PRE_ROUTINE(sse3_andC_32u, UINT32, generic->andC_32u, _mm_and_si128,
                      *dptr++ = *sptr++ & val)
 SSE3_SCD_PRE_ROUTINE(sse3_orC_32u, UINT32, generic->orC_32u, _mm_or_si128, *dptr++ = *sptr++ | val)
-#endif /* defined(ALL_PRIMITIVES_VERSIONS) */
 #endif
 
 /* ------------------------------------------------------------------------- */

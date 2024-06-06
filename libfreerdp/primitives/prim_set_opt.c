@@ -31,7 +31,6 @@ static primitives_t* generic = NULL;
 
 /* ========================================================================= */
 #ifdef WITH_SSE2
-#if !defined(WITH_IPP) || defined(ALL_PRIMITIVES_VERSIONS)
 static pstatus_t sse2_set_8u(BYTE val, BYTE* WINPR_RESTRICT pDst, UINT32 len)
 {
 	BYTE byte = 0;
@@ -113,12 +112,10 @@ static pstatus_t sse2_set_8u(BYTE val, BYTE* WINPR_RESTRICT pDst, UINT32 len)
 
 	return PRIMITIVES_SUCCESS;
 }
-#endif /* defined(ALL_PRIMITIVES_VERSIONS) */
 #endif /* WITH_SSE2 */
 
 /* ------------------------------------------------------------------------- */
 #ifdef WITH_SSE2
-#if defined(ALL_PRIMITIVES_VERSIONS)
 static pstatus_t sse2_set_32u(UINT32 val, UINT32* WINPR_RESTRICT pDst, UINT32 len)
 {
 	const primitives_t* prim = primitives_get_generic();
@@ -216,7 +213,6 @@ static pstatus_t sse2_set_32s(INT32 val, INT32* WINPR_RESTRICT pDst, UINT32 len)
 	UINT32 uval = *((UINT32*)&val);
 	return sse2_set_32u(uval, (UINT32*)pDst, len);
 }
-#endif /* defined(ALL_PRIMITIVES_VERSIONS) */
 #endif /* WITH_SSE2 */
 
 /* ------------------------------------------------------------------------- */

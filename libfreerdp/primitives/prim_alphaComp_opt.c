@@ -37,7 +37,6 @@ static primitives_t* generic = NULL;
 
 /* ------------------------------------------------------------------------- */
 #ifdef WITH_SSE2
-#if defined(ALL_PRIMITIVES_VERSIONS)
 
 static pstatus_t sse2_alphaComp_argb(const BYTE* WINPR_RESTRICT pSrc1, UINT32 src1Step,
                                      const BYTE* WINPR_RESTRICT pSrc2, UINT32 src2Step,
@@ -206,7 +205,6 @@ static pstatus_t sse2_alphaComp_argb(const BYTE* WINPR_RESTRICT pSrc1, UINT32 sr
 
 	return PRIMITIVES_SUCCESS;
 }
-#endif /* defined(ALL_PRIMITIVES_VERSIONS) */
 #endif
 
 /* ------------------------------------------------------------------------- */
