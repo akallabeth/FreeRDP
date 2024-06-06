@@ -24,10 +24,6 @@
 #include <pmmintrin.h>
 #endif /* WITH_SSE2 */
 
-#ifdef WITH_IPP
-#include <ipps.h>
-#endif /* WITH_IPP */
-
 #include "prim_internal.h"
 #include "prim_templates.h"
 
@@ -47,7 +43,6 @@ SSE3_SCD_ROUTINE(sse2_lShiftC_16u, UINT16, generic->lShiftC_16u, _mm_slli_epi16,
 /* ------------------------------------------------------------------------- */
 SSE3_SCD_ROUTINE(sse2_rShiftC_16u, UINT16, generic->rShiftC_16u, _mm_srli_epi16,
                  *dptr++ = *sptr++ >> val)
-#endif /* !defined(WITH_IPP) || defined(ALL_PRIMITIVES_VERSIONS) */
 #endif
 
 /* Note: the IPP version will have to call ippLShiftC_16s or ippRShiftC_16s
