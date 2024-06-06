@@ -819,13 +819,10 @@ static INLINE int progressive_rfx_dwt_2d_decode(PROGRESSIVE_CONTEXT* WINPR_RESTR
 		memcpy(current, buffer, bsize);
 	}
 
-	INT16* temp = (INT16*)BufferPool_Take(progressive->bufferPool, -1); /* DWT buffer */
-
-	if (!temp)
-		return -2;
-
+	INT16 temp[4096];
 	if (!extrapolate)
 	{
+		WINPR_ASSERT(progressive->rfx_context->dwt_2d_decode);
 		progressive->rfx_context->dwt_2d_decode(buffer, temp);
 	}
 	else
@@ -833,7 +830,6 @@ static INLINE int progressive_rfx_dwt_2d_decode(PROGRESSIVE_CONTEXT* WINPR_RESTR
 		WINPR_ASSERT(progressive->rfx_context->dwt_2d_extrapolate_decode);
 		progressive->rfx_context->dwt_2d_extrapolate_decode(buffer, temp);
 	}
-	BufferPool_Return(progressive->bufferPool, temp);
 	return 1;
 }
 
