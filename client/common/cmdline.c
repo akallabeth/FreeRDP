@@ -5333,6 +5333,18 @@ static int freerdp_client_settings_parse_command_line_arguments_int(
 
 	fill_credential_strings(largs);
 
+	if (freerdp_settings_get_bool(settings, FreeRDP_RemoteApplicationMode))
+	{
+		if (!freerdp_settings_set_bool(settings, FreeRDP_UseMultimon, TRUE))
+			return COMMAND_LINE_ERROR;
+
+		if (freerdp_settings_get_bool(settings, FreeRDP_SpanMonitors))
+		{
+			WLog_WARN(TAG, "/span not supported in combination with /app! disabling.");
+			if (!freerdp_settings_set_bool(settings, FreeRDP_SpanMonitors, FALSE))
+				return COMMAND_LINE_ERROR;
+		}
+	}
 	return status;
 }
 
