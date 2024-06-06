@@ -130,7 +130,7 @@ extern "C"
 		}
 	}
 
-	static INLINE void BitStream_Shift32(wBitStream* _bs)
+	static INLINE void BitStream_Shift32(wBitStream* WINPR_RESTRICT _bs)
 	{
 		WINPR_ASSERT(_bs);
 		BitStream_Shift(_bs, 16);
@@ -162,7 +162,7 @@ extern "C"
 		}
 	}
 
-	static INLINE size_t BitStream_GetRemainingLength(wBitStream* _bs)
+	static INLINE size_t BitStream_GetRemainingLength(wBitStream* WINPR_RESTRICT _bs)
 	{
 		WINPR_ASSERT(_bs);
 		return (_bs->length - _bs->position);

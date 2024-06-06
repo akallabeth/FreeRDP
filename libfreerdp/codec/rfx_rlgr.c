@@ -602,7 +602,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* WINPR_RESTRICT pSrcData, UINT32 
 /* Outputs the Golomb/Rice encoding of a non-negative integer */
 #define CodeGR(krp, val) rfx_rlgr_code_gr(bs, krp, val)
 
-static void rfx_rlgr_code_gr(RFX_BITSTREAM* bs, int* krp, UINT32 val)
+static void rfx_rlgr_code_gr(RFX_BITSTREAM* WINPR_RESTRICT bs, int* WINPR_RESTRICT krp, UINT32 val)
 {
 	int kr = *krp >> LSGR;
 
