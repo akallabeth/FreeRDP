@@ -612,9 +612,9 @@ static INLINE void progressive_rfx_idwt_x(const INT16* WINPR_RESTRICT pLowBand, 
 {
 	for (size_t i = 0; i < nDstCount; i++)
 	{
-		const INT16* pL = pLowBand;
-		const INT16* pH = pHighBand;
-		INT16* pX = pDstBand;
+		const INT16* WINPR_RESTRICT pL = pLowBand;
+		const INT16* WINPR_RESTRICT pH = pHighBand;
+		INT16* WINPR_RESTRICT pX = pDstBand;
 		INT16 H0 = *pH++;
 		INT16 L0 = *pL++;
 		INT16 X0 = L0 - H0;
@@ -678,9 +678,9 @@ static INLINE void progressive_rfx_idwt_y(const INT16* WINPR_RESTRICT pLowBand, 
 {
 	for (size_t i = 0; i < nDstCount; i++)
 	{
-		const INT16* pL = pLowBand;
-		const INT16* pH = pHighBand;
-		INT16* pX = pDstBand;
+		const INT16* WINPR_RESTRICT pL = pLowBand;
+		const INT16* WINPR_RESTRICT pH = pHighBand;
+		INT16* WINPR_RESTRICT pX = pDstBand;
 		INT16 H0 = *pH;
 		pH += nHighStep;
 		INT16 L0 = *pL;
