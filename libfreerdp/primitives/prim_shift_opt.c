@@ -30,7 +30,7 @@
 static primitives_t* generic = NULL;
 
 #ifdef WITH_SSE2
-#if !defined(WITH_IPP) || defined(ALL_PRIMITIVES_VERSIONS)
+#if defined(ALL_PRIMITIVES_VERSIONS)
 /* ------------------------------------------------------------------------- */
 SSE3_SCD_ROUTINE(sse2_lShiftC_16s, INT16, generic->lShiftC_16s, _mm_slli_epi16,
                  *dptr++ = (INT16)((UINT16)*sptr++ << val))

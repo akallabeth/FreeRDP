@@ -30,12 +30,14 @@ static pstatus_t general_add_16s(const INT16* WINPR_RESTRICT pSrc1,
 {
 	while (len--)
 	{
-		INT32 k = (INT32)(*pSrc1++) + (INT32)(*pSrc2++);
+		const INT16 a = *pSrc1++;
+		const INT16 b = *pSrc2++;
+		const INT32 k = (INT32)a + b;
 
-		if (k > 32767)
-			*pDst++ = ((INT16)32767);
-		else if (k < -32768)
-			*pDst++ = ((INT16)-32768);
+		if (k > INT16_MAX)
+			*pDst++ = INT16_MAX;
+		else if (k < INT16_MIN)
+			*pDst++ = INT16_MIN;
 		else
 			*pDst++ = (INT16)k;
 	}

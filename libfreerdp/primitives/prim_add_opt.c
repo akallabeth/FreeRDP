@@ -25,21 +25,17 @@
 #include <pmmintrin.h>
 #endif /* WITH_SSE2 */
 
-#ifdef WITH_IPP
-#include <ipps.h>
-#endif /* WITH_IPP */
-
 #include "prim_internal.h"
 #include "prim_templates.h"
 
 static primitives_t* generic = NULL;
 
 #ifdef WITH_SSE2
-#if !defined(WITH_IPP) || defined(ALL_PRIMITIVES_VERSIONS)
+#if defined(ALL_PRIMITIVES_VERSIONS)
 /* ------------------------------------------------------------------------- */
 SSE3_SSD_ROUTINE(sse3_add_16s, INT16, generic->add_16s, _mm_adds_epi16,
                  generic->add_16s(sptr1++, sptr2++, dptr++, 1))
-#endif /* !defined(WITH_IPP) || defined(ALL_PRIMITIVES_VERSIONS) */
+#endif /* defined(ALL_PRIMITIVES_VERSIONS) */
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -47,9 +43,8 @@ void primitives_init_add_opt(primitives_t* WINPR_RESTRICT prims)
 {
 	generic = primitives_get_generic();
 	primitives_init_add(prims);
-#ifdef WITH_IPP
-	prims->add_16s = (__add_16s_t)ippsAdd_16s;
-#elif defined(WITH_SSE2)
+
+#if defined(WITH_SSE2)
 
 	if (IsProcessorFeaturePresent(PF_SSE2_INSTRUCTIONS_AVAILABLE) &&
 	    IsProcessorFeaturePresent(PF_SSE3_INSTRUCTIONS_AVAILABLE)) /* for LDDQU */
