@@ -760,34 +760,24 @@ static INLINE size_t progressive_rfx_get_band_h_count(size_t level)
 static INLINE void progressive_rfx_dwt_2d_decode_block(INT16* WINPR_RESTRICT buffer,
                                                        INT16* WINPR_RESTRICT temp, size_t level)
 {
-	size_t nDstStepX = 0;
-	size_t nDstStepY = 0;
-	const INT16* WINPR_RESTRICT HL = NULL;
-	const INT16* WINPR_RESTRICT LH = NULL;
-	const INT16* WINPR_RESTRICT HH = NULL;
-	INT16* WINPR_RESTRICT LL = NULL;
-	INT16* WINPR_RESTRICT L = NULL;
-	INT16* WINPR_RESTRICT H = NULL;
-	INT16* WINPR_RESTRICT LLx = NULL;
-
 	const size_t nBandL = progressive_rfx_get_band_l_count(level);
 	const size_t nBandH = progressive_rfx_get_band_h_count(level);
 	size_t offset = 0;
 
-	HL = &buffer[offset];
+	const INT16* WINPR_RESTRICT HL = &buffer[offset];
 	offset += (nBandH * nBandL);
-	LH = &buffer[offset];
+	INT16* WINPR_RESTRICT LH = &buffer[offset];
 	offset += (nBandL * nBandH);
-	HH = &buffer[offset];
+	const INT16* WINPR_RESTRICT HH = &buffer[offset];
 	offset += (nBandH * nBandH);
-	LL = &buffer[offset];
-	nDstStepX = (nBandL + nBandH);
-	nDstStepY = (nBandL + nBandH);
+	INT16* WINPR_RESTRICT LL = &buffer[offset];
+	const size_t nDstStepX = (nBandL + nBandH);
+	const size_t nDstStepY = (nBandL + nBandH);
 	offset = 0;
-	L = &temp[offset];
+	INT16* WINPR_RESTRICT L = &temp[offset];
 	offset += (nBandL * nDstStepX);
-	H = &temp[offset];
-	LLx = &buffer[0];
+	const INT16* WINPR_RESTRICT H = &temp[offset];
+	INT16* WINPR_RESTRICT LLx = &buffer[0];
 
 	/* horizontal (LL + HL -> L) */
 	progressive_rfx_idwt_x(LL, nBandL, HL, nBandH, L, nDstStepX, nBandL, nBandH, nBandL);
