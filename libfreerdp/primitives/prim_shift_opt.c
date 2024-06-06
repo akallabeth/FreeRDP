@@ -60,11 +60,6 @@ void primitives_init_shift_opt(primitives_t* WINPR_RESTRICT prims)
 {
 	generic = primitives_get_generic();
 	primitives_init_shift(prims);
-#if defined(WITH_IPP)
-	prims->lShiftC_16s = ippsLShiftC_16s;
-	prims->rShiftC_16s = ippsRShiftC_16s;
-	prims->lShiftC_16u = ippsLShiftC_16u;
-	prims->rShiftC_16u = ippsRShiftC_16u;
 #elif defined(WITH_SSE2)
 
 	if (IsProcessorFeaturePresent(PF_SSE2_INSTRUCTIONS_AVAILABLE) &&
