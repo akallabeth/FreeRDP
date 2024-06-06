@@ -91,7 +91,7 @@ extern "C"
 			*(_bs->pointer + 3) = (BYTE)((UINT32)_bs->accumulator >> 0);
 	}
 
-	static INLINE void BitStream_Shift(wBitStream* _bs, UINT32 _nbits)
+	static INLINE void BitStream_Shift(wBitStream* WINPR_RESTRICT _bs, UINT32 _nbits)
 	{
 		WINPR_ASSERT(_bs);
 		if (_nbits == 0)

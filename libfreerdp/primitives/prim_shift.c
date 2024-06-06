@@ -20,7 +20,8 @@
 
 #include "prim_internal.h"
 /* ------------------------------------------------------------------------- */
-static INLINE pstatus_t general_lShiftC_16s(const INT16* pSrc, UINT32 val, INT16* pDst, UINT32 len)
+static INLINE pstatus_t general_lShiftC_16s(const INT16* WINPR_RESTRICT pSrc, UINT32 val,
+                                            INT16* WINPR_RESTRICT pDst, UINT32 len)
 {
 	if (val == 0)
 		return PRIMITIVES_SUCCESS;
@@ -34,7 +35,8 @@ static INLINE pstatus_t general_lShiftC_16s(const INT16* pSrc, UINT32 val, INT16
 }
 
 /* ------------------------------------------------------------------------- */
-static INLINE pstatus_t general_rShiftC_16s(const INT16* pSrc, UINT32 val, INT16* pDst, UINT32 len)
+static INLINE pstatus_t general_rShiftC_16s(const INT16* WINPR_RESTRICT pSrc, UINT32 val,
+                                            INT16* WINPR_RESTRICT pDst, UINT32 len)
 {
 	if (val == 0)
 		return PRIMITIVES_SUCCESS;
@@ -63,8 +65,8 @@ static INLINE pstatus_t general_lShiftC_16u(const UINT16* pSrc, UINT32 val, UINT
 }
 
 /* ------------------------------------------------------------------------- */
-static INLINE pstatus_t general_rShiftC_16u(const UINT16* pSrc, UINT32 val, UINT16* pDst,
-                                            UINT32 len)
+static INLINE pstatus_t general_rShiftC_16u(const UINT16* WINPR_RESTRICT pSrc, UINT32 val,
+                                            UINT16* WINPR_RESTRICT pDst, UINT32 len)
 {
 	if (val == 0)
 		return PRIMITIVES_SUCCESS;
@@ -78,7 +80,8 @@ static INLINE pstatus_t general_rShiftC_16u(const UINT16* pSrc, UINT32 val, UINT
 }
 
 /* ------------------------------------------------------------------------- */
-static INLINE pstatus_t general_shiftC_16s(const INT16* pSrc, INT32 val, INT16* pDst, UINT32 len)
+static INLINE pstatus_t general_shiftC_16s(const INT16* WINPR_RESTRICT pSrc, INT32 val,
+                                           INT16* WINPR_RESTRICT pDst, UINT32 len)
 {
 	if (val == 0)
 		return PRIMITIVES_SUCCESS;
@@ -90,7 +93,8 @@ static INLINE pstatus_t general_shiftC_16s(const INT16* pSrc, INT32 val, INT16* 
 }
 
 /* ------------------------------------------------------------------------- */
-static INLINE pstatus_t general_shiftC_16u(const UINT16* pSrc, INT32 val, UINT16* pDst, UINT32 len)
+static INLINE pstatus_t general_shiftC_16u(const UINT16* WINPR_RESTRICT pSrc, INT32 val,
+                                           UINT16* WINPR_RESTRICT pDst, UINT32 len)
 {
 	if (val == 0)
 		return PRIMITIVES_SUCCESS;
