@@ -202,7 +202,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* WINPR_RESTRICT pSrcData, UINT32 
 
 			vk = cnt;
 
-			while ((cnt == 32) && (BitStream_GetRemainingLength(bs) > 0))
+			while ((cnt == 32) && (nbits > 0))
 			{
 				BitStream_Shift32(bs);
 
@@ -266,7 +266,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* WINPR_RESTRICT pSrcData, UINT32 
 
 			vk = cnt;
 
-			while ((cnt == 32) && (BitStream_GetRemainingLength(bs) > 0))
+			while ((cnt == 32) && (nbits > 0))
 			{
 				BitStream_Shift32(bs);
 
@@ -377,7 +377,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* WINPR_RESTRICT pSrcData, UINT32 
 
 			vk = cnt;
 
-			while ((cnt == 32) && (BitStream_GetRemainingLength(bs) > 0))
+			while ((cnt == 32) && (nbits > 0))
 			{
 				BitStream_Shift32(bs);
 
