@@ -127,106 +127,13 @@ if (NOT WITH_DSP_FFMPEG AND NOT WITH_FAAC)
 endif ()
 
 add_subdirectory(codec)
-
-## cmake source properties are only seen by targets in the same CMakeLists.txt
-## therefore primitives and codecs need to be defined here
+add_subdirectory(primitives)
 
 if (WITH_AAD)
 	if (NOT WITH_WINPR_JSON)
 		message(FATAL_ERROR "Trying to build -DWITH_AAD=ON but WITH_WINPR_JSON is not defined")
 	endif()
 endif()
-
-# primitives
-
-set(PRIMITIVES_SRCS
-    primitives/prim_add.c
-    primitives/prim_andor.c
-    primitives/prim_alphaComp.c
-    primitives/prim_colors.c
-    primitives/prim_copy.c
-    primitives/prim_set.c
-    primitives/prim_shift.c
-    primitives/prim_sign.c
-    primitives/prim_YUV.c
-    primitives/prim_YCoCg.c
-    primitives/primitives.c
-    primitives/prim_internal.h)
-
-if (WITH_SSE2 OR WITH_NEON)
-    set(PRIMITIVES_SSE2_SRCS
-        primitives/prim_colors_opt.c
-        primitives/prim_set_opt.c)
-
-    set(PRIMITIVES_SSE3_SRCS
-        primitives/prim_add_opt.c
-        primitives/prim_alphaComp_opt.c
-        primitives/prim_andor_opt.c
-        primitives/prim_shift_opt.c)
-
-    set(PRIMITIVES_SSSE3_SRCS
-        primitives/prim_sign_opt.c
-        primitives/prim_YCoCg_opt.c)
-
-    if (WITH_SSE2)
-        set(PRIMITIVES_SSSE3_SRCS ${PRIMITIVES_SSSE3_SRCS}
-            primitives/prim_YUV_ssse3.c)
-    endif()
-
-    if (WITH_NEON)
-        set(PRIMITIVES_SSSE3_SRCS ${PRIMITIVES_SSSE3_SRCS}
-            primitives/prim_YUV_neon.c)
-    endif()
-endif()
-
-if (WITH_OPENCL)
-    set(PRIMITIVES_OPENCL_SRCS primitives/prim_YUV_opencl.c)
-
-        freerdp_include_directory_add(${OpenCL_INCLUDE_DIRS})
-        freerdp_library_add(OpenCL::OpenCL)
-
-endif()
-
-set(PRIMITIVES_OPT_SRCS
-    ${PRIMITIVES_SSE2_SRCS}
-    ${PRIMITIVES_SSE3_SRCS}
-    ${PRIMITIVES_SSSE3_SRCS}
-    ${PRIMITIVES_OPENCL_SRCS})
-
-if(WITH_SSE2)
-    if(CMAKE_COMPILER_IS_GNUCC OR ${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
-        set_source_files_properties(${PRIMITIVES_SSE2_SRCS}
-            PROPERTIES COMPILE_FLAGS "${OPTIMIZATION} -msse2")
-        set_source_files_properties(${PRIMITIVES_SSE3_SRCS}
-            PROPERTIES COMPILE_FLAGS "${OPTIMIZATION} -msse3")
-        set_source_files_properties(${PRIMITIVES_SSSE3_SRCS}
-            PROPERTIES COMPILE_FLAGS "${OPTIMIZATION} -mssse3")
-    endif()
-
-    if(MSVC)
-        set_source_files_properties(${PRIMITIVES_OPT_SRCS}
-            PROPERTIES COMPILE_FLAGS "${OPTIMIZATION} /arch:SSE2")
-    endif()
-elseif(WITH_NEON)
-    if(CMAKE_COMPILER_IS_GNUCC OR ${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
-        if (NOT MSVC_ARM64 AND NOT ARCH_ARM64)
-            set_source_files_properties(${PRIMITIVES_OPT_SRCS}
-                PROPERTIES COMPILE_FLAGS "${OPTIMIZATION} -mfpu=neon")
-        endif()
-    endif()
-    # TODO: Add MSVC equivalent
-endif()
-
-set(PRIMITIVES_SRCS ${PRIMITIVES_SRCS} ${PRIMITIVES_OPT_SRCS})
-
-freerdp_module_add(${PRIMITIVES_SRCS})
-
-if(BUILD_TESTING AND NOT WIN32 AND NOT APPLE)
-    add_subdirectory(primitives/test)
-endif()
-
-
-# /primitives
 
 list(APPEND LIBFREERDP_PUB_LIBS winpr)
 
