@@ -635,6 +635,7 @@ static INLINE BOOL freerdp_image_copy_bgrx32_bgrx32(BYTE* WINPR_RESTRICT pDstDat
 		BYTE* WINPR_RESTRICT dstLine =
 		    &pDstData[dstVMultiplier * (y + nYDst) * nDstStep + dstVOffset];
 
+		WINPR_PRAGMA_UNROLL_LOOP
 		for (SSIZE_T x = 0; x < nWidth; x++)
 		{
 			dstLine[(x + nXDst) * dstByte + 0] = srcLine[(x + nXSrc) * srcByte + 0];
@@ -667,6 +668,8 @@ static INLINE BOOL freerdp_image_copy_generic(
 		UINT32 oldColor = color;
 		UINT32 dstColor = FreeRDPConvertColor(color, SrcFormat, DstFormat, palette);
 		FreeRDPWriteColorIgnoreAlpha_int(&dstLine[nXDst * dstByte], DstFormat, dstColor);
+
+		WINPR_PRAGMA_UNROLL_LOOP
 		for (SSIZE_T x = 1; x < nWidth; x++)
 		{
 			color = FreeRDPReadColor_int(&srcLine[(x + nXSrc) * srcByte], SrcFormat);

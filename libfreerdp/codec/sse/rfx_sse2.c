@@ -499,7 +499,6 @@ static void rfx_dwt_2d_encode_sse2(INT16* WINPR_RESTRICT buffer, INT16* WINPR_RE
  *
  * LL3      4015        9x9         81
  */
-
 static INLINE void progressive_rfx_idwt_x(const INT16* WINPR_RESTRICT pLowBand, size_t nLowStep,
                                           const INT16* WINPR_RESTRICT pHighBand, size_t nHighStep,
                                           INT16* WINPR_RESTRICT pDstBand, size_t nDstStep,
@@ -515,6 +514,7 @@ static INLINE void progressive_rfx_idwt_x(const INT16* WINPR_RESTRICT pLowBand, 
 		INT16 X0 = L0 - H0;
 		INT16 X2 = L0 - H0;
 
+		WINPR_PRAGMA_UNROLL_LOOP
 		for (size_t j = 0; j < (nHighCount - 1); j++)
 		{
 			const INT16 H1 = *pH;
@@ -584,6 +584,7 @@ static INLINE void progressive_rfx_idwt_y(const INT16* WINPR_RESTRICT pLowBand, 
 		INT16 X0 = L0 - H0;
 		INT16 X2 = L0 - H0;
 
+		WINPR_PRAGMA_UNROLL_LOOP
 		for (size_t j = 0; j < (nHighCount - 1); j++)
 		{
 			const INT16 H1 = *pH;
