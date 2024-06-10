@@ -30,7 +30,7 @@
 void nsc_init_neon(NSC_CONTEXT* context)
 {
 #if defined(WITH_NEON)
-    if (!IsProcessorFeaturePresent(PF_ARM_NEON_INSTRUCTIONS_AVAILABLE))
+	if (!IsProcessorFeaturePresent(PF_ARM_NEON_INSTRUCTIONS_AVAILABLE))
 		return;
 
 	WLog_WARN(TAG, "TODO: Implement neon optimized version of this function")

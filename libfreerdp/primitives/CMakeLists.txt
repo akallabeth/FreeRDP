@@ -17,6 +17,7 @@ set(PRIMITIVES_SRCS
 if (WITH_SSE2 OR WITH_NEON)
 	set(PRIMITIVES_SSE2_SRCS
 		prim_colors_opt.c
+		prim_copy_sse.c
 		prim_set_opt.c)
 
 	set(PRIMITIVES_SSE3_SRCS
@@ -58,6 +59,7 @@ if(WITH_SSE2)
 	if(CMAKE_COMPILER_IS_GNUCC OR ${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
 		freerdp_compile_options_add("-msse2")
 		freerdp_compile_options_add("-msse3")
+                freerdp_compile_options_add("-msse4.1")
 		freerdp_compile_options_add("-mssse3")
 	endif()
 

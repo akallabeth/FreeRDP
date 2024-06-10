@@ -586,67 +586,6 @@ static INLINE BOOL overlapping(const BYTE* pDstData, UINT32 nXDst, UINT32 nYDst,
 	return FALSE;
 }
 
-static INLINE BOOL freerdp_image_copy_bgr24_bgrx32(BYTE* WINPR_RESTRICT pDstData, UINT32 nDstStep,
-                                                   UINT32 nXDst, UINT32 nYDst, UINT32 nWidth,
-                                                   UINT32 nHeight,
-                                                   const BYTE* WINPR_RESTRICT pSrcData,
-                                                   UINT32 nSrcStep, UINT32 nXSrc, UINT32 nYSrc,
-                                                   SSIZE_T srcVMultiplier, SSIZE_T srcVOffset,
-                                                   SSIZE_T dstVMultiplier, SSIZE_T dstVOffset)
-{
-
-	const SSIZE_T srcByte = 3;
-	const SSIZE_T dstByte = 4;
-
-	for (SSIZE_T y = 0; y < nHeight; y++)
-	{
-		const BYTE* WINPR_RESTRICT srcLine =
-		    &pSrcData[srcVMultiplier * (y + nYSrc) * nSrcStep + srcVOffset];
-		BYTE* WINPR_RESTRICT dstLine =
-		    &pDstData[dstVMultiplier * (y + nYDst) * nDstStep + dstVOffset];
-
-		for (SSIZE_T x = 0; x < nWidth; x++)
-		{
-			dstLine[(x + nXDst) * dstByte + 0] = srcLine[(x + nXSrc) * srcByte + 0];
-			dstLine[(x + nXDst) * dstByte + 1] = srcLine[(x + nXSrc) * srcByte + 1];
-			dstLine[(x + nXDst) * dstByte + 2] = srcLine[(x + nXSrc) * srcByte + 2];
-		}
-	}
-
-	return TRUE;
-}
-
-static INLINE BOOL freerdp_image_copy_bgrx32_bgrx32(BYTE* WINPR_RESTRICT pDstData, UINT32 nDstStep,
-                                                    UINT32 nXDst, UINT32 nYDst, UINT32 nWidth,
-                                                    UINT32 nHeight,
-                                                    const BYTE* WINPR_RESTRICT pSrcData,
-                                                    UINT32 nSrcStep, UINT32 nXSrc, UINT32 nYSrc,
-                                                    SSIZE_T srcVMultiplier, SSIZE_T srcVOffset,
-                                                    SSIZE_T dstVMultiplier, SSIZE_T dstVOffset)
-{
-
-	const SSIZE_T srcByte = 4;
-	const SSIZE_T dstByte = 4;
-
-	for (SSIZE_T y = 0; y < nHeight; y++)
-	{
-		const BYTE* WINPR_RESTRICT srcLine =
-		    &pSrcData[srcVMultiplier * (y + nYSrc) * nSrcStep + srcVOffset];
-		BYTE* WINPR_RESTRICT dstLine =
-		    &pDstData[dstVMultiplier * (y + nYDst) * nDstStep + dstVOffset];
-
-		WINPR_PRAGMA_UNROLL_LOOP
-		for (SSIZE_T x = 0; x < nWidth; x++)
-		{
-			dstLine[(x + nXDst) * dstByte + 0] = srcLine[(x + nXSrc) * srcByte + 0];
-			dstLine[(x + nXDst) * dstByte + 1] = srcLine[(x + nXSrc) * srcByte + 1];
-			dstLine[(x + nXDst) * dstByte + 2] = srcLine[(x + nXSrc) * srcByte + 2];
-		}
-	}
-
-	return TRUE;
-}
-
 static INLINE BOOL freerdp_image_copy_generic(
     BYTE* WINPR_RESTRICT pDstData, UINT32 DstFormat, UINT32 nDstStep, UINT32 nXDst, UINT32 nYDst,
     UINT32 nWidth, UINT32 nHeight, const BYTE* WINPR_RESTRICT pSrcData, UINT32 SrcFormat,
@@ -668,8 +607,6 @@ static INLINE BOOL freerdp_image_copy_generic(
 		UINT32 oldColor = color;
 		UINT32 dstColor = FreeRDPConvertColor(color, SrcFormat, DstFormat, palette);
 		FreeRDPWriteColorIgnoreAlpha_int(&dstLine[nXDst * dstByte], DstFormat, dstColor);
-
-		WINPR_PRAGMA_UNROLL_LOOP
 		for (SSIZE_T x = 1; x < nWidth; x++)
 		{
 			color = FreeRDPReadColor_int(&srcLine[(x + nXSrc) * srcByte], SrcFormat);
@@ -700,36 +637,17 @@ static INLINE BOOL freerdp_image_copy_no_overlap_dst_alpha(
 	WINPR_ASSERT(pDstData);
 	WINPR_ASSERT(pSrcData);
 
-	switch (SrcFormat)
-	{
-		case PIXEL_FORMAT_BGR24:
-			switch (DstFormat)
-			{
-				case PIXEL_FORMAT_BGRX32:
-				case PIXEL_FORMAT_BGRA32:
-					return freerdp_image_copy_bgr24_bgrx32(
-					    pDstData, nDstStep, nXDst, nYDst, nWidth, nHeight, pSrcData, nSrcStep,
-					    nXSrc, nYSrc, srcVMultiplier, srcVOffset, dstVMultiplier, dstVOffset);
-				default:
-					break;
-			}
-			break;
-		case PIXEL_FORMAT_BGRX32:
-		case PIXEL_FORMAT_BGRA32:
-			switch (DstFormat)
-			{
-				case PIXEL_FORMAT_BGRX32:
-				case PIXEL_FORMAT_BGRA32:
-					return freerdp_image_copy_bgrx32_bgrx32(
-					    pDstData, nDstStep, nXDst, nYDst, nWidth, nHeight, pSrcData, nSrcStep,
-					    nXSrc, nYSrc, srcVMultiplier, srcVOffset, dstVMultiplier, dstVOffset);
-				default:
-					break;
-			}
-			break;
-		default:
-			break;
-	}
+	static primitives_t* prims = NULL;
+	if (!prims)
+		prims = primitives_get();
+
+	WINPR_ASSERT(prims);
+	WINPR_ASSERT(prims->copy_no_overlap_dst_alpha);
+	const pstatus_t rc = prims->copy_no_overlap_dst_alpha(
+	    pDstData, DstFormat, nDstStep, nXDst, nYDst, nWidth, nHeight, pSrcData, SrcFormat, nSrcStep,
+	    nXSrc, nYSrc, palette, srcVMultiplier, srcVOffset, dstVMultiplier, dstVOffset);
+	if (rc == PRIMITIVES_SUCCESS)
+		return TRUE;
 
 	return freerdp_image_copy_generic(pDstData, DstFormat, nDstStep, nXDst, nYDst, nWidth, nHeight,
 	                                  pSrcData, SrcFormat, nSrcStep, nXSrc, nYSrc, palette,

@@ -104,6 +104,11 @@ typedef pstatus_t (*__add_16s_t)(const INT16* WINPR_RESTRICT pSrc1,
 	                             UINT32 len);
 typedef pstatus_t (*__add_16s_inplace_t)(INT16* WINPR_RESTRICT pSrcDst1,
 	                                     INT16* WINPR_RESTRICT pSrcDst2, UINT32 len);
+typedef pstatus_t (*__copy_no_overlap_dst_alpha_t)(
+	BYTE* WINPR_RESTRICT pDstData, DWORD DstFormat, UINT32 nDstStep, UINT32 nXDst, UINT32 nYDst,
+	UINT32 nWidth, UINT32 nHeight, const BYTE* WINPR_RESTRICT pSrcData, DWORD SrcFormat,
+	UINT32 nSrcStep, UINT32 nXSrc, UINT32 nYSrc, const gdiPalette* WINPR_RESTRICT palette,
+	SSIZE_T srcVMultiplier, SSIZE_T srcVOffset, SSIZE_T dstVMultiplier, SSIZE_T dstVOffset);
 typedef pstatus_t (*__lShiftC_16s_inplace_t)(INT16* WINPR_RESTRICT pSrcDst, UINT32 val, UINT32 len);
 typedef pstatus_t (*__lShiftC_16s_t)(const INT16* pSrc, UINT32 val, INT16* pSrcDst, UINT32 len);
 typedef pstatus_t (*__lShiftC_16u_t)(const UINT16* pSrc, UINT32 val, UINT16* pSrcDst, UINT32 len);
@@ -222,6 +227,7 @@ typedef struct
 	 */
 	__add_16s_inplace_t add_16s_inplace;
 	__lShiftC_16s_inplace_t lShiftC_16s_inplace;
+	__copy_no_overlap_dst_alpha_t copy_no_overlap_dst_alpha;
 } primitives_t;
 
 typedef enum

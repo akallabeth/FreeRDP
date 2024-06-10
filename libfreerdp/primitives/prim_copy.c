@@ -18,7 +18,12 @@
 #include <string.h>
 #include <freerdp/types.h>
 #include <freerdp/primitives.h>
+#include <freerdp/log.h>
+
 #include "prim_internal.h"
+#include <freerdp/codec/color.h>
+
+#define TAG FREERDP_TAG("primitives.copy")
 
 static primitives_t* generic = NULL;
 
@@ -128,6 +133,111 @@ static pstatus_t general_copy_8u_AC4r(const BYTE* pSrc, INT32 srcStep, BYTE* pDs
 	return PRIMITIVES_SUCCESS;
 }
 
+static INLINE BOOL freerdp_image_copy_bgr24_bgrx32(BYTE* WINPR_RESTRICT pDstData, UINT32 nDstStep,
+                                                   UINT32 nXDst, UINT32 nYDst, UINT32 nWidth,
+                                                   UINT32 nHeight,
+                                                   const BYTE* WINPR_RESTRICT pSrcData,
+                                                   UINT32 nSrcStep, UINT32 nXSrc, UINT32 nYSrc,
+                                                   SSIZE_T srcVMultiplier, SSIZE_T srcVOffset,
+                                                   SSIZE_T dstVMultiplier, SSIZE_T dstVOffset)
+{
+
+	const SSIZE_T srcByte = 3;
+	const SSIZE_T dstByte = 4;
+
+	for (SSIZE_T y = 0; y < nHeight; y++)
+	{
+		const BYTE* WINPR_RESTRICT srcLine =
+		    &pSrcData[srcVMultiplier * (y + nYSrc) * nSrcStep + srcVOffset];
+		BYTE* WINPR_RESTRICT dstLine =
+		    &pDstData[dstVMultiplier * (y + nYDst) * nDstStep + dstVOffset];
+
+		for (SSIZE_T x = 0; x < nWidth; x++)
+		{
+			dstLine[(x + nXDst) * dstByte + 0] = srcLine[(x + nXSrc) * srcByte + 0];
+			dstLine[(x + nXDst) * dstByte + 1] = srcLine[(x + nXSrc) * srcByte + 1];
+			dstLine[(x + nXDst) * dstByte + 2] = srcLine[(x + nXSrc) * srcByte + 2];
+		}
+	}
+
+	return TRUE;
+}
+
+static INLINE BOOL freerdp_image_copy_bgrx32_bgrx32(BYTE* WINPR_RESTRICT pDstData, UINT32 nDstStep,
+                                                    UINT32 nXDst, UINT32 nYDst, UINT32 nWidth,
+                                                    UINT32 nHeight,
+                                                    const BYTE* WINPR_RESTRICT pSrcData,
+                                                    UINT32 nSrcStep, UINT32 nXSrc, UINT32 nYSrc,
+                                                    SSIZE_T srcVMultiplier, SSIZE_T srcVOffset,
+                                                    SSIZE_T dstVMultiplier, SSIZE_T dstVOffset)
+{
+
+	const SSIZE_T srcByte = 4;
+	const SSIZE_T dstByte = 4;
+
+	for (SSIZE_T y = 0; y < nHeight; y++)
+	{
+		const BYTE* WINPR_RESTRICT srcLine =
+		    &pSrcData[srcVMultiplier * (y + nYSrc) * nSrcStep + srcVOffset];
+		BYTE* WINPR_RESTRICT dstLine =
+		    &pDstData[dstVMultiplier * (y + nYDst) * nDstStep + dstVOffset];
+
+		for (SSIZE_T x = 0; x < nWidth; x++)
+		{
+			dstLine[(x + nXDst) * dstByte + 0] = srcLine[(x + nXSrc) * srcByte + 0];
+			dstLine[(x + nXDst) * dstByte + 1] = srcLine[(x + nXSrc) * srcByte + 1];
+			dstLine[(x + nXDst) * dstByte + 2] = srcLine[(x + nXSrc) * srcByte + 2];
+		}
+	}
+
+	return TRUE;
+}
+
+static pstatus_t generic_copy_no_overlap_dst_alpha(
+    BYTE* WINPR_RESTRICT pDstData, DWORD DstFormat, UINT32 nDstStep, UINT32 nXDst, UINT32 nYDst,
+    UINT32 nWidth, UINT32 nHeight, const BYTE* WINPR_RESTRICT pSrcData, DWORD SrcFormat,
+    UINT32 nSrcStep, UINT32 nXSrc, UINT32 nYSrc, const gdiPalette* WINPR_RESTRICT palette,
+    SSIZE_T srcVMultiplier, SSIZE_T srcVOffset, SSIZE_T dstVMultiplier, SSIZE_T dstVOffset)
+{
+	WINPR_ASSERT(pDstData);
+	WINPR_ASSERT(pSrcData);
+
+	switch (SrcFormat)
+	{
+		case PIXEL_FORMAT_BGR24:
+			switch (DstFormat)
+			{
+				case PIXEL_FORMAT_BGRX32:
+				case PIXEL_FORMAT_BGRA32:
+					return freerdp_image_copy_bgr24_bgrx32(
+					    pDstData, nDstStep, nXDst, nYDst, nWidth, nHeight, pSrcData, nSrcStep,
+					    nXSrc, nYSrc, srcVMultiplier, srcVOffset, dstVMultiplier, dstVOffset);
+				default:
+					break;
+			}
+			break;
+		case PIXEL_FORMAT_BGRX32:
+		case PIXEL_FORMAT_BGRA32:
+			switch (DstFormat)
+			{
+				case PIXEL_FORMAT_BGRX32:
+				case PIXEL_FORMAT_BGRA32:
+					return freerdp_image_copy_bgrx32_bgrx32(
+					    pDstData, nDstStep, nXDst, nYDst, nWidth, nHeight, pSrcData, nSrcStep,
+					    nXSrc, nYSrc, srcVMultiplier, srcVOffset, dstVMultiplier, dstVOffset);
+				default:
+					break;
+			}
+			break;
+		default:
+			break;
+	}
+
+	WLog_DBG(TAG, "unsupported format src %s --> dst %s", FreeRDPGetColorFormatName(SrcFormat),
+	         FreeRDPGetColorFormatName(DstFormat));
+	return -1;
+}
+
 /* ------------------------------------------------------------------------- */
 void primitives_init_copy(primitives_t* prims)
 {
@@ -136,9 +246,12 @@ void primitives_init_copy(primitives_t* prims)
 	prims->copy_8u_AC4r = general_copy_8u_AC4r;
 	/* This is just an alias with void* parameters */
 	prims->copy = (__copy_t)(prims->copy_8u);
+	prims->copy_no_overlap_dst_alpha = generic_copy_no_overlap_dst_alpha;
 }
 
 #if defined(WITH_SSE2) || defined(WITH_NEON)
+extern void primitives_init_copy_sse(primitives_t* prims);
+
 void primitives_init_copy_opt(primitives_t* prims)
 {
 	generic = primitives_get_generic();
@@ -153,5 +266,6 @@ void primitives_init_copy_opt(primitives_t* prims)
 	 */
 	/* This is just an alias with void* parameters */
 	prims->copy = (__copy_t)(prims->copy_8u);
+	primitives_init_copy_sse(prims);
 }
 #endif

@@ -917,6 +917,33 @@ BOOL IsProcessorFeaturePresent(DWORD ProcessorFeature)
 
 			break;
 
+		case PF_SSSE3_INSTRUCTIONS_AVAILABLE:
+			if (d & C_BIT_SSSE3)
+				ret = TRUE;
+			break;
+		case PF_SSE4_1_INSTRUCTIONS_AVAILABLE:
+			if (d & C_BIT_SSE41)
+				ret = TRUE;
+			break;
+		case PF_SSE4_2_INSTRUCTIONS_AVAILABLE:
+			if (d & C_BIT_SSE42)
+				ret = TRUE;
+			break;
+		case PF_AVX_INSTRUCTIONS_AVAILABLE:
+			if (d & C_BIT_AVX)
+				ret = TRUE;
+			break;
+		case PF_AVX2_INSTRUCTIONS_AVAILABLE:
+		case PF_AVX512F_INSTRUCTIONS_AVAILABLE:
+		case PF_ARM_V8_INSTRUCTIONS_AVAILABLE:
+		case PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE:
+		case PF_ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE:
+		case PF_ARM_V81_ATOMIC_INSTRUCTIONS_AVAILABLE:
+		case PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE:
+		case PF_ARM_V83_JSCVT_INSTRUCTIONS_AVAILABLE:
+		case PF_ARM_V83_LRCPC_INSTRUCTIONS_AVAILABLE:
+			WLog_WARN(TAG, "feature 0x%08" PRIx32 " check not implemented", ProcessorFeature);
+			break;
 		default:
 			break;
 	}

@@ -722,7 +722,7 @@ void rfx_init_sse2(RFX_CONTEXT* context)
 	context->dwt_2d_decode = rfx_dwt_2d_decode_sse2;
 	context->dwt_2d_encode = rfx_dwt_2d_encode_sse2;
 	context->dwt_2d_extrapolate_decode = rfx_dwt_2d_extrapolate_decode_sse2;
-    //context->rlgr_decode = xxxx; // TODO: need optimized version
+	// context->rlgr_decode = xxxx; // TODO: need optimized version
 #else
 	WINPR_UNUSED(context);
 #endif
