@@ -535,6 +535,7 @@ void rfx_init_neon(RFX_CONTEXT* context)
 		context->quantization_decode = rfx_quantization_decode_NEON;
 		context->dwt_2d_decode = rfx_dwt_2d_decode_NEON;
 		context->dwt_2d_extrapolate_decode = rfx_dwt_2d_extrapolate_decode_neon;
+        //context->rlgr_decode = xxxx; // TODO: need optimized version
 	}
 #else
 	WINPR_UNUSED(context);
