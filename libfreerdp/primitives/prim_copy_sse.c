@@ -43,7 +43,9 @@ static INLINE BOOL freerdp_image_copy_bgr24_bgrx32(BYTE* WINPR_RESTRICT pDstData
 	const SSIZE_T srcByte = 3;
 	const SSIZE_T dstByte = 4;
 
-	const __m128i mask = _mm_set_epi32(0xFFFFFF00, 0xFFFFFF00, 0xFFFFFF00, 0xFFFFFF00);
+	const __m128i mask = _mm_set_epi32(0xFF, 0xFF, 0xFF, 0xFF);
+	const SSIZE_T rem = nWidth % 4;
+	const SSIZE_T width = nWidth - rem;
 	for (SSIZE_T y = 0; y < nHeight; y++)
 	{
 		const BYTE* WINPR_RESTRICT srcLine =
@@ -51,15 +53,23 @@ static INLINE BOOL freerdp_image_copy_bgr24_bgrx32(BYTE* WINPR_RESTRICT pDstData
 		BYTE* WINPR_RESTRICT dstLine =
 		    &pDstData[dstVMultiplier * (y + nYDst) * nDstStep + dstVOffset];
 
-		for (SSIZE_T x = 0; x < nWidth; x += 4)
+		for (SSIZE_T x = 0; x < width; x += 4)
 		{
 			const __m128i* src = (const __m128i*)&srcLine[(x + nXSrc) * srcByte];
 			__m128i* dst = (__m128i*)&dstLine[(x + nXDst) * dstByte];
 			const __m128i s0 = _mm_loadu_si128(src);
 			const __m128i s1 = _mm_loadu_si128(dst);
 			const __m128i s2 = _mm_shuffle_epi8(s1, mask);
-			__m128i d0 = _mm_blendv_epi8(s0, s2, mask);
+			__m128i d0 = _mm_blendv_epi8(s2, s0, mask);
 			_mm_storeu_si128(dst, d0);
+		}
+		for (SSIZE_T x = width; x < nWidth; x++)
+		{
+			const BYTE* src = &srcLine[(x + nXSrc) * srcByte];
+			BYTE* dst = &dstLine[(x + nXDst) * dstByte];
+			*dst++ = *src++;
+			*dst++ = *src++;
+			*dst++ = *src++;
 		}
 	}
 
@@ -79,6 +89,8 @@ static INLINE BOOL freerdp_image_copy_bgrx32_bgrx32(BYTE* WINPR_RESTRICT pDstDat
 	const SSIZE_T dstByte = 4;
 
 	const __m128i mask = _mm_set_epi32(0xFFFFFF00, 0xFFFFFF00, 0xFFFFFF00, 0xFFFFFF00);
+	const SSIZE_T rem = nWidth % 4;
+	const SSIZE_T width = nWidth - rem;
 	for (SSIZE_T y = 0; y < nHeight; y++)
 	{
 		const BYTE* WINPR_RESTRICT srcLine =
@@ -86,7 +98,7 @@ static INLINE BOOL freerdp_image_copy_bgrx32_bgrx32(BYTE* WINPR_RESTRICT pDstDat
 		BYTE* WINPR_RESTRICT dstLine =
 		    &pDstData[dstVMultiplier * (y + nYDst) * nDstStep + dstVOffset];
 
-		for (SSIZE_T x = 0; x < nWidth; x += 4)
+		for (SSIZE_T x = 0; x < width; x += 4)
 		{
 			const __m128i* src = (const __m128i*)&srcLine[(x + nXSrc) * srcByte];
 			__m128i* dst = (__m128i*)&dstLine[(x + nXDst) * dstByte];
@@ -94,6 +106,15 @@ static INLINE BOOL freerdp_image_copy_bgrx32_bgrx32(BYTE* WINPR_RESTRICT pDstDat
 			const __m128i s1 = _mm_loadu_si128(dst);
 			__m128i d0 = _mm_blendv_epi8(s1, s0, mask);
 			_mm_storeu_si128(dst, d0);
+		}
+
+		for (SSIZE_T x = width; x < nWidth; x++)
+		{
+			const BYTE* src = &srcLine[(x + nXSrc) * srcByte];
+			BYTE* dst = &dstLine[(x + nXDst) * dstByte];
+			*dst++ = *src++;
+			*dst++ = *src++;
+			*dst++ = *src++;
 		}
 	}
 
