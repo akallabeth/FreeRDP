@@ -54,12 +54,11 @@
 	} while (0)
 
 static __inline void __attribute__((ATTRIBUTES))
-_mm_prefetch_buffer(char* WINPR_RESTRICT buffer, int num_bytes)
+_mm_prefetch_buffer(char* WINPR_RESTRICT buffer, size_t num_bytes)
 {
 	__m128i* buf = (__m128i*)buffer;
 
-	for (unsigned int i = 0; i < (num_bytes / sizeof(__m128i));
-	     i += (CACHE_LINE_BYTES / sizeof(__m128i)))
+	for (size_t i = 0; i < (num_bytes / sizeof(__m128i)); i += (CACHE_LINE_BYTES / sizeof(__m128i)))
 	{
 		_mm_prefetch((char*)(&buf[i]), _MM_HINT_NTA);
 	}
@@ -513,6 +512,7 @@ static INLINE void sse_progressive_rfx_idwt_x(const INT16* WINPR_RESTRICT pLowBa
 	INT16 X1 = 0;
 	INT16 X2 = 0;
 
+	WINPR_PRAGMA_UNROLL_LOOP_8
 	for (size_t i = 0; i < nDstCount; i++)
 	{
 		const INT16* pL = pLowBand;
@@ -523,7 +523,7 @@ static INLINE void sse_progressive_rfx_idwt_x(const INT16* WINPR_RESTRICT pLowBa
 		X0 = L0 - H0;
 		X2 = L0 - H0;
 
-		WINPR_PRAGMA_UNROLL_LOOP
+		WINPR_PRAGMA_UNROLL_LOOP_8
 		for (size_t j = 0; j < (nHighCount - 1); j++)
 		{
 			H1 = *pH;
@@ -588,6 +588,7 @@ static INLINE void sse_progressive_rfx_idwt_y(const INT16* WINPR_RESTRICT pLowBa
 	INT16 X1 = 0;
 	INT16 X2 = 0;
 
+	WINPR_PRAGMA_UNROLL_LOOP_8
 	for (size_t i = 0; i < nDstCount; i++)
 	{
 		const INT16* pL = pLowBand;
@@ -600,7 +601,7 @@ static INLINE void sse_progressive_rfx_idwt_y(const INT16* WINPR_RESTRICT pLowBa
 		X0 = L0 - H0;
 		X2 = L0 - H0;
 
-		WINPR_PRAGMA_UNROLL_LOOP
+		WINPR_PRAGMA_UNROLL_LOOP_8
 		for (size_t j = 0; j < (nHighCount - 1); j++)
 		{
 			H1 = *pH;
@@ -718,6 +719,7 @@ static void sse_rfx_dwt_2d_extrapolate_decode(INT16* WINPR_RESTRICT buffer,
 {
 	WINPR_ASSERT(buffer);
 	WINPR_ASSERT(temp);
+	_mm_prefetch_buffer((char*)buffer, 4096 * sizeof(INT16));
 	sse_progressive_rfx_dwt_2d_decode_block(&buffer[3807], temp, 3);
 	sse_progressive_rfx_dwt_2d_decode_block(&buffer[3007], temp, 2);
 	sse_progressive_rfx_dwt_2d_decode_block(&buffer[0], temp, 1);

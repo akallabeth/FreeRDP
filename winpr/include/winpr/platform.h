@@ -40,7 +40,11 @@
 #define WINPR_PRAGMA_DIAG_IGNORED_MISMATCHED_DEALLOC \
 	_Pragma("clang diagnostic ignored \"-Wmismatched-dealloc\"")
 #define WINPR_PRAGMA_DIAG_POP _Pragma("clang diagnostic pop")
-#define WINPR_PRAGMA_UNROLL_LOOP _Pragma("clang loop vectorize_width(8) interleave_count(8)")
+#define WINPR_PRAGMA_UNROLL_LOOP_4 _Pragma("clang loop vectorize_width(4) interleave_count(4)")
+#define WINPR_PRAGMA_UNROLL_LOOP_8 _Pragma("clang loop vectorize_width(8) interleave_count(8)")
+#define WINPR_PRAGMA_UNROLL_LOOP_16 _Pragma("clang loop vectorize_width(16) interleave_count(16)")
+#define WINPR_PRAGMA_UNROLL_LOOP_32 _Pragma("clang loop vectorize_width(32) interleave_count(32)")
+#define WINPR_PRAGMA_UNROLL_LOOP_64 _Pragma("clang loop vectorize_width(64)) interleave_count(64)")
 #elif defined(__GNUC__)
 #define WINPR_PRAGMA_DIAG_PUSH _Pragma("GCC diagnostic push")
 #define WINPR_PRAGMA_DIAG_IGNORED_PEDANTIC _Pragma("GCC diagnostic ignored \"-Wpedantic\"")
@@ -60,7 +64,11 @@
 #define WINPR_PRAGMA_DIAG_IGNORED_MISMATCHED_DEALLOC \
 	_Pragma("GCC diagnostic ignored \"-Wmismatched-dealloc\"")
 #define WINPR_PRAGMA_DIAG_POP _Pragma("GCC diagnostic pop")
-#define WINPR_PRAGMA_UNROLL_LOOP _Pragma("GCC unroll 8") _Pragma("GCC ivdep")
+#define WINPR_PRAGMA_UNROLL_LOOP_4 _Pragma("GCC unroll 4") _Pragma("GCC ivdep")
+#define WINPR_PRAGMA_UNROLL_LOOP_8 _Pragma("GCC unroll 8") _Pragma("GCC ivdep")
+#define WINPR_PRAGMA_UNROLL_LOOP_16 _Pragma("GCC unroll 16") _Pragma("GCC ivdep")
+#define WINPR_PRAGMA_UNROLL_LOOP_32 _Pragma("GCC unroll 32") _Pragma("GCC ivdep")
+#define WINPR_PRAGMA_UNROLL_LOOP_64 _Pragma("GCC unroll 64") _Pragma("GCC ivdep")
 #else
 #define WINPR_PRAGMA_DIAG_PUSH
 #define WINPR_PRAGMA_DIAG_IGNORED_PEDANTIC
@@ -72,12 +80,24 @@
 #define WINPR_PRAGMA_DIAG_IGNORED_FORMAT_SECURITY
 #define WINPR_PRAGMA_DIAG_IGNORED_MISMATCHED_DEALLOC
 #define WINPR_PRAGMA_DIAG_POP
-#define WINPR_PRAGMA_UNROLL_LOOP
+#define WINPR_PRAGMA_UNROLL_LOOP_4
+#define WINPR_PRAGMA_UNROLL_LOOP_8
+#define WINPR_PRAGMA_UNROLL_LOOP_16
+#define WINPR_PRAGMA_UNROLL_LOOP_32
+#define WINPR_PRAGMA_UNROLL_LOOP_64
 #endif
 
 #if defined(MSVC)
-#undef WINPR_PRAGMA_UNROLL_LOOP
-#define WINPR_PRAGMA_UNROLL_LOOP _Pragma("loop ( ivdep )")
+#undef WINPR_PRAGMA_UNROLL_LOOP_4
+#undef WINPR_PRAGMA_UNROLL_LOOP_8
+#undef WINPR_PRAGMA_UNROLL_LOOP_16
+#undef WINPR_PRAGMA_UNROLL_LOOP_32
+#undef WINPR_PRAGMA_UNROLL_LOOP_64
+#define WINPR_PRAGMA_UNROLL_LOOP_4 _Pragma("loop ( ivdep )")
+#define WINPR_PRAGMA_UNROLL_LOOP_8 _Pragma("loop ( ivdep )")
+#define WINPR_PRAGMA_UNROLL_LOOP_16 _Pragma("loop ( ivdep )")
+#define WINPR_PRAGMA_UNROLL_LOOP_32 _Pragma("loop ( ivdep )")
+#define WINPR_PRAGMA_UNROLL_LOOP_64 _Pragma("loop ( ivdep )")
 #endif
 
 WINPR_PRAGMA_DIAG_PUSH

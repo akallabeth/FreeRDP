@@ -181,7 +181,7 @@ static INLINE pstatus_t sse_image_copy_no_overlap_convert(
 	const SSIZE_T srcByte = FreeRDPGetBytesPerPixel(SrcFormat);
 	const SSIZE_T dstByte = FreeRDPGetBytesPerPixel(DstFormat);
 
-	const UINT32 width = nWidth - nWidth % 8;
+	const UINT32 width = nWidth - nWidth % 32;
 	for (SSIZE_T y = 0; y < nHeight; y++)
 	{
 		const BYTE* WINPR_RESTRICT srcLine =
@@ -190,7 +190,7 @@ static INLINE pstatus_t sse_image_copy_no_overlap_convert(
 		    &pDstData[dstVMultiplier * (y + nYDst) * nDstStep + dstVOffset];
 
 		SSIZE_T x = 0;
-		WINPR_PRAGMA_UNROLL_LOOP
+		WINPR_PRAGMA_UNROLL_LOOP_32
 		for (; x < width; x++)
 		{
 			const UINT32 color = FreeRDPReadColor(&srcLine[(x + nXSrc) * srcByte], SrcFormat);
