@@ -10,6 +10,7 @@ set(PRIMITIVES_SRCS
 	prim_set.c
 	prim_shift.c
 	prim_sign.c
+	prim_YUV.h
 	prim_YUV.c
 	prim_YCoCg.c
 	primitives.c
@@ -19,8 +20,11 @@ if (WITH_SSE2 OR WITH_NEON)
 	set(PRIMITIVES_SSE2_SRCS
 		prim_colors_opt.c
 		prim_copy_sse.c
-		prim_copy_avx2.c
 		prim_set_opt.c)
+
+    set(PRIMITIVES_AVX2_SRCS
+		prim_copy_avx2.c
+    )
 
 	set(PRIMITIVES_SSE3_SRCS
 		prim_add_opt.c
@@ -52,6 +56,7 @@ if (WITH_OPENCL)
 endif()
 
 set(PRIMITIVES_OPT_SRCS
+	${PRIMITIVES_AVX2_SRCS}
 	${PRIMITIVES_SSE2_SRCS}
 	${PRIMITIVES_SSE3_SRCS}
 	${PRIMITIVES_SSSE3_SRCS}
@@ -75,7 +80,9 @@ if(WITH_SSE2)
 			set_source_files_properties(${PRIMITIVES_SSSE3_SRCS} PROPERTIES COMPILE_FLAGS "-mssse3" )
 		endif()
 		set_source_files_properties(prim_copy_sse.c PROPERTIES COMPILE_FLAGS "-msse4.1" )
-		set_source_files_properties(prim_copy_avx2.c PROPERTIES COMPILE_FLAGS "-mavx2" )
+		if (PRIMITIVES_AVX2_SRCS)
+			set_source_files_properties(${PRIMITIVES_AVX2_SRCS} PROPERTIES COMPILE_FLAGS "-mavx2" )
+		endif()
 	endif()
 
 	if(MSVC)

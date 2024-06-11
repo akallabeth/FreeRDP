@@ -29,6 +29,7 @@
 #include <freerdp/primitives.h>
 #include <freerdp/codec/color.h>
 #include "prim_internal.h"
+#include "prim_YUV.h"
 
 static pstatus_t general_LumaToYUV444(const BYTE* const WINPR_RESTRICT pSrcRaw[3],
                                       const UINT32 srcStep[3], BYTE* WINPR_RESTRICT pDstRaw[3],
