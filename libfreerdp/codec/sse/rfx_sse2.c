@@ -481,6 +481,247 @@ static void rfx_dwt_2d_encode_sse2(INT16* WINPR_RESTRICT buffer, INT16* WINPR_RE
 	rfx_dwt_2d_encode_block_sse2(buffer + 3072, dwt_buffer, 16);
 	rfx_dwt_2d_encode_block_sse2(buffer + 3840, dwt_buffer, 8);
 }
+
+/*
+ * Band	    Offset      Dimensions  Size
+ *
+ * HL1      0           31x33       1023
+ * LH1      1023        33x31       1023
+ * HH1      2046        31x31       961
+ *
+ * HL2      3007        16x17       272
+ * LH2      3279        17x16       272
+ * HH2      3551        16x16       256
+ *
+ * HL3      3807        8x9         72
+ * LH3      3879        9x8         72
+ * HH3      3951        8x8         64
+ *
+ * LL3      4015        9x9         81
+ */
+
+static INLINE void sse_progressive_rfx_idwt_x(const INT16* WINPR_RESTRICT pLowBand, size_t nLowStep,
+                                              const INT16* WINPR_RESTRICT pHighBand,
+                                              size_t nHighStep, INT16* WINPR_RESTRICT pDstBand,
+                                              size_t nDstStep, size_t nLowCount, size_t nHighCount,
+                                              size_t nDstCount)
+{
+	INT16 L0 = 0;
+	INT16 H0 = 0;
+	INT16 H1 = 0;
+	INT16 X0 = 0;
+	INT16 X1 = 0;
+	INT16 X2 = 0;
+
+	for (size_t i = 0; i < nDstCount; i++)
+	{
+		const INT16* pL = pLowBand;
+		const INT16* pH = pHighBand;
+		INT16* pX = pDstBand;
+		H0 = *pH++;
+		L0 = *pL++;
+		X0 = L0 - H0;
+		X2 = L0 - H0;
+
+		WINPR_PRAGMA_UNROLL_LOOP
+		for (size_t j = 0; j < (nHighCount - 1); j++)
+		{
+			H1 = *pH;
+			pH++;
+			L0 = *pL;
+			pL++;
+			X2 = L0 - ((H0 + H1) / 2);
+			X1 = ((X0 + X2) / 2) + (2 * H0);
+			pX[0] = X0;
+			pX[1] = X1;
+			pX += 2;
+			X0 = X2;
+			H0 = H1;
+		}
+
+		if (nLowCount <= (nHighCount + 1))
+		{
+			if (nLowCount <= nHighCount)
+			{
+				pX[0] = X2;
+				pX[1] = X2 + (2 * H0);
+			}
+			else
+			{
+				L0 = *pL;
+				pL++;
+				X0 = L0 - H0;
+				pX[0] = X2;
+				pX[1] = ((X0 + X2) / 2) + (2 * H0);
+				pX[2] = X0;
+			}
+		}
+		else
+		{
+			L0 = *pL;
+			pL++;
+			X0 = L0 - (H0 / 2);
+			pX[0] = X2;
+			pX[1] = ((X0 + X2) / 2) + (2 * H0);
+			pX[2] = X0;
+			L0 = *pL;
+			pL++;
+			pX[3] = (X0 + L0) / 2;
+		}
+
+		pLowBand += nLowStep;
+		pHighBand += nHighStep;
+		pDstBand += nDstStep;
+	}
+}
+
+static INLINE void sse_progressive_rfx_idwt_y(const INT16* WINPR_RESTRICT pLowBand, size_t nLowStep,
+                                              const INT16* WINPR_RESTRICT pHighBand,
+                                              size_t nHighStep, INT16* WINPR_RESTRICT pDstBand,
+                                              size_t nDstStep, size_t nLowCount, size_t nHighCount,
+                                              size_t nDstCount)
+{
+	INT16 L0 = 0;
+	INT16 H0 = 0;
+	INT16 H1 = 0;
+	INT16 X0 = 0;
+	INT16 X1 = 0;
+	INT16 X2 = 0;
+
+	for (size_t i = 0; i < nDstCount; i++)
+	{
+		const INT16* pL = pLowBand;
+		const INT16* pH = pHighBand;
+		INT16* pX = pDstBand;
+		H0 = *pH;
+		pH += nHighStep;
+		L0 = *pL;
+		pL += nLowStep;
+		X0 = L0 - H0;
+		X2 = L0 - H0;
+
+		WINPR_PRAGMA_UNROLL_LOOP
+		for (size_t j = 0; j < (nHighCount - 1); j++)
+		{
+			H1 = *pH;
+			pH += nHighStep;
+			L0 = *pL;
+			pL += nLowStep;
+			X2 = L0 - ((H0 + H1) / 2);
+			X1 = ((X0 + X2) / 2) + (2 * H0);
+			*pX = X0;
+			pX += nDstStep;
+			*pX = X1;
+			pX += nDstStep;
+			X0 = X2;
+			H0 = H1;
+		}
+
+		if (nLowCount <= (nHighCount + 1))
+		{
+			if (nLowCount <= nHighCount)
+			{
+				*pX = X2;
+				pX += nDstStep;
+				*pX = X2 + (2 * H0);
+			}
+			else
+			{
+				L0 = *pL;
+				X0 = L0 - H0;
+				*pX = X2;
+				pX += nDstStep;
+				*pX = ((X0 + X2) / 2) + (2 * H0);
+				pX += nDstStep;
+				*pX = X0;
+			}
+		}
+		else
+		{
+			L0 = *pL;
+			pL += nLowStep;
+			X0 = L0 - (H0 / 2);
+			*pX = X2;
+			pX += nDstStep;
+			*pX = ((X0 + X2) / 2) + (2 * H0);
+			pX += nDstStep;
+			*pX = X0;
+			pX += nDstStep;
+			L0 = *pL;
+			*pX = (X0 + L0) / 2;
+		}
+
+		pLowBand++;
+		pHighBand++;
+		pDstBand++;
+	}
+}
+
+static INLINE size_t sse_progressive_rfx_get_band_l_count(size_t level)
+{
+	return (64 >> level) + 1;
+}
+
+static INLINE size_t sse_progressive_rfx_get_band_h_count(size_t level)
+{
+	if (level == 1)
+		return (64 >> 1) - 1;
+	else
+		return (64 + (1 << (level - 1))) >> level;
+}
+
+static INLINE void sse_progressive_rfx_dwt_2d_decode_block(INT16* WINPR_RESTRICT buffer,
+                                                           INT16* WINPR_RESTRICT temp, size_t level)
+{
+	size_t nDstStepX = 0;
+	size_t nDstStepY = 0;
+	const INT16* WINPR_RESTRICT HL = NULL;
+	const INT16* WINPR_RESTRICT LH = NULL;
+	const INT16* WINPR_RESTRICT HH = NULL;
+	INT16* WINPR_RESTRICT LL = NULL;
+	INT16* WINPR_RESTRICT L = NULL;
+	INT16* WINPR_RESTRICT H = NULL;
+	INT16* WINPR_RESTRICT LLx = NULL;
+
+	const size_t nBandL = sse_progressive_rfx_get_band_l_count(level);
+	const size_t nBandH = sse_progressive_rfx_get_band_h_count(level);
+	size_t offset = 0;
+
+	HL = &buffer[offset];
+	offset += (nBandH * nBandL);
+	LH = &buffer[offset];
+	offset += (nBandL * nBandH);
+	HH = &buffer[offset];
+	offset += (nBandH * nBandH);
+	LL = &buffer[offset];
+	nDstStepX = (nBandL + nBandH);
+	nDstStepY = (nBandL + nBandH);
+	offset = 0;
+	L = &temp[offset];
+	offset += (nBandL * nDstStepX);
+	H = &temp[offset];
+	LLx = &buffer[0];
+
+	/* horizontal (LL + HL -> L) */
+	sse_progressive_rfx_idwt_x(LL, nBandL, HL, nBandH, L, nDstStepX, nBandL, nBandH, nBandL);
+
+	/* horizontal (LH + HH -> H) */
+	sse_progressive_rfx_idwt_x(LH, nBandL, HH, nBandH, H, nDstStepX, nBandL, nBandH, nBandH);
+
+	/* vertical (L + H -> LL) */
+	sse_progressive_rfx_idwt_y(L, nDstStepX, H, nDstStepX, LLx, nDstStepY, nBandL, nBandH,
+	                           nBandL + nBandH);
+}
+
+static void sse_rfx_dwt_2d_extrapolate_decode(INT16* WINPR_RESTRICT buffer,
+                                              INT16* WINPR_RESTRICT temp)
+{
+	WINPR_ASSERT(buffer);
+	WINPR_ASSERT(temp);
+	sse_progressive_rfx_dwt_2d_decode_block(&buffer[3807], temp, 3);
+	sse_progressive_rfx_dwt_2d_decode_block(&buffer[3007], temp, 2);
+	sse_progressive_rfx_dwt_2d_decode_block(&buffer[0], temp, 1);
+}
 #endif
 
 void rfx_init_sse2(RFX_CONTEXT* context)
@@ -497,6 +738,7 @@ void rfx_init_sse2(RFX_CONTEXT* context)
 	context->quantization_encode = rfx_quantization_encode_sse2;
 	context->dwt_2d_decode = rfx_dwt_2d_decode_sse2;
 	context->dwt_2d_encode = rfx_dwt_2d_encode_sse2;
+	context->dwt_2d_extrapolate_decode = sse_rfx_dwt_2d_extrapolate_decode;
 #else
 	WINPR_UNUSED(context);
 #endif
