@@ -481,6 +481,300 @@ static void rfx_dwt_2d_encode_sse2(INT16* WINPR_RESTRICT buffer, INT16* WINPR_RE
 	rfx_dwt_2d_encode_block_sse2(buffer + 3072, dwt_buffer, 16);
 	rfx_dwt_2d_encode_block_sse2(buffer + 3840, dwt_buffer, 8);
 }
+
+static INLINE void rfx_idwt_extrapolate_horiz_sse2(INT16* restrict pLowBand, size_t nLowStep,
+                                                   const INT16* restrict pHighBand,
+                                                   size_t nHighStep, INT16* restrict pDstBand,
+                                                   size_t nDstStep, size_t nLowCount,
+                                                   size_t nHighCount, size_t nDstCount)
+{
+	WINPR_ASSERT(pLowBand);
+	WINPR_ASSERT(pHighBand);
+	WINPR_ASSERT(pDstBand);
+
+	INT16* l_ptr = pLowBand;
+	const INT16* h_ptr = pHighBand;
+	INT16* dst_ptr = pDstBand;
+	size_t batchSize = (nLowCount + nHighCount) >> 1;
+
+	for (size_t y = 0; y < nDstCount; y++)
+	{
+		/* Even coefficients */
+		size_t n = 0;
+		for (; n < batchSize; n += 8)
+		{
+			// dst[2n] = l[n] - ((h[n-1] + h[n] + 1) >> 1);
+			__m128i l_n = _mm_loadu_si16(l_ptr);
+			__m128i h_n = _mm_loadu_si16(h_ptr);
+			__m128i h_n_m = _mm_loadu_si16(h_ptr - 1);
+
+			if (n == 0)
+			{
+				int first = _mm_extract_epi16(h_n_m, 1);
+				h_n_m = _mm_insert_epi16(h_n_m, first, 0);
+			}
+			else if (n == 24)
+				h_n = _mm_insert_epi16(h_n, 0, 7);
+
+			__m128i tmp_n = _mm_add_epi16(h_n, h_n_m);
+			tmp_n = _mm_add_epi16(tmp_n, _mm_set_epi16(1, 1, 1, 1, 1, 1, 1, 1));
+			tmp_n = _mm_srai_epi16(tmp_n, 1);
+			__m128i dst_n = _mm_sub_epi16(l_n, tmp_n);
+			_mm_storeu_si16(l_ptr, dst_n);
+			l_ptr += 8;
+			h_ptr += 8;
+		}
+		if (n < 32)
+			*l_ptr -= *(h_ptr - 1);
+
+		l_ptr -= batchSize;
+		h_ptr -= batchSize;
+
+		/* Odd coefficients */
+		n = 0;
+		for (; n < batchSize; n += 8)
+		{
+			// dst[2n + 1] = (h[n] << 1) + ((dst[2n] + dst[2n + 2]) >> 1);
+			__m128i h_n = _mm_loadu_si16(h_ptr);
+			h_n = _mm_slli_epi16(h_n, 1);
+			__m128i dst_n_l = _mm_loadu_si16(l_ptr);
+			__m128i dst_n_p = _mm_loadu_si16(l_ptr + 1);
+
+			if (n == 24)
+				h_n = _mm_insert_epi16(h_n, 0, 7);
+
+			__m128i dst_n_h = _mm_add_epi16(dst_n_p, dst_n_l);
+			dst_n_h = _mm_srai_epi16(dst_n_h, 1);
+			dst_n_h = _mm_add_epi16(dst_n_h, h_n);
+			__m128i dst_n_1 = _mm_unpackhi_epi16(dst_n_l, dst_n_h);
+			_mm_storeu_si16(dst_ptr, dst_n_1);
+			dst_ptr += 8;
+
+			__m128i dst_n_2 = _mm_unpacklo_epi16(dst_n_l, dst_n_h);
+			_mm_storeu_si16(dst_ptr, dst_n_2);
+			dst_ptr += 8;
+
+			l_ptr += 8;
+			h_ptr += 8;
+		}
+		if (n == 32)
+		{
+			h_ptr -= 1;
+			l_ptr += 1;
+		}
+		else
+		{
+			*dst_ptr = *l_ptr;
+			l_ptr += 1;
+			dst_ptr += 1;
+		}
+	}
+}
+
+static INLINE void rfx_idwt_extrapolate_vert_sse2(const INT16* restrict pLowBand, size_t nLowStep,
+                                                  const INT16* restrict pHighBand, size_t nHighStep,
+                                                  INT16* restrict pDstBand, size_t nDstStep,
+                                                  size_t nLowCount, size_t nHighCount,
+                                                  size_t nDstCount)
+{
+	WINPR_ASSERT(pLowBand);
+	WINPR_ASSERT(pHighBand);
+	WINPR_ASSERT(pDstBand);
+
+	const INT16* l_ptr = pLowBand;
+	const INT16* h_ptr = pHighBand;
+	INT16* dst_ptr = pDstBand;
+	size_t batchSize = (nDstCount >> 3) << 3;
+	size_t forceBandSize = (nLowCount + nHighCount) >> 1;
+
+	/* Even coefficients */
+	for (size_t n = 0; n < forceBandSize; n++)
+	{
+		for (size_t x = 0; x < batchSize; x += 8)
+		{
+			// dst[2n] = l[n] - ((h[n-1] + h[n] + 1) >> 1);
+			__m128i l_n = _mm_loadu_si16(l_ptr);
+			__m128i h_n = _mm_loadu_si16((n == 31) ? (h_ptr - nHighStep) : h_ptr);
+			__m128i tmp_n = _mm_add_epi16(h_n, _mm_set_epi16(1, 1, 1, 1, 1, 1, 1, 1));
+
+			if (n == 0)
+				tmp_n = _mm_add_epi16(tmp_n, h_n);
+			else if (n < 31)
+			{
+				__m128i h_n_m = _mm_loadu_si16((h_ptr - nHighStep));
+				tmp_n = _mm_add_epi16(tmp_n, h_n_m);
+			}
+
+			tmp_n = _mm_srai_epi16(tmp_n, 1);
+			__m128i dst_n = _mm_sub_epi16(l_n, tmp_n);
+			_mm_storeu_si16(dst_ptr, dst_n);
+			l_ptr += 8;
+			h_ptr += 8;
+			dst_ptr += 8;
+		}
+
+		if (nDstCount > batchSize)
+		{
+			int16_t h_n = (n == 31) ? *(h_ptr - nHighStep) : *h_ptr;
+			int16_t tmp_n = h_n + 1;
+			if (n == 0)
+				tmp_n += h_n;
+			else if (n < 31)
+				tmp_n += *(h_ptr - nHighStep);
+			tmp_n >>= 1;
+			*dst_ptr = *l_ptr - tmp_n;
+			l_ptr += 1;
+			h_ptr += 1;
+			dst_ptr += 1;
+		}
+
+		dst_ptr += nDstStep;
+	}
+
+	if (forceBandSize < 32)
+	{
+		for (size_t x = 0; x < batchSize; x += 8)
+		{
+			__m128i l_n = _mm_loadu_si16(l_ptr);
+			__m128i h_n = _mm_loadu_si16(h_ptr - nHighStep);
+			__m128i tmp_n = _mm_sub_epi16(l_n, h_n);
+			_mm_storeu_si16(dst_ptr, tmp_n);
+			l_ptr += 8;
+			h_ptr += 8;
+			dst_ptr += 8;
+		}
+
+		if (nDstCount > batchSize)
+		{
+			*dst_ptr = *l_ptr - *(h_ptr - nHighStep);
+			l_ptr += 1;
+			h_ptr += 1;
+			dst_ptr += 1;
+		}
+	}
+
+	h_ptr = pHighBand;
+	dst_ptr = pDstBand + nDstStep;
+
+	/* Odd coefficients */
+	for (size_t n = 0; n < forceBandSize; n++)
+	{
+		for (size_t x = 0; x < batchSize; x += 8)
+		{
+			// dst[2n + 1] = (h[n] << 1) + ((dst[2n] + dst[2n + 2]) >> 1);
+			__m128i tmp_n = _mm_loadu_si16(dst_ptr - nDstStep);
+			if (n == 31)
+			{
+				__m128i dst_n_p = _mm_loadu_si16(l_ptr);
+				l_ptr += 8;
+				tmp_n = _mm_add_epi16(tmp_n, dst_n_p);
+				tmp_n = _mm_srai_epi16(tmp_n, 1);
+			}
+			else
+			{
+				__m128i dst_n_p = _mm_loadu_si16(dst_ptr + nDstStep);
+				tmp_n = _mm_add_epi16(tmp_n, dst_n_p);
+				tmp_n = _mm_srai_epi16(tmp_n, 1);
+				__m128i h_n = _mm_loadu_si16(h_ptr);
+				h_n = _mm_slli_epi16(h_n, 1);
+				tmp_n = _mm_add_epi16(tmp_n, h_n);
+			}
+			_mm_storeu_si16(dst_ptr, tmp_n);
+			h_ptr += 8;
+			dst_ptr += 8;
+		}
+
+		if (nDstCount > batchSize)
+		{
+			int16_t tmp_n = *(dst_ptr - nDstStep);
+			if (n == 31)
+			{
+				int16_t dst_n_p = *l_ptr;
+				l_ptr += 1;
+				tmp_n += dst_n_p;
+				tmp_n >>= 1;
+			}
+			else
+			{
+				int16_t dst_n_p = *(dst_ptr + nDstStep);
+				tmp_n += dst_n_p;
+				tmp_n >>= 1;
+				int16_t h_n = *h_ptr;
+				h_n <<= 1;
+				tmp_n += h_n;
+			}
+			*dst_ptr = tmp_n;
+			h_ptr += 1;
+			dst_ptr += 1;
+		}
+
+		dst_ptr += nDstStep;
+	}
+}
+
+static INLINE size_t prfx_get_band_l_count(size_t level)
+{
+	return (64 >> level) + 1;
+}
+
+static INLINE size_t prfx_get_band_h_count(size_t level)
+{
+	if (level == 1)
+		return (64 >> 1) - 1;
+	else
+		return (64 + (1 << (level - 1))) >> level;
+}
+
+static INLINE void rfx_dwt_2d_decode_extrapolate_block_sse2(INT16* buffer, INT16* temp,
+                                                            size_t level)
+{
+	size_t nDstStepX;
+	size_t nDstStepY;
+	INT16 *HL, *LH;
+	INT16 *HH, *LL;
+	INT16 *L, *H, *LLx;
+
+	const size_t nBandL = prfx_get_band_l_count(level);
+	const size_t nBandH = prfx_get_band_h_count(level);
+	size_t offset = 0;
+
+	WINPR_ASSERT(buffer);
+	WINPR_ASSERT(temp);
+
+	HL = &buffer[offset];
+	offset += (nBandH * nBandL);
+	LH = &buffer[offset];
+	offset += (nBandL * nBandH);
+	HH = &buffer[offset];
+	offset += (nBandH * nBandH);
+	LL = &buffer[offset];
+	nDstStepX = (nBandL + nBandH);
+	nDstStepY = (nBandL + nBandH);
+	offset = 0;
+	L = &temp[offset];
+	offset += (nBandL * nDstStepX);
+	H = &temp[offset];
+	LLx = &buffer[0];
+
+	/* horizontal (LL + HL -> L) */
+	rfx_idwt_extrapolate_horiz_sse2(LL, nBandL, HL, nBandH, L, nDstStepX, nBandL, nBandH, nBandL);
+
+	/* horizontal (LH + HH -> H) */
+	rfx_idwt_extrapolate_horiz_sse2(LH, nBandL, HH, nBandH, H, nDstStepX, nBandL, nBandH, nBandH);
+
+	/* vertical (L + H -> LL) */
+	rfx_idwt_extrapolate_vert_sse2(L, nDstStepX, H, nDstStepX, LLx, nDstStepY, nBandL, nBandH,
+	                               nBandL + nBandH);
+}
+
+static void rfx_dwt_2d_extrapolate_decode_sse2(INT16* buffer, INT16* temp)
+{
+	WINPR_ASSERT(buffer);
+	WINPR_ASSERT(temp);
+	rfx_dwt_2d_decode_extrapolate_block_sse2(&buffer[3807], temp, 3);
+	rfx_dwt_2d_decode_extrapolate_block_sse2(&buffer[3007], temp, 2);
+	rfx_dwt_2d_decode_extrapolate_block_sse2(&buffer[0], temp, 1);
+}
 #endif
 
 void rfx_init_sse2(RFX_CONTEXT* context)
@@ -497,6 +791,7 @@ void rfx_init_sse2(RFX_CONTEXT* context)
 	context->quantization_encode = rfx_quantization_encode_sse2;
 	context->dwt_2d_decode = rfx_dwt_2d_decode_sse2;
 	context->dwt_2d_encode = rfx_dwt_2d_encode_sse2;
+	context->dwt_2d_extrapolate_decode = rfx_dwt_2d_extrapolate_decode_sse2;
 #else
 	WINPR_UNUSED(context);
 #endif
