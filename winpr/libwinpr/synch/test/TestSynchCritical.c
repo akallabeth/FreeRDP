@@ -329,23 +329,8 @@ int TestSynchCritical(int argc, char* argv[])
 		return -1;
 	}
 
-	/**
-	 * We have to be able to detect dead locks in this test.
-	 * At the time of writing winpr's WaitForSingleObject has not implemented timeout for thread
-	 * wait
-	 *
-	 * Workaround checking the value of bThreadTerminated which is passed in the thread arg
-	 */
-
-	for (DWORD i = 0; i < dwDeadLockDetectionTimeMs; i += 10)
-	{
-		if (bThreadTerminated)
-			break;
-
-		Sleep(10);
-	}
-
-	if (!bThreadTerminated)
+	const DWORD status = WaitForSingleObject(hThread, dwDeadLockDetectionTimeMs);
+	if (!bThreadTerminated || (status != WAIT_OBJECT_0))
 	{
 		printf("CriticalSection failure: Possible dead lock detected\n");
 		return -1;
