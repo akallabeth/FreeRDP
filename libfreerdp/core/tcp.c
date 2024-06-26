@@ -235,19 +235,20 @@ static long transport_bio_simple_ctrl(BIO* bio, int cmd, long arg1, void* arg2)
 			int timeout = (int)arg1;
 			int sockfd = (int)ptr->socket;
 #ifdef WINPR_HAVE_POLL_H
-			struct pollfd pollset;
+			struct pollfd pollset = { 0 };
 			pollset.fd = sockfd;
 			pollset.events = POLLIN;
 			pollset.revents = 0;
 
 			do
 			{
+				errno = 0;
 				status = poll(&pollset, 1, timeout);
 			} while ((status < 0) && (errno == EINTR));
 
 #else
-			fd_set rset;
-			struct timeval tv;
+			fd_set rset = { 0 };
+			struct timeval tv = { 0 };
 			FD_ZERO(&rset);
 			FD_SET(sockfd, &rset);
 
@@ -259,6 +260,7 @@ static long transport_bio_simple_ctrl(BIO* bio, int cmd, long arg1, void* arg2)
 
 			do
 			{
+				errno = 0;
 				status = select(sockfd + 1, &rset, NULL, NULL, timeout ? &tv : NULL);
 			} while ((status < 0) && (errno == EINTR));
 
@@ -274,19 +276,20 @@ static long transport_bio_simple_ctrl(BIO* bio, int cmd, long arg1, void* arg2)
 			int timeout = (int)arg1;
 			int sockfd = (int)ptr->socket;
 #ifdef WINPR_HAVE_POLL_H
-			struct pollfd pollset;
+			struct pollfd pollset = { 0 };
 			pollset.fd = sockfd;
 			pollset.events = POLLOUT;
 			pollset.revents = 0;
 
 			do
 			{
+				errno = 0;
 				status = poll(&pollset, 1, timeout);
 			} while ((status < 0) && (errno == EINTR));
 
 #else
-			fd_set rset;
-			struct timeval tv;
+			fd_set rset = { 0 };
+			struct timeval tv = { 0 };
 			FD_ZERO(&rset);
 			FD_SET(sockfd, &rset);
 
@@ -298,6 +301,7 @@ static long transport_bio_simple_ctrl(BIO* bio, int cmd, long arg1, void* arg2)
 
 			do
 			{
+				errno = 0;
 				status = select(sockfd + 1, NULL, &rset, NULL, timeout ? &tv : NULL);
 			} while ((status < 0) && (errno == EINTR));
 
