@@ -233,20 +233,31 @@ static long transport_bio_simple_ctrl(BIO* bio, int cmd, long arg1, void* arg2)
 		case BIO_C_WAIT_READ:
 		{
 			DWORD timeout = (DWORD)arg1;
-			HANDLE event = 0;
-			BIO_get_event(bio, &event);
-			const DWORD wstatus = WaitForSingleObject(event, timeout);
-			if (wstatus == WAIT_OBJECT_0)
+
+			do
 			{
-				status = 1;
-			}
-			else if (wstatus == WAIT_TIMEOUT)
+				errno = 0;
+				status = _recv(ptr->socket, NULL, 0, MSG_DONTWAIT);
+				if (errno == EAGAIN)
+				{
+					Sleep(10);
+					if (timeout > 10)
+						timeout -= 10;
+					else
+						timeout = 0;
+				}
+				else
+					break;
+			} while ((timeout > 0) && (errno == EAGAIN));
+
+			switch (errno)
 			{
-				errno = ETIMEDOUT;
-				status = 0;
+				case EAGAIN:
+					errno = ETIMEDOUT;
+					break;
+				default:
+					break;
 			}
-			else
-				status = -1;
 		}
 		break;
 

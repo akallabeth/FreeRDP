@@ -97,6 +97,10 @@ static INLINE int BIO_timed_read(BIO* bio, void* data, size_t dlen, DWORD timeou
 	if (timeoutMS == INFINITE)
 		return BIO_read(bio, data, dlen);
 
+	const long rc = BIO_wait_read(bio, timeoutMS);
+	if (rc <= 0)
+		return (int)rc;
+
 	return BIO_read(bio, data, dlen);
 }
 
