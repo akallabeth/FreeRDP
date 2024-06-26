@@ -208,7 +208,7 @@ int websocket_write(BIO* bio, const BYTE* buf, int isize, WEBSOCKET_OPCODE opcod
 }
 
 static int websocket_read_data(BIO* bio, BYTE* pBuffer, size_t size,
-                               websocket_context* encodingContext)
+                               websocket_context* encodingContext, DWORD timeoutMS)
 {
 	int status = 0;
 
@@ -223,9 +223,9 @@ static int websocket_read_data(BIO* bio, BYTE* pBuffer, size_t size,
 	}
 
 	ERR_clear_error();
-	status =
-	    BIO_read(bio, pBuffer,
-	             (encodingContext->payloadLength < size ? encodingContext->payloadLength : size));
+	status = BIO_timed_read(
+	    bio, pBuffer,
+	    (encodingContext->payloadLength < size ? encodingContext->payloadLength : size), timeoutMS);
 	if (status <= 0)
 		return status;
 
@@ -237,7 +237,7 @@ static int websocket_read_data(BIO* bio, BYTE* pBuffer, size_t size,
 	return status;
 }
 
-static int websocket_read_discard(BIO* bio, websocket_context* encodingContext)
+static int websocket_read_discard(BIO* bio, websocket_context* encodingContext, DWORD timeoutMS)
 {
 	char _dummy[256] = { 0 };
 	int status = 0;
@@ -252,7 +252,7 @@ static int websocket_read_discard(BIO* bio, websocket_context* encodingContext)
 	}
 
 	ERR_clear_error();
-	status = BIO_read(bio, _dummy, sizeof(_dummy));
+	status = BIO_timed_read(bio, _dummy, sizeof(_dummy), timeoutMS);
 	if (status <= 0)
 		return status;
 
@@ -264,7 +264,8 @@ static int websocket_read_discard(BIO* bio, websocket_context* encodingContext)
 	return status;
 }
 
-static int websocket_read_wstream(BIO* bio, wStream* s, websocket_context* encodingContext)
+static int websocket_read_wstream(BIO* bio, wStream* s, websocket_context* encodingContext,
+                                  DWORD timeoutMS)
 {
 	int status = 0;
 
@@ -286,7 +287,7 @@ static int websocket_read_wstream(BIO* bio, wStream* s, websocket_context* encod
 	}
 
 	ERR_clear_error();
-	status = BIO_read(bio, Stream_Pointer(s), encodingContext->payloadLength);
+	status = BIO_timed_read(bio, Stream_Pointer(s), encodingContext->payloadLength, timeoutMS);
 	if (status <= 0)
 		return status;
 
@@ -380,7 +381,7 @@ static BOOL websocket_reply_pong(BIO* bio, wStream* s)
 }
 
 static int websocket_handle_payload(BIO* bio, BYTE* pBuffer, size_t size,
-                                    websocket_context* encodingContext)
+                                    websocket_context* encodingContext, DWORD timeoutMS)
 {
 	int status = 0;
 
@@ -396,7 +397,7 @@ static int websocket_handle_payload(BIO* bio, BYTE* pBuffer, size_t size,
 	{
 		case WebsocketBinaryOpcode:
 		{
-			status = websocket_read_data(bio, pBuffer, size, encodingContext);
+			status = websocket_read_data(bio, pBuffer, size, encodingContext, timeoutMS);
 			if (status < 0)
 				return status;
 
@@ -408,8 +409,8 @@ static int websocket_handle_payload(BIO* bio, BYTE* pBuffer, size_t size,
 				encodingContext->responseStreamBuffer =
 				    Stream_New(NULL, encodingContext->payloadLength);
 
-			status =
-			    websocket_read_wstream(bio, encodingContext->responseStreamBuffer, encodingContext);
+			status = websocket_read_wstream(bio, encodingContext->responseStreamBuffer,
+			                                encodingContext, timeoutMS);
 			if (status < 0)
 				return status;
 
@@ -429,8 +430,8 @@ static int websocket_handle_payload(BIO* bio, BYTE* pBuffer, size_t size,
 				encodingContext->responseStreamBuffer =
 				    Stream_New(NULL, encodingContext->payloadLength);
 
-			status =
-			    websocket_read_wstream(bio, encodingContext->responseStreamBuffer, encodingContext);
+			status = websocket_read_wstream(bio, encodingContext->responseStreamBuffer,
+			                                encodingContext, timeoutMS);
 			if (status < 0)
 				return status;
 
@@ -448,7 +449,7 @@ static int websocket_handle_payload(BIO* bio, BYTE* pBuffer, size_t size,
 		default:
 			WLog_WARN(TAG, "Unimplemented websocket opcode %x. Dropping", effectiveOpcode & 0xf);
 
-			status = websocket_read_discard(bio, encodingContext);
+			status = websocket_read_discard(bio, encodingContext, timeoutMS);
 			if (status < 0)
 				return status;
 	}
@@ -457,7 +458,8 @@ static int websocket_handle_payload(BIO* bio, BYTE* pBuffer, size_t size,
 	return 0;
 }
 
-int websocket_read(BIO* bio, BYTE* pBuffer, size_t size, websocket_context* encodingContext)
+int websocket_read(BIO* bio, BYTE* pBuffer, size_t size, websocket_context* encodingContext,
+                   DWORD timeoutMS)
 {
 	int status = 0;
 	int effectiveDataLen = 0;
@@ -474,7 +476,7 @@ int websocket_read(BIO* bio, BYTE* pBuffer, size_t size, websocket_context* enco
 			{
 				BYTE buffer[1];
 				ERR_clear_error();
-				status = BIO_read(bio, (char*)buffer, sizeof(buffer));
+				status = BIO_timed_read(bio, (char*)buffer, sizeof(buffer), timeoutMS);
 				if (status <= 0)
 					return (effectiveDataLen > 0 ? effectiveDataLen : status);
 
@@ -490,7 +492,7 @@ int websocket_read(BIO* bio, BYTE* pBuffer, size_t size, websocket_context* enco
 				BYTE buffer[1];
 				BYTE len = 0;
 				ERR_clear_error();
-				status = BIO_read(bio, (char*)buffer, sizeof(buffer));
+				status = BIO_timed_read(bio, (char*)buffer, sizeof(buffer), timeoutMS);
 				if (status <= 0)
 					return (effectiveDataLen > 0 ? effectiveDataLen : status);
 
@@ -518,7 +520,7 @@ int websocket_read(BIO* bio, BYTE* pBuffer, size_t size, websocket_context* enco
 				while (encodingContext->lengthAndMaskPosition < lenLength)
 				{
 					ERR_clear_error();
-					status = BIO_read(bio, (char*)buffer, sizeof(buffer));
+					status = BIO_timed_read(bio, (char*)buffer, sizeof(buffer), timeoutMS);
 					if (status <= 0)
 						return (effectiveDataLen > 0 ? effectiveDataLen : status);
 
@@ -538,7 +540,7 @@ int websocket_read(BIO* bio, BYTE* pBuffer, size_t size, websocket_context* enco
 			}
 			case WebSocketStatePayload:
 			{
-				status = websocket_handle_payload(bio, pBuffer, size, encodingContext);
+				status = websocket_handle_payload(bio, pBuffer, size, encodingContext, timeoutMS);
 				if (status < 0)
 					return (effectiveDataLen > 0 ? effectiveDataLen : status);
 

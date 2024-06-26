@@ -46,6 +46,7 @@
 
 #include "rpc.h"
 #include "rts.h"
+#include "../tcp.h"
 
 #define TAG FREERDP_TAG("core.gateway.rpc")
 
@@ -456,8 +457,10 @@ SSIZE_T rpc_channel_read(RpcChannel* channel, wStream* s, size_t length)
 	if (!channel || (length > INT32_MAX))
 		return -1;
 
+	const UINT32 timeout =
+	    freerdp_settings_get_uint32(channel->client->context->settings, FreeRDP_TcpConnectTimeout);
 	ERR_clear_error();
-	status = BIO_read(channel->tls->bio, Stream_Pointer(s), (INT32)length);
+	status = BIO_timed_read(channel->tls->bio, Stream_Pointer(s), (INT32)length, timeout);
 
 	if (status > 0)
 	{

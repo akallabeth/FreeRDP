@@ -571,9 +571,10 @@ static int wst_bio_read(BIO* bio, char* buf, int size)
 	rdpWst* wst = (rdpWst*)BIO_get_data(bio);
 	WINPR_ASSERT(wst);
 
+	const UINT32 timeoutMS = freerdp_settings_get_uint32(wst->settings, FreeRDP_TcpConnectTimeout);
 	while (status <= 0)
 	{
-		status = websocket_read(wst->tls->bio, (BYTE*)buf, size, &wst->wscontext);
+		status = websocket_read(wst->tls->bio, (BYTE*)buf, size, &wst->wscontext, timeoutMS);
 		if (status <= 0)
 		{
 			if (!BIO_should_retry(wst->tls->bio))

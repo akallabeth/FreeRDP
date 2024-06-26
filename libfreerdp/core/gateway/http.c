@@ -1114,7 +1114,7 @@ static int print_bio_error(const char* str, size_t len, void* bp)
 }
 
 int http_chuncked_read(BIO* bio, BYTE* pBuffer, size_t size,
-                       http_encoding_chunked_context* encodingContext)
+                       http_encoding_chunked_context* encodingContext, DWORD timeoutMS)
 {
 	int status = 0;
 	int effectiveDataLen = 0;
@@ -1128,9 +1128,10 @@ int http_chuncked_read(BIO* bio, BYTE* pBuffer, size_t size,
 			case ChunkStateData:
 			{
 				ERR_clear_error();
-				status = BIO_read(
+				status = BIO_timed_read(
 				    bio, pBuffer,
-				    (size > encodingContext->nextOffset ? encodingContext->nextOffset : size));
+				    (size > encodingContext->nextOffset ? encodingContext->nextOffset : size),
+				    timeoutMS);
 				if (status <= 0)
 					return (effectiveDataLen > 0 ? effectiveDataLen : status);
 
@@ -1155,7 +1156,8 @@ int http_chuncked_read(BIO* bio, BYTE* pBuffer, size_t size,
 				WINPR_ASSERT(encodingContext->nextOffset == 0);
 				WINPR_ASSERT(encodingContext->headerFooterPos < 2);
 				ERR_clear_error();
-				status = BIO_read(bio, _dummy, 2 - encodingContext->headerFooterPos);
+				status =
+				    BIO_timed_read(bio, _dummy, 2 - encodingContext->headerFooterPos, timeoutMS);
 				if (status >= 0)
 				{
 					encodingContext->headerFooterPos += status;
@@ -1177,7 +1179,7 @@ int http_chuncked_read(BIO* bio, BYTE* pBuffer, size_t size,
 				while (encodingContext->headerFooterPos < 10 && !_haveNewLine)
 				{
 					ERR_clear_error();
-					status = BIO_read(bio, dst, 1);
+					status = BIO_timed_read(bio, dst, 1, timeoutMS);
 					if (status >= 0)
 					{
 						if (*dst == '\n')
@@ -1239,26 +1241,8 @@ HttpResponse* http_response_recv(rdpTls* tls, BOOL readContentLength)
 		char* end = NULL;
 		/* Read until we encounter \r\n\r\n */
 		ERR_clear_error();
-		const long wstatus = BIO_wait_read(tls->bio, timeout);
-		if (wstatus < 0)
-		{
-			if (!BIO_should_retry(tls->bio))
-			{
-				WLog_ERR(TAG, "[BIO_wait_read] Retries exceeded");
-				ERR_print_errors_cb(print_bio_error, NULL);
-				goto out_error;
-			}
-			USleep(100);
-			continue;
-		}
-		else if (wstatus == 0)
-		{
-			WLog_ERR(TAG, "[BIO_wait] timeout exceeded");
-			ERR_print_errors_cb(print_bio_error, NULL);
-			goto out_error;
-		}
 
-		status = BIO_read(tls->bio, Stream_Pointer(response->data), 1);
+		status = BIO_timed_read(tls->bio, Stream_Pointer(response->data), 1, timeout);
 		if (status <= 0)
 		{
 			if (!BIO_should_retry(tls->bio))
@@ -1382,8 +1366,9 @@ HttpResponse* http_response_recv(rdpTls* tls, BOOL readContentLength)
 				if (!Stream_EnsureRemainingCapacity(response->data, 2048))
 					goto out_error;
 
-				int status = http_chuncked_read(tls->bio, Stream_Pointer(response->data),
-				                                Stream_GetRemainingCapacity(response->data), &ctx);
+				int status =
+				    http_chuncked_read(tls->bio, Stream_Pointer(response->data),
+				                       Stream_GetRemainingCapacity(response->data), &ctx, timeout);
 				if (status <= 0)
 				{
 					if (!BIO_should_retry(tls->bio))
@@ -1416,8 +1401,8 @@ HttpResponse* http_response_recv(rdpTls* tls, BOOL readContentLength)
 					goto out_error;
 
 				ERR_clear_error();
-				status = BIO_read(tls->bio, Stream_Pointer(response->data),
-				                  bodyLength - response->BodyLength);
+				status = BIO_timed_read(tls->bio, Stream_Pointer(response->data),
+				                        bodyLength - response->BodyLength, timeout);
 
 				if (status <= 0)
 				{

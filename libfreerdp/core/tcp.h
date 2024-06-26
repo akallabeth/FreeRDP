@@ -91,6 +91,15 @@ static INLINE long BIO_wait_write(BIO* b, long c)
 	return BIO_ctrl(b, BIO_C_WAIT_WRITE, c, NULL);
 }
 
+static INLINE int BIO_timed_read(BIO* bio, void* data, size_t dlen, DWORD timeoutMS)
+{
+	// TODO: Need AbortEvent here toche ack that too...
+	if (timeoutMS == INFINITE)
+		return BIO_read(bio, data, dlen);
+
+	return BIO_read(bio, data, dlen);
+}
+
 FREERDP_LOCAL BIO_METHOD* BIO_s_simple_socket(void);
 FREERDP_LOCAL BIO_METHOD* BIO_s_buffered_socket(void);
 

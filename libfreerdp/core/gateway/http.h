@@ -130,6 +130,7 @@ FREERDP_LOCAL void http_response_log_error_status(wLog* log, DWORD level,
 
 /* chunked read helper */
 FREERDP_LOCAL int http_chuncked_read(BIO* bio, BYTE* pBuffer, size_t size,
-                                     http_encoding_chunked_context* encodingContext);
+                                     http_encoding_chunked_context* encodingContext,
+                                     DWORD timeoutMS);
 
 #endif /* FREERDP_LIB_CORE_GATEWAY_HTTP_H */

@@ -40,6 +40,7 @@
 #include "../credssp_auth.h"
 #include "../proxy.h"
 #include "../rdp.h"
+#include "../tcp.h"
 #include "../../crypto/opensslcompat.h"
 #include "rpc_fault.h"
 #include "../utils.h"
@@ -336,22 +337,23 @@ static BOOL rdg_write_packet(rdpRdg* rdg, wStream* sPacket)
 }
 
 static int rdg_socket_read(BIO* bio, BYTE* pBuffer, size_t size,
-                           rdg_http_encoding_context* encodingContext)
+                           rdg_http_encoding_context* encodingContext, DWORD timeoutMS)
 {
 	WINPR_ASSERT(encodingContext != NULL);
 
 	if (encodingContext->isWebsocketTransport)
 	{
-		return websocket_read(bio, pBuffer, size, &encodingContext->context.websocket);
+		return websocket_read(bio, pBuffer, size, &encodingContext->context.websocket, timeoutMS);
 	}
 
 	switch (encodingContext->httpTransferEncoding)
 	{
 		case TransferEncodingIdentity:
 			ERR_clear_error();
-			return BIO_read(bio, pBuffer, size);
+			return BIO_timed_read(bio, pBuffer, size, timeoutMS);
 		case TransferEncodingChunked:
-			return http_chuncked_read(bio, pBuffer, size, &encodingContext->context.chunked);
+			return http_chuncked_read(bio, pBuffer, size, &encodingContext->context.chunked,
+			                          timeoutMS);
 		default:
 			return -1;
 	}
@@ -369,12 +371,15 @@ static BOOL rdg_read_all(rdpContext* context, rdpTls* tls, BYTE* buffer, size_t 
 	size_t readCount = 0;
 	BYTE* pBuffer = buffer;
 
+	const UINT32 timeoutMS =
+	    freerdp_settings_get_uint32(context->settings, FreeRDP_TcpConnectTimeout);
 	while (readCount < size)
 	{
 		if (freerdp_shall_disconnect_context(context))
 			return FALSE;
 
-		int status = rdg_socket_read(tls->bio, pBuffer, size - readCount, transferEncoding);
+		int status =
+		    rdg_socket_read(tls->bio, pBuffer, size - readCount, transferEncoding, timeoutMS);
 		if (status <= 0)
 		{
 			if (!BIO_should_retry(tls->bio))
@@ -1847,6 +1852,7 @@ static BOOL rdg_process_control_packet(rdpRdg* rdg, int type, size_t packetLengt
 		return FALSE;
 
 	WINPR_ASSERT(sizeof(RdgPacketHeader) < INT_MAX);
+	const UINT32 timeoutMS = freerdp_settings_get_uint32(rdg->settings, FreeRDP_TcpConnectTimeout);
 
 	if (payloadSize)
 	{
@@ -1863,7 +1869,7 @@ static BOOL rdg_process_control_packet(rdpRdg* rdg, int type, size_t packetLengt
 				return FALSE;
 			}
 			status = rdg_socket_read(rdg->tlsOut->bio, Stream_Pointer(s), payloadSize - readCount,
-			                         &rdg->transferEncoding);
+			                         &rdg->transferEncoding, timeoutMS);
 
 			if (status <= 0)
 			{
@@ -1929,6 +1935,7 @@ static int rdg_read_data_packet(rdpRdg* rdg, BYTE* buffer, int size)
 	size_t readSize = 0;
 	int status = 0;
 
+	const UINT32 timeoutMS = freerdp_settings_get_uint32(rdg->settings, FreeRDP_TcpConnectTimeout);
 	if (!rdg->packetRemainingCount)
 	{
 		WINPR_ASSERT(sizeof(RdgPacketHeader) < INT_MAX);
@@ -1940,7 +1947,7 @@ static int rdg_read_data_packet(rdpRdg* rdg, BYTE* buffer, int size)
 
 			status = rdg_socket_read(rdg->tlsOut->bio, (BYTE*)(&header) + readCount,
 			                         (int)sizeof(RdgPacketHeader) - (int)readCount,
-			                         &rdg->transferEncoding);
+			                         &rdg->transferEncoding, timeoutMS);
 
 			if (status <= 0)
 			{
@@ -1978,7 +1985,7 @@ static int rdg_read_data_packet(rdpRdg* rdg, BYTE* buffer, int size)
 				return -1;
 			status =
 			    rdg_socket_read(rdg->tlsOut->bio, (BYTE*)(&rdg->packetRemainingCount) + readCount,
-			                    2 - (int)readCount, &rdg->transferEncoding);
+			                    2 - (int)readCount, &rdg->transferEncoding, timeoutMS);
 
 			if (status < 0)
 			{
@@ -1994,7 +2001,7 @@ static int rdg_read_data_packet(rdpRdg* rdg, BYTE* buffer, int size)
 	}
 
 	readSize = (rdg->packetRemainingCount < size) ? rdg->packetRemainingCount : size;
-	status = rdg_socket_read(rdg->tlsOut->bio, buffer, readSize, &rdg->transferEncoding);
+	status = rdg_socket_read(rdg->tlsOut->bio, buffer, readSize, &rdg->transferEncoding, timeoutMS);
 
 	if (status <= 0)
 	{

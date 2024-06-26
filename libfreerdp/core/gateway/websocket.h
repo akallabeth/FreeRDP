@@ -66,6 +66,6 @@ typedef struct
 FREERDP_LOCAL BOOL websocket_write_wstream(BIO* bio, wStream* sPacket, WEBSOCKET_OPCODE opcode);
 FREERDP_LOCAL int websocket_write(BIO* bio, const BYTE* buf, int isize, WEBSOCKET_OPCODE opcode);
 FREERDP_LOCAL int websocket_read(BIO* bio, BYTE* pBuffer, size_t size,
-                                 websocket_context* encodingContext);
+                                 websocket_context* encodingContext, DWORD timeoutMS);
 
 #endif /* FREERDP_LIB_CORE_GATEWAY_WEBSOCKET_H */

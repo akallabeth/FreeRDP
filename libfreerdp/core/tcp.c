@@ -232,42 +232,21 @@ static long transport_bio_simple_ctrl(BIO* bio, int cmd, long arg1, void* arg2)
 		}
 		case BIO_C_WAIT_READ:
 		{
-			int timeout = (int)arg1;
-			int sockfd = (int)ptr->socket;
-#ifdef WINPR_HAVE_POLL_H
-			struct pollfd pollset = { 0 };
-			pollset.fd = sockfd;
-			pollset.events = POLLIN;
-			pollset.revents = 0;
-
-			do
+			DWORD timeout = (DWORD)arg1;
+			HANDLE event = 0;
+			BIO_get_event(bio, &event);
+			const DWORD wstatus = WaitForSingleObject(event, timeout);
+			if (wstatus == WAIT_OBJECT_0)
 			{
-				errno = 0;
-				status = poll(&pollset, 1, timeout);
-			} while ((status < 0) && (errno == EINTR));
-
-#else
-			fd_set rset = { 0 };
-			struct timeval tv = { 0 };
-			FD_ZERO(&rset);
-			FD_SET(sockfd, &rset);
-
-			if (timeout)
-			{
-				tv.tv_sec = timeout / 1000;
-				tv.tv_usec = (timeout % 1000) * 1000;
+				status = 1;
 			}
-
-			do
+			else if (wstatus == WAIT_TIMEOUT)
 			{
-				errno = 0;
-				status = select(sockfd + 1, &rset, NULL, NULL, timeout ? &tv : NULL);
-			} while ((status < 0) && (errno == EINTR));
-
-#endif
-			/* Convert timeout to error return */
-			if (status == 0)
 				errno = ETIMEDOUT;
+				status = 0;
+			}
+			else
+				status = -1;
 		}
 		break;
 
