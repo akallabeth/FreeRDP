@@ -5147,6 +5147,11 @@ static int freerdp_client_settings_parse_command_line_arguments_int(
 			if (!freerdp_settings_set_bool(settings, FreeRDP_MouseMotion, enable))
 				return fail_at(arg, COMMAND_LINE_ERROR);
 		}
+		CommandLineSwitchCase(arg, "mouse-use-host-pointer")
+		{
+			if (!freerdp_settings_set_bool(settings, FreeRDP_MouseHostPointer, enable))
+				return fail_at(arg, COMMAND_LINE_ERROR);
+		}
 		CommandLineSwitchCase(arg, "parent-window")
 		{
 			ULONGLONG val = 0;

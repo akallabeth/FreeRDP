@@ -32,6 +32,12 @@
 
 #define TAG FREERDP_TAG("cache.pointer")
 
+static BOOL use_mouse_host_pointer(const rdpContext* context)
+{
+	WINPR_ASSERT(context);
+	return freerdp_settings_get_bool(context->settings, FreeRDP_MouseHostPointer);
+}
+
 static BOOL pointer_cache_put(rdpPointerCache* pointer_cache, UINT32 index, rdpPointer* pointer,
                               BOOL colorCache);
 static rdpPointer* pointer_cache_get(rdpPointerCache* pointer_cache, UINT32 index);
@@ -54,7 +60,8 @@ static void pointer_free(rdpContext* context, rdpPointer* pointer)
 {
 	if (pointer)
 	{
-		IFCALL(pointer->Free, context, pointer);
+		if (!use_mouse_host_pointer(context))
+			IFCALL(pointer->Free, context, pointer);
 		pointer_clear(pointer);
 	}
 	free(pointer);
@@ -74,6 +81,9 @@ static BOOL update_pointer_position(rdpContext* context,
 	const rdpPointer* pointer = context->graphics->Pointer_Prototype;
 	WINPR_ASSERT(pointer);
 
+	if (use_mouse_host_pointer(context))
+		return TRUE;
+
 	return IFCALLRESULT(TRUE, pointer->SetPosition, context, pointer_position->xPos,
 	                    pointer_position->yPos);
 }
@@ -90,9 +100,13 @@ static BOOL update_pointer_system(rdpContext* context, const POINTER_SYSTEM_UPDA
 	switch (pointer_system->type)
 	{
 		case SYSPTR_NULL:
+			if (use_mouse_host_pointer(context))
+				return TRUE;
 			return IFCALLRESULT(TRUE, pointer->SetNull, context);
 
 		case SYSPTR_DEFAULT:
+			if (use_mouse_host_pointer(context))
+				return TRUE;
 			return IFCALLRESULT(TRUE, pointer->SetDefault, context);
 
 		default:
@@ -157,11 +171,17 @@ static BOOL update_pointer_color(rdpContext* context, const POINTER_COLOR_UPDATE
 	                               pointer_color->lengthXorMask))
 		goto out_fail;
 
-	if (!IFCALLRESULT(TRUE, pointer->New, context, pointer))
-		goto out_fail;
+	if (!use_mouse_host_pointer(context))
+	{
+		if (!IFCALLRESULT(TRUE, pointer->New, context, pointer))
+			goto out_fail;
+	}
 
 	if (!pointer_cache_put(cache->pointer, pointer_color->cacheIndex, pointer, TRUE))
 		goto out_fail;
+
+	if (use_mouse_host_pointer(context))
+		return TRUE;
 
 	return IFCALLRESULT(TRUE, pointer->Set, context, pointer);
 
@@ -195,12 +215,17 @@ static BOOL update_pointer_large(rdpContext* context, const POINTER_LARGE_UPDATE
 	                               pointer_large->lengthXorMask))
 		goto out_fail;
 
-	if (!IFCALLRESULT(TRUE, pointer->New, context, pointer))
-		goto out_fail;
+	if (!use_mouse_host_pointer(context))
+	{
+		if (!IFCALLRESULT(TRUE, pointer->New, context, pointer))
+			goto out_fail;
+	}
 
 	if (!pointer_cache_put(cache->pointer, pointer_large->cacheIndex, pointer, FALSE))
 		goto out_fail;
 
+	if (use_mouse_host_pointer(context))
+		return TRUE;
 	return IFCALLRESULT(TRUE, pointer->Set, context, pointer);
 
 out_fail:
@@ -229,12 +254,17 @@ static BOOL update_pointer_new(rdpContext* context, const POINTER_NEW_UPDATE* po
 	        pointer_new->colorPtrAttr.xorMaskData, pointer_new->colorPtrAttr.lengthXorMask))
 		goto out_fail;
 
-	if (!IFCALLRESULT(TRUE, pointer->New, context, pointer))
-		goto out_fail;
+	if (!use_mouse_host_pointer(context))
+	{
+		if (!IFCALLRESULT(TRUE, pointer->New, context, pointer))
+			goto out_fail;
+	}
 
 	if (!pointer_cache_put(cache->pointer, pointer_new->colorPtrAttr.cacheIndex, pointer, FALSE))
 		goto out_fail;
 
+	if (use_mouse_host_pointer(context))
+		return TRUE;
 	return IFCALLRESULT(TRUE, pointer->Set, context, pointer);
 
 out_fail:
@@ -256,7 +286,11 @@ static BOOL update_pointer_cached(rdpContext* context, const POINTER_CACHED_UPDA
 	pointer = pointer_cache_get(cache->pointer, pointer_cached->cacheIndex);
 
 	if (pointer != NULL)
+	{
+		if (use_mouse_host_pointer(context))
+			return TRUE;
 		return IFCALLRESULT(TRUE, pointer->Set, context, pointer);
+	}
 
 	return FALSE;
 }

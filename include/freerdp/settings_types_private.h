@@ -378,7 +378,7 @@ struct rdp_settings
 	SETTINGS_DEPRECATED(ALIGN64 BOOL MouseMotion);             /* 1541 */
 	SETTINGS_DEPRECATED(ALIGN64 char* WindowTitle);            /* 1542 */
 	SETTINGS_DEPRECATED(ALIGN64 UINT64 ParentWindowId);        /* 1543 */
-	UINT64 padding1544[1545 - 1544];                           /* 1544 */
+	SETTINGS_DEPRECATED(ALIGN64 BOOL MouseHostPointer);        /* 1544 */
 	SETTINGS_DEPRECATED(ALIGN64 BOOL AsyncUpdate);             /* 1545 */
 	SETTINGS_DEPRECATED(ALIGN64 BOOL AsyncChannels);           /* 1546 */
 	UINT64 padding1548[1548 - 1547];                           /* 1547 */

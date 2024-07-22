@@ -155,6 +155,7 @@ static const struct settings_str_entry settings_map[] = {
 	{ FreeRDP_MaximizeShell, FREERDP_SETTINGS_TYPE_BOOL, "FreeRDP_MaximizeShell" },
 	{ FreeRDP_MouseAttached, FREERDP_SETTINGS_TYPE_BOOL, "FreeRDP_MouseAttached" },
 	{ FreeRDP_MouseHasWheel, FREERDP_SETTINGS_TYPE_BOOL, "FreeRDP_MouseHasWheel" },
+	{ FreeRDP_MouseHostPointer, FREERDP_SETTINGS_TYPE_BOOL, "FreeRDP_MouseHostPointer" },
 	{ FreeRDP_MouseMotion, FREERDP_SETTINGS_TYPE_BOOL, "FreeRDP_MouseMotion" },
 	{ FreeRDP_MouseUseRelativeMove, FREERDP_SETTINGS_TYPE_BOOL, "FreeRDP_MouseUseRelativeMove" },
 	{ FreeRDP_MstscCookieMode, FREERDP_SETTINGS_TYPE_BOOL, "FreeRDP_MstscCookieMode" },

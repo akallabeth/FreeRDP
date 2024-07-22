@@ -105,6 +105,7 @@ static const size_t bool_list_indices[] = {
 	FreeRDP_MaximizeShell,
 	FreeRDP_MouseAttached,
 	FreeRDP_MouseHasWheel,
+	FreeRDP_MouseHostPointer,
 	FreeRDP_MouseMotion,
 	FreeRDP_MouseUseRelativeMove,
 	FreeRDP_MstscCookieMode,

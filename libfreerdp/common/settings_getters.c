@@ -363,6 +363,9 @@ BOOL freerdp_settings_get_bool(const rdpSettings* settings, FreeRDP_Settings_Key
 		case FreeRDP_MouseHasWheel:
 			return settings->MouseHasWheel;
 
+		case FreeRDP_MouseHostPointer:
+			return settings->MouseHostPointer;
+
 		case FreeRDP_MouseMotion:
 			return settings->MouseMotion;
 
@@ -1066,6 +1069,10 @@ BOOL freerdp_settings_set_bool(rdpSettings* settings, FreeRDP_Settings_Keys_Bool
 
 		case FreeRDP_MouseHasWheel:
 			settings->MouseHasWheel = cnv.c;
+			break;
+
+		case FreeRDP_MouseHostPointer:
+			settings->MouseHostPointer = cnv.c;
 			break;
 
 		case FreeRDP_MouseMotion:

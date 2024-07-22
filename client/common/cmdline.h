@@ -321,6 +321,8 @@ static const COMMAND_LINE_ARGUMENT_A global_cmd_args[] = {
 #endif
 	{ "monitors", COMMAND_LINE_VALUE_REQUIRED, "<id>[,<id>[,...]]", NULL, NULL, -1, NULL,
 	  "Select monitors to use" },
+	{ "mouse-use-host-pointer", COMMAND_LINE_VALUE_BOOL, NULL, BoolValueFalse, NULL, -1, NULL,
+	  "Use mouse pointer of host system" },
 	{ "mouse-motion", COMMAND_LINE_VALUE_BOOL, NULL, BoolValueTrue, NULL, -1, NULL,
 	  "Send mouse motion" },
 	{ "mouse-relative", COMMAND_LINE_VALUE_BOOL, NULL, BoolValueFalse, NULL, -1, NULL,
