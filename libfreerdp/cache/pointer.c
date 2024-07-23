@@ -58,9 +58,11 @@ static void pointer_clear(rdpPointer* pointer)
 
 static void pointer_free(rdpContext* context, rdpPointer* pointer)
 {
+	const BOOL ignore = use_mouse_host_pointer(context);
+	WLog_VRB(TAG, "Pointer::Free(%p) [%s]", pointer, ignore ? "IGNORED" : "");
 	if (pointer)
 	{
-		if (!use_mouse_host_pointer(context))
+		if (!ignore)
 			IFCALL(pointer->Free, context, pointer);
 		pointer_clear(pointer);
 	}
@@ -81,7 +83,10 @@ static BOOL update_pointer_position(rdpContext* context,
 	const rdpPointer* pointer = context->graphics->Pointer_Prototype;
 	WINPR_ASSERT(pointer);
 
-	if (use_mouse_host_pointer(context))
+	const BOOL ignore = use_mouse_host_pointer(context);
+	WLog_VRB(TAG, "Pointer::SetPosition(%" PRIu32 "x%" PRIu32 ") [%s]", pointer_position->xPos,
+	         pointer_position->yPos, ignore ? "IGNORED" : "");
+	if (ignore)
 		return TRUE;
 
 	return IFCALLRESULT(TRUE, pointer->SetPosition, context, pointer_position->xPos,
@@ -97,15 +102,18 @@ static BOOL update_pointer_system(rdpContext* context, const POINTER_SYSTEM_UPDA
 
 	pointer = context->graphics->Pointer_Prototype;
 
+	const BOOL ignore = use_mouse_host_pointer(context);
 	switch (pointer_system->type)
 	{
 		case SYSPTR_NULL:
-			if (use_mouse_host_pointer(context))
+			WLog_VRB(TAG, "Pointer::SetNull [%s]", ignore ? "IGNORED" : "");
+			if (ignore)
 				return TRUE;
 			return IFCALLRESULT(TRUE, pointer->SetNull, context);
 
 		case SYSPTR_DEFAULT:
-			if (use_mouse_host_pointer(context))
+			WLog_VRB(TAG, "Pointer::SetDefault [%s]", ignore ? "IGNORED" : "");
+			if (ignore)
 				return TRUE;
 			return IFCALLRESULT(TRUE, pointer->SetDefault, context);
 
@@ -165,13 +173,15 @@ static BOOL update_pointer_color(rdpContext* context, const POINTER_COLOR_UPDATE
 	pointer->yPos = pointer_color->hotSpotY;
 	pointer->width = pointer_color->width;
 	pointer->height = pointer_color->height;
+	const BOOL ignore = use_mouse_host_pointer(context);
 
 	if (!upate_pointer_copy_andxor(pointer, pointer_color->andMaskData,
 	                               pointer_color->lengthAndMask, pointer_color->xorMaskData,
 	                               pointer_color->lengthXorMask))
 		goto out_fail;
 
-	if (!use_mouse_host_pointer(context))
+	WLog_VRB(TAG, "Pointer::New(%p) [%s]", pointer, ignore ? "IGNORED" : "");
+	if (!ignore)
 	{
 		if (!IFCALLRESULT(TRUE, pointer->New, context, pointer))
 			goto out_fail;
@@ -180,7 +190,8 @@ static BOOL update_pointer_color(rdpContext* context, const POINTER_COLOR_UPDATE
 	if (!pointer_cache_put(cache->pointer, pointer_color->cacheIndex, pointer, TRUE))
 		goto out_fail;
 
-	if (use_mouse_host_pointer(context))
+	WLog_VRB(TAG, "Pointer::Set(%p) [%s]", pointer, ignore ? "IGNORED" : "");
+	if (ignore)
 		return TRUE;
 
 	return IFCALLRESULT(TRUE, pointer->Set, context, pointer);
@@ -210,12 +221,14 @@ static BOOL update_pointer_large(rdpContext* context, const POINTER_LARGE_UPDATE
 	pointer->width = pointer_large->width;
 	pointer->height = pointer_large->height;
 
+	const BOOL ignore = use_mouse_host_pointer(context);
 	if (!upate_pointer_copy_andxor(pointer, pointer_large->andMaskData,
 	                               pointer_large->lengthAndMask, pointer_large->xorMaskData,
 	                               pointer_large->lengthXorMask))
 		goto out_fail;
 
-	if (!use_mouse_host_pointer(context))
+	WLog_VRB(TAG, "Pointer::New(%p) [%s]", pointer, ignore ? "IGNORED" : "");
+	if (!ignore)
 	{
 		if (!IFCALLRESULT(TRUE, pointer->New, context, pointer))
 			goto out_fail;
@@ -224,7 +237,8 @@ static BOOL update_pointer_large(rdpContext* context, const POINTER_LARGE_UPDATE
 	if (!pointer_cache_put(cache->pointer, pointer_large->cacheIndex, pointer, FALSE))
 		goto out_fail;
 
-	if (use_mouse_host_pointer(context))
+	WLog_VRB(TAG, "Pointer::Set(%p) [%s]", pointer, ignore ? "IGNORED" : "");
+	if (ignore)
 		return TRUE;
 	return IFCALLRESULT(TRUE, pointer->Set, context, pointer);
 
@@ -249,12 +263,15 @@ static BOOL update_pointer_new(rdpContext* context, const POINTER_NEW_UPDATE* po
 	pointer->yPos = pointer_new->colorPtrAttr.hotSpotY;
 	pointer->width = pointer_new->colorPtrAttr.width;
 	pointer->height = pointer_new->colorPtrAttr.height;
+	const BOOL ignore = use_mouse_host_pointer(context);
+
 	if (!upate_pointer_copy_andxor(
 	        pointer, pointer_new->colorPtrAttr.andMaskData, pointer_new->colorPtrAttr.lengthAndMask,
 	        pointer_new->colorPtrAttr.xorMaskData, pointer_new->colorPtrAttr.lengthXorMask))
 		goto out_fail;
 
-	if (!use_mouse_host_pointer(context))
+	WLog_VRB(TAG, "Pointer::New(%p) [%s]", pointer, ignore ? "IGNORED" : "");
+	if (!ignore)
 	{
 		if (!IFCALLRESULT(TRUE, pointer->New, context, pointer))
 			goto out_fail;
@@ -263,7 +280,8 @@ static BOOL update_pointer_new(rdpContext* context, const POINTER_NEW_UPDATE* po
 	if (!pointer_cache_put(cache->pointer, pointer_new->colorPtrAttr.cacheIndex, pointer, FALSE))
 		goto out_fail;
 
-	if (use_mouse_host_pointer(context))
+	WLog_VRB(TAG, "Pointer::Set(%p) [%s]", pointer, ignore ? "IGNORED" : "");
+	if (ignore)
 		return TRUE;
 	return IFCALLRESULT(TRUE, pointer->Set, context, pointer);
 
@@ -285,9 +303,11 @@ static BOOL update_pointer_cached(rdpContext* context, const POINTER_CACHED_UPDA
 
 	pointer = pointer_cache_get(cache->pointer, pointer_cached->cacheIndex);
 
+	const BOOL ignore = use_mouse_host_pointer(context);
+	WLog_VRB(TAG, "Pointer::SetNull(%p) [%s]", pointer, ignore ? "IGNORED" : "");
 	if (pointer != NULL)
 	{
-		if (use_mouse_host_pointer(context))
+		if (ignore)
 			return TRUE;
 		return IFCALLRESULT(TRUE, pointer->Set, context, pointer);
 	}
