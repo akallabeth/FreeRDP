@@ -96,11 +96,15 @@ extern "C"
 		NdrMessageType msg;
 	} NdrDeferredEntry;
 
+	void ndr_context_destroy(NdrContext* pcontext);
+
+	WINPR_ATTR_MALLOC(ndr_context_destroy, 1)
 	NdrContext* ndr_context_new(BOOL bigEndianDrep, BYTE version);
-	void ndr_context_destroy(NdrContext** pcontext);
+
+	WINPR_ATTR_MALLOC(ndr_context_destroy, 1)
+	NdrContext* ndr_context_copy(const NdrContext* src);
 
 	void ndr_context_reset(NdrContext* context);
-	NdrContext* ndr_context_copy(const NdrContext* src);
 
 	NdrContext* ndr_read_header(wStream* s);
 	BOOL ndr_write_header(NdrContext* context, wStream* s);

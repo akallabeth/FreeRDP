@@ -15,18 +15,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_library(rdpear-common STATIC
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+add_library(rdpear-common INTERFACE)
+add_library(rdpear-common-obj OBJECT
     ndr.c
     rdpear_asn1.c
     rdpear_common.c
+    rdpear-common/ndr.h
+    rdpear-common/rdpear_asn1.h
+    rdpear-common/rdpear_common.h
 )
 
-target_include_directories(rdpear-common PRIVATE ${KRB5_INCLUDE_DIRS})
-target_link_directories(rdpear-common PUBLIC ${KRB5_LIBRARY_DIRS})
-target_link_libraries(rdpear-common ${KRB5_LIBRARIES})
-
-
-channel_install(rdpear-common ${FREERDP_ADDIN_PATH} "FreeRDPTargets")
+target_include_directories(rdpear-common INTERFACE
+    ${KRB5_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_link_directories(rdpear-common INTERFACE
+    ${KRB5_LIBRARY_DIRS}
+)
+target_link_libraries(rdpear-common INTERFACE
+    ${KRB5_LIBRARIES}
+    $<TARGET_OBJECTS:rdpear-common-obj>
+)
 
 if (BUILD_TESTING)
     add_subdirectory(test)

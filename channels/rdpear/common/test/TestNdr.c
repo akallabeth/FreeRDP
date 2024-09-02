@@ -2,19 +2,22 @@
 
 int TestNdr(int argc, char* argv[])
 {
+	WINPR_UNUSED(argc);
+	WINPR_UNUSED(argv);
+
 	int retCode = -2;
 	NdrContext* context = ndr_context_new(FALSE, 1);
 	if (!context)
 		return -1;
 
-	BYTE payload[] = {
+	const BYTE payload[] = {
 		// == conformant array ==
 		0x02, 0x00, 0x00, 0x00, // (nitems)
 		0x30, 0x00,             // content
 		0x00, 0x00              // (padding)
 	};
-	wStream staticS;
-	wStream* s = Stream_StaticInit(&staticS, payload, sizeof(payload));
+	wStream staticS = { 0 };
+	wStream* s = Stream_StaticConstInit(&staticS, payload, sizeof(payload));
 
 	BYTE* target = NULL;
 	NdrArrayHints hints = { 2 };
@@ -31,6 +34,6 @@ int TestNdr(int argc, char* argv[])
 	free(target);
 	retCode = 0;
 out:
-	ndr_context_destroy(&context);
+	ndr_context_destroy(context);
 	return retCode;
 }

@@ -41,9 +41,12 @@
 
 #define TAG CHANNELS_TAG("rdpear.client")
 
+#define FILETIME_TO_UNIX_OFFSET_S 11644473600LL
+
 /* defined in libkrb5 */
-krb5_error_code encode_krb5_authenticator(const krb5_authenticator* rep, krb5_data** code_out);
-krb5_error_code encode_krb5_ap_rep(const krb5_ap_rep* rep, krb5_data** code_out);
+extern krb5_error_code encode_krb5_authenticator(const krb5_authenticator* rep,
+                                                 krb5_data** code_out);
+extern krb5_error_code encode_krb5_ap_rep(const krb5_ap_rep* rep, krb5_data** code_out);
 
 typedef struct
 {
@@ -59,15 +62,17 @@ static krb5_error_code RPC_ENCRYPTION_KEY_to_keyblock(krb5_context ctx,
                                                       const KERB_RPC_ENCRYPTION_KEY* key,
                                                       krb5_keyblock** pkeyblock)
 {
+	WINPR_ASSERT(key);
 	WINPR_ASSERT(pkeyblock);
-	krb5_keyblock* keyblock = NULL;
 
 	krb5_error_code rv =
 	    krb5_init_keyblock(ctx, (krb5_enctype)key->reserved2, key->reserved3.length, pkeyblock);
 	if (rv)
 		return rv;
 
-	keyblock = *pkeyblock;
+	krb5_keyblock* keyblock = *pkeyblock;
+	if (!keyblock)
+		return KRB5_RC_MALLOC;
 	memcpy(keyblock->contents, key->reserved3.value, key->reserved3.length);
 	return rv;
 }
@@ -106,14 +111,14 @@ static krb5_error_code kerb_do_encrypt(krb5_context ctx, KERB_RPC_ENCRYPTION_KEY
 	WINPR_ASSERT(out);
 
 	krb5_keyblock* keyblock = NULL;
-	krb5_data data = { 0 };
 	krb5_enc_data enc = { 0 };
-	size_t elen = 0;
 
 	krb5_error_code rv = RPC_ENCRYPTION_KEY_to_keyblock(ctx, key, &keyblock);
 	if (rv)
 		return rv;
 
+	size_t elen = 0;
+	krb5_data data = { 0 };
 	data.data = (char*)plain->Asn1Buffer;
 	data.length = plain->Asn1BufferHints.count;
 
@@ -160,7 +165,8 @@ static krb5_error_code kerb_do_decrypt(krb5_context ctx, KERB_RPC_ENCRYPTION_KEY
 	enc.ciphertext.data = cipher->data;
 
 	data.length = cipher->length;
-	data.data = (char*)malloc(cipher->length);
+	if (data.length > 0)
+		data.data = malloc(cipher->length);
 	if (!data.data)
 	{
 		rv = ENOMEM;
@@ -181,10 +187,10 @@ static BOOL rdpear_send_payload(RDPEAR_PLUGIN* rdpear, IWTSVirtualChannelCallbac
 {
 	GENERIC_CHANNEL_CALLBACK* callback = (GENERIC_CHANNEL_CALLBACK*)pChannelCallback;
 	BOOL ret = FALSE;
-	wStream* finalStream = NULL;
 	SecBuffer cryptedBuffer = { 0 };
+	wStream* finalStream = Stream_New(NULL, 200);
 	wStream* unencodedContent = rdpear_encodePayload(packageType, payload);
-	if (!unencodedContent)
+	if (!unencodedContent || !finalStream)
 		goto out;
 
 	size_t unencodedLen = Stream_GetPosition(unencodedContent);
@@ -193,9 +199,6 @@ static BOOL rdpear_send_payload(RDPEAR_PLUGIN* rdpear, IWTSVirtualChannelCallbac
 	if (!freerdp_nla_encrypt(rdpear->rdp_context, &inBuffer, &cryptedBuffer))
 		goto out;
 
-	finalStream = Stream_New(NULL, 200);
-	if (!finalStream)
-		goto out;
 	Stream_Write_UINT32(finalStream, 0x4EACC3C8);             /* ProtocolMagic (4 bytes) */
 	Stream_Write_UINT32(finalStream, cryptedBuffer.cbBuffer); /* Length (4 bytes) */
 	Stream_Write_UINT32(finalStream, 0x00000000);             /* Version (4 bytes) */
@@ -233,7 +236,7 @@ static BOOL rdpear_prepare_response(NdrContext* rcontext, UINT16 callId, UINT32 
 
 	wStream* retStream = Stream_New(NULL, 500);
 	if (!retStream)
-		goto out_stream;
+		goto fail;
 
 	Stream_Write(retStream, payloadHeader, sizeof(payloadHeader));
 
@@ -244,22 +247,25 @@ static BOOL rdpear_prepare_response(NdrContext* rcontext, UINT16 callId, UINT32 
 	    !ndr_write_uint32(wcontext, retStream, status) || /* status */
 	    !ndr_write_uint16(wcontext, retStream, callId) || /* callId */
 	    !ndr_write_uint16(wcontext, retStream, 0x0000))   /* align padding */
-		goto out_write;
+		goto fail;
 
 	*pwcontext = wcontext;
 	*pRetStream = retStream;
 	return TRUE;
 
-out_write:
+fail:
 	Stream_Free(retStream, TRUE);
-out_stream:
-	ndr_context_destroy(&wcontext);
+	ndr_context_destroy(wcontext);
 	return FALSE;
 }
 
 static BOOL rdpear_kerb_version(RDPEAR_PLUGIN* rdpear, IWTSVirtualChannelCallback* pChannelCallback,
                                 NdrContext* rcontext, wStream* s, UINT32* pstatus, UINT32* pversion)
 {
+	WINPR_UNUSED(rdpear);
+	WINPR_UNUSED(pChannelCallback);
+	WINPR_ASSERT(pstatus);
+
 	*pstatus = ERROR_INVALID_DATA;
 
 	if (!ndr_read_uint32(rcontext, s, pversion))
@@ -276,9 +282,14 @@ static BOOL rdpear_kerb_ComputeTgsChecksum(RDPEAR_PLUGIN* rdpear,
                                            NdrContext* rcontext, wStream* s, UINT32* pstatus,
                                            KERB_ASN1_DATA* resp)
 {
+	wStream* asn1Payload = NULL;
 	ComputeTgsChecksumReq req = { 0 };
 	krb5_checksum checksum = { 0 };
-	wStream* asn1Payload = NULL;
+
+	WINPR_UNUSED(pChannelCallback);
+	WINPR_ASSERT(rdpear);
+	WINPR_ASSERT(pstatus);
+	WINPR_ASSERT(resp);
 
 	*pstatus = ERROR_INVALID_DATA;
 	WLog_DBG(TAG, "-> ComputeTgsChecksum");
@@ -315,10 +326,14 @@ static BOOL rdpear_kerb_BuildEncryptedAuthData(RDPEAR_PLUGIN* rdpear,
                                                NdrContext* rcontext, wStream* s, UINT32* pstatus,
                                                KERB_ASN1_DATA* asn1)
 {
+	wStream* asn1Payload = NULL;
 	BuildEncryptedAuthDataReq req = { 0 };
 	krb5_data encrypted = { 0 };
-	wStream* asn1Payload = NULL;
-	krb5_error_code rv = 0;
+
+	WINPR_ASSERT(rdpear);
+	WINPR_UNUSED(pChannelCallback);
+	WINPR_ASSERT(pstatus);
+	WINPR_ASSERT(asn1);
 
 	*pstatus = ERROR_INVALID_DATA;
 	WLog_DBG(TAG, "-> BuildEncryptedAuthData");
@@ -327,8 +342,8 @@ static BOOL rdpear_kerb_BuildEncryptedAuthData(RDPEAR_PLUGIN* rdpear,
 	    !ndr_treat_deferred_read(rcontext, s))
 		goto out;
 
-	rv = kerb_do_encrypt(rdpear->krbContext, req.Key, (krb5_keyusage)req.KeyUsage,
-	                     req.PlainAuthData, &encrypted);
+	krb5_error_code rv = kerb_do_encrypt(rdpear->krbContext, req.Key, (krb5_keyusage)req.KeyUsage,
+	                                     req.PlainAuthData, &encrypted);
 	if (rv)
 		goto out;
 
@@ -359,11 +374,18 @@ static char* KERB_RPC_UNICODESTR_to_charptr(const RPC_UNICODE_STRING* src)
 
 static BOOL extractAuthData(const KERB_ASN1_DATA* src, krb5_authdata* authData, BOOL* haveData)
 {
-	WinPrAsn1Decoder dec, dec2, dec3;
-	WinPrAsn1Decoder_InitMem(&dec, WINPR_ASN1_DER, src->Asn1Buffer, src->Asn1BufferHints.count);
+	WinPrAsn1Decoder dec = { 0 };
+	WinPrAsn1Decoder dec2 = { 0 };
+	WinPrAsn1Decoder dec3 = { 0 };
 	BOOL error = FALSE;
-	WinPrAsn1_INTEGER adType;
-	WinPrAsn1_OctetString os;
+	WinPrAsn1_INTEGER adType = 0;
+	WinPrAsn1_OctetString os = { 0 };
+
+	WINPR_ASSERT(src);
+	WINPR_ASSERT(authData);
+	WINPR_ASSERT(haveData);
+
+	WinPrAsn1Decoder_InitMem(&dec, WINPR_ASN1_DER, src->Asn1Buffer, src->Asn1BufferHints.count);
 
 	*haveData = FALSE;
 	if (!WinPrAsn1DecReadSequence(&dec, &dec2))
@@ -389,15 +411,19 @@ static BOOL extractAuthData(const KERB_ASN1_DATA* src, krb5_authdata* authData, 
 
 static BOOL extractChecksum(const KERB_ASN1_DATA* src, krb5_checksum* dst)
 {
-	WinPrAsn1Decoder dec, dec2;
-	WinPrAsn1Decoder_InitMem(&dec, WINPR_ASN1_DER, src->Asn1Buffer, src->Asn1BufferHints.count);
+	WinPrAsn1Decoder dec = { 0 };
+	WinPrAsn1Decoder dec2 = { 0 };
 	BOOL error = FALSE;
-	WinPrAsn1_OctetString os;
+	WinPrAsn1_OctetString os = { 0 };
 
+	WINPR_ASSERT(src);
+	WINPR_ASSERT(dst);
+
+	WinPrAsn1Decoder_InitMem(&dec, WINPR_ASN1_DER, src->Asn1Buffer, src->Asn1BufferHints.count);
 	if (!WinPrAsn1DecReadSequence(&dec, &dec2))
 		return FALSE;
 
-	WinPrAsn1_INTEGER cksumtype;
+	WinPrAsn1_INTEGER cksumtype = 0;
 	if (!WinPrAsn1DecReadContextualInteger(&dec2, 0, &error, &cksumtype) ||
 	    !WinPrAsn1DecReadContextualOctetString(&dec2, 1, &error, &os, FALSE))
 		return FALSE;
@@ -408,17 +434,18 @@ static BOOL extractChecksum(const KERB_ASN1_DATA* src, krb5_checksum* dst)
 	return TRUE;
 }
 
-#define FILETIME_TO_UNIX_OFFSET_S 11644473600ULL
-
-static UINT64 krb5_time_to_FILETIME(const krb5_timestamp* ts, krb5_int32 usec)
+static INT64 krb5_time_to_FILETIME(const krb5_timestamp* ts, krb5_int32 usec)
 {
 	WINPR_ASSERT(ts);
-	return (UINT64)(((*ts + FILETIME_TO_UNIX_OFFSET_S) * (1000 * 1000) + usec) * 10);
+	WINPR_ASSERT(usec >= 0);
+	return ((*ts + FILETIME_TO_UNIX_OFFSET_S) * (1000LL * 1000LL) + usec) * 10LL;
 }
 
 static void krb5_free_principal_contents(krb5_context ctx, krb5_principal principal)
 {
-	WINPR_ASSERT(principal);
+	if (!principal)
+		return;
+
 	krb5_free_data_contents(ctx, &principal->realm);
 	krb5_free_data_contents(ctx, principal->data);
 }
@@ -428,6 +455,7 @@ static BOOL rdpear_kerb_CreateApReqAuthenticator(RDPEAR_PLUGIN* rdpear,
                                                  NdrContext* rcontext, wStream* s, UINT32* pstatus,
                                                  CreateApReqAuthenticatorResp* resp)
 {
+	BOOL rc = FALSE;
 	krb5_error_code rv = 0;
 	wStream* asn1EncodedAuth = NULL;
 	CreateApReqAuthenticatorReq req = { 0 };
@@ -435,6 +463,14 @@ static BOOL rdpear_kerb_CreateApReqAuthenticator(RDPEAR_PLUGIN* rdpear,
 	krb5_data* der = NULL;
 	krb5_keyblock* subkey = NULL;
 	krb5_principal_data client = { 0 };
+	krb5_authdata authdata = { 0 };
+	krb5_authdata* authDataPtr[2] = { &authdata, NULL };
+	BOOL haveData = FALSE;
+
+	WINPR_ASSERT(rdpear);
+	WINPR_UNUSED(pChannelCallback);
+	WINPR_ASSERT(pstatus);
+	WINPR_ASSERT(resp);
 
 	*pstatus = ERROR_INVALID_DATA;
 	WLog_DBG(TAG, "-> CreateApReqAuthenticator");
@@ -442,10 +478,6 @@ static BOOL rdpear_kerb_CreateApReqAuthenticator(RDPEAR_PLUGIN* rdpear,
 	if (!ndr_read_CreateApReqAuthenticatorReq(rcontext, s, NULL, &req) ||
 	    !ndr_treat_deferred_read(rcontext, s))
 		goto out;
-
-	krb5_authdata authdata;
-	krb5_authdata* authDataPtr[2] = { &authdata, NULL };
-	BOOL haveData;
 
 	if (!extractAuthData(req.AuthData, &authdata, &haveData))
 	{
@@ -470,10 +502,14 @@ static BOOL rdpear_kerb_CreateApReqAuthenticator(RDPEAR_PLUGIN* rdpear,
 	authent.authorization_data = haveData ? authDataPtr : NULL;
 
 	client.type = req.ClientName->NameType;
+	WINPR_ASSERT(req.ClientName->nameHints.count <= INT32_MAX);
 	client.length = (krb5_int32)req.ClientName->nameHints.count;
-	client.data = calloc(client.length, sizeof(krb5_data));
-	if (!client.data)
-		goto out;
+	if (client.length > 0)
+	{
+		client.data = calloc(client.length, sizeof(krb5_data));
+		if (!client.data)
+			goto out;
+	}
 
 	for (int i = 0; i < client.length; i++)
 	{
@@ -488,7 +524,7 @@ static BOOL rdpear_kerb_CreateApReqAuthenticator(RDPEAR_PLUGIN* rdpear,
 	client.realm.length = strlen(client.realm.data);
 	authent.client = &client;
 
-	krb5_checksum checksum;
+	krb5_checksum checksum = { 0 };
 	krb5_checksum* pchecksum = NULL;
 	if (req.GssChecksum)
 	{
@@ -501,7 +537,9 @@ static BOOL rdpear_kerb_CreateApReqAuthenticator(RDPEAR_PLUGIN* rdpear,
 	}
 	authent.checksum = pchecksum;
 
-	krb5_us_timeofday(rdpear->krbContext, &authent.ctime, &authent.cusec);
+	rv = krb5_us_timeofday(rdpear->krbContext, &authent.ctime, &authent.cusec);
+	if (rv)
+		goto out;
 
 	rv = encode_krb5_authenticator(&authent, &der);
 	if (rv)
@@ -526,7 +564,6 @@ static BOOL rdpear_kerb_CreateApReqAuthenticator(RDPEAR_PLUGIN* rdpear,
 	if (!asn1EncodedAuth)
 	{
 		WLog_ERR(TAG, "error encoding to ASN1");
-		rv = ENOMEM;
 		goto out;
 	}
 
@@ -534,15 +571,15 @@ static BOOL rdpear_kerb_CreateApReqAuthenticator(RDPEAR_PLUGIN* rdpear,
 	// winpr_HexDump(TAG, WLOG_DEBUG, Stream_Buffer(asn1EncodedAuth),
 	// Stream_GetPosition(asn1EncodedAuth));
 
+	resp->Authenticator.Pdu = 6;
 	resp->Authenticator.Asn1BufferHints.count = Stream_GetPosition(asn1EncodedAuth);
 	resp->Authenticator.Asn1Buffer = Stream_Buffer(asn1EncodedAuth);
-	resp->AuthenticatorTime.QuadPart =
-	    (LONGLONG)krb5_time_to_FILETIME(&authent.ctime, authent.cusec);
+	resp->AuthenticatorTime.QuadPart = krb5_time_to_FILETIME(&authent.ctime, authent.cusec);
+	resp->KerbProtocolError = rv;
 	*pstatus = 0;
+	rc = TRUE;
 
 out:
-	resp->Authenticator.Pdu = 6;
-	resp->KerbProtocolError = rv;
 	krb5_free_principal_contents(rdpear->krbContext, &client);
 	krb5_free_data(rdpear->krbContext, der);
 	krb5_free_data_contents(rdpear->krbContext, &authenticator);
@@ -550,17 +587,22 @@ out:
 		krb5_free_keyblock(rdpear->krbContext, subkey);
 	ndr_destroy_CreateApReqAuthenticatorReq(rcontext, NULL, &req);
 	Stream_Free(asn1EncodedAuth, FALSE);
-	return TRUE;
+	return rc;
 }
 
 static BOOL rdpear_findEncryptedData(const KERB_ASN1_DATA* src, int* penctype, krb5_data* data)
 {
-	WinPrAsn1Decoder dec, dec2;
-	WinPrAsn1Decoder_InitMem(&dec, WINPR_ASN1_DER, src->Asn1Buffer, src->Asn1BufferHints.count);
+	WinPrAsn1Decoder dec = { 0 };
+	WinPrAsn1Decoder dec2 = { 0 };
 	BOOL error = FALSE;
-	WinPrAsn1_INTEGER encType;
-	WinPrAsn1_OctetString os;
+	WinPrAsn1_INTEGER encType = 0;
+	WinPrAsn1_OctetString os = { 0 };
 
+	WINPR_ASSERT(src);
+	WINPR_ASSERT(penctype);
+	WINPR_ASSERT(data);
+
+	WinPrAsn1Decoder_InitMem(&dec, WINPR_ASN1_DER, src->Asn1Buffer, src->Asn1BufferHints.count);
 	if (!WinPrAsn1DecReadSequence(&dec, &dec2) ||
 	    !WinPrAsn1DecReadContextualInteger(&dec2, 0, &error, &encType) ||
 	    !WinPrAsn1DecReadContextualOctetString(&dec2, 2, &error, &os, FALSE))
@@ -579,6 +621,11 @@ static BOOL rdpear_kerb_UnpackKdcReplyBody(RDPEAR_PLUGIN* rdpear,
 {
 	UnpackKdcReplyBodyReq req = { 0 };
 
+	WINPR_ASSERT(rdpear);
+	WINPR_UNUSED(pChannelCallback);
+	WINPR_ASSERT(pstatus);
+	WINPR_ASSERT(resp);
+
 	*pstatus = ERROR_INVALID_DATA;
 
 	if (!ndr_read_UnpackKdcReplyBodyReq(rcontext, s, NULL, &req) ||
@@ -596,8 +643,8 @@ static BOOL rdpear_kerb_UnpackKdcReplyBody(RDPEAR_PLUGIN* rdpear,
 	// winpr_HexDump(TAG, WLOG_DEBUG, req.EncryptedData->Asn1Buffer,
 	// req.EncryptedData->Asn1BufferHints.count);
 
-	krb5_data asn1Data;
-	int encType;
+	krb5_data asn1Data = { 0 };
+	int encType = 0;
 	if (!rdpear_findEncryptedData(req.EncryptedData, &encType, &asn1Data))
 		goto out;
 
@@ -619,6 +666,11 @@ static BOOL rdpear_kerb_DecryptApReply(RDPEAR_PLUGIN* rdpear,
 {
 	DecryptApReplyReq req = { 0 };
 
+	WINPR_ASSERT(rdpear);
+	WINPR_UNUSED(pChannelCallback);
+	WINPR_ASSERT(pstatus);
+	WINPR_ASSERT(resp);
+
 	*pstatus = ERROR_INVALID_DATA;
 	if (!ndr_read_DecryptApReplyReq(rcontext, s, NULL, &req) ||
 	    !ndr_treat_deferred_read(rcontext, s))
@@ -628,8 +680,8 @@ static BOOL rdpear_kerb_DecryptApReply(RDPEAR_PLUGIN* rdpear,
 	// winpr_HexDump(TAG, WLOG_DEBUG, req.EncryptedReply->Asn1Buffer,
 	// req.EncryptedReply->Asn1BufferHints.count);
 
-	krb5_data asn1Data;
-	int encType;
+	krb5_data asn1Data = { 0 };
+	int encType = 0;
 	if (!rdpear_findEncryptedData(req.EncryptedReply, &encType, &asn1Data))
 		goto out;
 
@@ -659,6 +711,11 @@ static BOOL rdpear_kerb_PackApReply(RDPEAR_PLUGIN* rdpear,
 	krb5_data asn1Data = { 0 };
 	krb5_data* out = NULL;
 
+	WINPR_ASSERT(rdpear);
+	WINPR_UNUSED(pChannelCallback);
+	WINPR_ASSERT(pstatus);
+	WINPR_ASSERT(resp);
+
 	WLog_DBG(TAG, "-> PackApReply");
 	*pstatus = ERROR_INVALID_DATA;
 	if (!ndr_read_PackApReplyReq(rcontext, s, NULL, &req) || !ndr_treat_deferred_read(rcontext, s))
@@ -669,11 +726,11 @@ static BOOL rdpear_kerb_PackApReply(RDPEAR_PLUGIN* rdpear,
 	if (rv)
 		goto out;
 
-	krb5_ap_rep reply;
+	krb5_ap_rep reply = { 0 };
 	reply.enc_part.kvno = KRB5_PVNO;
-	reply.enc_part.enctype = req.SessionKey->reserved2;
+	reply.enc_part.enctype = (krb5_enctype)req.SessionKey->reserved2;
 	reply.enc_part.ciphertext.length = asn1Data.length;
-	reply.enc_part.ciphertext.data = (char*)asn1Data.data;
+	reply.enc_part.ciphertext.data = asn1Data.data;
 
 	rv = encode_krb5_ap_rep(&reply, &out);
 	if (rv)
@@ -696,7 +753,6 @@ static UINT rdpear_decode_payload(RDPEAR_PLUGIN* rdpear,
 	UINT ret = ERROR_INVALID_DATA;
 	NdrContext* context = NULL;
 	NdrContext* wcontext = NULL;
-	wStream* respStream = NULL;
 	UINT32 status = 0;
 
 	UINT32 uint32Resp = 0;
@@ -708,14 +764,19 @@ static UINT rdpear_decode_payload(RDPEAR_PLUGIN* rdpear,
 	void* resp = NULL;
 	NdrMessageType respDescr = NULL;
 
-	respStream = Stream_New(NULL, 4096);
+	WINPR_ASSERT(rdpear);
+	WINPR_ASSERT(pChannelCallback);
+	WINPR_UNUSED(packageType);
+
+	wStream* respStream = Stream_New(NULL, 4096);
 	if (!respStream)
 		goto out;
 
 	Stream_Seek(s, 16); /* skip first 16 bytes */
 
-	wStream commandStream;
-	UINT16 callId, callId2;
+	wStream commandStream = { 0 };
+	UINT16 callId = 0;
+	UINT16 callId2 = 0;
 
 	context = ndr_read_header(s);
 	if (!context || !ndr_read_constructed(context, s, &commandStream) ||
@@ -824,11 +885,8 @@ static UINT rdpear_decode_payload(RDPEAR_PLUGIN* rdpear,
 		goto out;
 	}
 out:
-	if (context)
-		ndr_context_destroy(&context);
-
-	if (wcontext)
-		ndr_context_destroy(&wcontext);
+	ndr_context_destroy(context);
+	ndr_context_destroy(wcontext);
 
 	if (respStream)
 		Stream_Free(respStream, TRUE);
@@ -846,7 +904,9 @@ static UINT rdpear_on_data_received(IWTSVirtualChannelCallback* pChannelCallback
 	if (!Stream_CheckAndLogRequiredLength(TAG, s, 24))
 		return ERROR_INVALID_DATA;
 
-	UINT32 protocolMagic, Length, Version;
+	UINT32 protocolMagic = 0;
+	UINT32 Length = 0;
+	UINT32 Version = 0;
 	Stream_Read_UINT32(s, protocolMagic);
 	if (protocolMagic != 0x4EACC3C8)
 		return ERROR_INVALID_DATA;
@@ -863,7 +923,7 @@ static UINT rdpear_on_data_received(IWTSVirtualChannelCallback* pChannelCallback
 	if (!Stream_CheckAndLogRequiredLength(TAG, s, Length))
 		return ERROR_INVALID_DATA;
 
-	SecBuffer inBuffer = { Length, SECBUFFER_TOKEN, Stream_PointerAs(s, void*) };
+	SecBuffer inBuffer = { Length, SECBUFFER_TOKEN, Stream_PointerAs(s, void) };
 	SecBuffer decrypted = { Length, SECBUFFER_DATA, NULL };
 
 	if (!sspi_SecBufferAlloc(&decrypted, Length))
@@ -874,17 +934,18 @@ static UINT rdpear_on_data_received(IWTSVirtualChannelCallback* pChannelCallback
 	if (!freerdp_nla_decrypt(rdpear->rdp_context, &inBuffer, &decrypted))
 		goto out;
 
-	WinPrAsn1Decoder dec, dec2;
-	wStream decodedStream;
+	WinPrAsn1Decoder dec = { 0 };
+	WinPrAsn1Decoder dec2 = { 0 };
+	wStream decodedStream = { 0 };
 	Stream_StaticInit(&decodedStream, decrypted.pvBuffer, decrypted.cbBuffer);
 	WinPrAsn1Decoder_Init(&dec, WINPR_ASN1_DER, &decodedStream);
 
 	if (!WinPrAsn1DecReadSequence(&dec, &dec2))
 		goto out;
 
-	WinPrAsn1_OctetString packageName;
-	WinPrAsn1_OctetString payload;
-	BOOL error;
+	WinPrAsn1_OctetString packageName = { 0 };
+	WinPrAsn1_OctetString payload = { 0 };
+	BOOL error = FALSE;
 	if (!WinPrAsn1DecReadContextualOctetString(&dec2, 1, &error, &packageName, FALSE))
 		goto out;
 
@@ -893,7 +954,7 @@ static UINT rdpear_on_data_received(IWTSVirtualChannelCallback* pChannelCallback
 	if (!WinPrAsn1DecReadContextualOctetString(&dec2, 2, &error, &payload, FALSE))
 		goto out;
 
-	wStream payloadStream;
+	wStream payloadStream = { 0 };
 	Stream_StaticInit(&payloadStream, payload.data, payload.len);
 
 	ret = rdpear_decode_payload(rdpear, pChannelCallback, packageType, &payloadStream);
@@ -909,7 +970,7 @@ out:
  */
 static UINT rdpear_on_open(IWTSVirtualChannelCallback* pChannelCallback)
 {
-
+	WINPR_UNUSED(pChannelCallback);
 	return CHANNEL_RC_OK;
 }
 
@@ -920,23 +981,24 @@ static UINT rdpear_on_open(IWTSVirtualChannelCallback* pChannelCallback)
  */
 static UINT rdpear_on_close(IWTSVirtualChannelCallback* pChannelCallback)
 {
-	UINT error = CHANNEL_RC_OK;
-	return error;
+	WINPR_UNUSED(pChannelCallback);
+	return CHANNEL_RC_OK;
 }
 
 static void terminate_plugin_cb(GENERIC_DYNVC_PLUGIN* base)
 {
-	WINPR_ASSERT(base);
-
 	RDPEAR_PLUGIN* rdpear = (RDPEAR_PLUGIN*)base;
+	WINPR_ASSERT(rdpear);
+
 	krb5_free_context(rdpear->krbContext);
 }
 
 static UINT init_plugin_cb(GENERIC_DYNVC_PLUGIN* base, rdpContext* rcontext, rdpSettings* settings)
 {
-	WINPR_ASSERT(base);
-
 	RDPEAR_PLUGIN* rdpear = (RDPEAR_PLUGIN*)base;
+	WINPR_ASSERT(rdpear);
+	WINPR_UNUSED(settings);
+
 	rdpear->rdp_context = rcontext;
 	if (krb5_init_context(&rdpear->krbContext))
 		return CHANNEL_RC_INITIALIZATION_ERROR;

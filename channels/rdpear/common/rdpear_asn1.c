@@ -20,7 +20,7 @@
 #include <rdpear-common/rdpear_asn1.h>
 #include <winpr/asn1.h>
 
-wStream* rdpear_enc_Checksum(UINT32 cksumtype, krb5_checksum* csum)
+wStream* rdpear_enc_Checksum(UINT32 cksumtype, krb5_checksum* payload)
 {
 	/**
 	 * Checksum        ::= SEQUENCE {
@@ -28,6 +28,7 @@ wStream* rdpear_enc_Checksum(UINT32 cksumtype, krb5_checksum* csum)
 	 *   checksum        [1] OCTET STRING
 	 * }
 	 */
+	WINPR_ASSERT(payload);
 	wStream* ret = NULL;
 	WinPrAsn1Encoder* enc = WinPrAsn1Encoder_New(WINPR_ASN1_DER);
 	if (!enc)
@@ -36,12 +37,12 @@ wStream* rdpear_enc_Checksum(UINT32 cksumtype, krb5_checksum* csum)
 	if (!WinPrAsn1EncSeqContainer(enc))
 		goto out;
 
-	if (!WinPrAsn1EncContextualInteger(enc, 0, cksumtype))
+	if (!WinPrAsn1EncContextualInteger(enc, 0, (WinPrAsn1_tagId)cksumtype))
 		goto out;
 
-	WinPrAsn1_OctetString octets;
-	octets.data = (BYTE*)csum->contents;
-	octets.len = csum->length;
+	WinPrAsn1_OctetString octets = { 0 };
+	octets.data = (BYTE*)payload->contents;
+	octets.len = payload->length;
 	if (!WinPrAsn1EncContextualOctetString(enc, 1, &octets) || !WinPrAsn1EncEndContainer(enc))
 		goto out;
 
@@ -70,6 +71,7 @@ wStream* rdpear_enc_EncryptedData(UINT32 encType, krb5_data* payload)
 	 *   cipher  [2] OCTET STRING -- ciphertext
 	 *	}
 	 */
+	WINPR_ASSERT(payload);
 	wStream* ret = NULL;
 	WinPrAsn1Encoder* enc = WinPrAsn1Encoder_New(WINPR_ASN1_DER);
 	if (!enc)
@@ -78,10 +80,10 @@ wStream* rdpear_enc_EncryptedData(UINT32 encType, krb5_data* payload)
 	if (!WinPrAsn1EncSeqContainer(enc))
 		goto out;
 
-	if (!WinPrAsn1EncContextualInteger(enc, 0, encType))
+	if (!WinPrAsn1EncContextualInteger(enc, 0, (WinPrAsn1_tagId)encType))
 		goto out;
 
-	WinPrAsn1_OctetString octets;
+	WinPrAsn1_OctetString octets = { 0 };
 	octets.data = (BYTE*)payload->data;
 	octets.len = payload->length;
 	if (!WinPrAsn1EncContextualOctetString(enc, 2, &octets) || !WinPrAsn1EncEndContainer(enc))

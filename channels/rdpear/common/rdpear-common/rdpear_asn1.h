@@ -24,8 +24,17 @@
 
 #include <winpr/stream.h>
 
-wStream* rdpear_enc_Checksum(UINT32 cksumtype, krb5_checksum* payload);
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-wStream* rdpear_enc_EncryptedData(UINT32 encType, krb5_data* payload);
+	wStream* rdpear_enc_Checksum(UINT32 cksumtype, krb5_checksum* payload);
+
+	wStream* rdpear_enc_EncryptedData(UINT32 encType, krb5_data* payload);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* RPDEAR_RDPEAR_ASN1_H__ */

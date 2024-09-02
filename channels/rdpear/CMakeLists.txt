@@ -21,8 +21,6 @@ if (NOT IOS AND NOT WIN32 AND NOT ANDROID)
     if(KRB5_FOUND)
         define_channel("rdpear")
 
-        include_directories(common)
-
         if(WITH_CLIENT_CHANNELS OR WITH_SERVER_CHANNELS)
             add_subdirectory(common)
         endif()

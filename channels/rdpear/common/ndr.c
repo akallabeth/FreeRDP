@@ -85,9 +85,10 @@ void ndr_context_reset(NdrContext* context)
 
 NdrContext* ndr_context_copy(const NdrContext* src)
 {
-	WINPR_ASSERT(src);
+	if (!src)
+		return NULL;
 
-	NdrContext* ret = calloc(1, sizeof(*ret));
+	NdrContext* ret = calloc(1, sizeof(NdrContext));
 	if (!ret)
 		return NULL;
 
@@ -104,21 +105,18 @@ NdrContext* ndr_context_copy(const NdrContext* src)
 	return ret;
 }
 
-void ndr_context_destroy(NdrContext** pcontext)
+void ndr_context_destroy(NdrContext* context)
 {
-	WINPR_ASSERT(pcontext);
-
-	NdrContext* context = *pcontext;
 	if (context)
 	{
 		HashTable_Free(context->refPointers);
 		free(context);
 	}
-	*pcontext = NULL;
 }
 
 void ndr_context_bytes_read(NdrContext* context, size_t len)
 {
+	WINPR_ASSERT(context);
 	context->indentLevels[context->currentLevel] += len;
 }
 
@@ -132,11 +130,12 @@ NdrContext* ndr_read_header(wStream* s)
 	if (!Stream_CheckAndLogRequiredLength(TAG, s, 8))
 		return NULL;
 
-	BYTE version, drep;
+	BYTE version = 0;
+	BYTE drep = 0;
 	Stream_Read_UINT8(s, version);
 	Stream_Read_UINT8(s, drep);
 
-	UINT16 headerLen;
+	UINT16 headerLen = 0;
 	Stream_Read_UINT16(s, headerLen);
 
 	if (headerLen < 4 || !Stream_CheckAndLogRequiredLength(TAG, s, headerLen - 4))
@@ -166,7 +165,6 @@ BOOL ndr_write_header(NdrContext* context, wStream* s)
 BOOL ndr_skip_bytes(NdrContext* context, wStream* s, size_t nbytes)
 {
 	WINPR_ASSERT(context);
-
 	if (!Stream_CheckAndLogRequiredLength(TAG, s, nbytes))
 		return FALSE;
 
@@ -197,7 +195,7 @@ BOOL ndr_write_align(NdrContext* context, wStream* s, size_t sz)
 {
 	WINPR_ASSERT(context);
 
-	size_t rest = context->indentLevels[context->currentLevel] % sz;
+	const size_t rest = context->indentLevels[context->currentLevel] % sz;
 	if (rest)
 	{
 		size_t padding = (sz - rest);
@@ -214,9 +212,7 @@ BOOL ndr_write_align(NdrContext* context, wStream* s, size_t sz)
 
 BOOL ndr_read_pickle(NdrContext* context, wStream* s)
 {
-	WINPR_ASSERT(context);
-
-	UINT32 v;
+	UINT32 v = 0;
 
 	/* NDR format label */
 	if (!ndr_read_uint32(context, s, &v) || v != 0x20000)
@@ -227,8 +223,6 @@ BOOL ndr_read_pickle(NdrContext* context, wStream* s)
 
 BOOL ndr_write_pickle(NdrContext* context, wStream* s)
 {
-	WINPR_ASSERT(context);
-
 	/* NDR format label */
 	if (!ndr_write_uint32(context, s, 0x20000))
 		return FALSE;
@@ -239,9 +233,7 @@ BOOL ndr_write_pickle(NdrContext* context, wStream* s)
 
 BOOL ndr_read_constructed(NdrContext* context, wStream* s, wStream* target)
 {
-	WINPR_ASSERT(context);
-
-	UINT32 len;
+	UINT32 len = 0;
 
 	/* len */
 	if (!ndr_read_uint32(context, s, &len))
@@ -277,18 +269,18 @@ BOOL ndr_start_constructed(NdrContext* context, wStream* s)
 	return TRUE;
 }
 
-BOOL ndr_end_constructed(NdrContext* context, wStream* target)
+BOOL ndr_end_constructed(NdrContext* context, wStream* s)
 {
 	WINPR_ASSERT(context);
 	WINPR_ASSERT(context->constructLevel >= 0);
 
 	size_t offset = context->constructs[context->constructLevel];
 
-	wStream staticS;
-	Stream_StaticInit(&staticS, Stream_Buffer(target) + offset, 4);
+	wStream staticS = { 0 };
+	Stream_StaticInit(&staticS, Stream_Buffer(s) + offset, 4);
 
 	/* len */
-	size_t len = Stream_GetPosition(target) - (offset + 8);
+	size_t len = Stream_GetPosition(s) - (offset + 8);
 	if (!ndr_write_uint32(context, &staticS, len))
 		return FALSE;
 
@@ -335,6 +327,7 @@ BOOL ndr_read_uint8(NdrContext* context, wStream* s, BYTE* v)
 
 BOOL ndr_read_uint8_(NdrContext* context, wStream* s, const void* hints, void* v)
 {
+	WINPR_UNUSED(hints);
 	return ndr_read_uint8(context, s, (BYTE*)v);
 }
 
@@ -357,8 +350,8 @@ BOOL ndr_write_uint8_(NdrContext* context, wStream* s, const void* hints, const 
 	return ndr_write_uint8(context, s, *(const BYTE*)v);
 }
 
-const NdrMessageDescr uint8_descr = { NDR_ARITY_SIMPLE, 1,    ndr_read_uint8_,
-	                                  ndr_write_uint8_, NULL, NULL };
+static const NdrMessageDescr uint8_descr = { NDR_ARITY_SIMPLE, 1,    ndr_read_uint8_,
+	                                         ndr_write_uint8_, NULL, NULL };
 
 NdrMessageType ndr_uint8_descr(void)
 {
@@ -415,10 +408,12 @@ NdrMessageType ndr_uint8_descr(void)
 		return ndr_write_##LOWERTYPE(context, s, *(const UPPERTYPE*)v);                       \
 	}                                                                                         \
                                                                                               \
-	const NdrMessageDescr ndr_##LOWERTYPE##_descr_s = {                                       \
-		NDR_ARITY_SIMPLE,         sizeof(UPPERTYPE),    ndr_read_##LOWERTYPE##_,              \
-		ndr_write_##LOWERTYPE##_, (NDR_DESTROY_FN)NULL, (NDR_DUMP_FN)NULL                     \
-	};                                                                                        \
+	const NdrMessageDescr ndr_##LOWERTYPE##_descr_s = { NDR_ARITY_SIMPLE,                     \
+		                                                sizeof(UPPERTYPE),                    \
+		                                                ndr_read_##LOWERTYPE##_,              \
+		                                                ndr_write_##LOWERTYPE##_,             \
+		                                                NULL,                                 \
+		                                                NULL };                               \
                                                                                               \
 	NdrMessageType ndr_##LOWERTYPE##_descr(void)                                              \
 	{                                                                                         \
@@ -466,7 +461,7 @@ SIMPLE_TYPE_IMPL(UINT64, uint64)
                                                                                                    \
 	const NdrMessageDescr ndr_##TYPE##Array_descr_s = {                                            \
 		NDR_ARITY_ARRAYOF,       sizeof(UPPERTYPE),         ndr_read_##TYPE##Array,                \
-		ndr_write_##TYPE##Array, ndr_destroy_##TYPE##Array, (NDR_DUMP_FN)NULL                      \
+		ndr_write_##TYPE##Array, ndr_destroy_##TYPE##Array, NULL                                   \
 	};                                                                                             \
                                                                                                    \
 	NdrMessageType ndr_##TYPE##Array_descr(void)                                                   \
@@ -493,10 +488,12 @@ SIMPLE_TYPE_IMPL(UINT64, uint64)
 		                                           ndr_##TYPE##_descr(), v);                       \
 	}                                                                                              \
                                                                                                    \
-	const NdrMessageDescr ndr_##TYPE##VaryingArray_descr_s = {                                     \
-		NDR_ARITY_VARYING_ARRAYOF,      sizeof(UPPERTYPE),    ndr_read_##TYPE##VaryingArray,       \
-		ndr_write_##TYPE##VaryingArray, (NDR_DESTROY_FN)NULL, (NDR_DUMP_FN)NULL                    \
-	};                                                                                             \
+	const NdrMessageDescr ndr_##TYPE##VaryingArray_descr_s = { NDR_ARITY_VARYING_ARRAYOF,          \
+		                                                       sizeof(UPPERTYPE),                  \
+		                                                       ndr_read_##TYPE##VaryingArray,      \
+		                                                       ndr_write_##TYPE##VaryingArray,     \
+		                                                       NULL,                               \
+		                                                       NULL };                             \
                                                                                                    \
 	NdrMessageType ndr_##TYPE##VaryingArray_descr(void)                                            \
 	{                                                                                              \
@@ -518,10 +515,11 @@ BOOL ndr_read_uconformant_varying_array(NdrContext* context, wStream* s,
 	WINPR_ASSERT(context);
 	WINPR_ASSERT(s);
 	WINPR_ASSERT(hints);
-	WINPR_ASSERT(itemType);
 	WINPR_ASSERT(ptarget);
 
-	UINT32 maxCount, offset, length;
+	UINT32 maxCount = 0;
+	UINT32 offset = 0;
+	UINT32 length = 0;
 
 	if (!ndr_read_uint32(context, s, &maxCount) || !ndr_read_uint32(context, s, &offset) ||
 	    !ndr_read_uint32(context, s, &length))
@@ -550,7 +548,6 @@ BOOL ndr_write_uconformant_varying_array(NdrContext* context, wStream* s,
 	WINPR_ASSERT(context);
 	WINPR_ASSERT(s);
 	WINPR_ASSERT(hints);
-	WINPR_ASSERT(itemType);
 	WINPR_ASSERT(psrc);
 
 	if (!ndr_write_uint32(context, s, hints->maxLength) || !ndr_write_uint32(context, s, 0) ||
@@ -575,7 +572,7 @@ BOOL ndr_read_uconformant_array(NdrContext* context, wStream* s, const NdrArrayH
 	WINPR_ASSERT(itemType);
 	WINPR_ASSERT(vtarget);
 
-	UINT32 count;
+	UINT32 count = 0;
 
 	if (!ndr_read_uint32(context, s, &count))
 		return FALSE;
@@ -596,10 +593,7 @@ BOOL ndr_read_uconformant_array(NdrContext* context, wStream* s, const NdrArrayH
 BOOL ndr_write_uconformant_array(NdrContext* context, wStream* s, UINT32 len,
                                  NdrMessageType itemType, const BYTE* ptr)
 {
-	WINPR_ASSERT(context);
-	WINPR_ASSERT(s);
 	WINPR_ASSERT(itemType);
-	WINPR_ASSERT(ptr);
 
 	size_t toWrite = len * itemType->itemSize;
 	size_t padding = (4 - (toWrite % 4)) % 4;
@@ -729,7 +723,7 @@ BOOL ndr_struct_write_fromDescr(NdrContext* context, wStream* s, const NdrStruct
 			case NDR_POINTER_NON_NULL:
 			{
 				ndr_refid ptrId = NDR_PTR_NULL;
-				BOOL isNew;
+				BOOL isNew = FALSE;
 				ptr = *(void**)ptr;
 
 				if (!ptr && field->pointerType == NDR_POINTER_NON_NULL)
@@ -781,7 +775,7 @@ BOOL ndr_struct_write_fromDescr(NdrContext* context, wStream* s, const NdrStruct
 void ndr_struct_dump_fromDescr(wLog* logger, UINT32 lvl, size_t identLevel,
                                const NdrStructDescr* descr, const void* obj)
 {
-	char tabArray[30 + 1];
+	char tabArray[30 + 1] = { 0 };
 	size_t ntabs = (identLevel <= 30) ? identLevel : 30;
 
 	memset(tabArray, '\t', ntabs);
@@ -862,11 +856,12 @@ typedef struct
 	ndr_refid* presult;
 } FindValueArgs;
 
-BOOL findValueRefFn(const void* key, void* value, void* parg)
+static BOOL findValueRefFn(const void* key, void* value, void* parg)
 {
-	WINPR_ASSERT(parg);
-
 	FindValueArgs* args = (FindValueArgs*)parg;
+	if (!args)
+		return FALSE;
+
 	if (args->needle == value)
 	{
 		*args->presult = (ndr_refid)(UINT_PTR)key;
@@ -877,9 +872,10 @@ BOOL findValueRefFn(const void* key, void* value, void* parg)
 
 BOOL ndr_context_allocatePtr(NdrContext* context, const void* ptr, ndr_refid* prefId, BOOL* pnewPtr)
 {
+	FindValueArgs findArgs = { ptr, prefId };
+
 	WINPR_ASSERT(context);
 
-	FindValueArgs findArgs = { ptr, prefId };
 	if (!HashTable_Foreach(context->refPointers, findValueRefFn, &findArgs))
 	{
 		*pnewPtr = FALSE;
