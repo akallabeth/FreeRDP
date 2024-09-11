@@ -52,8 +52,6 @@ if (WITH_WEBVIEW)
     list(APPEND LIBS
         webview::core_static
     )
-include(ListTargetProperties)
-list_target_properties(webview::core_static)
   endif()
 else()
   set(SRCS
@@ -64,14 +62,15 @@ endif()
 configure_file(sdl_config.hpp.in sdl_config.hpp @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(sdl-common-aad-view INTERFACE)
 add_library(sdl-common-aad-view-obj OBJECT
     ${SRCS}
 )
+target_link_libraries(sdl-common-aad-view-obj PRIVATE ${LIBS})
+
+add_library(sdl-common-aad-view INTERFACE)
 target_include_directories(sdl-common-aad-view INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(sdl-common-aad-view
   INTERFACE
-  ${LIBS}
   sdl-common-aad-view-obj
 )
 target_compile_definitions(
