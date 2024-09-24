@@ -294,7 +294,7 @@ BOOL rdp_read_share_control_header(rdpRdp* rdp, wStream* s, UINT16* tpktLength,
 		*channel_id = 0; /* Windows XP can send such short DEACTIVATE_ALL PDUs. */
 
 	char buffer[128] = { 0 };
-	WLog_Print(rdp->log, WLOG_DEBUG, "type=%s, tpktLength=%" PRIuz ", remainingLength=%" PRIuz,
+	WLog_Print(rdp->log, WLOG_INFO, "type=%s, tpktLength=%" PRIuz ", remainingLength=%" PRIuz,
 	           pdu_type_to_str(*type, buffer, sizeof(buffer)), len, remLen);
 	if (remainingLength)
 		*remainingLength = remLen;

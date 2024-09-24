@@ -23,6 +23,7 @@
 #include <winpr/assert.h>
 #include <winpr/crt.h>
 #include <winpr/stream.h>
+#include <winpr/print.h>
 
 #include "stream.h"
 #include "../log.h"
@@ -380,10 +381,11 @@ BOOL Stream_CheckAndLogRequiredCapacityWLogEx(wLog* log, DWORD level, wStream* s
 		va_list args;
 
 		va_start(args, fmt);
-		Stream_CheckAndLogRequiredCapacityWLogExVa(log, level, s, nmemb, size, fmt, args);
+		const BOOL rc =
+		    Stream_CheckAndLogRequiredCapacityWLogExVa(log, level, s, nmemb, size, fmt, args);
 		va_end(args);
 
-		return FALSE;
+		return rc;
 	}
 	return TRUE;
 }
@@ -400,10 +402,10 @@ BOOL Stream_CheckAndLogRequiredLengthEx(const char* tag, DWORD level, wStream* s
 		va_list args;
 
 		va_start(args, fmt);
-		Stream_CheckAndLogRequiredLengthExVa(tag, level, s, nmemb, size, fmt, args);
+		const BOOL rc = Stream_CheckAndLogRequiredLengthExVa(tag, level, s, nmemb, size, fmt, args);
 		va_end(args);
 
-		return FALSE;
+		return rc;
 	}
 	return TRUE;
 }
@@ -431,10 +433,11 @@ BOOL Stream_CheckAndLogRequiredLengthWLogEx(wLog* log, DWORD level, wStream* s, 
 		va_list args;
 
 		va_start(args, fmt);
-		Stream_CheckAndLogRequiredLengthWLogExVa(log, level, s, nmemb, size, fmt, args);
+		const BOOL rc =
+		    Stream_CheckAndLogRequiredLengthWLogExVa(log, level, s, nmemb, size, fmt, args);
 		va_end(args);
 
-		return FALSE;
+		return rc;
 	}
 	return TRUE;
 }
@@ -458,6 +461,7 @@ BOOL Stream_CheckAndLogRequiredLengthWLogExVa(wLog* log, DWORD level, wStream* s
 		           " [element size=%" PRIuz "]",
 		           prefix, actual, nmemb, size);
 		winpr_log_backtrace_ex(log, level, 20);
+		winpr_HexLogDump(log, level, Stream_Buffer(s), Stream_Length(s));
 		return FALSE;
 	}
 	return TRUE;
