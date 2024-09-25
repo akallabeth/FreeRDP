@@ -614,7 +614,7 @@ BOOL rdp_read_header(rdpRdp* rdp, wStream* s, UINT16* length, UINT16* channelId)
 			rdp_set_error_info(rdp, errorInfo);
 		}
 
-		WLog_Print(rdp->log, WLOG_DEBUG, "DisconnectProviderUltimatum: reason: %d", reason);
+		WLog_Print(rdp->log, WLOG_WARN, "DisconnectProviderUltimatum: reason: %d", reason);
 		utils_abort_connect(rdp);
 		EventArgsInit(&e, "freerdp");
 		e.code = 0;

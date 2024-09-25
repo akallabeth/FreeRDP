@@ -4477,11 +4477,14 @@ BOOL rdp_recv_get_active_header(rdpRdp* rdp, wStream* s, UINT16* pChannelId, UIN
 	if (!rdp_read_header(rdp, s, length, pChannelId))
 		return FALSE;
 
+	WLog_INFO(TAG, "xxxx: header: length: %" PRIu16 ", channelId: %" PRIx16, *length, *pChannelId);
+
 	if (freerdp_shall_disconnect_context(rdp->context))
 		return TRUE;
 
 	if (rdp->settings->UseRdpSecurityLayer)
 	{
+		WLog_INFO(TAG, "xxxx: unexpected: RDP security enabled!");
 		if (!rdp_read_security_header(rdp, s, &securityFlags, length))
 			return FALSE;
 
@@ -4490,6 +4493,8 @@ BOOL rdp_recv_get_active_header(rdpRdp* rdp, wStream* s, UINT16* pChannelId, UIN
 			if (!rdp_decrypt(rdp, s, length, securityFlags))
 				return FALSE;
 		}
+		WLog_INFO(TAG, "xxxx: securityFlags=0x%04" PRIx16 ", length=%" PRIu16, securityFlags,
+		          *length)
 	}
 
 	if (*pChannelId != MCS_GLOBAL_CHANNEL_ID)
