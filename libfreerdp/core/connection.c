@@ -1011,6 +1011,7 @@ static BOOL rdp_client_join_channel(rdpRdp* rdp, UINT16 ChannelId)
 {
 	WINPR_ASSERT(rdp);
 
+	WLog_INFO(TAG, "xxxx: join: %" PRIu16, ChannelId);
 	rdpMcs* mcs = rdp->mcs;
 	if (!rdp_client_transition_to_state(rdp, CONNECTION_STATE_MCS_CHANNEL_JOIN_REQUEST))
 		return FALSE;
@@ -1034,6 +1035,7 @@ BOOL rdp_client_connect_mcs_channel_join_confirm(rdpRdp* rdp, wStream* s)
 
 	if (!mcs->userChannelJoined)
 	{
+		WLog_INFO(TAG, "xxxx: userChannelId: %" PRIu16, channelId);
 		if (channelId != mcs->userId)
 		{
 			WLog_ERR(TAG, "expected user channel id %" PRIu16 ", but received %" PRIu16,
@@ -1047,6 +1049,7 @@ BOOL rdp_client_connect_mcs_channel_join_confirm(rdpRdp* rdp, wStream* s)
 	}
 	else if (!mcs->globalChannelJoined)
 	{
+		WLog_INFO(TAG, "xxxx: globalChannelId: %" PRIu16, channelId);
 		if (channelId != MCS_GLOBAL_CHANNEL_ID)
 		{
 			WLog_ERR(TAG, "expected uglobalser channel id %" PRIu16 ", but received %" PRIu16,
@@ -1057,6 +1060,7 @@ BOOL rdp_client_connect_mcs_channel_join_confirm(rdpRdp* rdp, wStream* s)
 
 		if (mcs->messageChannelId != 0)
 		{
+			WLog_INFO(TAG, "xxxx: messageChannelId: %" PRIu16, mcs->messageChannelId);
 			if (!rdp_client_join_channel(rdp, mcs->messageChannelId))
 				return FALSE;
 			allJoined = FALSE;
@@ -1074,6 +1078,7 @@ BOOL rdp_client_connect_mcs_channel_join_confirm(rdpRdp* rdp, wStream* s)
 	}
 	else if ((mcs->messageChannelId != 0) && !mcs->messageChannelJoined)
 	{
+		WLog_INFO(TAG, "xxxx: messageChannelId: %" PRIu16, channelId);
 		if (channelId != mcs->messageChannelId)
 		{
 			WLog_ERR(TAG, "expected messageChannelId=%" PRIu16 ", got %" PRIu16,
