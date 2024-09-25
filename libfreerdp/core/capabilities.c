@@ -4494,7 +4494,7 @@ BOOL rdp_recv_get_active_header(rdpRdp* rdp, wStream* s, UINT16* pChannelId, UIN
 				return FALSE;
 		}
 		WLog_INFO(TAG, "xxxx: securityFlags=0x%04" PRIx16 ", length=%" PRIu16, securityFlags,
-		          *length)
+		          *length);
 	}
 
 	if (*pChannelId != MCS_GLOBAL_CHANNEL_ID)
