@@ -1264,6 +1264,7 @@ state_run_t rdp_client_connect_demand_active(rdpRdp* rdp, wStream* s)
 	if (freerdp_shall_disconnect_context(rdp->context))
 		return STATE_RUN_QUIT_SESSION;
 
+	WLog_INFO(TAG, "xxxxx: call rdp_read_share_control_header");
 	if (!rdp_read_share_control_header(rdp, s, NULL, NULL, &pduType, &pduSource))
 		return STATE_RUN_FAILED;
 

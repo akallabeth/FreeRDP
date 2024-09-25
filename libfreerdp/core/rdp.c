@@ -1654,6 +1654,7 @@ static state_run_t rdp_recv_tpkt_pdu(rdpRdp* rdp, wStream* s)
 			size_t diff = 0;
 			UINT16 remain = 0;
 
+			WLog_INFO(TAG, "xxxxx: call rdp_read_share_control_header");
 			if (!rdp_read_share_control_header(rdp, s, NULL, &remain, &pduType, &pduSource))
 				return STATE_RUN_FAILED;
 
