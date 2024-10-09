@@ -15,7 +15,7 @@ This defaults to
 The location relative to
 \fIXDG_CONFIG_HOME\fR
 is
-\fI$XDG_CONFIG_HOME/@VENDOR@/@PRODUCT@/sdl\-freerdp\&.json\fR
+\fI$XDG_CONFIG_HOME/@VENDOR_PRODUCT@/sdl\-freerdp\&.json\fR
 .br
 
 The configuration is stored in JSON format
@@ -38,7 +38,7 @@ Default
 An array of
 \fISDL_Keymod\fR
 strings as defined at
-\fIhttps://wiki\&.libsdl\&.org/SDL2/SDL_Keymod\fR
+\fI@SDL_WIKI_BASE_URL@/SDL_Keymod\fR
 .RE
 .RE
 .PP
@@ -54,7 +54,7 @@ Default
 .br
 
 A string as defined at
-\fIhttps://wiki\&.libsdl\&.org/SDL2/SDLScancodeLookup\fR
+\fI@SDL_WIKI_BASE_URL@/SDLScancodeLookup\fR
 .RE
 .RE
 .PP
@@ -70,7 +70,7 @@ Default
 .br
 
 A string as defined at
-\fIhttps://wiki\&.libsdl\&.org/SDL2/SDLScancodeLookup\fR
+\fI@SDL_WIKI_BASE_URL@/SDLScancodeLookup\fR
 .RE
 .RE
 .PP
@@ -86,7 +86,7 @@ Default
 .br
 
 A string as defined at
-\fIhttps://wiki\&.libsdl\&.org/SDL2/SDLScancodeLookup\fR
+\fI@SDL_WIKI_BASE_URL@/SDLScancodeLookup\fR
 .RE
 .RE
 .PP
@@ -102,7 +102,7 @@ Default
 .br
 
 A string as defined at
-\fIhttps://wiki\&.libsdl\&.org/SDL2/SDLScancodeLookup\fR
+\fI@SDL_WIKI_BASE_URL@/SDLScancodeLookup\fR
 .RE
 .RE
 .PP
@@ -118,7 +118,7 @@ Default
 .br
 
 A string as defined at
-\fIhttps://wiki\&.libsdl\&.org/SDL2/SDLScancodeLookup\fR
+\fI@SDL_WIKI_BASE_URL@/SDLScancodeLookup\fR
 .RE
 .RE
 .RE

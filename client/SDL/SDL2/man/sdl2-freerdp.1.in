@@ -1,4 +1,4 @@
-.TH "@MANPAGE_NAME@" "1" "10/09/2024" "freerdp" "@MANPAGE_NAME@"
+.TH "@MANPAGE_NAME@" "1" "@TODAY@" "freerdp" "@MANPAGE_NAME@"
 .ie \n(.g .ds Aq \(aq
 .el       .ds Aq '
 .nh
