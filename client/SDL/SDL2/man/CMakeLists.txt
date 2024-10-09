@@ -1,5 +1,6 @@
 set(DEPS
 	../../common/man/sdl-freerdp-config.1
+        freerdp-argument.1
 	../../common/man/sdl-freerdp-examples.1
 	../../../common/man/freerdp-global-envvar.1
 	../../../common/man/freerdp-global-config.1

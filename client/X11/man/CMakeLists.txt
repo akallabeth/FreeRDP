@@ -1,6 +1,6 @@
 set(DEPS
-    # TODO: arguments, generated
     xfreerdp-shortcuts.1
+    freerdp-argument.1
     ../../common/man/freerdp-global-envvar.1
     ../../common/man/freerdp-global-config.1
     xfreerdp-examples.1

@@ -112,7 +112,14 @@ static LPSTR tr_esc_str(LPCSTR arg, bool format)
 int main(int argc, char* argv[])
 {
 	size_t elements = sizeof(global_cmd_args) / sizeof(global_cmd_args[0]);
-	const char* fname = "freerdp-argument.1.xml";
+
+	if (argc != 2)
+	{
+		(void)fprintf(stderr, "Usage: %s <output file name>\n", argv[0]);
+		return -1;
+	}
+
+	const char* fname = argv[1];
 
 	(void)fprintf(stdout, "Generating docbook file '%s'\n", fname);
 	FILE* fp = fopen(fname, "w");
@@ -123,9 +130,7 @@ int main(int argc, char* argv[])
 	}
 
 	/* The tag used as header in the manpage */
-	(void)fprintf(fp, "<refsect1>\n");
-	(void)fprintf(fp, "\t<title>Options</title>\n");
-	(void)fprintf(fp, "\t\t<variablelist>\n");
+	(void)fprintf(fp, ".SH \"OPTIONS\">\n");
 
 	/* Iterate over argument struct and write data to docbook 4.5
 	 * compatible XML */
@@ -142,31 +147,29 @@ int main(int argc, char* argv[])
 		char* alias = tr_esc_str(arg->Alias, FALSE);
 		char* format = tr_esc_str(arg->Format, TRUE);
 		char* text = tr_esc_str(arg->Text, FALSE);
-		(void)fprintf(fp, "\t\t\t<varlistentry>\n");
 
 		do
 		{
-			(void)fprintf(fp, "\t\t\t\t<term><option>");
+			(void)fprintf(fp, ".PP\n");
 
+			(void)fprintf(fp, "\\fB");
 			if (arg->Flags == COMMAND_LINE_VALUE_BOOL)
 				(void)fprintf(fp, "%s", arg->Default ? "-" : "+");
 			else
 				(void)fprintf(fp, "/");
 
-			(void)fprintf(fp, "%s</option>", name);
+			(void)fprintf(fp, "%s\\fR", name);
 
 			if (format)
 			{
 				if (arg->Flags == COMMAND_LINE_VALUE_OPTIONAL)
 					(void)fprintf(fp, "[");
 
-				(void)fprintf(fp, ":%s", format);
+				(void)fprintf(fp, ":\\fI%s\\fR", format);
 
 				if (arg->Flags == COMMAND_LINE_VALUE_OPTIONAL)
 					(void)fprintf(fp, "]");
 			}
-
-			(void)fprintf(fp, "</term>\n");
 
 			if (alias == name)
 				break;
@@ -177,9 +180,7 @@ int main(int argc, char* argv[])
 
 		if (text)
 		{
-			(void)fprintf(fp, "\t\t\t\t<listitem>\n");
-			(void)fprintf(fp, "\t\t\t\t\t<para>");
-
+			(void)fprintf(fp, ".RS 4\n");
 			if (text)
 				(void)fprintf(fp, "%s", text);
 
@@ -193,18 +194,16 @@ int main(int argc, char* argv[])
 				free(value);
 			}
 
-			(void)fprintf(fp, "</para>\n");
-			(void)fprintf(fp, "\t\t\t\t</listitem>\n");
+			(void)fprintf(fp, "\n");
 		}
 
-		(void)fprintf(fp, "\t\t\t</varlistentry>\n");
+		(void)fprintf(fp, ".RE\n");
+
 		free(name);
 		free(format);
 		free(text);
 	}
 
-	(void)fprintf(fp, "\t\t</variablelist>\n");
-	(void)fprintf(fp, "\t</refsect1>\n");
 	(void)fclose(fp);
 
 	(void)fprintf(stdout, "successfully generated '%s'\n", fname);

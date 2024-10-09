@@ -27,16 +27,16 @@ function(generate_and_install_freerdp_man_from_xml target section dependencies)
 		set(manpage "${name_base}.${section}")
 
 		# We need the variable ${MAN_TODAY} to contain the current date in ISO
-                # format to replace it in the cleaning_configure_file step.
+		# format to replace it in the cleaning_configure_file step.
 		include(today)
 
 		TODAY(MAN_TODAY)
 
-                cleaning_configure_file(${template}.in ${manpage}.tmp @ONLY IMMEDIATE)
+		cleaning_configure_file(${template}.in ${manpage}.tmp @ONLY IMMEDIATE)
 
-                # write header (aka name of the manpage), truncate existing
-                file(READ ${CMAKE_CURRENT_BINARY_DIR}/${manpage}.tmp CONTENTS)
-                file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${manpage} "${CONTENTS}")
+		# write header (aka name of the manpage), truncate existing
+		file(READ ${CMAKE_CURRENT_BINARY_DIR}/${manpage}.tmp CONTENTS)
+		file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${manpage} "${CONTENTS}")
 
 		foreach(DEP IN LISTS dependencies)
 			get_filename_component(DNAME "${DEP}" NAME)
@@ -45,13 +45,13 @@ function(generate_and_install_freerdp_man_from_xml target section dependencies)
 
 			if (EXISTS ${SRC})
 				message("generating ${DST} from ${SRC}")
-                                cleaning_configure_file(${SRC} ${DST} @ONLY IMMEDIATE)
+				cleaning_configure_file(${SRC} ${DST} @ONLY IMMEDIATE)
 			else()
 				message("using ${DST} from ${SRC}")
-                        endif()
+			endif()
 
-                        file(READ ${DST} CONTENTS)
-                        file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${manpage} "${CONTENTS}")
+			file(READ ${DST} CONTENTS)
+			file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${manpage} "${CONTENTS}")
 		endforeach()
 
 		install_freerdp_man(${CMAKE_CURRENT_BINARY_DIR}/${manpage} ${section})
