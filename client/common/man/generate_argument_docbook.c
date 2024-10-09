@@ -59,9 +59,9 @@ static LPSTR tr_esc_str(LPCSTR arg, bool format)
 		{
 			case '<':
 				if (format)
-					str = "<replaceable>";
+					str = "\\fI";
 				else
-					str = "&lt;";
+					str = "<";
 
 				if (!append(&tmp, &ds, str))
 					exit(-3);
@@ -69,33 +69,17 @@ static LPSTR tr_esc_str(LPCSTR arg, bool format)
 
 			case '>':
 				if (format)
-					str = "</replaceable>";
+					str = "\\fR";
 				else
-					str = "&gt;";
+					str = ">";
 
 				if (!append(&tmp, &ds, str))
 					exit(-4);
 				break;
 
-			case '\'':
-				if (!append(&tmp, &ds, "&apos;"))
-					exit(-5);
-				break;
-
-			case '"':
-				if (!append(&tmp, &ds, "&quot;"))
-					exit(-6);
-				break;
-
 			case '&':
-				if (!append(&tmp, &ds, "&amp;"))
+				if (!append(&tmp, &ds, "\\&."))
 					exit(-6);
-				break;
-
-			case '\r':
-			case '\n':
-				if (!append(&tmp, &ds, "<sbr/>"))
-					exit(-7);
 				break;
 
 			default:
@@ -130,7 +114,7 @@ int main(int argc, char* argv[])
 	}
 
 	/* The tag used as header in the manpage */
-	(void)fprintf(fp, ".SH \"OPTIONS\">\n");
+	(void)fprintf(fp, ".SH \"OPTIONS\"\n");
 
 	/* Iterate over argument struct and write data to docbook 4.5
 	 * compatible XML */
@@ -148,10 +132,9 @@ int main(int argc, char* argv[])
 		char* format = tr_esc_str(arg->Format, TRUE);
 		char* text = tr_esc_str(arg->Text, FALSE);
 
+		(void)fprintf(fp, ".PP\n");
 		do
 		{
-			(void)fprintf(fp, ".PP\n");
-
 			(void)fprintf(fp, "\\fB");
 			if (arg->Flags == COMMAND_LINE_VALUE_BOOL)
 				(void)fprintf(fp, "%s", arg->Default ? "-" : "+");
@@ -165,7 +148,7 @@ int main(int argc, char* argv[])
 				if (arg->Flags == COMMAND_LINE_VALUE_OPTIONAL)
 					(void)fprintf(fp, "[");
 
-				(void)fprintf(fp, ":\\fI%s\\fR", format);
+				(void)fprintf(fp, ":%s", format);
 
 				if (arg->Flags == COMMAND_LINE_VALUE_OPTIONAL)
 					(void)fprintf(fp, "]");
@@ -177,6 +160,7 @@ int main(int argc, char* argv[])
 			free(name);
 			name = alias;
 		} while (alias);
+		(void)fprintf(fp, "\n");
 
 		if (text)
 		{
