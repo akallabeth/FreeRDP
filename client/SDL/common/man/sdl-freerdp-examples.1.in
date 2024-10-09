@@ -1,6 +1,6 @@
 .SH "EXAMPLES"
 .PP
-\fBsdl\-freerdp connection\&.rdp /p:Pwd123! /f\fR
+\fB@MANPAGE_NAME@ connection\&.rdp /p:Pwd123! /f\fR
 .RS 4
 Connect in fullscreen mode using a stored configuration
 \fIconnection\&.rdp\fR
@@ -8,7 +8,7 @@ and the password
 \fIPwd123!\fR
 .RE
 .PP
-\fBsdl\-freerdp /u:USER /size:50%h /v:rdp\&.contoso\&.com\fR
+\fB@MANPAGE_NAME@ /u:USER /size:50%h /v:rdp\&.contoso\&.com\fR
 .RS 4
 Connect to host
 \fIrdp\&.contoso\&.com\fR
@@ -18,7 +18,7 @@ and a size of
 \fI50 percent of the height\fR\&. If width (w) is set instead of height (h) like /size:50%w\&. 50 percent of the width is used\&.
 .RE
 .PP
-\fBsdl\-freerdp /u:CONTOSO\e\eJohnDoe /p:Pwd123! /v:rdp\&.contoso\&.com\fR
+\fB@MANPAGE_NAME@ /u:CONTOSO\e\eJohnDoe /p:Pwd123! /v:rdp\&.contoso\&.com\fR
 .RS 4
 Connect to host
 \fIrdp\&.contoso\&.com\fR
@@ -28,7 +28,7 @@ and password
 \fIPwd123!\fR
 .RE
 .PP
-\fBsdl\-freerdp /u:JohnDoe /p:Pwd123! /w:1366 /h:768 /v:192\&.168\&.1\&.100:4489\fR
+\fB@MANPAGE_NAME@ /u:JohnDoe /p:Pwd123! /w:1366 /h:768 /v:192\&.168\&.1\&.100:4489\fR
 .RS 4
 Connect to host
 \fI192\&.168\&.1\&.100\fR
@@ -42,7 +42,7 @@ and the height to
 \fI768\fR
 .RE
 .PP
-\fBsdl\-freerdp /u:JohnDoe /p:Pwd123! /vmconnect:C824F53E\-95D2\-46C6\-9A18\-23A5BB403532 /v:192\&.168\&.1\&.100\fR
+\fB@MANPAGE_NAME@ /u:JohnDoe /p:Pwd123! /vmconnect:C824F53E\-95D2\-46C6\-9A18\-23A5BB403532 /v:192\&.168\&.1\&.100\fR
 .RS 4
 Establish a connection to host
 \fI192\&.168\&.1\&.100\fR

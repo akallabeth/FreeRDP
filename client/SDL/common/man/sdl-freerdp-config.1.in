@@ -15,7 +15,7 @@ This defaults to
 The location relative to
 \fIXDG_CONFIG_HOME\fR
 is
-\fI$XDG_CONFIG_HOME/freerdp/sdl\-freerdp\&.json\fR
+\fI$XDG_CONFIG_HOME/@VENDOR@/@PRODUCT@/sdl\-freerdp\&.json\fR
 .br
 
 The configuration is stored in JSON format
