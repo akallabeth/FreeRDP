@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
 
 	const char* fname = argv[1];
 
-	(void)fprintf(stdout, "Generating docbook file '%s'\n", fname);
+	(void)fprintf(stdout, "Generating manpage file '%s'\n", fname);
 	FILE* fp = fopen(fname, "w");
 	if (NULL == fp)
 	{
@@ -134,8 +134,6 @@ int main(int argc, char* argv[])
 	/* The tag used as header in the manpage */
 	(void)fprintf(fp, ".SH \"OPTIONS\"\n");
 
-	/* Iterate over argument struct and write data to docbook 4.5
-	 * compatible XML */
 	if (elements < 2)
 	{
 		(void)fprintf(stderr, "The argument array 'args' is empty, writing an empty file.\n");
