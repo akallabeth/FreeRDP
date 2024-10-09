@@ -24,7 +24,7 @@ endfunction()
 
 function(generate_and_install_freerdp_man_from_xml target section dependencies)
 	if(WITH_MANPAGES)
-		get_target_property(name_base ${target} OUTPUT_NAME)
+                get_target_property(name_base "${target}" OUTPUT_NAME)
 		set(template "${target}.${section}")
 		set(MANPAGE_NAME "${name_base}")
 		set(manpage "${name_base}.${section}")
@@ -35,13 +35,11 @@ function(generate_and_install_freerdp_man_from_xml target section dependencies)
 
 		TODAY(MAN_TODAY)
 
-                message("xxxxxxxxx1 ${MAN_TODAY}")
-                message("xxxxxxxxx2 ${template}")
-                message("xxxxxxxxx3 ${MANPAGE_NAME}")
-                message("xxxxxxxxx4 ${manpage}")
+                set(GENERATE_COMMAND -Dtemplate=\"${template}\" -DMANPAGE_NAME=\"${MANPAGE_NAME}\" -Dmanpage=\"${manpage}\" -DMAN_TODAY=\"${MAN_TODAY}\" -DCURRENT_SOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\" -DCURRENT_BINARY_DIR=\"${CMAKE_CURRENT_BINARY_DIR}\" -Dtarget="${target}" -Dsection="${section}" -Ddependencies="${dependencies}" -P \"${INSTALL_FREERDP_MAN_SCRIPT_DIR}/GenerateManpages.cmake\")
 
                 add_custom_target(${manpage}.target ALL
-                    COMMAND ${CMAKE_COMMAND} -Dtemplate=${template} -DMANPAGE_NAME=${MAPAGE_NAME} -Dmanpage=${manpate} -DMAN_TODAY=${MAN_TODAY} -DURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DCURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR} -P "${INSTALL_FREERDP_MAN_SCRIPT_DIR}/GenerateManpages.cmake"
+                    COMMAND ${CMAKE_COMMAND} ${GENERATE_COMMAND}
+                    DEPENDS ${MAN_OPTIONS_FILE}
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                 )
 
