@@ -1,0 +1,15 @@
+.TH "SDL\-FREERDP" "1" "10/09/2024" "freerdp" "sdl\-freerdp"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.nh
+.ad l
+.SH "NAME"
+sdl-freerdp \- FreeRDP SDL client
+.SH "SYNOPSIS"
+.PP
+\fBsdl\-freerdp\fR
+[file] [options] [/v:server[:port]]
+.SH "DESCRIPTION"
+.PP
+\fBsdl\-freerdp\fR
+is an SDL Remote Desktop Protocol (RDP) client which is part of the FreeRDP project\&. An RDP server is built\-in to many editions of Windows\&. Alternative servers included ogon, gnome\-remote\-desktop, xrdp and VRDP (VirtualBox)\&.
