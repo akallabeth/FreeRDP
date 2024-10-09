@@ -39,7 +39,7 @@ function(generate_and_install_freerdp_man_from_xml target section dependencies)
 
                 add_custom_target(${manpage}.target ALL
                     COMMAND ${CMAKE_COMMAND} ${GENERATE_COMMAND}
-                    DEPENDS ${MAN_OPTIONS_FILE}
+                    DEPENDS generate_argument_manpage.target
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                 )
 

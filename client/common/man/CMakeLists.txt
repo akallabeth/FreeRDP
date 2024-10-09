@@ -9,7 +9,7 @@ else()
 		"${CMAKE_BINARY_DIR}/GenerateArgumentManpageConfig.cmake")
 endif()
 
-set(MAN_OPTIONS_FILE "${CMAKE_CURRENT_BINARY_DIR}/freerdp-global-options.1" CACHE INTERNAL "cached value")
+set(MAN_OPTIONS_FILE "${CMAKE_CURRENT_BINARY_DIR}/freerdp-global-options.1")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${MAN_OPTIONS_FILE})
 
 add_custom_command(
@@ -19,3 +19,7 @@ add_custom_command(
 	DEPENDS
 		generate_argument_manpage
 )
+add_custom_target(generate_argument_manpage.target
+                    DEPENDS ${MAN_OPTIONS_FILE}
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                )
