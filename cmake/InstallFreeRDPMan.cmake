@@ -1,5 +1,8 @@
+include(today)
 include(GNUInstallDirs)
 include(CleaningConfigureFile)
+
+get_filename_component(INSTALL_FREERDP_MAN_SCRIPT_DIR "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
 
 function(install_freerdp_man manpage section)
 	if(WITH_MANPAGES)
@@ -32,27 +35,15 @@ function(generate_and_install_freerdp_man_from_xml target section dependencies)
 
 		TODAY(MAN_TODAY)
 
-		cleaning_configure_file(${template}.in ${manpage}.tmp @ONLY IMMEDIATE)
+                message("xxxxxxxxx1 ${MAN_TODAY}")
+                message("xxxxxxxxx2 ${template}")
+                message("xxxxxxxxx3 ${MANPAGE_NAME}")
+                message("xxxxxxxxx4 ${manpage}")
 
-		# write header (aka name of the manpage), truncate existing
-		file(READ ${CMAKE_CURRENT_BINARY_DIR}/${manpage}.tmp CONTENTS)
-		file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${manpage} "${CONTENTS}")
-
-		foreach(DEP IN LISTS dependencies)
-			get_filename_component(DNAME "${DEP}" NAME)
-			set(SRC ${CMAKE_CURRENT_SOURCE_DIR}/${DEP}.in)
-			set(DST ${CMAKE_CURRENT_BINARY_DIR}/${DNAME})
-
-			if (EXISTS ${SRC})
-				message("generating ${DST} from ${SRC}")
-				cleaning_configure_file(${SRC} ${DST} @ONLY IMMEDIATE)
-			else()
-				message("using ${DST} from ${SRC}")
-			endif()
-
-			file(READ ${DST} CONTENTS)
-			file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${manpage} "${CONTENTS}")
-		endforeach()
+                add_custom_target(${manpage}.target ALL
+                    COMMAND ${CMAKE_COMMAND} -Dtemplate=${template} -DMANPAGE_NAME=${MAPAGE_NAME} -Dmanpage=${manpate} -DMAN_TODAY=${MAN_TODAY} -DURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DCURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR} -P "${INSTALL_FREERDP_MAN_SCRIPT_DIR}/GenerateManpages.cmake"
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                )
 
 		install_freerdp_man(${CMAKE_CURRENT_BINARY_DIR}/${manpage} ${section})
 	endif()
