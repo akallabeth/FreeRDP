@@ -57,6 +57,12 @@ static LPSTR tr_esc_str(LPCSTR arg, bool format)
 		char data[2] = { 0 };
 		switch (arg[x])
 		{
+			case '-':
+				str = "\\-";
+				if (!append(&tmp, &ds, str))
+					exit(-3);
+				break;
+
 			case '<':
 				if (format)
 					str = "\\fI";
@@ -77,9 +83,21 @@ static LPSTR tr_esc_str(LPCSTR arg, bool format)
 					exit(-4);
 				break;
 
-			case '&':
+			case '\'':
+				str = "\\*(Aq";
+				if (!append(&tmp, &ds, str))
+					exit(-4);
+				break;
+
+			case '.':
 				if (!append(&tmp, &ds, "\\&."))
 					exit(-6);
+				break;
+
+			case '\r':
+			case '\n':
+				if (!append(&tmp, &ds, "\n.br\n"))
+					exit(-7);
 				break;
 
 			default:
@@ -133,11 +151,13 @@ int main(int argc, char* argv[])
 		char* text = tr_esc_str(arg->Text, FALSE);
 
 		(void)fprintf(fp, ".PP\n");
+		bool first = true;
 		do
 		{
-			(void)fprintf(fp, "\\fB");
+			(void)fprintf(fp, "%s\\fB", first ? "" : ", ");
+			first = false;
 			if (arg->Flags == COMMAND_LINE_VALUE_BOOL)
-				(void)fprintf(fp, "%s", arg->Default ? "-" : "+");
+				(void)fprintf(fp, "%s", arg->Default ? "\\-" : "+");
 			else
 				(void)fprintf(fp, "/");
 
@@ -165,20 +185,21 @@ int main(int argc, char* argv[])
 		if (text)
 		{
 			(void)fprintf(fp, ".RS 4\n");
-			if (text)
+			const int hasText = text && (strnlen(text, 2) > 0);
+			if (hasText)
 				(void)fprintf(fp, "%s", text);
 
 			if (arg->Flags & COMMAND_LINE_VALUE_BOOL &&
 			    (!arg->Default || arg->Default == BoolValueTrue))
-				(void)fprintf(fp, " (default:%s)", arg->Default ? "on" : "off");
+				(void)fprintf(fp, " (default:%s)\n", arg->Default ? "on" : "off");
 			else if (arg->Default)
 			{
 				char* value = tr_esc_str(arg->Default, FALSE);
-				(void)fprintf(fp, " (default:%s)", value);
+				(void)fprintf(fp, " (default:%s)\n", value);
 				free(value);
 			}
-
-			(void)fprintf(fp, "\n");
+			else if (hasText)
+				(void)fprintf(fp, "\n");
 		}
 
 		(void)fprintf(fp, ".RE\n");
