@@ -219,12 +219,15 @@ static const char* freerdp_passphrase_read_askpass(const char* prompt, char* buf
 {
 	char command[4096] = { 0 };
 
+	if (bufsiz > INT32_MAX)
+		return NULL;
+
 	(void)sprintf_s(command, sizeof(command), "%s 'FreeRDP authentication\n%s'", askpass_env,
 	                prompt);
 	FILE* askproc = popen(command, "r");
 	if (!askproc)
 		return NULL;
-	if (fgets(buf, bufsiz, askproc) != NULL)
+	if (fgets(buf, (int)bufsiz, askproc) != NULL)
 		buf[strcspn(buf, "\r\n")] = '\0';
 	else
 		buf = NULL;

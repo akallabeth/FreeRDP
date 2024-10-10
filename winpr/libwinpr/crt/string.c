@@ -578,7 +578,7 @@ LPSTR CharLowerA(LPSTR lpsz)
 
 LPWSTR CharLowerW(LPWSTR lpsz)
 {
-	CharLowerBuffW(lpsz, _wcslen(lpsz));
+	CharLowerBuffW(lpsz, (UINT32)_wcsnlen(lpsz, UINT32_MAX));
 	return lpsz;
 }
 

@@ -268,8 +268,11 @@ static BOOL test_peer_draw_background(freerdp_peer* client)
 	{
 		WLog_DBG(TAG, "Using RemoteFX codec");
 		rfx_context_set_pixel_format(context->rfx_context, colorFormat);
+
+		const size_t width = bpp * rect.width;
+		WINPR_ASSERT(width <= UINT32_MAX);
 		if (!rfx_compose_message(context->rfx_context, s, &rect, 1, rgb_data, rect.width,
-		                         rect.height, rect.width * bpp))
+		                         rect.height, (UINT32)width))
 		{
 			goto out;
 		}
@@ -284,8 +287,10 @@ static BOOL test_peer_draw_background(freerdp_peer* client)
 	{
 		WLog_DBG(TAG, "Using NSCodec");
 		nsc_context_set_parameters(context->nsc_context, NSC_COLOR_FORMAT, colorFormat);
-		nsc_compose_message(context->nsc_context, s, rgb_data, rect.width, rect.height,
-		                    rect.width * bpp);
+
+		const size_t width = bpp * rect.width;
+		WINPR_ASSERT(width <= UINT32_MAX);
+		nsc_compose_message(context->nsc_context, s, rgb_data, rect.width, rect.height, width);
 		const UINT32 NSCodecId = freerdp_settings_get_uint32(settings, FreeRDP_NSCodecId);
 		WINPR_ASSERT(NSCodecId <= UINT16_MAX);
 		cmd.bmp.codecID = (UINT16)NSCodecId;
@@ -1043,6 +1048,7 @@ static int hook_peer_write_pdu(rdpTransport* transport, wStream* s)
 			if ((last_ts > 0) && (ts > last_ts))
 			{
 				UINT64 diff = ts - last_ts;
+				static_assert(diff <= UINT32_MAX);
 				Sleep(diff);
 			}
 			last_ts = ts;

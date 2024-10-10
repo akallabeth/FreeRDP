@@ -20,6 +20,7 @@
  */
 
 #include <stdlib.h>
+#include <stdint.h>
 
 #include <winpr/config.h>
 
@@ -276,8 +277,9 @@ static void* winpr_bitmap_write_buffer(const BYTE* data, size_t size, UINT32 wid
 	const size_t bpp_stride = 1ull * width * (bpp / 8);
 	wStream* s = Stream_New(NULL, 1024);
 
+	WINPR_ASSERT(bpp_stride <= UINT32_MAX);
 	if (stride == 0)
-		stride = bpp_stride;
+		stride = (UINT32)bpp_stride;
 
 	BYTE* bmp_header = winpr_bitmap_construct_header(width, height, bpp);
 	if (!bmp_header)
@@ -297,7 +299,10 @@ static void* winpr_bitmap_write_buffer(const BYTE* data, size_t size, UINT32 wid
 	}
 
 	result = Stream_Buffer(s);
-	*pSize = Stream_GetPosition(s);
+	const size_t pos = Stream_GetPosition(s);
+	WINPR_ASSERT(pos <= UINT32_MAX);
+
+	*pSize = (UINT32)pos;
 fail:
 	Stream_Free(s, result == NULL);
 	free(bmp_header);
@@ -322,7 +327,13 @@ int winpr_bitmap_write_ex(const char* filename, const BYTE* data, size_t stride,
 
 	UINT32 bmpsize = 0;
 	const size_t size = stride * 1ull * height;
-	void* bmpdata = winpr_bitmap_write_buffer(data, size, width, height, stride, bpp, &bmpsize);
+
+	WINPR_ASSERT(width <= UINT32_MAX);
+	WINPR_ASSERT(height <= UINT32_MAX);
+	WINPR_ASSERT(stride <= UINT32_MAX);
+	WINPR_ASSERT(bpp <= UINT32_MAX);
+	void* bmpdata = winpr_bitmap_write_buffer(data, size, (UINT32)width, (UINT32)height,
+	                                          (UINT32)stride, (UINT32)bpp, &bmpsize);
 	if (!bmpdata)
 		goto fail;
 
@@ -444,7 +455,7 @@ static int winpr_image_bitmap_read_buffer(wImage* image, const BYTE* buffer, siz
 
 	image->bitsPerPixel = bi.biBitCount;
 	image->bytesPerPixel = (image->bitsPerPixel / 8);
-	const size_t bpp = (bi.biBitCount + 7) / 8;
+	const UINT32 bpp = (bi.biBitCount + 7) / 8;
 	image->scanline = bi.biWidth * bpp;
 	const size_t bmpsize = 1ull * image->scanline * image->height;
 	if (bmpsize != bi.biSizeImage)

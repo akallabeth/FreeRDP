@@ -483,7 +483,7 @@ static SECURITY_STATUS collect_keys(NCryptP11ProviderHandle* provider, P11EnumKe
 
 static BOOL convertKeyType(CK_KEY_TYPE k, LPWSTR dest, DWORD len, DWORD* outlen)
 {
-	DWORD retLen = 0;
+	size_t retLen = 0;
 	const WCHAR* r = NULL;
 
 #define ALGO_CASE(V, S) \
@@ -522,8 +522,9 @@ static BOOL convertKeyType(CK_KEY_TYPE k, LPWSTR dest, DWORD len, DWORD* outlen)
 #undef ALGO_CASE
 
 	retLen = _wcslen(r);
+	WINPR_ASSERT(retLen <= UINT32_MAX);
 	if (outlen)
-		*outlen = retLen;
+		*outlen = (UINT32)retLen;
 
 	if (!r)
 	{

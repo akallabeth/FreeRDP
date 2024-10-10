@@ -408,12 +408,12 @@ static BOOL pf_client_load_channels(freerdp* instance)
 		{
 			CHANNEL_DEF* channels = (CHANNEL_DEF*)freerdp_settings_get_pointer_array_writable(
 			    settings, FreeRDP_ChannelDefArray, 0);
-			size_t size = freerdp_settings_get_uint32(settings, FreeRDP_ChannelCount);
+			UINT32 size = freerdp_settings_get_uint32(settings, FreeRDP_ChannelCount);
 			UINT32 id = MCS_GLOBAL_CHANNEL_ID + 1;
 
 			WINPR_ASSERT(channels || (size == 0));
 
-			size_t x = 0;
+			UINT32 x = 0;
 			for (; x < size;)
 			{
 				CHANNEL_DEF* cur = &channels[x];
@@ -427,7 +427,7 @@ static BOOL pf_client_load_channels(freerdp* instance)
 				                           FILTER_TYPE_CLIENT_PASSTHROUGH_CHANNEL_CREATE, pc->pdata,
 				                           &dev))
 				{
-					const size_t s = size - MIN(size, x + 1);
+					const UINT32 s = size - MIN(size, x + 1);
 					memmove(cur, &cur[1], sizeof(CHANNEL_DEF) * s);
 					size--;
 				}

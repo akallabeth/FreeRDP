@@ -367,7 +367,7 @@ static PfChannelResult DynvcTrackerPeekFn(ChannelStateTracker* tracker, BOOL fir
 					return PF_CHANNEL_RESULT_ERROR;
 
 				wStream* currentPacket = channelTracker_getCurrentPacket(tracker);
-				dev.channel_id = dynChannelId;
+				dev.channel_id = (UINT16)dynChannelId;
 				dev.channel_name = name;
 				dev.data = Stream_Buffer(s);
 				dev.data_len = Stream_GetPosition(currentPacket);

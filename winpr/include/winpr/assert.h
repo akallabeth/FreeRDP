@@ -22,6 +22,8 @@
 #define WINPR_ASSERT_H
 
 #include <stdlib.h>
+#include <assert.h>
+
 #include <winpr/winpr.h>
 #include <winpr/wtypes.h>
 #include <winpr/wlog.h>

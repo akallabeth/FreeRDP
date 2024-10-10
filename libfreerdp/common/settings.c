@@ -1297,6 +1297,8 @@ BOOL freerdp_settings_set_pointer_len_(rdpSettings* settings, FreeRDP_Settings_K
 
 	if (len == 0)
 		return TRUE;
+	if (len > UINT32_MAX)
+		return FALSE;
 	copy = calloc(len, size);
 	if (!copy)
 		return FALSE;
@@ -1313,7 +1315,7 @@ BOOL freerdp_settings_set_pointer_len_(rdpSettings* settings, FreeRDP_Settings_K
 	//  NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
 	if (lenId < 0)
 		return TRUE;
-	return freerdp_settings_set_uint32(settings, (FreeRDP_Settings_Keys_UInt32)lenId, len);
+	return freerdp_settings_set_uint32(settings, (FreeRDP_Settings_Keys_UInt32)lenId, (UINT32)len);
 }
 
 const void* freerdp_settings_get_pointer(const rdpSettings* settings,

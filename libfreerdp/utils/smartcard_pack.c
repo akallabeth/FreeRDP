@@ -167,13 +167,13 @@ static LONG smartcard_ndr_read(wStream* s, BYTE** data, size_t min, size_t eleme
 	if (!Stream_CheckAndLogRequiredLengthOfSize(TAG, s, len, elementSize))
 		return STATUS_BUFFER_TOO_SMALL;
 
-	len *= elementSize;
-
-	r = calloc(len + 1, sizeof(CHAR));
+	r = calloc(len + 1, elementSize);
 	if (!r)
 		return SCARD_E_NO_MEMORY;
-	Stream_Read(s, r, len);
-	smartcard_unpack_read_size_align(s, len, 4);
+
+	const size_t blen = len * elementSize;
+	Stream_Read(s, r, blen);
+	smartcard_unpack_read_size_align(s, blen, 4);
 	*data = r;
 	return STATUS_SUCCESS;
 }

@@ -17,8 +17,10 @@
  * limitations under the License.
  */
 
-#include <winpr/config.h>
+#include <limits.h>
 
+#include <winpr/config.h>
+#include <winpr/assert.h>
 #include <winpr/shell.h>
 
 /**
@@ -81,7 +83,8 @@ BOOL GetUserProfileDirectoryA(HANDLE hToken, LPSTR lpProfileDir, LPDWORD lpcchSi
 
 	if (!lpProfileDir || (*lpcchSize < cchDirSize))
 	{
-		*lpcchSize = cchDirSize;
+		WINPR_ASSERT(cchDirSize <= UINT32_MAX);
+		*lpcchSize = (DWORD)cchDirSize;
 		SetLastError(ERROR_INSUFFICIENT_BUFFER);
 		free(buf);
 		return FALSE;
@@ -89,7 +92,8 @@ BOOL GetUserProfileDirectoryA(HANDLE hToken, LPSTR lpProfileDir, LPDWORD lpcchSi
 
 	ZeroMemory(lpProfileDir, *lpcchSize);
 	(void)sprintf_s(lpProfileDir, *lpcchSize, "%s", pw->pw_dir);
-	*lpcchSize = cchDirSize;
+	WINPR_ASSERT(cchDirSize <= UINT32_MAX);
+	*lpcchSize = (DWORD)cchDirSize;
 	free(buf);
 	return TRUE;
 }

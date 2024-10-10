@@ -294,8 +294,7 @@ BOOL CommReadFile(HANDLE hDevice, LPVOID lpBuffer, DWORD nNumberOfBytesToRead,
 
 	if (FD_ISSET(pComm->fd_read, &read_set))
 	{
-		ssize_t nbRead = 0;
-		nbRead = read(pComm->fd_read, lpBuffer, nNumberOfBytesToRead);
+		const SSIZE_T nbRead = read(pComm->fd_read, lpBuffer, nNumberOfBytesToRead);
 
 		if (nbRead < 0)
 		{
@@ -335,13 +334,17 @@ BOOL CommReadFile(HANDLE hDevice, LPVOID lpBuffer, DWORD nNumberOfBytesToRead,
 			SetLastError(ERROR_TIMEOUT);
 			goto return_false;
 		}
+		else if (nbRead > UINT32_MAX)
+		{
+			goto return_false;
+		}
 
-		*lpNumberOfBytesRead = nbRead;
+		*lpNumberOfBytesRead = (UINT32)nbRead;
 
 		EnterCriticalSection(&pComm->EventsLock);
 		if (pComm->PendingEvents & SERIAL_EV_WINPR_WAITING)
 		{
-			if (pComm->eventChar != '\0' && memchr(lpBuffer, pComm->eventChar, nbRead))
+			if (pComm->eventChar != '\0' && memchr(lpBuffer, pComm->eventChar, (size_t)nbRead))
 				pComm->PendingEvents |= SERIAL_EV_RXCHAR;
 		}
 		LeaveCriticalSection(&pComm->EventsLock);
