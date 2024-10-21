@@ -1085,8 +1085,6 @@ static SECURITY_STATUS SEC_ENTRY winpr_EnumerateSecurityPackagesW(ULONG* pcPacka
 	SecPkgInfoW* pPackageInfo =
 	    (SecPkgInfoW*)sspi_ContextBufferAlloc(EnumerateSecurityPackagesIndex, size);
 
-	WINPR_ASSERT(cPackages <= UINT32_MAX);
-
 	if (!pPackageInfo)
 		return SEC_E_INSUFFICIENT_MEMORY;
 
@@ -1112,8 +1110,6 @@ static SECURITY_STATUS SEC_ENTRY winpr_EnumerateSecurityPackagesA(ULONG* pcPacka
 	const size_t size = sizeof(SecPkgInfoA) * cPackages;
 	SecPkgInfoA* pPackageInfo =
 	    (SecPkgInfoA*)sspi_ContextBufferAlloc(EnumerateSecurityPackagesIndex, size);
-
-	WINPR_ASSERT(cPackages <= UINT32_MAX);
 
 	if (!pPackageInfo)
 		return SEC_E_INSUFFICIENT_MEMORY;
