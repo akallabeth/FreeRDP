@@ -16,7 +16,6 @@
 # limitations under the License.
 
 cleaning_configure_file(config/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/winpr/version.h)
-cleaning_configure_file(config/wtypes.h.in ${CMAKE_CURRENT_BINARY_DIR}/winpr/wtypes.h)
 cleaning_configure_file(config/build-config.h.in ${CMAKE_CURRENT_BINARY_DIR}/winpr/build-config.h)
 cleaning_configure_file(config/buildflags.h.in ${CMAKE_CURRENT_BINARY_DIR}/winpr/buildflags.h)
 cleaning_configure_file(config/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/winpr/config.h)
