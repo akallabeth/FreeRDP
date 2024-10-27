@@ -814,12 +814,13 @@ extern "C"
 		*_s->pointer++ = WINPR_STREAM_CAST(BYTE, _v);
 	}
 
-#define Stream_Write_UINT8(s, v)                \
-	do                                          \
-	{                                           \
-		WINPR_ASSERT((v) <= UINT8_MAX);         \
-		WINPR_ASSERT((v) >= 0);                 \
-		Stream_Write_UINT8_unchecked((s), (v)); \
+#define Stream_Write_UINT8(s, v)                                             \
+	do                                                                       \
+	{                                                                        \
+		WINPR_ASSERT((v) <= UINT8_MAX);                                      \
+		_Pragma("coverity compliance deviate \"NO_EFFECT\" \"intentional\"") \
+		    WINPR_ASSERT((v) >= 0);                                          \
+		Stream_Write_UINT8_unchecked((s), (v));                              \
 	} while (0)
 
 	/** @brief writes a \b UINT8 to a \b wStream. The stream must be large enough to hold the data.
@@ -864,12 +865,13 @@ extern "C"
 		*_s->pointer++ = ((_v) >> 8) & 0xFF;
 	}
 
-#define Stream_Write_UINT16(s, v)                \
-	do                                           \
-	{                                            \
-		WINPR_ASSERT((v) <= UINT16_MAX);         \
-		WINPR_ASSERT((v) >= 0);                  \
-		Stream_Write_UINT16_unchecked((s), (v)); \
+#define Stream_Write_UINT16(s, v)                                            \
+	do                                                                       \
+	{                                                                        \
+		WINPR_ASSERT((v) <= UINT16_MAX);                                     \
+		_Pragma("coverity compliance deviate \"NO_EFFECT\" \"intentional\"") \
+		    WINPR_ASSERT((v) >= 0);                                          \
+		Stream_Write_UINT16_unchecked((s), (v));                             \
 	} while (0)
 
 	/** @brief writes a \b UINT16 as \b little endian to a \b wStream. The stream must be large
@@ -890,12 +892,13 @@ extern "C"
 		*_s->pointer++ = ((_v) >> 8) & 0xFF;
 	}
 
-#define Stream_Write_UINT16_BE(s, v)                \
-	do                                              \
-	{                                               \
-		WINPR_ASSERT((v) <= UINT16_MAX);            \
-		WINPR_ASSERT((v) >= 0);                     \
-		Stream_Write_UINT16_BE_unchecked((s), (v)); \
+#define Stream_Write_UINT16_BE(s, v)                                         \
+	do                                                                       \
+	{                                                                        \
+		WINPR_ASSERT((v) <= UINT16_MAX);                                     \
+		_Pragma("coverity compliance deviate \"NO_EFFECT\" \"intentional\"") \
+		    WINPR_ASSERT((v) >= 0);                                          \
+		Stream_Write_UINT16_BE_unchecked((s), (v));                          \
 	} while (0)
 
 	/** @brief writes a \b UINT16 as \b big endian to a \b wStream. The stream must be large enough
@@ -916,12 +919,13 @@ extern "C"
 		*_s->pointer++ = (_v) & 0xFF;
 	}
 
-#define Stream_Write_UINT24_BE(s, v)                \
-	do                                              \
-	{                                               \
-		WINPR_ASSERT((v) <= 0xFFFFFF);              \
-		WINPR_ASSERT((v) >= 0);                     \
-		Stream_Write_UINT24_BE_unchecked((s), (v)); \
+#define Stream_Write_UINT24_BE(s, v)                                         \
+	do                                                                       \
+	{                                                                        \
+		WINPR_ASSERT((v) <= 0xFFFFFF);                                       \
+		_Pragma("coverity compliance deviate \"NO_EFFECT\" \"intentional\"") \
+		    WINPR_ASSERT((v) >= 0);                                          \
+		Stream_Write_UINT24_BE_unchecked((s), (v));                          \
 	} while (0)
 
 	/** @brief writes a \b UINT24 as \b big endian to a \b wStream. The stream must be large enough
@@ -972,12 +976,13 @@ extern "C"
 		*_s->pointer++ = ((_v) >> 24) & 0xFF;
 	}
 
-#define Stream_Write_UINT32(s, v)                \
-	do                                           \
-	{                                            \
-		WINPR_ASSERT((v) <= UINT32_MAX);         \
-		WINPR_ASSERT((v) >= 0);                  \
-		Stream_Write_UINT32_unchecked((s), (v)); \
+#define Stream_Write_UINT32(s, v)                                            \
+	do                                                                       \
+	{                                                                        \
+		WINPR_ASSERT((v) <= UINT32_MAX);                                     \
+		_Pragma("coverity compliance deviate \"NO_EFFECT\" \"intentional\"") \
+		    WINPR_ASSERT((v) >= 0);                                          \
+		Stream_Write_UINT32_unchecked((s), (v));                             \
 	} while (0)
 
 	/** @brief writes a \b UINT32 as \b little endian to a \b wStream. The stream must be large
@@ -1000,12 +1005,13 @@ extern "C"
 		*_s->pointer++ = ((_v) >> 24) & 0xFF;
 	}
 
-#define Stream_Write_UINT32_BE(s, v)                \
-	do                                              \
-	{                                               \
-		WINPR_ASSERT((v) <= UINT32_MAX);            \
-		WINPR_ASSERT((v) >= 0);                     \
-		Stream_Write_UINT32_BE_unchecked((s), (v)); \
+#define Stream_Write_UINT32_BE(s, v)                                         \
+	do                                                                       \
+	{                                                                        \
+		WINPR_ASSERT((v) <= UINT32_MAX);                                     \
+		_Pragma("coverity compliance deviate \"NO_EFFECT\" \"intentional\"") \
+		    WINPR_ASSERT((v) >= 0);                                          \
+		Stream_Write_UINT32_BE_unchecked((s), (v));                          \
 	} while (0)
 
 	/** @brief writes a \b UINT32 as \b big endian to a \b wStream. The stream must be large enough
