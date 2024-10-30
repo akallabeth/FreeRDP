@@ -48,10 +48,7 @@ extern "C"
 		UINT32 framePixFmt;
 		INT16 frameWidth;
 		INT16 frameHeight;
-		INT16 x;
-		INT16 y;
-		INT16 width;
-		INT16 height;
+		RECTANGLE_32 rect;
 		UINT16 numVisibleRects;
 		RECTANGLE_16* visibleRects;
 	} TSMF_VIDEO_FRAME_EVENT;

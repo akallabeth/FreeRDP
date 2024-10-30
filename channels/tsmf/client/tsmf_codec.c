@@ -393,7 +393,7 @@ static BOOL tsmf_read_format_type(TS_AM_MEDIA_TYPE* mediatype, wStream* s, UINT3
 					return FALSE;
 				if (!Stream_CheckAndLogRequiredLength(TAG, s, nsize))
 					return FALSE;
-				mediatype->ExtraDataSize = nsize;
+				mediatype->ExtraDataSize = (UINT32)nsize;
 				mediatype->ExtraData = Stream_Pointer(s);
 			}
 			break;

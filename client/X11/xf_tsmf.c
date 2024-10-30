@@ -105,7 +105,7 @@ static int xf_tsmf_xv_video_frame_event(TsmfClientContext* tsmf, TSMF_VIDEO_FRAM
 		return -1001;
 
 	/* In case the player is minimized */
-	if (event->x < -2048 || event->y < -2048 || event->numVisibleRects == 0)
+	if ((event->rect.left < -2048) || (event->rect.top < -2048) || (event->numVisibleRects == 0))
 	{
 		return -1002;
 	}
@@ -122,8 +122,8 @@ static int xf_tsmf_xv_video_frame_event(TsmfClientContext* tsmf, TSMF_VIDEO_FRAM
 
 		for (int i = 0; i < numRects; i++)
 		{
-			x = event->x + event->visibleRects[i].left;
-			y = event->y + event->visibleRects[i].top;
+			x = event->rect.left + event->visibleRects[i].left;
+			y = event->rect.top + event->visibleRects[i].top;
 			width = event->visibleRects[i].right - event->visibleRects[i].left;
 			height = event->visibleRects[i].bottom - event->visibleRects[i].top;
 
@@ -291,8 +291,8 @@ static int xf_tsmf_xv_video_frame_event(TsmfClientContext* tsmf, TSMF_VIDEO_FRAM
 	}
 
 	XvShmPutImage(xfc->display, xv->xv_port, xfc->window->handle, xfc->gc, image, 0, 0,
-	              image->width, image->height, event->x, event->y, event->width, event->height,
-	              FALSE);
+	              image->width, image->height, event->rect.left, event->rect.top, event->rect.width,
+	              event->rect.height, FALSE);
 
 	if (xv->xv_colorkey_atom == None)
 		XSetClipMask(xfc->display, xfc->gc, None);
