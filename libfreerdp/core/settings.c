@@ -399,10 +399,16 @@ static BOOL monitor_has_gaps(const rdpSettings* settings, UINT32 start, UINT32 c
 	return !hasNeighbor;
 }
 
+static void alloc_free(UINT32** ptr)
+{
+	free((void*)ptr);
+}
+
+WINPR_ATTR_MALLOC(alloc_free, 1)
 static UINT32** alloc_array(size_t count)
 {
 	// NOLINTNEXTLINE(clang-analyzer-unix.MallocSizeof)
-	BYTE* array = calloc(count * sizeof(uintptr_t), count * sizeof(UINT32));
+	BYTE* array = calloc(2 * count, sizeof(uintptr_t));
 	UINT32** dst = (UINT32**)array;
 	UINT32* val = (UINT32*)(array + count * sizeof(uintptr_t));
 	for (size_t x = 0; x < count; x++)
@@ -500,7 +506,7 @@ static BOOL find_path_exists_with_dijkstra(UINT32** graph, size_t count, UINT32 
 			}
 		}
 	}
-	free((void*)cost);
+	alloc_free(cost);
 	free(distance);
 	free(visited);
 	free(parent);
@@ -529,7 +535,7 @@ static BOOL freerdp_settings_client_monitors_have_gaps(const rdpSettings* settin
 	rc = !find_path_exists_with_dijkstra(graph, count, 0);
 
 fail:
-	free((void*)graph);
+	alloc_free(graph);
 
 	return rc;
 }
