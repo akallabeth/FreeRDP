@@ -21,11 +21,14 @@
 #include <winpr/version.h>
 #include <winpr/build-config.h>
 
+#include <winpr/assert.h>
 #include <winpr/crt.h>
 #include <winpr/tchar.h>
 
 #include <winpr/path.h>
 #include <winpr/file.h>
+
+#include <cwalk.h>
 
 #define STR(x) #x
 
@@ -1213,4 +1216,17 @@ char* winpr_GetConfigFilePath(BOOL system, const char* filename)
 	free(base);
 
 	return path;
+}
+
+char* winpr_NormalizePath(const char* path)
+{
+	const size_t rc = cwk_path_normalize(path, NULL, 0);
+	if (rc == 0)
+		return NULL;
+	char* npath = calloc(rc + 2, sizeof(char));
+	if (!npath)
+		return NULL;
+	const size_t chk = cwk_path_normalize(path, npath, rc + 1);
+	WINPR_ASSERT(chk == rc);
+	return npath;
 }

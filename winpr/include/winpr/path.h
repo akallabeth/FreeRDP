@@ -341,6 +341,15 @@ extern "C"
 	WINPR_ATTR_MALLOC(free, 1)
 	WINPR_API char* GetCombinedPath(const char* basePath, const char* subPath);
 
+	/** @brief creates a normalized version of \b path
+	 *
+	 *  @param path The path to normalize
+	 *  @return A normalized version of \b path or \b NULL in case of an error
+	 *  @since version 3.10.0
+	 */
+	WINPR_ATTR_MALLOC(free, 1)
+	WINPR_API char* winpr_NormalizePath(const char* path);
+
 	WINPR_API BOOL PathMakePathA(LPCSTR path, LPSECURITY_ATTRIBUTES lpAttributes);
 	WINPR_API BOOL PathMakePathW(LPCWSTR path, LPSECURITY_ATTRIBUTES lpAttributes);
 
