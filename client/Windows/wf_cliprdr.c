@@ -239,8 +239,8 @@ static HRESULT STDMETHODCALLTYPE CliprdrStream_Read(IStream* This, void* pv, ULO
 		return S_FALSE;
 
 	ret = cliprdr_send_request_filecontents(clipboard, (void*)This, instance->m_lIndex,
-	                                        FILECONTENTS_RANGE, instance->m_lOffset.HighPart,
-	                                        instance->m_lOffset.LowPart, cb);
+	                                        FILECONTENTS_RANGE, instance->m_lOffset.u.HighPart,
+	                                        instance->m_lOffset.u.LowPart, cb);
 
 	if (ret < 0)
 		return E_FAIL;
@@ -462,8 +462,8 @@ static CliprdrStream* CliprdrStream_New(ULONG index, void* pData, const FILEDESC
 			}
 			else
 			{
-				instance->m_lSize.LowPart = instance->m_Dsc.nFileSizeLow;
-				instance->m_lSize.HighPart = instance->m_Dsc.nFileSizeHigh;
+				instance->m_lSize.u.LowPart = instance->m_Dsc.nFileSizeLow;
+				instance->m_lSize.u.HighPart = instance->m_Dsc.nFileSizeHigh;
 				success = TRUE;
 			}
 		}
@@ -588,7 +588,7 @@ static HRESULT STDMETHODCALLTYPE CliprdrDataObject_GetData(IDataObject* This, FO
 		if (cliprdr_send_data_request(clipboard, remote) != 0)
 			return E_UNEXPECTED;
 
-		pMedium->hGlobal = clipboard->hmem; /* points to a FILEGROUPDESCRIPTOR structure */
+		pMedium->u.hGlobal = clipboard->hmem; /* points to a FILEGROUPDESCRIPTOR structure */
 		/* GlobalLock returns a pointer to the first byte of the memory block,
 		 * in which is a FILEGROUPDESCRIPTOR structure, whose first UINT member
 		 * is the number of FILEDESCRIPTOR's */
@@ -624,7 +624,7 @@ static HRESULT STDMETHODCALLTYPE CliprdrDataObject_GetData(IDataObject* This, FO
 				clipboard->hmem = NULL;
 			}
 
-			pMedium->hGlobal = NULL;
+			pMedium->u.hGlobal = NULL;
 			return E_OUTOFMEMORY;
 		}
 	}
@@ -632,7 +632,7 @@ static HRESULT STDMETHODCALLTYPE CliprdrDataObject_GetData(IDataObject* This, FO
 	{
 		if ((pFormatEtc->lindex >= 0) && ((ULONG)pFormatEtc->lindex < instance->m_nStreams))
 		{
-			pMedium->pstm = instance->m_pStream[pFormatEtc->lindex];
+			pMedium->u.pstm = instance->m_pStream[pFormatEtc->lindex];
 			IDataObject_AddRef(instance->m_pStream[pFormatEtc->lindex]);
 		}
 		else
@@ -833,7 +833,7 @@ static BOOL wf_create_file_obj(wfClipboard* clipboard, IDataObject** ppDataObjec
 	fmtetc[0].ptd = NULL;
 	fmtetc[0].tymed = TYMED_HGLOBAL;
 	stgmeds[0].tymed = TYMED_HGLOBAL;
-	stgmeds[0].hGlobal = NULL;
+	stgmeds[0].u.hGlobal = NULL;
 	stgmeds[0].pUnkForRelease = NULL;
 	fmtetc[1].cfFormat = RegisterClipboardFormat(CFSTR_FILECONTENTS);
 	fmtetc[1].dwAspect = DVASPECT_CONTENT;
@@ -841,7 +841,7 @@ static BOOL wf_create_file_obj(wfClipboard* clipboard, IDataObject** ppDataObjec
 	fmtetc[1].ptd = NULL;
 	fmtetc[1].tymed = TYMED_ISTREAM;
 	stgmeds[1].tymed = TYMED_ISTREAM;
-	stgmeds[1].pstm = NULL;
+	stgmeds[1].u.pstm = NULL;
 	stgmeds[1].pUnkForRelease = NULL;
 	*ppDataObject = (IDataObject*)CliprdrDataObject_New(fmtetc, stgmeds, 2, clipboard);
 	return (*ppDataObject) ? TRUE : FALSE;
@@ -2073,7 +2073,7 @@ static SSIZE_T wf_cliprdr_get_filedescriptor(wfClipboard* clipboard, BYTE** pDat
 		goto exit;
 	}
 
-	DROPFILES* dropFiles = (DROPFILES*)GlobalLock(stg_medium.hGlobal);
+	DROPFILES* dropFiles = (DROPFILES*)GlobalLock(stg_medium.u.hGlobal);
 
 	if (!dropFiles)
 	{
@@ -2108,7 +2108,7 @@ static SSIZE_T wf_cliprdr_get_filedescriptor(wfClipboard* clipboard, BYTE** pDat
 		}
 	}
 
-	GlobalUnlock(stg_medium.hGlobal);
+	GlobalUnlock(stg_medium.u.hGlobal);
 	ReleaseStgMedium(&stg_medium);
 exit:
 {
@@ -2319,7 +2319,7 @@ wf_cliprdr_server_file_contents_request(CliprdrClientContext* context,
 
 						if (hRet == S_OK)
 						{
-							pStreamStc = vStgMedium.pstm;
+							pStreamStc = vStgMedium.u.pstm;
 							uStreamIdStc = fileContentsRequest->streamId;
 							bIsStreamFile = TRUE;
 						}
@@ -2340,8 +2340,8 @@ wf_cliprdr_server_file_contents_request(CliprdrClientContext* context,
 
 			if (hRet == S_OK)
 			{
-				*((UINT32*)&pData[0]) = vStatStg.cbSize.LowPart;
-				*((UINT32*)&pData[4]) = vStatStg.cbSize.HighPart;
+				*((UINT32*)&pData[0]) = vStatStg.cbSize.u.LowPart;
+				*((UINT32*)&pData[4]) = vStatStg.cbSize.u.HighPart;
 				uSize = cbRequested;
 			}
 		}
@@ -2349,8 +2349,8 @@ wf_cliprdr_server_file_contents_request(CliprdrClientContext* context,
 		{
 			LARGE_INTEGER dlibMove;
 			ULARGE_INTEGER dlibNewPosition;
-			dlibMove.HighPart = fileContentsRequest->nPositionHigh;
-			dlibMove.LowPart = fileContentsRequest->nPositionLow;
+			dlibMove.u.HighPart = fileContentsRequest->nPositionHigh;
+			dlibMove.u.LowPart = fileContentsRequest->nPositionLow;
 			hRet = IStream_Seek(pStreamStc, dlibMove, STREAM_SEEK_SET, &dlibNewPosition);
 
 			if (SUCCEEDED(hRet))
