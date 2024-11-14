@@ -1,16 +1,4 @@
-include(CheckCXXCompilerFlag)
-
-macro (checkCXXFlag FLAG)
-	check_cxx_compiler_flag("${FLAG}" CXXFLAG${FLAG})
-	if(CXXFLAG${FLAG})
-		string(APPEND CMAKE_CXX_FLAGS " ${FLAG}")
-	else()
-		message(WARNING "compiler does not support ${FLAG}")
-	endif()
-endmacro()
-
-option(ENABLE_WARNING_VERBOSE "enable -Weveryting (and some exceptions) for compile" OFF)
-option(ENABLE_WARNING_ERROR "enable -Werror for compile" OFF)
+include(CommonCompilerFlags)
 
 if (ENABLE_WARNING_VERBOSE)
 	if (MSVC)
@@ -25,24 +13,8 @@ if (ENABLE_WARNING_VERBOSE)
 			string (REGEX REPLACE "(^| )[/-]W[ ]*[1-9]" " "
 			"${flags_var_to_scrub}" "${${flags_var_to_scrub}}")
 		endforeach()
-
-		set(C_WARNING_FLAGS
-			/W4
-			/wo4324
-		)
 	else()
 		set(C_WARNING_FLAGS
-			-Weverything
-			-Wall
-			-Wpedantic
-			-Wno-padded
-			-Wno-switch-enum
-			-Wno-cast-align
-			-Wno-declaration-after-statement
-			-Wno-unsafe-buffer-usage
-			-Wno-reserved-identifier
-			-Wno-covered-switch-default
-			-Wno-disabled-macro-expansion
 			-Wno-ctad-maybe-unsupported
 			-Wno-c++98-compat
 			-Wno-c++98-compat-pedantic
@@ -53,30 +25,23 @@ if (ENABLE_WARNING_VERBOSE)
 	endif()
 
 	foreach(FLAG ${C_WARNING_FLAGS})
-		CheckCXXFlag(${FLAG})
+		CheckAndSetFlag(${FLAG})
 	endforeach()
 endif()
-
-
-if (ENABLE_WARNING_ERROR)
-	CheckCXXFlag(-Werror)
-endif()
-
-CheckCXXFlag(-fno-omit-frame-pointer)
-
-CheckCXXFlag(-fmacro-prefix-map="${CMAKE_SOURCE_DIR}"="./")
-CheckCXXFlag(-fmacro-prefix-map="${CMAKE_BINARY_DIR}"="./build/")
-CheckCXXFlag(-ffile-prefix-map="${CMAKE_SOURCE_DIR}"="./")
-CheckCXXFlag(-ffile-prefix-map="${CMAKE_BINARY_DIR}"="./build")
 
 # https://stackoverflow.com/questions/4913922/possible-problems-with-nominmax-on-visual-c
 if (WIN32)
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-DNOMINMAX>)
 endif()
 
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53431
-if (CMAKE_COMPILER_IS_GNUCC AND (CMAKE_CXX_COMPILER_VERSION LESS 13))
-	CheckCFlag(-Wno-unknown-pragmas)
+if(MSVC)
+    add_compile_options(/Gd)
+
+	set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
+	set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR})
+
+    add_compile_options("$<$<CONFIG:Debug>:/Zi>")
+	add_compile_definitions(_CRT_NONSTDC_NO_DEPRECATE)
 endif()
 
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} CACHE STRING "default CXXFLAGS")

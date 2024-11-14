@@ -1,0 +1,21 @@
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
+
+macro (CheckAndSetFlag FLAG)
+  if (FLAG)
+      get_property(languages GLOBAL PROPERTY ENABLED_LANGUAGES)
+      if ("C" IN_LIST languages)
+        CHECK_C_COMPILER_FLAG("${FLAG}" CFLAG${FLAG})
+      endif()
+      
+      if ("CXX" IN_LIST languages)
+        CHECK_CXX_COMPILER_FLAG("${FLAG}" CFLAG${FLAG})
+      endif()
+
+      if(CFLAG${FLAG})
+        add_compile_options(${FLAG})
+      else()
+        message(WARNING "compiler does not support ${FLAG}")
+      endif()
+  endif()
+endmacro()

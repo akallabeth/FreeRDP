@@ -1,13 +1,4 @@
-include(CheckCCompilerFlag)
-
-macro (checkCFlag FLAG)
-	CHECK_C_COMPILER_FLAG("${FLAG}" CFLAG${FLAG})
-	if(CFLAG${FLAG})
-		string(APPEND CMAKE_C_FLAGS " ${FLAG}")
-	else()
-		message(WARNING "compiler does not support ${FLAG}")
-	endif()
-endmacro()
+include(CheckAndSetFlag)
 
 option(ENABLE_WARNING_VERBOSE "enable -Weveryting (and some exceptions) for compile" OFF)
 option(ENABLE_WARNING_ERROR "enable -Werror for compile" OFF)
@@ -25,49 +16,29 @@ if (ENABLE_WARNING_VERBOSE)
 			string (REGEX REPLACE "(^| )[/-]W[ ]*[1-9]" " "
 			"${flags_var_to_scrub}" "${${flags_var_to_scrub}}")
 		endforeach()
-
-		set(C_WARNING_FLAGS
-			/W4
-			/wo4324
-		)
 	else()
 		set(C_WARNING_FLAGS
-			-Weverything
-			-Wall
-			-Wpedantic
-			-Wno-padded
-			-Wno-switch-enum
-			-Wno-cast-align
-			-Wno-declaration-after-statement
-			-Wno-unsafe-buffer-usage
-			-Wno-reserved-identifier
-			-Wno-covered-switch-default
-			-Wno-disabled-macro-expansion
 			-Wno-pre-c11-compat
 			-Wno-gnu-zero-variadic-macro-arguments
 		)
 	endif()
 
 	foreach(FLAG ${C_WARNING_FLAGS})
-		CheckCFlag(${FLAG})
+		CheckAndSetFlag(${FLAG})
 	endforeach()
 endif()
 
-if (ENABLE_WARNING_ERROR)
-	CheckCFlag(-Werror)
+CheckAndSetFlag(-Wimplicit-function-declaration)
+
+# Android profiling
+if(ANDROID)
+	if(WITH_GPROF)
+        CheckAndSetFlag(-pg)
+		set(PROFILER_LIBRARIES
+			"${FREERDP_EXTERNAL_PROFILER_PATH}/obj/local/${ANDROID_ABI}/libandroid-ndk-profiler.a")
+		include_directories(SYSTEM "${FREERDP_EXTERNAL_PROFILER_PATH}")
+	endif()
 endif()
-
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53431
-if (CMAKE_COMPILER_IS_GNUCC AND (CMAKE_C_COMPILER_VERSION LESS 13))
-	CheckCFlag(-Wno-unknown-pragmas)
-endif()
-
-CheckCFlag(-fno-omit-frame-pointer)
-
-CheckCFlag(-fmacro-prefix-map="${CMAKE_SOURCE_DIR}"="./")
-CheckCFlag(-fmacro-prefix-map="${CMAKE_BINARY_DIR}"="./build/")
-CheckCFlag(-ffile-prefix-map="${CMAKE_SOURCE_DIR}"="./")
-CheckCFlag(-ffile-prefix-map="${CMAKE_BINARY_DIR}"="./build")
 
 set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} CACHE STRING "default CFLAGS")
 message("Using CFLAGS ${CMAKE_C_FLAGS}")

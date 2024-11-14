@@ -26,6 +26,7 @@
 
 #include <winpr/winpr.h>
 #include <winpr/wtypes.h>
+#include <winpr/platform.h>
 #include <winpr/wlog.h>
 #include <winpr/debug.h>
 
