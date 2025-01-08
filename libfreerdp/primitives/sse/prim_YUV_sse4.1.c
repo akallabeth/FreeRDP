@@ -228,9 +228,10 @@ static void BGRX_fillRGB(size_t offset, BYTE* WINPR_RESTRICT pRGB[2],
 	}
 }
 
-static inline void unpack_mul_add(__m128i toadd[2], __m128i wide, __m128i mul, __m128i sub)
+static inline void unpack_mul_add(__m128i toadd[2], __m128i narrow, short iMul, __m128i sub)
 {
-	const __m128i usub = _mm_sub_epi16(wide, sub);
+	const __m128i usub = _mm_sub_epi16(narrow, sub);
+	const __m128i mul = _mm_set1_epi32(iMul);
 	const __m128i umulhi = _mm_mulhi_epi16(usub, mul);
 	const __m128i umullo = _mm_mullo_epi16(usub, mul);
 	{
@@ -257,15 +258,13 @@ static inline __m128i sse41_yuv2x(const __m128i Y[2], __m128i U, __m128i V, cons
 
 	if (iMulU != 0)
 	{
-		const __m128i mulU = _mm_set1_epi16(iMulU);
-		unpack_mul_add(res[0], _mm_unpackhi_epi8(U, zero), mulU, addX);
-		unpack_mul_add(res[1], _mm_unpacklo_epi8(U, zero), mulU, addX);
+		unpack_mul_add(res[0], _mm_unpackhi_epi8(U, zero), iMulU, addX);
+		unpack_mul_add(res[1], _mm_unpacklo_epi8(U, zero), iMulU, addX);
 	}
 	if (iMulV != 0)
 	{
-		const __m128i mulV = _mm_set1_epi16(iMulV);
-		unpack_mul_add(res[0], _mm_unpackhi_epi8(V, zero), mulV, addX);
-		unpack_mul_add(res[1], _mm_unpacklo_epi8(V, zero), mulV, addX);
+		unpack_mul_add(res[0], _mm_unpackhi_epi8(V, zero), iMulV, addX);
+		unpack_mul_add(res[1], _mm_unpacklo_epi8(V, zero), iMulV, addX);
 	}
 
 	res[0][0] = _mm_srai_epi32(res[0][0], 8);
