@@ -294,9 +294,33 @@ static inline __m128i sse41_yuv2b(const __m128i Y[2], __m128i U, __m128i V)
 	return sse41_yuv2x(Y, U, V, 475, 0);
 }
 
+static inline void print_single(const char* prefix, const uint8_t* array, size_t len) {
+	printf("%s={", prefix);
+	for (size_t x=0;x<len;x++) {
+		printf("0x%02" PRIx8 ", ", array[x]);
+	}
+	printf("}\n");
+}
+static inline void print_values(
+		const uint8_t* y,
+		const uint8_t* u,
+		const uint8_t* v
+		)
+{
+	print_single("Y", y, 16);
+	print_single("U", u, 16);
+	print_single("V", v, 16);
+	fflush(stdout);
+}
+
 static inline void sse41_BGRX_fillRGB_pixel(BYTE* WINPR_RESTRICT pRGB, __m128i Y, __m128i U,
                                             __m128i V)
 {
+	//print_values(&Y, &U, &V);
+	Y = mm_set_epu8(0x31, 0x8f, 0x29, 0x00, 0x50, 0x59, 0x6a, 0xa2, 0xe7, 0x46, 0x64, 0x73, 0x85, 0x8c, 0x07, 0x30);
+	U = mm_set_epu8(0x73, 0x3c, 0xd0, 0x45, 0x2e, 0xff, 0x29, 0xcb, 0x22, 0xe7, 0x88, 0x04, 0x94, 0x81, 0xeb, 0xe1);
+	V = mm_set_epu8(0x15, 0x0d, 0xb6, 0x95, 0x8e, 0xb9, 0xb7, 0x7c, 0xb2, 0xfd, 0xef, 0x54, 0xd2, 0x22, 0xe2, 0xaa);
+
 	const __m128i zero = _mm_set1_epi8(0);
 	/* Y * 256 */
 	const __m128i yY[] = { _mm_unpackhi_epi8(zero, Y), _mm_unpacklo_epi8(zero, Y) };
@@ -319,6 +343,29 @@ static inline void sse41_BGRX_fillRGB_pixel(BYTE* WINPR_RESTRICT pRGB, __m128i Y
 	_mm_maskmoveu_si128(bgrx2, mask, (char*)&rgb[2]);
 	const __m128i bgrx3 = _mm_unpacklo_epi16(bg[1], rx[1]);
 	_mm_maskmoveu_si128(bgrx3, mask, (char*)&rgb[3]);
+
+	uint8_t cmprgb[16*4] = { 0};
+	const char* py = &Y;
+	const char* pu = &U;
+	const char* pv = &V;
+	for (size_t x=0; x<16; x++) {
+		uint8_t y = py[x];
+		uint8_t u = pu[x];
+		uint8_t v = pv[x];
+		uint8_t r = YUV2R(y, u, v);
+		uint8_t g = YUV2G(y, u, v);
+		uint8_t b = YUV2B(y, u, v);
+
+		cmprgb[4*x + 0] = b;
+		cmprgb[4*x + 1] = g;
+		cmprgb[4*x + 2] = r;
+	}
+
+	if (memcmp(cmprgb, pRGB, sizeof(cmprgb)) != 0) {
+		WLog_WARN("ccc", "xxxx:");
+		print_single("cmp", cmprgb, sizeof(cmprgb));
+		print_single("rgb", pRGB, sizeof(cmprgb));
+	}
 }
 
 static void sse41_BGRX_fillRGB(BYTE* WINPR_RESTRICT pRGB[2], const __m128i pY[2],
