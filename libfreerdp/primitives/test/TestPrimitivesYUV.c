@@ -1,6 +1,7 @@
 
 #include <freerdp/config.h>
 
+#include <stdlib.h>
 #include <math.h>
 
 #include "prim_test.h"
@@ -1253,6 +1254,19 @@ fail:
 	free(rgb2);
 
 	return rc;
+}
+
+static BOOL similarYUV(const BYTE* line1, const BYTE* line2, size_t len)
+{
+	for (size_t x = 0; x < len; x++)
+	{
+		const int a = line1[x];
+		const int b = line2[x];
+		const int diff = abs(a - b);
+		if (diff >= 2)
+			return FALSE;
+		return TRUE;
+	}
 }
 
 /* Check the result of generic matches the optimized routine.

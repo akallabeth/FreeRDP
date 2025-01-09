@@ -677,44 +677,35 @@ static INLINE void sse41_RGBToYUV420_BGRX_UV(const BYTE* WINPR_RESTRICT src1,
 	}
 }
 
-static pstatus_t sse41_RGBToYUV420_BGRX(const BYTE* WINPR_RESTRICT pSrc, UINT32 srcFormat,
-                                        UINT32 srcStep, BYTE* WINPR_RESTRICT pDst[],
-                                        const UINT32 dstStep[],
+static pstatus_t sse41_RGBToYUV420_BGRX(const BYTE* WINPR_RESTRICT pSrc, UINT32 srcStep,
+                                        BYTE* WINPR_RESTRICT pDst[], const UINT32 dstStep[],
                                         const prim_size_t* WINPR_RESTRICT roi)
 {
-	const BYTE* argb = pSrc;
-	BYTE* ydst = pDst[0];
-	BYTE* udst = pDst[1];
-	BYTE* vdst = pDst[2];
-
 	if (roi->height < 1 || roi->width < 1)
 	{
 		return !PRIMITIVES_SUCCESS;
 	}
 
-	if (roi->width % 16 || (uintptr_t)pSrc % 16 || srcStep % 16)
+	UINT32 y = 0;
+	for (; y < roi->height - roi->height % 2; y += 2)
 	{
-		return generic->RGBToYUV420_8u_P3AC4R(pSrc, srcFormat, srcStep, pDst, dstStep, roi);
-	}
+		const BYTE* line1 = &pSrc[4ULL * y * srcStep];
+		const BYTE* line2 = &pSrc[4ULL * (1ULL + y) * srcStep];
+		BYTE* ydst1 = &pDst[0][y * dstStep[0]];
+		BYTE* ydst2 = &pDst[0][(1ULL + y) * dstStep[0]];
+		BYTE* udst = &pDst[1][y / 2 * dstStep[1]];
+		BYTE* vdst = &pDst[2][y / 2 * dstStep[2]];
 
-	for (UINT32 y = 0; y < roi->height - 1; y += 2)
-	{
-		const BYTE* line1 = argb;
-		const BYTE* line2 = argb + srcStep;
 		sse41_RGBToYUV420_BGRX_UV(line1, line2, udst, vdst, roi->width);
-		sse41_RGBToYUV420_BGRX_Y(line1, ydst, roi->width);
-		sse41_RGBToYUV420_BGRX_Y(line2, ydst + dstStep[0], roi->width);
-		argb += 2ULL * srcStep;
-		ydst += 2ULL * dstStep[0];
-		udst += 1ULL * dstStep[1];
-		vdst += 1ULL * dstStep[2];
+		sse41_RGBToYUV420_BGRX_Y(line1, ydst1, roi->width);
+		sse41_RGBToYUV420_BGRX_Y(line2, ydst2, roi->width);
 	}
 
-	if (roi->height & 1)
+	for (; y < roi->height; y++)
 	{
-		/* pass the same last line of an odd height twice for UV */
-		sse41_RGBToYUV420_BGRX_UV(argb, argb, udst, vdst, roi->width);
-		sse41_RGBToYUV420_BGRX_Y(argb, ydst, roi->width);
+		const BYTE* line = &pSrc[4ULL * y * srcStep];
+		BYTE* ydst = &pDst[0][y * dstStep[0]];
+		sse41_RGBToYUV420_BGRX_Y(line, ydst, roi->width);
 	}
 
 	return PRIMITIVES_SUCCESS;
@@ -728,7 +719,7 @@ static pstatus_t sse41_RGBToYUV420(const BYTE* WINPR_RESTRICT pSrc, UINT32 srcFo
 	{
 		case PIXEL_FORMAT_BGRX32:
 		case PIXEL_FORMAT_BGRA32:
-			return sse41_RGBToYUV420_BGRX(pSrc, srcFormat, srcStep, pDst, dstStep, roi);
+			return sse41_RGBToYUV420_BGRX(pSrc, srcStep, pDst, dstStep, roi);
 
 		default:
 			return generic->RGBToYUV420_8u_P3AC4R(pSrc, srcFormat, srcStep, pDst, dstStep, roi);
