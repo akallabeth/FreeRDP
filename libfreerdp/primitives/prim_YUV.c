@@ -858,6 +858,7 @@ static INLINE pstatus_t general_RGBToYUV420_DOUBLE_ROW_X(const BYTE* WINPR_RESTR
 		const BYTE b2 = pLine2[bPos];
 		pYLine[1][x] = RGB2Y(r2, g2, b2);
 	}
+	return PRIMITIVES_SUCCESS;
 }
 
 static INLINE pstatus_t general_RGBToYUV420_X(const BYTE* WINPR_RESTRICT pSrc, UINT32 srcStep,
