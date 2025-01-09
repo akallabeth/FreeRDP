@@ -570,30 +570,109 @@ PRIM_ALIGN_128 static const BYTE rgbx_v_factors[] = {
 };
 */
 
+static inline void sse41_BGRX_TO_YUV(const BYTE* WINPR_RESTRICT pLine1, BYTE* WINPR_RESTRICT pYLine,
+                                     BYTE* WINPR_RESTRICT pULine, BYTE* WINPR_RESTRICT pVLine)
+{
+	const BYTE r1 = pLine1[2];
+	const BYTE g1 = pLine1[1];
+	const BYTE b1 = pLine1[0];
+
+	pYLine[0] = RGB2Y(r1, g1, b1);
+	if (pULine && pVLine)
+	{
+		pULine[0] = RGB2U(r1, g1, b1);
+		pVLine[0] = RGB2V(r1, g1, b1);
+	}
+}
+
 /* compute the luma (Y) component from a single rgb source line */
+static inline __m128i muladdBR(__m128i x0, __m128i x1)
+{
+	const __m128i lomask =
+	    mm_set_epu8(0xff, 5, 0xff, 5, 0xff, 1, 0xff, 1, 0xff, 6, 0xff, 4, 0xff, 2, 0xff, 0);
+	const __m128i himask =
+	    mm_set_epu8(0xff, 13, 0xff, 13, 0xff, 9, 0xff, 9, 0xff, 14, 0xff, 12, 0xff, 10, 0xff, 8);
+	const __m128i factors = _mm_set_epi16(3, 61, 3, 61, 54, 18, 54, 18);
+
+	/* reordered (high to low): G4G4G3G3G2G2G1G1R4B4R3B3R2B2R1B1 */
+	const __m128i x0lo = _mm_shuffle_epi8(x0, lomask);
+	const __m128i x0hi = _mm_shuffle_epi8(x0, himask);
+
+	/* Multiplications: Split G multiplication in 2 to avoid INT16 overflow
+	 * mr = 54 * R
+	 * mb = 18 * B
+	 * mg1 = 3 * G
+	 * mg2 = 61 * G
+	 */
+	const __m128i fx0lo = _mm_mullo_epi16(x0lo, factors);
+	const __m128i fx0hi = _mm_mullo_epi16(x0hi, factors);
+
+	/* Sum up horizontally
+	 * high
+	 * low
+	 * 54*R + 3*G
+	 * 18*B + 61*G
+	 */
+	const __m128i fmx0 = _mm_hadds_epi16(fx0lo, fx0hi);
+
+}
 
 static INLINE void sse41_RGBToYUV420_BGRX_Y(const BYTE* WINPR_RESTRICT src, BYTE* dst, UINT32 width)
 {
-	__m128i x0;
-	__m128i x1;
-	__m128i x2;
-	__m128i x3;
 	const __m128i y_factors = BGRX_Y_FACTORS;
 	const __m128i* argb = (const __m128i*)src;
 	__m128i* ydst = (__m128i*)dst;
 
-	for (UINT32 x = 0; x < width; x += 16)
+	UINT32 x = 0;
+	for (; x < width - width % 16; x += 16)
 	{
 		/* store 16 rgba pixels in 4 128 bit registers */
-		x0 = _mm_load_si128(argb++); // 1st 4 pixels
-		x1 = _mm_load_si128(argb++); // 2nd 4 pixels
-		x2 = _mm_load_si128(argb++); // 3rd 4 pixels
-		x3 = _mm_load_si128(argb++); // 4th 4 pixels
-		/* multiplications and subtotals */
-		x0 = _mm_maddubs_epi16(x0, y_factors);
-		x1 = _mm_maddubs_epi16(x1, y_factors);
-		x2 = _mm_maddubs_epi16(x2, y_factors);
-		x3 = _mm_maddubs_epi16(x3, y_factors);
+		const __m128i x0 = _mm_load_si128(argb++); // 1st 4 pixels
+		const __m128i x1 = _mm_load_si128(argb++); // 2nd 4 pixels
+		const __m128i x2 = _mm_load_si128(argb++); // 3rd 4 pixels
+		const __m128i x3 = _mm_load_si128(argb++); // 4th 4 pixels
+
+		/* unpack to 16bit:
+		 * bgrx -> bbggrrxx
+		/* extend to 16 bit, reorder:
+		 * input is b, g, r, x (little endian, so read x, r, g, b for arguments)
+		 *
+		 * we want b and r as 16bit and g as 32bit
+ */
+		const __m128i brmask =
+		    mm_set_epu8(0xff, 14, 0xff, 12, 0xff, 10, 0xff, 8, 0xff, 6, 0xff, 4, 0xff, 2, 0xff, 0);
+		const __m128i br0 = _mm_shuffle_epi8(x0, brmask);
+		const __m128i br1 = _mm_shuffle_epi8(x1, brmask);
+		const __m128i br2 = _mm_shuffle_epi8(x2, brmask);
+		const __m128i br3 = _mm_shuffle_epi8(x3, brmask);
+		const __m128i zero = _mm_set1_epi8(0);
+		const __m128i x0hi = _mm_unpackhi_epi8(x0, zero);
+		const __m128i x0lo = _mm_unpackhi_epi8(x0, zero);
+		const __m128i x1hi = _mm_unpackhi_epi8(x1, zero);
+		const __m128i x1lo = _mm_unpackhi_epi8(x1, zero);
+		const __m128i x2hi = _mm_unpackhi_epi8(x2, zero);
+		const __m128i x2lo = _mm_unpackhi_epi8(x2, zero);
+		const __m128i x3hi = _mm_unpackhi_epi8(x3, zero);
+		const __m128i x3lo = _mm_unpackhi_epi8(x3, zero);
+
+		/* val1 = 54 * R
+		 * val2 = 183 * G -> does not fit in 16bit signed
+		 * val3 = 18 * B
+		 */
+		const __m128i factors = _mm_set_epi16(0, 54, 183 / 3, 18);
+		const __m128i fx0hi = _mm_mullo_epi16(x0hi, factors);
+		const __m128i fx0lo = _mm_mullo_epi16(x0lo, factors);
+		const __m128i fx1hi = _mm_mullo_epi16(x1hi, factors);
+		const __m128i fx1lo = _mm_mullo_epi16(x1lo, factors);
+		const __m128i fx2hi = _mm_mullo_epi16(x2hi, factors);
+		const __m128i fx2lo = _mm_mullo_epi16(x2lo, factors);
+		const __m128i fx3hi = _mm_mullo_epi16(x3hi, factors);
+		const __m128i fx3lo = _mm_mullo_epi16(x3lo, factors);
+
+		const __m128i fx0 = _mm_maddubs_epi16(x1, y_factors);
+		const __m128i fx1 = _mm_maddubs_epi16(x1, y_factors);
+		const __m128i fx2 = _mm_maddubs_epi16(x2, y_factors);
+		const __m128i fx3 = _mm_maddubs_epi16(x3, y_factors);
 		/* the total sums */
 		x0 = _mm_hadd_epi16(x0, x1);
 		x2 = _mm_hadd_epi16(x2, x3);
@@ -604,6 +683,11 @@ static INLINE void sse41_RGBToYUV420_BGRX_Y(const BYTE* WINPR_RESTRICT src, BYTE
 		x0 = _mm_packus_epi16(x0, x2);
 		/* save to y plane */
 		_mm_storeu_si128(ydst++, x0);
+	}
+
+	for (; x < width; x++)
+	{
+		sse41_BGRX_TO_YUV(&src[4ULL * x], &dst[x], NULL, NULL);
 	}
 }
 
