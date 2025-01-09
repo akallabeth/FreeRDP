@@ -577,84 +577,15 @@ static inline void sse41_BGRX_TO_YUV(const BYTE* WINPR_RESTRICT pLine1, BYTE* WI
 	const BYTE g1 = pLine1[1];
 	const BYTE b1 = pLine1[0];
 
-	pYLine[0] = RGB2Y(r1, g1, b1);
+	if (pYLine)
+		pYLine[0] = RGB2Y(r1, g1, b1);
 	if (pULine && pVLine)
-	{
 		pULine[0] = RGB2U(r1, g1, b1);
+	if (pVLine)
 		pVLine[0] = RGB2V(r1, g1, b1);
-	}
 }
 
 /* compute the luma (Y) component from a single rgb source line */
-
-/* Calculate 4 Y values for a given input
- *
- * input:
- * lo = 54*R + 3*G and hi = 18*B + 61*G ordered in high and low
- *
- * calculate:
- * (hi + lo) >> 8 in 32bit
- *
- * return 32bit integers with 4 Y values
- */
-static inline __m128i add_final_sub(__m238i hi)
-{
-	const __m128i lomask =
-	    mm_set_epu8(0xFF, 0xFF, 7, 6, 0xFF, 0xFF, 5, 4, 0xFF, 0xFF, 3, 2, 0xFF, 0xFF, 1, 0);
-	const __m128i himask =
-	    mm_set_epu8(0xFF, 0xFF, 15, 14, 0xFF, 0xFF, 13, 12, 0xFF, 0xFF, 11, 10, 0xFF, 0xFF, 9, 8);
-	const __m128i hihi = _mm_shuffle_epi0(hi, himask);
-	const __m128i hilo = _mm_shuffle_epi0(hi, lomask);
-	const __m128i ahi = _mm_add_epi32(hilo, hihi);
-	return _mm_srai_epi32(ahi, 8);
-}
-
-/* Calculate 4 Y values for given inputs
- *
- * return 4 16bit YUV values
- */
-static inline __m128i addshift_halves(__m128i lo, __m128i hi)
-{
-	const __m128i yhi = add_final_sub(hi);
-	const __m128i ylo = add_final_sub(lo);
-	return _mm_packus_epi32(ylo, yhi);
-}
-
-/* Calculate 8 YUV values for given input
- *
- * input: 4 BGRX values
- *
- * return 4 16bit YUV values
- */
-static inline __m128i BGRX2Y(__m128i x0, __m128i x1, __m128i x2, __m128i x3)
-{
-	const __m128i lomask =
-	    mm_set_epu8(0xff, 5, 0xff, 5, 0xff, 1, 0xff, 1, 0xff, 6, 0xff, 4, 0xff, 2, 0xff, 0);
-	const __m128i himask =
-	    mm_set_epu8(0xff, 13, 0xff, 13, 0xff, 9, 0xff, 9, 0xff, 14, 0xff, 12, 0xff, 10, 0xff, 8);
-
-	/* reordered (high to low): G4G4G3G3G2G2G1G1R4B4R3B3R2B2R1B1 */
-	const __m128i x0lo = _mm_shuffle_epi8(x0, lomask);
-	const __m128i x0hi = _mm_shuffle_epi8(x0, himask);
-
-	/* Multiplications: Split G multiplication in 2 to avoid INT16 overflow
-	 * mr = 54 * R
-	 * mb = 18 * B
-	 * mg1 = 3 * G
-	 * mg2 = 61 * G
-	 */
-	const __m128i factors = _mm_set_epi16(3, 61, 3, 61, 54, 18, 54, 18);
-	const __m128i fx0lo = _mm_mullo_epi16(x0lo, factors);
-	const __m128i fx0hi = _mm_mullo_epi16(x0hi, factors);
-
-	/* Sum up horizontally
-	 * high
-	 * low
-	 * 54*R + 3*G
-	 * 18*B + 61*G
-	 */
-	return addshift_halves(fx0lo, fx0hi);
-}
 
 static INLINE void sse41_RGBToYUV420_BGRX_Y(const BYTE* WINPR_RESTRICT src, BYTE* dst, UINT32 width)
 {
@@ -666,59 +597,26 @@ static INLINE void sse41_RGBToYUV420_BGRX_Y(const BYTE* WINPR_RESTRICT src, BYTE
 	for (; x < width - width % 16; x += 16)
 	{
 		/* store 16 rgba pixels in 4 128 bit registers */
-		const __m128i x0 = _mm_load_si128(argb++); // 1st 4 pixels
-		const __m128i x1 = _mm_load_si128(argb++); // 2nd 4 pixels
-		const __m128i x2 = _mm_load_si128(argb++); // 3rd 4 pixels
-		const __m128i x3 = _mm_load_si128(argb++); // 4th 4 pixels
+		__m128i x0 = _mm_load_si128(argb++); // 1st 4 pixels
+		{
+			x0 = _mm_maddubs_epi16(x0, y_factors);
 
-		/* unpack to 16bit:
-		 * bgrx -> bbggrrxx
-		/* extend to 16 bit, reorder:
-		 * input is b, g, r, x (little endian, so read x, r, g, b for arguments)
-		 *
-		 * we want b and r as 16bit and g as 32bit
- */
-		const __m128i brmask =
-		    mm_set_epu8(0xff, 14, 0xff, 12, 0xff, 10, 0xff, 8, 0xff, 6, 0xff, 4, 0xff, 2, 0xff, 0);
-		const __m128i br0 = _mm_shuffle_epi8(x0, brmask);
-		const __m128i br1 = _mm_shuffle_epi8(x1, brmask);
-		const __m128i br2 = _mm_shuffle_epi8(x2, brmask);
-		const __m128i br3 = _mm_shuffle_epi8(x3, brmask);
-		const __m128i zero = _mm_set1_epi8(0);
-		const __m128i x0hi = _mm_unpackhi_epi8(x0, zero);
-		const __m128i x0lo = _mm_unpackhi_epi8(x0, zero);
-		const __m128i x1hi = _mm_unpackhi_epi8(x1, zero);
-		const __m128i x1lo = _mm_unpackhi_epi8(x1, zero);
-		const __m128i x2hi = _mm_unpackhi_epi8(x2, zero);
-		const __m128i x2lo = _mm_unpackhi_epi8(x2, zero);
-		const __m128i x3hi = _mm_unpackhi_epi8(x3, zero);
-		const __m128i x3lo = _mm_unpackhi_epi8(x3, zero);
+			__m128i x1 = _mm_load_si128(argb++); // 2nd 4 pixels
+			x1 = _mm_maddubs_epi16(x1, y_factors);
+			x0 = _mm_hadds_epi16(x0, x1);
+			x0 = _mm_srli_epi16(x0, Y_SHIFT);
+		}
 
-		/* val1 = 54 * R
-		 * val2 = 183 * G -> does not fit in 16bit signed
-		 * val3 = 18 * B
-		 */
-		const __m128i factors = _mm_set_epi16(0, 54, 183 / 3, 18);
-		const __m128i fx0hi = _mm_mullo_epi16(x0hi, factors);
-		const __m128i fx0lo = _mm_mullo_epi16(x0lo, factors);
-		const __m128i fx1hi = _mm_mullo_epi16(x1hi, factors);
-		const __m128i fx1lo = _mm_mullo_epi16(x1lo, factors);
-		const __m128i fx2hi = _mm_mullo_epi16(x2hi, factors);
-		const __m128i fx2lo = _mm_mullo_epi16(x2lo, factors);
-		const __m128i fx3hi = _mm_mullo_epi16(x3hi, factors);
-		const __m128i fx3lo = _mm_mullo_epi16(x3lo, factors);
+		__m128i x2 = _mm_load_si128(argb++); // 3rd 4 pixels
+		{
+			x2 = _mm_maddubs_epi16(x2, y_factors);
 
-		const __m128i fx0 = _mm_maddubs_epi16(x1, y_factors);
-		const __m128i fx1 = _mm_maddubs_epi16(x1, y_factors);
-		const __m128i fx2 = _mm_maddubs_epi16(x2, y_factors);
-		const __m128i fx3 = _mm_maddubs_epi16(x3, y_factors);
-		/* the total sums */
-		x0 = _mm_hadd_epi16(x0, x1);
-		x2 = _mm_hadd_epi16(x2, x3);
-		/* shift the results */
-		x0 = _mm_srli_epi16(x0, Y_SHIFT);
-		x2 = _mm_srli_epi16(x2, Y_SHIFT);
-		/* pack the 16 words into bytes */
+			__m128i x3 = _mm_load_si128(argb++); // 4th 4 pixels
+			x3 = _mm_maddubs_epi16(x3, y_factors);
+			x2 = _mm_hadds_epi16(x2, x3);
+			x2 = _mm_srli_epi16(x2, Y_SHIFT);
+		}
+
 		x0 = _mm_packus_epi16(x0, x2);
 		/* save to y plane */
 		_mm_storeu_si128(ydst++, x0);
@@ -740,30 +638,25 @@ static INLINE void sse41_RGBToYUV420_BGRX_UV(const BYTE* WINPR_RESTRICT src1,
 	const __m128i u_factors = BGRX_U_FACTORS;
 	const __m128i v_factors = BGRX_V_FACTORS;
 	const __m128i vector128 = CONST128_FACTORS;
-	__m128i x0;
-	__m128i x1;
-	__m128i x2;
-	__m128i x3;
-	__m128i x4;
-	__m128i x5;
 	const __m128i* rgb1 = (const __m128i*)src1;
 	const __m128i* rgb2 = (const __m128i*)src2;
 	__m64* udst = (__m64*)dst1;
 	__m64* vdst = (__m64*)dst2;
 
-	for (UINT32 x = 0; x < width; x += 16)
+	UINT32 x = 0;
+	for (; x < width - width % 16; x += 16)
 	{
 		/* subsample 16x2 pixels into 16x1 pixels */
-		x0 = _mm_load_si128(rgb1++);
-		x4 = _mm_load_si128(rgb2++);
+		__m128i x0 = _mm_load_si128(rgb1++);
+		__m128i x4 = _mm_load_si128(rgb2++);
 		x0 = _mm_avg_epu8(x0, x4);
-		x1 = _mm_load_si128(rgb1++);
+		__m128i x1 = _mm_load_si128(rgb1++);
 		x4 = _mm_load_si128(rgb2++);
 		x1 = _mm_avg_epu8(x1, x4);
-		x2 = _mm_load_si128(rgb1++);
+		__m128i x2 = _mm_load_si128(rgb1++);
 		x4 = _mm_load_si128(rgb2++);
 		x2 = _mm_avg_epu8(x2, x4);
-		x3 = _mm_load_si128(rgb1++);
+		__m128i x3 = _mm_load_si128(rgb1++);
 		x4 = _mm_load_si128(rgb2++);
 		x3 = _mm_avg_epu8(x3, x4);
 		/* subsample these 16x1 pixels into 8x1 pixels */
@@ -782,7 +675,7 @@ static INLINE void sse41_RGBToYUV420_BGRX_UV(const BYTE* WINPR_RESTRICT src1,
 		x2 = _mm_maddubs_epi16(x0, u_factors);
 		x3 = _mm_maddubs_epi16(x1, u_factors);
 		x4 = _mm_maddubs_epi16(x0, v_factors);
-		x5 = _mm_maddubs_epi16(x1, v_factors);
+		__m128i x5 = _mm_maddubs_epi16(x1, v_factors);
 		/* the total sums */
 		x0 = _mm_hadd_epi16(x2, x3);
 		x1 = _mm_hadd_epi16(x4, x5);
@@ -797,6 +690,25 @@ static INLINE void sse41_RGBToYUV420_BGRX_UV(const BYTE* WINPR_RESTRICT src1,
 		_mm_storel_pi(udst++, _mm_castsi128_ps(x0));
 		/* the upper 8 bytes go to the v plane */
 		_mm_storeh_pi(vdst++, _mm_castsi128_ps(x0));
+	}
+
+	for (; x < width - width % 2; x += 2)
+	{
+		BYTE u[4] = { 0 };
+		BYTE v[4] = { 0 };
+		sse41_BGRX_TO_YUV(&src1[4ULL * (1ULL + x)], NULL, &u[0], &v[0]);
+		sse41_BGRX_TO_YUV(&src1[4ULL * x], NULL, &u[1], &v[1]);
+		sse41_BGRX_TO_YUV(&src2[4ULL * (1ULL + x)], NULL, &u[2], &v[2]);
+		sse41_BGRX_TO_YUV(&src2[4ULL * x], NULL, &u[3], &v[3]);
+		const INT16 u4 = (INT16)u[0] + u[1] + u[2] + u[3];
+		const INT16 uu = u4 / 4;
+		const BYTE u8 = CLIP(uu);
+		dst1[x / 2] = u8;
+
+		const INT16 v4 = (INT16)v[0] + v[1] + v[2] + v[3];
+		const INT16 vu = v4 / 4;
+		const BYTE v8 = CLIP(vu);
+		dst2[x / 2] = v8;
 	}
 }
 
