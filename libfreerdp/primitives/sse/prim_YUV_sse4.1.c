@@ -440,12 +440,12 @@ static inline pstatus_t sse41_YUV444ToRGB_8u_P3AC4R_BGRX_DOUBLE_ROW(
     for (; x < nWidth - pad; x += 16)
 	{
 #if 1
-		const __m128i Y[] = { _mm_load_si128((const __m128i*)&YData[0][x]),
-			                  _mm_load_si128((const __m128i*)&YData[1][x]) };
-		__m128i U[] = { _mm_load_si128((const __m128i*)&UData[0][x]),
-			            _mm_load_si128((const __m128i*)&UData[1][x]) };
-		__m128i V[] = { _mm_load_si128((const __m128i*)&VData[0][x]),
-			            _mm_load_si128((const __m128i*)&VData[1][x]) };
+		const __m128i Y[] = { _mm_loadu_si128((const __m128i*)&YData[0][x]),
+		                      _mm_loadu_si128((const __m128i*)&YData[1][x]) };
+		__m128i U[] = { _mm_loadu_si128((const __m128i*)&UData[0][x]),
+		                _mm_loadu_si128((const __m128i*)&UData[1][x]) };
+		__m128i V[] = { _mm_loadu_si128((const __m128i*)&VData[0][x]),
+		                _mm_loadu_si128((const __m128i*)&VData[1][x]) };
 #else
 		const __m128i Y[] = { mm_set_epu8(0x40, 0xf2, 0x24, 0x3c, 0xed, 0x41, 0xc4, 0xfa, 0xc5,
 			                              0x7d, 0xca, 0x59, 0x60, 0x0d, 0xd7, 0x3a),
@@ -597,21 +597,21 @@ static INLINE void sse41_RGBToYUV420_BGRX_Y(const BYTE* WINPR_RESTRICT src, BYTE
 	for (; x < width - width % 16; x += 16)
 	{
 		/* store 16 rgba pixels in 4 128 bit registers */
-		__m128i x0 = _mm_load_si128(argb++); // 1st 4 pixels
+		__m128i x0 = _mm_loadu_si128(argb++); // 1st 4 pixels
 		{
 			x0 = _mm_maddubs_epi16(x0, y_factors);
 
-			__m128i x1 = _mm_load_si128(argb++); // 2nd 4 pixels
+			__m128i x1 = _mm_loadu_si128(argb++); // 2nd 4 pixels
 			x1 = _mm_maddubs_epi16(x1, y_factors);
 			x0 = _mm_hadds_epi16(x0, x1);
 			x0 = _mm_srli_epi16(x0, Y_SHIFT);
 		}
 
-		__m128i x2 = _mm_load_si128(argb++); // 3rd 4 pixels
+		__m128i x2 = _mm_loadu_si128(argb++); // 3rd 4 pixels
 		{
 			x2 = _mm_maddubs_epi16(x2, y_factors);
 
-			__m128i x3 = _mm_load_si128(argb++); // 4th 4 pixels
+			__m128i x3 = _mm_loadu_si128(argb++); // 4th 4 pixels
 			x3 = _mm_maddubs_epi16(x3, y_factors);
 			x2 = _mm_hadds_epi16(x2, x3);
 			x2 = _mm_srli_epi16(x2, Y_SHIFT);
@@ -647,17 +647,17 @@ static INLINE void sse41_RGBToYUV420_BGRX_UV(const BYTE* WINPR_RESTRICT src1,
 	for (; x < width - width % 16; x += 16)
 	{
 		/* subsample 16x2 pixels into 16x1 pixels */
-		__m128i x0 = _mm_load_si128(rgb1++);
-		__m128i x4 = _mm_load_si128(rgb2++);
+		__m128i x0 = _mm_loadu_si128(rgb1++);
+		__m128i x4 = _mm_loadu_si128(rgb2++);
 		x0 = _mm_avg_epu8(x0, x4);
-		__m128i x1 = _mm_load_si128(rgb1++);
-		x4 = _mm_load_si128(rgb2++);
+		__m128i x1 = _mm_loadu_si128(rgb1++);
+		x4 = _mm_loadu_si128(rgb2++);
 		x1 = _mm_avg_epu8(x1, x4);
-		__m128i x2 = _mm_load_si128(rgb1++);
-		x4 = _mm_load_si128(rgb2++);
+		__m128i x2 = _mm_loadu_si128(rgb1++);
+		x4 = _mm_loadu_si128(rgb2++);
 		x2 = _mm_avg_epu8(x2, x4);
-		__m128i x3 = _mm_load_si128(rgb1++);
-		x4 = _mm_load_si128(rgb2++);
+		__m128i x3 = _mm_loadu_si128(rgb1++);
+		x4 = _mm_loadu_si128(rgb2++);
 		x3 = _mm_avg_epu8(x3, x4);
 		/* subsample these 16x1 pixels into 8x1 pixels */
 		/**
@@ -781,14 +781,14 @@ static INLINE void sse41_RGBToAVC444YUV_BGRX_DOUBLE_ROW(
 	for (UINT32 x = 0; x < width; x += 16)
 	{
 		/* store 16 rgba pixels in 4 128 bit registers */
-		const __m128i xe1 = _mm_load_si128(argbEven++); // 1st 4 pixels
-		const __m128i xe2 = _mm_load_si128(argbEven++); // 2nd 4 pixels
-		const __m128i xe3 = _mm_load_si128(argbEven++); // 3rd 4 pixels
-		const __m128i xe4 = _mm_load_si128(argbEven++); // 4th 4 pixels
-		const __m128i xo1 = _mm_load_si128(argbOdd++);  // 1st 4 pixels
-		const __m128i xo2 = _mm_load_si128(argbOdd++);  // 2nd 4 pixels
-		const __m128i xo3 = _mm_load_si128(argbOdd++);  // 3rd 4 pixels
-		const __m128i xo4 = _mm_load_si128(argbOdd++);  // 4th 4 pixels
+		const __m128i xe1 = _mm_loadu_si128(argbEven++); // 1st 4 pixels
+		const __m128i xe2 = _mm_loadu_si128(argbEven++); // 2nd 4 pixels
+		const __m128i xe3 = _mm_loadu_si128(argbEven++); // 3rd 4 pixels
+		const __m128i xe4 = _mm_loadu_si128(argbEven++); // 4th 4 pixels
+		const __m128i xo1 = _mm_loadu_si128(argbOdd++);  // 1st 4 pixels
+		const __m128i xo2 = _mm_loadu_si128(argbOdd++);  // 2nd 4 pixels
+		const __m128i xo3 = _mm_loadu_si128(argbOdd++);  // 3rd 4 pixels
+		const __m128i xo4 = _mm_loadu_si128(argbOdd++);  // 4th 4 pixels
 		{
 			/* Y: multiplications with subtotals and horizontal sums */
 			const __m128i ye1 = _mm_srli_epi16(_mm_hadd_epi16(_mm_maddubs_epi16(xe1, y_factors),
@@ -879,7 +879,7 @@ static INLINE void sse41_RGBToAVC444YUV_BGRX_DOUBLE_ROW(
 
 			if (b1Odd) /* b4 */
 			{
-				_mm_store_si128((__m128i*)b4, uo);
+				_mm_storeu_si128((__m128i*)b4, uo);
 				b4 += 16;
 			}
 
@@ -957,7 +957,7 @@ static INLINE void sse41_RGBToAVC444YUV_BGRX_DOUBLE_ROW(
 
 			if (b1Odd) /* b5 */
 			{
-				_mm_store_si128((__m128i*)b5, vo);
+				_mm_storeu_si128((__m128i*)b5, vo);
 				b5 += 16;
 			}
 
@@ -1061,14 +1061,14 @@ static INLINE void sse41_RGBToAVC444YUVv2_BGRX_DOUBLE_ROW(
 		/* store 16 rgba pixels in 4 128 bit registers
 		 * for even and odd rows.
 		 */
-		const __m128i xe1 = _mm_load_si128(argbEven++); /* 1st 4 pixels */
-		const __m128i xe2 = _mm_load_si128(argbEven++); /* 2nd 4 pixels */
-		const __m128i xe3 = _mm_load_si128(argbEven++); /* 3rd 4 pixels */
-		const __m128i xe4 = _mm_load_si128(argbEven++); /* 4th 4 pixels */
-		const __m128i xo1 = _mm_load_si128(argbOdd++);  /* 1st 4 pixels */
-		const __m128i xo2 = _mm_load_si128(argbOdd++);  /* 2nd 4 pixels */
-		const __m128i xo3 = _mm_load_si128(argbOdd++);  /* 3rd 4 pixels */
-		const __m128i xo4 = _mm_load_si128(argbOdd++);  /* 4th 4 pixels */
+		const __m128i xe1 = _mm_loadu_si128(argbEven++); /* 1st 4 pixels */
+		const __m128i xe2 = _mm_loadu_si128(argbEven++); /* 2nd 4 pixels */
+		const __m128i xe3 = _mm_loadu_si128(argbEven++); /* 3rd 4 pixels */
+		const __m128i xe4 = _mm_loadu_si128(argbEven++); /* 4th 4 pixels */
+		const __m128i xo1 = _mm_loadu_si128(argbOdd++);  /* 1st 4 pixels */
+		const __m128i xo2 = _mm_loadu_si128(argbOdd++);  /* 2nd 4 pixels */
+		const __m128i xo3 = _mm_loadu_si128(argbOdd++);  /* 3rd 4 pixels */
+		const __m128i xo4 = _mm_loadu_si128(argbOdd++);  /* 4th 4 pixels */
 		{
 			/* Y: multiplications with subtotals and horizontal sums */
 			const __m128i y_factors = BGRX_Y_FACTORS;
