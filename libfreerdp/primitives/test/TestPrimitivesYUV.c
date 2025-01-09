@@ -1269,6 +1269,26 @@ static BOOL similarYUV(const BYTE* line1, const BYTE* line2, size_t len)
 	}
 }
 
+/* Due to optimizations the Y value might be off by +/- 1 */
+static int similarY(const BYTE* a, const BYTE* b, size_t size, size_t type)
+{
+	switch (type)
+	{
+		case 0:
+			for (size_t x = 0; x < size; x++)
+			{
+				const int ba = a[x];
+				const int bb = b[x];
+				const int diff = abs(ba - bb);
+				if (diff > 1)
+					return diff;
+			}
+			return 0;
+			break;
+		default:
+			return memcmp(a, b, size);
+	}
+}
 /* Check the result of generic matches the optimized routine.
  *
  */
@@ -1324,7 +1344,7 @@ static BOOL compare_rgb_to_yuv420(prim_size_t roi, DWORD type)
 
 		for (size_t x = 0; x < ARRAYSIZE(yline1); x++)
 		{
-			if (memcmp(yline1[x], yline2[x], yuvStep[x]) != 0)
+			if (similarY(yline1[x], yline2[x], yuvStep[x], x) != 0)
 			{
 				fprintf(stderr, "[%s] compare failed in component %" PRIuz ", line %" PRIuz "\n",
 				        __func__, x, y);
