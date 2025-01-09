@@ -1312,9 +1312,12 @@ static BOOL compare_rgb_to_yuv420(prim_size_t roi, DWORD type)
 		{
 			if (memcmp(yline1[x], yline2[x], yuvStep[x]) != 0)
 			{
-				fprintf(stderr, "[%s] compare failed in line %" PRIuz "\n", __func__, x);
+				fprintf(stderr, "[%s] compare failed in component %" PRIuz ", line %" PRIuz "\n",
+				        __func__, x, y);
 				fprintf(stderr, "[%s] roi %" PRIu32 "x%" PRIu32 "\n", __func__, roi.width,
 				        roi.height);
+				winpr_HexDump(TAG, WLOG_WARN, yline1[x], yuvStep[x]);
+				winpr_HexDump(TAG, WLOG_WARN, yline2[x], yuvStep[x]);
 				goto fail;
 			}
 		}
