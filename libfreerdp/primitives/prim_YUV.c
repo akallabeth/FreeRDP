@@ -804,6 +804,22 @@ static inline BYTE general_X_TO_R(const BYTE* pLine, uint8_t rPos, uint8_t gPos,
 	return RGB2Y(r1, g1, b1);
 }
 
+static inline void general_X_TO_YUV(const BYTE* WINPR_RESTRICT pLine1, BYTE* WINPR_RESTRICT pYLine,
+                                    BYTE* WINPR_RESTRICT pULine, BYTE* WINPR_RESTRICT pVLine,
+                                    uint8_t rPos, uint8_t gPos, uint8_t bPos)
+{
+	const BYTE r1 = pLine1[rPos];
+	const BYTE g1 = pLine1[gPos];
+	const BYTE b1 = pLine1[bPos];
+
+	pYLine[0] = RGB2Y(r1, g1, b1);
+	if (pULine && pVLine)
+	{
+		pULine[0] = RGB2U(r1, g1, b1);
+		pVLine[0] = RGB2V(r1, g1, b1);
+	}
+}
+
 static INLINE pstatus_t general_RGBToYUV420_DOUBLE_ROW_X(const BYTE* WINPR_RESTRICT pLine1,
                                                          const BYTE* WINPR_RESTRICT pLine2,
                                                          BYTE* WINPR_RESTRICT pYLine[2],
@@ -846,17 +862,9 @@ static INLINE pstatus_t general_RGBToYUV420_DOUBLE_ROW_X(const BYTE* WINPR_RESTR
 
 	for (; x < width; x++)
 	{
-		const BYTE r1 = pLine1[rPos];
-		const BYTE g1 = pLine1[gPos];
-		const BYTE b1 = pLine1[bPos];
-		pYLine[0][x] = RGB2Y(r1, g1, b1);
-		pULine[x / 2] = RGB2U(r1, g1, b1);
-		pVLine[x / 2] = RGB2V(r1, g1, b1);
-
-		const BYTE r2 = pLine2[rPos];
-		const BYTE g2 = pLine2[gPos];
-		const BYTE b2 = pLine2[bPos];
-		pYLine[1][x] = RGB2Y(r2, g2, b2);
+		general_X_TO_YUV(&pLine1[4ULL * x], &pYLine[0][x], &pULine[x / 2], &pVLine[x / 2], rPos,
+		                 gPos, bPos);
+		general_X_TO_YUV(&pLine2[4ULL * x], &pYLine[1][x], NULL, NULL, rPos, gPos, bPos);
 	}
 	return PRIMITIVES_SUCCESS;
 }
@@ -866,7 +874,8 @@ static INLINE pstatus_t general_RGBToYUV420_X(const BYTE* WINPR_RESTRICT pSrc, U
                                               const prim_size_t* WINPR_RESTRICT roi, uint8_t rPos,
                                               uint8_t gPos, uint8_t bPos)
 {
-	for (size_t y = 0; y < roi->height; y += 2)
+	size_t y = 0;
+	for (; y < roi->height - roi->height % 2; y += 2)
 	{
 		const BYTE* line1 = &pSrc[y * srcStep];
 		const BYTE* line2 = &pSrc[(1ULL + y) * srcStep];
@@ -876,6 +885,17 @@ static INLINE pstatus_t general_RGBToYUV420_X(const BYTE* WINPR_RESTRICT pSrc, U
 
 		general_RGBToYUV420_DOUBLE_ROW_X(line1, line2, yline, uline, vline, roi->width, rPos, gPos,
 		                                 bPos);
+	}
+
+	for (; y < roi->height; y++)
+	{
+		const BYTE* line1 = &pSrc[y * srcStep];
+		BYTE* yline = &pDst[0][y * dstStep[0]];
+
+		for (size_t x = 0; x < roi->width; x++)
+		{
+			general_X_TO_YUV(&line1[4ULL * x], &yline[x], NULL, NULL, rPos, gPos, bPos);
+		}
 	}
 
 	return PRIMITIVES_SUCCESS;
@@ -922,6 +942,7 @@ static inline void general_ANY_TO_YUV(const BYTE* WINPR_RESTRICT pLine1, UINT32 
 		pVLine[0] = RGB2V(r1, g1, b1);
 	}
 }
+
 static INLINE pstatus_t general_RGBToYUV420_DOUBLE_ROW_ANY(
     const BYTE* WINPR_RESTRICT pLine1, const BYTE* WINPR_RESTRICT pLine2, UINT32 format,
     BYTE* WINPR_RESTRICT pYLine[2], BYTE* WINPR_RESTRICT pULine, BYTE* WINPR_RESTRICT pVLine,
@@ -975,7 +996,8 @@ static INLINE pstatus_t general_RGBToYUV420_ANY(const BYTE* WINPR_RESTRICT pSrc,
                                                 const UINT32 dstStep[3],
                                                 const prim_size_t* WINPR_RESTRICT roi)
 {
-	for (size_t y = 0; y < roi->height; y += 2)
+	size_t y = 0;
+	for (; y < roi->height - roi->height % 2; y += 2)
 	{
 		const BYTE* line1 = &pSrc[y * srcStep];
 		const BYTE* line2 = &pSrc[(1ULL + y) * srcStep];
@@ -984,6 +1006,17 @@ static INLINE pstatus_t general_RGBToYUV420_ANY(const BYTE* WINPR_RESTRICT pSrc,
 		BYTE* vline = &pDst[2][(y / 2) * dstStep[2]];
 
 		general_RGBToYUV420_DOUBLE_ROW_ANY(line1, line2, format, yline, uline, vline, roi->width);
+	}
+
+	for (; y < roi->height; y++)
+	{
+		const BYTE* line1 = &pSrc[y * srcStep];
+		BYTE* yline = &pDst[0][y * dstStep[0]];
+
+		for (size_t x = 0; x < roi->width; x++)
+		{
+			general_ANY_TO_YUV(&line1[4ULL * x], format, &yline[x], NULL, NULL);
+		}
 	}
 
 	return PRIMITIVES_SUCCESS;
