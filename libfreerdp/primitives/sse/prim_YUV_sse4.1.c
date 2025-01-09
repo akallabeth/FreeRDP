@@ -638,26 +638,27 @@ static INLINE void sse41_RGBToYUV420_BGRX_UV(const BYTE* WINPR_RESTRICT src1,
 	const __m128i u_factors = BGRX_U_FACTORS;
 	const __m128i v_factors = BGRX_V_FACTORS;
 	const __m128i vector128 = CONST128_FACTORS;
-	const __m128i* rgb1 = (const __m128i*)src1;
-	const __m128i* rgb2 = (const __m128i*)src2;
-	__m64* udst = (__m64*)dst1;
-	__m64* vdst = (__m64*)dst2;
 
-	UINT32 x = 0;
+	size_t x = 0;
 	for (; x < width - width % 16; x += 16)
 	{
+		const __m128i* rgb1 = (const __m128i*)&src1[4ULL*x];
+		const __m128i* rgb2 = (const __m128i*)&src2[4ULL*x];
+		__m64* udst = (__m64*)&dst1[x / 2];
+		__m64* vdst = (__m64*)&dst2[x / 2];
+
 		/* subsample 16x2 pixels into 16x1 pixels */
-		__m128i x0 = _mm_loadu_si128(rgb1++);
-		__m128i x4 = _mm_loadu_si128(rgb2++);
+		__m128i x0 = _mm_loadu_si128(&rgb1[0]);
+		__m128i x4 = _mm_loadu_si128(&rgb2[0]);
 		x0 = _mm_avg_epu8(x0, x4);
-		__m128i x1 = _mm_loadu_si128(rgb1++);
-		x4 = _mm_loadu_si128(rgb2++);
+		__m128i x1 = _mm_loadu_si128(&rgb1[1]);
+		x4 = _mm_loadu_si128(&rgb2[1]);
 		x1 = _mm_avg_epu8(x1, x4);
-		__m128i x2 = _mm_loadu_si128(rgb1++);
-		x4 = _mm_loadu_si128(rgb2++);
+		__m128i x2 = _mm_loadu_si128(&rgb1[2]);
+		x4 = _mm_loadu_si128(&rgb2[2]);
 		x2 = _mm_avg_epu8(x2, x4);
-		__m128i x3 = _mm_loadu_si128(rgb1++);
-		x4 = _mm_loadu_si128(rgb2++);
+		__m128i x3 = _mm_loadu_si128(&rgb1[3]);
+		x4 = _mm_loadu_si128(&rgb2[3]);
 		x3 = _mm_avg_epu8(x3, x4);
 		/* subsample these 16x1 pixels into 8x1 pixels */
 		/**
@@ -687,9 +688,9 @@ static INLINE void sse41_RGBToYUV420_BGRX_UV(const BYTE* WINPR_RESTRICT src1,
 		/* add 128 */
 		x0 = _mm_sub_epi8(x0, vector128);
 		/* the lower 8 bytes go to the u plane */
-		_mm_storel_pi(udst++, _mm_castsi128_ps(x0));
+		_mm_storel_pi(udst, _mm_castsi128_ps(x0));
 		/* the upper 8 bytes go to the v plane */
-		_mm_storeh_pi(vdst++, _mm_castsi128_ps(x0));
+		_mm_storeh_pi(vdst, _mm_castsi128_ps(x0));
 	}
 
 	for (; x < width - width % 2; x += 2)
@@ -721,15 +722,15 @@ static pstatus_t sse41_RGBToYUV420_BGRX(const BYTE* WINPR_RESTRICT pSrc, UINT32 
 		return !PRIMITIVES_SUCCESS;
 	}
 
-	UINT32 y = 0;
+	size_t y = 0;
 	for (; y < roi->height - roi->height % 2; y += 2)
 	{
-		const BYTE* line1 = &pSrc[4ULL * y * srcStep];
-		const BYTE* line2 = &pSrc[4ULL * (1ULL + y) * srcStep];
-		BYTE* ydst1 = &pDst[0][y * dstStep[0]];
+		const BYTE* line1 = &pSrc[y * srcStep];
+		const BYTE* line2 = &pSrc[(1ULL + y) * srcStep];
+		BYTE* ydst1 = &pDst[0][1ULL * y * dstStep[0]];
 		BYTE* ydst2 = &pDst[0][(1ULL + y) * dstStep[0]];
-		BYTE* udst = &pDst[1][y / 2 * dstStep[1]];
-		BYTE* vdst = &pDst[2][y / 2 * dstStep[2]];
+		BYTE* udst = &pDst[1][1ULL * y / 2 * dstStep[1]];
+		BYTE* vdst = &pDst[2][1ULL * y / 2 * dstStep[2]];
 
 		sse41_RGBToYUV420_BGRX_UV(line1, line2, udst, vdst, roi->width);
 		sse41_RGBToYUV420_BGRX_Y(line1, ydst1, roi->width);
@@ -738,8 +739,8 @@ static pstatus_t sse41_RGBToYUV420_BGRX(const BYTE* WINPR_RESTRICT pSrc, UINT32 
 
 	for (; y < roi->height; y++)
 	{
-		const BYTE* line = &pSrc[4ULL * y * srcStep];
-		BYTE* ydst = &pDst[0][y * dstStep[0]];
+		const BYTE* line = &pSrc[y * srcStep];
+		BYTE* ydst = &pDst[0][1ULL * y * dstStep[0]];
 		sse41_RGBToYUV420_BGRX_Y(line, ydst, roi->width);
 	}
 
