@@ -1312,7 +1312,9 @@ static BOOL compare_rgb_to_yuv420(prim_size_t roi, DWORD type)
 		{
 			if (memcmp(yline1[x], yline2[x], yuvStep[x]) != 0)
 			{
-				fprintf(stderr, "[%s] compare failed in line %" PRIuz, __func__, x);
+				fprintf(stderr, "[%s] compare failed in line %" PRIuz "\n", __func__, x);
+				fprintf(stderr, "[%s] roi %" PRIu32 "x%" PRIu32 "\n", __func__, roi.width,
+				        roi.height);
 				goto fail;
 			}
 		}
