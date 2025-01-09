@@ -880,6 +880,93 @@ static INLINE pstatus_t general_RGBToYUV420_X(const BYTE* WINPR_RESTRICT pSrc, U
 	return PRIMITIVES_SUCCESS;
 }
 
+static INLINE pstatus_t general_RGBToYUV420_ANY(const BYTE* WINPR_RESTRICT pSrc, UINT32 srcFormat,
+                                                UINT32 srcStep, BYTE* WINPR_RESTRICT pDst[3],
+                                                const UINT32 dstStep[3],
+                                                const prim_size_t* WINPR_RESTRICT roi)
+{
+	const UINT32 bpp = FreeRDPGetBytesPerPixel(srcFormat);
+	size_t x1 = 0;
+	size_t x2 = bpp;
+	size_t x3 = srcStep;
+	size_t x4 = srcStep + bpp;
+	size_t y1 = 0;
+	size_t y2 = 1;
+	size_t y3 = dstStep[0];
+	size_t y4 = dstStep[0] + 1;
+	UINT32 max_x = roi->width - 1;
+	UINT32 max_y = roi->height - 1;
+
+	for (size_t y = 0, i = 0; y < roi->height; y += 2, i++)
+	{
+		const BYTE* src = pSrc + y * srcStep;
+		BYTE* ydst = pDst[0] + y * dstStep[0];
+		BYTE* udst = pDst[1] + i * dstStep[1];
+		BYTE* vdst = pDst[2] + i * dstStep[2];
+
+		for (size_t x = 0; x < roi->width; x += 2)
+		{
+			BYTE R = 0;
+			BYTE G = 0;
+			BYTE B = 0;
+			INT32 Ra = 0;
+			INT32 Ga = 0;
+			INT32 Ba = 0;
+			UINT32 color = 0;
+			/* row 1, pixel 1 */
+			color = FreeRDPReadColor(src + x1, srcFormat);
+			FreeRDPSplitColor(color, srcFormat, &R, &G, &B, NULL, NULL);
+			Ra = R;
+			Ga = G;
+			Ba = B;
+			ydst[y1] = RGB2Y(R, G, B);
+
+			if (x < max_x)
+			{
+				/* row 1, pixel 2 */
+				color = FreeRDPReadColor(src + x2, srcFormat);
+				FreeRDPSplitColor(color, srcFormat, &R, &G, &B, NULL, NULL);
+				Ra += R;
+				Ga += G;
+				Ba += B;
+				ydst[y2] = RGB2Y(R, G, B);
+			}
+
+			if (y < max_y)
+			{
+				/* row 2, pixel 1 */
+				color = FreeRDPReadColor(src + x3, srcFormat);
+				FreeRDPSplitColor(color, srcFormat, &R, &G, &B, NULL, NULL);
+				Ra += R;
+				Ga += G;
+				Ba += B;
+				ydst[y3] = RGB2Y(R, G, B);
+
+				if (x < max_x)
+				{
+					/* row 2, pixel 2 */
+					color = FreeRDPReadColor(src + x4, srcFormat);
+					FreeRDPSplitColor(color, srcFormat, &R, &G, &B, NULL, NULL);
+					Ra += R;
+					Ga += G;
+					Ba += B;
+					ydst[y4] = RGB2Y(R, G, B);
+				}
+			}
+
+			Ra >>= 2;
+			Ga >>= 2;
+			Ba >>= 2;
+			*udst++ = RGB2U(Ra, Ga, Ba);
+			*vdst++ = RGB2V(Ra, Ga, Ba);
+			ydst += 2;
+			src += 2ULL * bpp;
+		}
+	}
+
+	return PRIMITIVES_SUCCESS;
+}
+
 static pstatus_t general_RGBToYUV420_8u_P3AC4R(const BYTE* WINPR_RESTRICT pSrc, UINT32 srcFormat,
                                                UINT32 srcStep, BYTE* WINPR_RESTRICT pDst[3],
                                                const UINT32 dstStep[3],
@@ -904,7 +991,7 @@ static pstatus_t general_RGBToYUV420_8u_P3AC4R(const BYTE* WINPR_RESTRICT pSrc, 
 			return general_RGBToYUV420_X(pSrc, srcStep, pDst, dstStep, roi, 3, 2, 1);
 
 		default:
-			return -1;
+			return general_RGBToYUV420_ANY(pSrc, srcFormat, srcStep, pDst, dstStep, roi);
 	}
 }
 
