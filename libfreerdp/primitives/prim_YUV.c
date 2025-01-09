@@ -848,7 +848,7 @@ static INLINE pstatus_t general_RGBToYUV420_DOUBLE_ROW_X(const BYTE* WINPR_RESTR
 		pYLine[1][x] = y10;
 
 		const BYTE y11 = general_X_TO_R(&pLine2[4ULL * (1ULL + x)], rPos, gPos, bPos);
-		addUV_X(&pLine1[4ULL * (1ULL + x)], &u4, &v4, rPos, gPos, bPos);
+		addUV_X(&pLine2[4ULL * (1ULL + x)], &u4, &v4, rPos, gPos, bPos);
 		pYLine[1][1UL + x] = y11;
 
 		const INT16 uw = u4 >> 2;
