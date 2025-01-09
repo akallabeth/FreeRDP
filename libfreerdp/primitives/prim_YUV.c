@@ -906,7 +906,7 @@ static inline BYTE general_ANY_TO_R(const BYTE* pLine, UINT32 format)
 }
 
 static inline void general_ANY_TO_YUV(const BYTE* WINPR_RESTRICT pLine1, UINT32 format,
-                                      BYTE* WINPR_RESTRICT pYLine[2], BYTE* WINPR_RESTRICT pULine,
+                                      BYTE* WINPR_RESTRICT pYLine, BYTE* WINPR_RESTRICT pULine,
                                       BYTE* WINPR_RESTRICT pVLine)
 {
 	const UINT32 color1 = FreeRDPReadColor(pLine1, format);
