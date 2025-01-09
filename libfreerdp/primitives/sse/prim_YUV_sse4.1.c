@@ -579,7 +579,7 @@ static inline void sse41_BGRX_TO_YUV(const BYTE* WINPR_RESTRICT pLine1, BYTE* WI
 
 	if (pYLine)
 		pYLine[0] = RGB2Y(r1, g1, b1);
-	if (pULine && pVLine)
+	if (pULine)
 		pULine[0] = RGB2U(r1, g1, b1);
 	if (pVLine)
 		pVLine[0] = RGB2V(r1, g1, b1);
@@ -594,6 +594,7 @@ static INLINE void sse41_RGBToYUV420_BGRX_Y(const BYTE* WINPR_RESTRICT src, BYTE
 	__m128i* ydst = (__m128i*)dst;
 
 	UINT32 x = 0;
+
 	for (; x < width - width % 16; x += 16)
 	{
 		/* store 16 rgba pixels in 4 128 bit registers */
@@ -640,6 +641,7 @@ static INLINE void sse41_RGBToYUV420_BGRX_UV(const BYTE* WINPR_RESTRICT src1,
 	const __m128i vector128 = CONST128_FACTORS;
 
 	size_t x = 0;
+
 	for (; x < width - width % 16; x += 16)
 	{
 		const __m128i* rgb1 = (const __m128i*)&src1[4ULL*x];
@@ -651,15 +653,19 @@ static INLINE void sse41_RGBToYUV420_BGRX_UV(const BYTE* WINPR_RESTRICT src1,
 		__m128i x0 = _mm_loadu_si128(&rgb1[0]);
 		__m128i x4 = _mm_loadu_si128(&rgb2[0]);
 		x0 = _mm_avg_epu8(x0, x4);
+
 		__m128i x1 = _mm_loadu_si128(&rgb1[1]);
 		x4 = _mm_loadu_si128(&rgb2[1]);
 		x1 = _mm_avg_epu8(x1, x4);
+
 		__m128i x2 = _mm_loadu_si128(&rgb1[2]);
 		x4 = _mm_loadu_si128(&rgb2[2]);
 		x2 = _mm_avg_epu8(x2, x4);
+
 		__m128i x3 = _mm_loadu_si128(&rgb1[3]);
 		x4 = _mm_loadu_si128(&rgb2[3]);
 		x3 = _mm_avg_epu8(x3, x4);
+
 		/* subsample these 16x1 pixels into 8x1 pixels */
 		/**
 		 * shuffle controls
@@ -697,10 +703,10 @@ static INLINE void sse41_RGBToYUV420_BGRX_UV(const BYTE* WINPR_RESTRICT src1,
 	{
 		BYTE u[4] = { 0 };
 		BYTE v[4] = { 0 };
-		sse41_BGRX_TO_YUV(&src1[4ULL * (1ULL + x)], NULL, &u[0], &v[0]);
-		sse41_BGRX_TO_YUV(&src1[4ULL * x], NULL, &u[1], &v[1]);
-		sse41_BGRX_TO_YUV(&src2[4ULL * (1ULL + x)], NULL, &u[2], &v[2]);
-		sse41_BGRX_TO_YUV(&src2[4ULL * x], NULL, &u[3], &v[3]);
+		sse41_BGRX_TO_YUV(&src1[4ULL * x], NULL, &u[0], &v[0]);
+		sse41_BGRX_TO_YUV(&src1[4ULL * (1ULL + x)], NULL, &u[1], &v[1]);
+		sse41_BGRX_TO_YUV(&src2[4ULL * x], NULL, &u[2], &v[2]);
+		sse41_BGRX_TO_YUV(&src2[4ULL * (1ULL + x)], NULL, &u[3], &v[3]);
 		const INT16 u4 = (INT16)u[0] + u[1] + u[2] + u[3];
 		const INT16 uu = u4 / 4;
 		const BYTE u8 = CLIP(uu);
@@ -727,10 +733,10 @@ static pstatus_t sse41_RGBToYUV420_BGRX(const BYTE* WINPR_RESTRICT pSrc, UINT32 
 	{
 		const BYTE* line1 = &pSrc[y * srcStep];
 		const BYTE* line2 = &pSrc[(1ULL + y) * srcStep];
-		BYTE* ydst1 = &pDst[0][1ULL * y * dstStep[0]];
+		BYTE* ydst1 = &pDst[0][y * dstStep[0]];
 		BYTE* ydst2 = &pDst[0][(1ULL + y) * dstStep[0]];
-		BYTE* udst = &pDst[1][1ULL * y / 2 * dstStep[1]];
-		BYTE* vdst = &pDst[2][1ULL * y / 2 * dstStep[2]];
+		BYTE* udst = &pDst[1][y / 2 * dstStep[1]];
+		BYTE* vdst = &pDst[2][y / 2 * dstStep[2]];
 
 		sse41_RGBToYUV420_BGRX_UV(line1, line2, udst, vdst, roi->width);
 		sse41_RGBToYUV420_BGRX_Y(line1, ydst1, roi->width);

@@ -1275,6 +1275,8 @@ static int similarY(const BYTE* a, const BYTE* b, size_t size, size_t type)
 	switch (type)
 	{
 		case 0:
+		case 1:
+		case 2:
 			for (size_t x = 0; x < size; x++)
 			{
 				const int ba = a[x];
@@ -1352,6 +1354,7 @@ static BOOL compare_rgb_to_yuv420(prim_size_t roi, DWORD type)
 				        roi.height);
 				winpr_HexDump(TAG, WLOG_WARN, yline1[x], yuvStep[x]);
 				winpr_HexDump(TAG, WLOG_WARN, yline2[x], yuvStep[x]);
+				winpr_HexDump(TAG, WLOG_WARN, &rgb[y * stride], stride);
 				goto fail;
 			}
 		}
