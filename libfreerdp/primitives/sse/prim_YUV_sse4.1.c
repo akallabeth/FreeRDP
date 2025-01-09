@@ -586,13 +586,52 @@ static inline void sse41_BGRX_TO_YUV(const BYTE* WINPR_RESTRICT pLine1, BYTE* WI
 }
 
 /* compute the luma (Y) component from a single rgb source line */
-static inline __m128i muladdBR(__m128i x0, __m128i x1)
+
+/* Calculate 4 Y values for a given input
+ *
+ * input:
+ * lo = 54*R + 3*G and hi = 18*B + 61*G ordered in high and low
+ *
+ * calculate:
+ * (hi + lo) >> 8 in 32bit
+ *
+ * return 32bit integers with 4 Y values
+ */
+static inline __m128i add_final_sub(__m238i hi)
+{
+	const __m128i lomask =
+	    mm_set_epu8(0xFF, 0xFF, 7, 6, 0xFF, 0xFF, 5, 4, 0xFF, 0xFF, 3, 2, 0xFF, 0xFF, 1, 0);
+	const __m128i himask =
+	    mm_set_epu8(0xFF, 0xFF, 15, 14, 0xFF, 0xFF, 13, 12, 0xFF, 0xFF, 11, 10, 0xFF, 0xFF, 9, 8);
+	const __m128i hihi = _mm_shuffle_epi0(hi, himask);
+	const __m128i hilo = _mm_shuffle_epi0(hi, lomask);
+	const __m128i ahi = _mm_add_epi32(hilo, hihi);
+	return _mm_srai_epi32(ahi, 8);
+}
+
+/* Calculate 4 Y values for given inputs
+ *
+ * return 4 16bit YUV values
+ */
+static inline __m128i addshift_halves(__m128i lo, __m128i hi)
+{
+	const __m128i yhi = add_final_sub(hi);
+	const __m128i ylo = add_final_sub(lo);
+	return _mm_packus_epi32(ylo, yhi);
+}
+
+/* Calculate 8 YUV values for given input
+ *
+ * input: 4 BGRX values
+ *
+ * return 4 16bit YUV values
+ */
+static inline __m128i BGRX2Y(__m128i x0, __m128i x1, __m128i x2, __m128i x3)
 {
 	const __m128i lomask =
 	    mm_set_epu8(0xff, 5, 0xff, 5, 0xff, 1, 0xff, 1, 0xff, 6, 0xff, 4, 0xff, 2, 0xff, 0);
 	const __m128i himask =
 	    mm_set_epu8(0xff, 13, 0xff, 13, 0xff, 9, 0xff, 9, 0xff, 14, 0xff, 12, 0xff, 10, 0xff, 8);
-	const __m128i factors = _mm_set_epi16(3, 61, 3, 61, 54, 18, 54, 18);
 
 	/* reordered (high to low): G4G4G3G3G2G2G1G1R4B4R3B3R2B2R1B1 */
 	const __m128i x0lo = _mm_shuffle_epi8(x0, lomask);
@@ -604,6 +643,7 @@ static inline __m128i muladdBR(__m128i x0, __m128i x1)
 	 * mg1 = 3 * G
 	 * mg2 = 61 * G
 	 */
+	const __m128i factors = _mm_set_epi16(3, 61, 3, 61, 54, 18, 54, 18);
 	const __m128i fx0lo = _mm_mullo_epi16(x0lo, factors);
 	const __m128i fx0hi = _mm_mullo_epi16(x0hi, factors);
 
@@ -613,8 +653,7 @@ static inline __m128i muladdBR(__m128i x0, __m128i x1)
 	 * 54*R + 3*G
 	 * 18*B + 61*G
 	 */
-	const __m128i fmx0 = _mm_hadds_epi16(fx0lo, fx0hi);
-
+	return addshift_halves(fx0lo, fx0hi);
 }
 
 static INLINE void sse41_RGBToYUV420_BGRX_Y(const BYTE* WINPR_RESTRICT src, BYTE* dst, UINT32 width)
