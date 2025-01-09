@@ -1001,6 +1001,7 @@ static BOOL yuv444_to_rgb(BYTE* rgb, size_t stride, const BYTE* yuv[3], const UI
 /* Check the result of generic matches the optimized routine.
  *
  */
+#include <winpr/print.h>
 static BOOL compare_yuv444_to_rgb(prim_size_t roi, DWORD type)
 {
 	BOOL rc = FALSE;
@@ -1074,6 +1075,15 @@ static BOOL compare_yuv444_to_rgb(prim_size_t roi, DWORD type)
 				        "|0x%" PRIx8 "] g[0x%" PRIx8 "|0x%" PRIx8 "] b[0x%" PRIx8 "|0x%" PRIx8
 				        "]\n",
 				        x, y, r1, r2, g1, g2, b1, b2);
+				fprintf(stderr, "roi: %dx%d\n", roi.width, roi.height);
+				winpr_HexDump("y0", WLOG_INFO, &yline[0][x], 16);
+				winpr_HexDump("y1", WLOG_INFO, &yline[0][x + roi.width], 16);
+				winpr_HexDump("u0", WLOG_INFO, &yline[1][x], 16);
+				winpr_HexDump("u1", WLOG_INFO, &yline[1][x + roi.width], 16);
+				winpr_HexDump("v0", WLOG_INFO, &yline[2][x], 16);
+				winpr_HexDump("v1", WLOG_INFO, &yline[2][x + roi.width], 16);
+				winpr_HexDump("foo1",WLOG_INFO, &line1[x * 4], 16);
+                winpr_HexDump("foo2",WLOG_INFO, &line2[x * 4], 16);
 				goto fail;
 			}
 		}
