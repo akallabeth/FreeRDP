@@ -158,15 +158,14 @@ static UINT ainput_server_open_channel(ainput_server* ainput)
 static UINT ainput_server_send_version(ainput_server* ainput)
 {
 	ULONG written = 0;
-	wStream* s = NULL;
 
 	WINPR_ASSERT(ainput);
 
-	s = ainput->buffer;
+	wStream* s = ainput->buffer;
 	WINPR_ASSERT(s);
 
 	Stream_SetPosition(s, 0);
-	if (!Stream_EnsureCapacity(s, 10))
+	if (!Stream_EnsureRemainingCapacity(s, 10))
 	{
 		WLog_WARN(TAG, "[%s] out of memory", AINPUT_DVC_CHANNEL_NAME);
 		return ERROR_OUTOFMEMORY;

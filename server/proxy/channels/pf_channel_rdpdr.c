@@ -197,7 +197,7 @@ static wStream* rdpdr_get_send_buffer(pf_channel_common_context* rdpdr, UINT16 c
 	WINPR_ASSERT(rdpdr->s);
 	if (!Stream_SetPosition(rdpdr->s, 0))
 		return NULL;
-	if (!Stream_EnsureCapacity(rdpdr->s, capacity + 4))
+	if (!Stream_EnsureRemainingCapacity(rdpdr->s, capacity + 4))
 		return NULL;
 	Stream_Write_UINT16(rdpdr->s, component);
 	Stream_Write_UINT16(rdpdr->s, PacketID);

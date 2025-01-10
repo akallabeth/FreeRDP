@@ -534,7 +534,7 @@ UINT rdpei_server_handle_messages(RdpeiServerContext* context)
 		Stream_SetPosition(s, 0);
 		if (priv->expectedBytes)
 		{
-			if (!Stream_EnsureCapacity(s, priv->expectedBytes))
+			if (!Stream_EnsureRemainingCapacity(s, priv->expectedBytes))
 			{
 				WLog_ERR(TAG, "Stream_EnsureCapacity failed!");
 				return CHANNEL_RC_NO_MEMORY;
@@ -614,7 +614,7 @@ UINT rdpei_server_send_sc_ready(RdpeiServerContext* context, UINT32 version, UIN
 	if (version >= RDPINPUT_PROTOCOL_V300)
 		pduLen += 4;
 
-	if (!Stream_EnsureCapacity(priv->outputStream, RDPINPUT_HEADER_LENGTH + pduLen))
+	if (!Stream_EnsureRemainingCapacity(priv->outputStream, RDPINPUT_HEADER_LENGTH + pduLen))
 	{
 		WLog_ERR(TAG, "Stream_EnsureCapacity failed!");
 		return CHANNEL_RC_NO_MEMORY;
@@ -663,7 +663,7 @@ UINT rdpei_server_suspend(RdpeiServerContext* context)
 	}
 
 	Stream_SetPosition(priv->outputStream, 0);
-	if (!Stream_EnsureCapacity(priv->outputStream, RDPINPUT_HEADER_LENGTH))
+	if (!Stream_EnsureRemainingCapacity(priv->outputStream, RDPINPUT_HEADER_LENGTH))
 	{
 		WLog_ERR(TAG, "Stream_EnsureCapacity failed!");
 		return CHANNEL_RC_NO_MEMORY;
@@ -709,7 +709,7 @@ UINT rdpei_server_resume(RdpeiServerContext* context)
 	}
 
 	Stream_SetPosition(priv->outputStream, 0);
-	if (!Stream_EnsureCapacity(priv->outputStream, RDPINPUT_HEADER_LENGTH))
+	if (!Stream_EnsureRemainingCapacity(priv->outputStream, RDPINPUT_HEADER_LENGTH))
 	{
 		WLog_ERR(TAG, "Stream_EnsureCapacity failed!");
 		return CHANNEL_RC_NO_MEMORY;

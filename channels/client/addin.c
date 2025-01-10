@@ -668,10 +668,7 @@ UINT channel_client_post_message(void* MsgsHandle, LPVOID pData, UINT32 dataLeng
 	if (dataFlags & CHANNEL_FLAG_FIRST)
 	{
 		if (internals->data_in)
-		{
-			if (!Stream_EnsureCapacity(internals->data_in, totalLength))
-				return CHANNEL_RC_NO_MEMORY;
-		}
+			Stream_SetPosition(internals->data_in, 0);
 		else
 			internals->data_in = Stream_New(NULL, totalLength);
 	}

@@ -717,7 +717,7 @@ static BOOL freerdp_dsp_channel_mix(FREERDP_DSP_CONTEXT* WINPR_RESTRICT context,
 		switch (srcFormat->nChannels)
 		{
 			case 1:
-				if (!Stream_EnsureCapacity(context->common.channelmix, size * 2))
+				if (!Stream_EnsureRemainingCapacity(context->common.channelmix, size * 2))
 					return FALSE;
 
 				for (size_t x = 0; x < samples; x++)
@@ -747,7 +747,7 @@ static BOOL freerdp_dsp_channel_mix(FREERDP_DSP_CONTEXT* WINPR_RESTRICT context,
 	switch (srcFormat->nChannels)
 	{
 		case 2:
-			if (!Stream_EnsureCapacity(context->common.channelmix, size / 2))
+			if (!Stream_EnsureRemainingCapacity(context->common.channelmix, size / 2))
 				return FALSE;
 
 			/* Simply drop second channel.

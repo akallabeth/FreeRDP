@@ -155,13 +155,13 @@ wStream* transport_send_stream_init(rdpTransport* transport, size_t size)
 	if (!s)
 		return NULL;
 
-	if (!Stream_EnsureCapacity(s, size))
+	Stream_SetPosition(s, 0);
+	if (!Stream_EnsureRemainingCapacity(s, size))
 	{
 		Stream_Release(s);
 		return NULL;
 	}
 
-	Stream_SetPosition(s, 0);
 	return s;
 }
 
@@ -1082,7 +1082,7 @@ static int transport_default_read_pdu(rdpTransport* transport, wStream* s)
 	}
 	else if (transport->earlyUserAuth)
 	{
-		if (!Stream_EnsureCapacity(s, 4))
+		if (!Stream_EnsureRemainingCapacity(s, 4))
 			return -1;
 		const SSIZE_T rc = transport_read_layer_bytes(transport, s, 4);
 		if (rc != 1)
@@ -1110,14 +1110,13 @@ static int transport_default_read_pdu(rdpTransport* transport, wStream* s)
 		pduLength = (size_t)status;
 
 		/* Read in rest of the PDU */
-		if (!Stream_EnsureCapacity(s, pduLength))
-			return -1;
-
 		position = Stream_GetPosition(s);
 		if (position > pduLength)
 			return -1;
 		else if (position < pduLength)
 		{
+			if (!Stream_EnsureRemainingCapacity(s, pduLength - position))
+				return -1;
 			status = transport_read_layer_bytes(transport, s, pduLength - position);
 			if (status != 1)
 			{

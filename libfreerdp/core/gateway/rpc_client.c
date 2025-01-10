@@ -458,13 +458,13 @@ static int rpc_client_recv_fragment(rdpRpc* rpc, wStream* fragment)
 		{
 			const rpcconn_response_hdr_t* response =
 			    (const rpcconn_response_hdr_t*)&header.response;
-			if (!Stream_EnsureCapacity(pdu->s, response->alloc_hint))
-				goto fail;
 
 			if (Stream_Length(fragment) < StubOffset + StubLength)
 				goto fail;
 
 			Stream_SetPosition(fragment, StubOffset);
+			if (!Stream_EnsureRemainingCapacity(pdu->s, StubLength))
+				goto fail;
 			Stream_Write(pdu->s, Stream_ConstPointer(fragment), StubLength);
 			rpc->StubFragCount++;
 
@@ -508,7 +508,7 @@ static int rpc_client_recv_fragment(rdpRpc* rpc, wStream* fragment)
 			pdu->CallId = header.common.call_id;
 
 			const size_t len = Stream_Length(fragment);
-			if (!Stream_EnsureCapacity(pdu->s, len))
+			if (!Stream_EnsureRemainingCapacity(pdu->s, len))
 				goto fail;
 
 			Stream_Write(pdu->s, Stream_Buffer(fragment), len);
@@ -534,7 +534,7 @@ static int rpc_client_recv_fragment(rdpRpc* rpc, wStream* fragment)
 		pdu->CallId = header.common.call_id;
 
 		const size_t len = Stream_Length(fragment);
-		if (!Stream_EnsureCapacity(pdu->s, len))
+		if (!Stream_EnsureRemainingCapacity(pdu->s, len))
 			goto fail;
 
 		Stream_Write(pdu->s, Stream_Buffer(fragment), len);

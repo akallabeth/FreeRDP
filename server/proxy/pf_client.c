@@ -946,9 +946,9 @@ static int pf_client_verify_X509_certificate(freerdp* instance, const BYTE* data
 	pc = (pClientContext*)instance->context;
 	WINPR_ASSERT(pc);
 
-	if (!Stream_EnsureCapacity(pc->remote_pem, length))
-		return 0;
 	Stream_SetPosition(pc->remote_pem, 0);
+	if (!Stream_EnsureRemainingCapacity(pc->remote_pem, length))
+		return 0;
 
 	free(pc->remote_hostname);
 	pc->remote_hostname = NULL;

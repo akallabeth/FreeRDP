@@ -174,7 +174,7 @@ static BOOL freerdp_dsp_channel_mix(FREERDP_DSP_CONTEXT* WINPR_RESTRICT context,
 		switch (srcFormat->nChannels)
 		{
 			case 1:
-				if (!Stream_EnsureCapacity(context->common.channelmix, size * 2))
+				if (!Stream_EnsureRemainingCapacity(context->common.channelmix, size * 2))
 					return FALSE;
 
 				for (size_t x = 0; x < samples; x++)
@@ -201,7 +201,7 @@ static BOOL freerdp_dsp_channel_mix(FREERDP_DSP_CONTEXT* WINPR_RESTRICT context,
 	switch (srcFormat->nChannels)
 	{
 		case 2:
-			if (!Stream_EnsureCapacity(context->common.channelmix, size / 2))
+			if (!Stream_EnsureRemainingCapacity(context->common.channelmix, size / 2))
 				return FALSE;
 
 			/* Simply drop second channel.
@@ -281,7 +281,7 @@ static BOOL freerdp_dsp_resample(FREERDP_DSP_CONTEXT* WINPR_RESTRICT context,
 	    srcFormat->nSamplesPerSec;
 	rsize = rframes * rbytes;
 
-	if (!Stream_EnsureCapacity(context->common.resample, rsize))
+	if (!Stream_EnsureRemainingCapacity(context->common.resample, rsize))
 		return FALSE;
 
 	error =
@@ -362,7 +362,7 @@ static BOOL freerdp_dsp_decode_ima_adpcm(FREERDP_DSP_CONTEXT* WINPR_RESTRICT con
 	const UINT32 block_size = context->common.format.nBlockAlign;
 	const UINT32 channels = context->common.format.nChannels;
 
-	if (!Stream_EnsureCapacity(out, out_size))
+	if (!Stream_EnsureRemainingCapacity(out, out_size))
 		return FALSE;
 
 	while (size > 0)
@@ -515,7 +515,7 @@ static BOOL freerdp_dsp_decode_mp3(FREERDP_DSP_CONTEXT* WINPR_RESTRICT context,
 
 	buffer_size = 2 * context->common.format.nChannels * context->common.format.nSamplesPerSec;
 
-	if (!Stream_EnsureCapacity(context->common.buffer, 2 * buffer_size))
+	if (!Stream_EnsureRemainingCapacity(context->common.buffer, 2 * buffer_size))
 		return FALSE;
 
 	pcm_l = Stream_BufferAs(context->common.buffer, short);
@@ -922,7 +922,7 @@ static BOOL freerdp_dsp_decode_ms_adpcm(FREERDP_DSP_CONTEXT* WINPR_RESTRICT cont
 	const UINT32 channels = context->common.format.nChannels;
 	const UINT32 block_size = context->common.format.nBlockAlign;
 
-	if (!Stream_EnsureCapacity(out, out_size))
+	if (!Stream_EnsureRemainingCapacity(out, out_size))
 		return FALSE;
 
 	while (size > 0)
@@ -1495,8 +1495,8 @@ BOOL freerdp_dsp_context_reset(FREERDP_DSP_CONTEXT* WINPR_RESTRICT context,
 			nb_block_per_packet++;
 
 		context->adpcm.ima.packet_size = nb_block_per_packet * context->common.format.nBlockAlign;
-		Stream_EnsureCapacity(context->common.buffer, context->adpcm.ima.packet_size);
 		Stream_SetPosition(context->common.buffer, 0);
+		Stream_EnsureRemainingCapacity(context->common.buffer, context->adpcm.ima.packet_size);
 	}
 
 #if defined(WITH_OPUS)

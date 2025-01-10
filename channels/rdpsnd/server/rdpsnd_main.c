@@ -1195,7 +1195,7 @@ UINT rdpsnd_server_handle_messages(RdpsndServerContext* context)
 
 		if (priv->expectedBytes)
 		{
-			if (!Stream_EnsureCapacity(s, priv->expectedBytes))
+			if (!Stream_EnsureRemainingCapacity(s, priv->expectedBytes))
 			{
 				WLog_ERR(TAG, "Stream_EnsureCapacity failed!");
 				return CHANNEL_RC_NO_MEMORY;
