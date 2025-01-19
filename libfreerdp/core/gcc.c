@@ -1201,6 +1201,11 @@ BOOL gcc_read_client_core_data(wStream* s, rdpMcs* mcs)
 	Stream_Seek(s, 64);                                   /* imeFileName (64 bytes) */
 	blockLength -= 128;
 
+	WLog_INFO("keyboard-logger",
+	          "Keyboard Layout=%" PRIu32 ", Type=%" PRIu32 ", SubType=%" PRIu32
+	          ", FunctionKey=%" PRIu32,
+	          settings->KeyboardLayout, settings->KeyboardType, settings->KeyboardSubType,
+	          settings->KeyboardFunctionKey);
 	/**
 	 * The following fields are all optional. If one field is present, all of the preceding
 	 * fields MUST also be present. If one field is not present, all of the subsequent fields

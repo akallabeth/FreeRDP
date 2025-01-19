@@ -207,6 +207,9 @@ static BOOL x11_shadow_input_synchronize_event(rdpShadowSubsystem* subsystem,
 static BOOL x11_shadow_input_keyboard_event(rdpShadowSubsystem* subsystem, rdpShadowClient* client,
                                             UINT16 flags, UINT8 code)
 {
+	WLog_INFO("keyboard-logger", "KeyboardEvent flags=0x%04" PRIx16 ", code=0x%02" PRIx8, flags,
+	          code);
+
 #ifdef WITH_XTEST
 	x11ShadowSubsystem* x11 = (x11ShadowSubsystem*)subsystem;
 	DWORD vkcode = 0;
@@ -254,6 +257,8 @@ static BOOL x11_shadow_input_unicode_keyboard_event(rdpShadowSubsystem* subsyste
                                                     rdpShadowClient* client, UINT16 flags,
                                                     UINT16 code)
 {
+	WLog_INFO("keyboard-logger", "UnicodeKeyboardEvent flags=0x%04" PRIx16 ", code=0x%04" PRIx16,
+	          flags, code);
 	/* TODO: Implement */
 	WLog_WARN(TAG, "not implemented");
 	return TRUE;
