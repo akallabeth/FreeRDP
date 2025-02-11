@@ -13,12 +13,9 @@
  * this code may be covered by patents by HP, Microsoft, or other parties.
  */
 
-#ifdef __GNUC__
 #pragma once
-#endif
 
-#ifndef FREERDP_LIB_PRIM_TEMPLATES_H
-#define FREERDP_LIB_PRIM_TEMPLATES_H
+#include "prim_avxsse.h"
 
 /* These are prototypes for SSE (potentially NEON) routines that do a
  * simple SSE operation over an array of data.  Since so much of this
@@ -440,5 +437,3 @@
 		}                                                                                       \
 		return PRIMITIVES_SUCCESS;                                                              \
 	}
-
-#endif /* FREERDP_LIB_PRIM_TEMPLATES_H */
