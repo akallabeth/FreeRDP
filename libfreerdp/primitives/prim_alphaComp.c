@@ -85,12 +85,12 @@ static pstatus_t general_alphaComp_argb(const BYTE* pSrc1, UINT32 src1Step, cons
 }
 
 /* ------------------------------------------------------------------------- */
-void primitives_init_alphaComp(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_alphaComp(primitives_t* prims)
 {
 	prims->alphaComp_argb = general_alphaComp_argb;
 }
 
-void primitives_init_alphaComp_opt(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_alphaComp_opt(primitives_t* prims)
 {
 	primitives_init_alphaComp_sse3(prims);
 }

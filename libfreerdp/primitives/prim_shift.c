@@ -126,7 +126,7 @@ static INLINE pstatus_t general_shiftC_16u(const UINT16* pSrc, INT32 val, UINT16
 }
 
 /* ------------------------------------------------------------------------- */
-void primitives_init_shift(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_shift(primitives_t* prims)
 {
 	/* Start with the default. */
 	prims->lShiftC_16s_inplace = general_lShiftC_16s_inplace;
@@ -139,7 +139,7 @@ void primitives_init_shift(primitives_t* WINPR_RESTRICT prims)
 	prims->shiftC_16u = general_shiftC_16u;
 }
 
-void primitives_init_shift_opt(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_shift_opt(primitives_t* prims)
 {
 	primitives_init_shift_sse3(prims);
 }

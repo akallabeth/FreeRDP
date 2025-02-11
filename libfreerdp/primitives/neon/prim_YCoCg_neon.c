@@ -155,7 +155,7 @@ static pstatus_t neon_YCoCgToRGB_8u_AC4R(const BYTE* WINPR_RESTRICT pSrc, INT32 
 #endif
 
 /* ------------------------------------------------------------------------- */
-void primitives_init_YCoCg_neon(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_YCoCg_neon(primitives_t* prims)
 {
 #if defined(NEON_INTRINSICS_ENABLED)
 	generic = primitives_get_generic();

@@ -261,7 +261,7 @@ static pstatus_t primitives_uninit_opencl(void)
 	return PRIMITIVES_SUCCESS;
 }
 
-static BOOL primitives_init_opencl_context(primitives_opencl_context* WINPR_RESTRICT prims)
+static BOOL primitives_init_opencl_context(primitives_opencl_context* prims)
 {
 	cl_uint ndevices = 0;
 	cl_uint nplatforms = 0;

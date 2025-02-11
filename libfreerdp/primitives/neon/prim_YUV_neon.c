@@ -776,7 +776,7 @@ static pstatus_t neon_YUV420CombineToYUV444(avc444_frame_type type,
 }
 #endif
 
-void primitives_init_YUV_neon(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_YUV_neon(primitives_t* prims)
 {
 #if defined(NEON_INTRINSICS_ENABLED)
 	generic = primitives_get_generic();

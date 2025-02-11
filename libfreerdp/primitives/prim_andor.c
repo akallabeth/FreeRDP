@@ -50,14 +50,14 @@ static pstatus_t general_orC_32u(const UINT32* pSrc, UINT32 val, UINT32* pDst, I
 }
 
 /* ------------------------------------------------------------------------- */
-void primitives_init_andor(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_andor(primitives_t* prims)
 {
 	/* Start with the default. */
 	prims->andC_32u = general_andC_32u;
 	prims->orC_32u = general_orC_32u;
 }
 
-void primitives_init_andor_opt(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_andor_opt(primitives_t* prims)
 {
 	primitives_init_andor_sse3(prims);
 }

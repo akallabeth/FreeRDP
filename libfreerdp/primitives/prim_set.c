@@ -117,7 +117,7 @@ static pstatus_t general_set_32u(UINT32 val, UINT32* pDst, UINT32 len)
 }
 
 /* ------------------------------------------------------------------------- */
-void primitives_init_set(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_set(primitives_t* prims)
 {
 	/* Start with the default. */
 	prims->set_8u = general_set_8u;
@@ -126,7 +126,7 @@ void primitives_init_set(primitives_t* WINPR_RESTRICT prims)
 	prims->zero = general_zero;
 }
 
-void primitives_init_set_opt(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_set_opt(primitives_t* prims)
 {
 	primitives_init_set_sse2(prims);
 }

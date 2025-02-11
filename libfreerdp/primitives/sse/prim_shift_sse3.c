@@ -140,7 +140,7 @@ static pstatus_t sse2_lShiftC_16s_inplace(INT16* WINPR_RESTRICT pSrcDst, UINT32 
  */
 
 /* ------------------------------------------------------------------------- */
-void primitives_init_shift_sse3(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_shift_sse3(primitives_t* prims)
 {
 #if defined(SSE_AVX_INTRINSICS_ENABLED)
 	generic = primitives_get_generic();

@@ -38,7 +38,7 @@ SSE3_SCD_PRE_ROUTINE(sse3_orC_32u, UINT32, generic->orC_32u, _mm_or_si128, *dptr
 #endif
 
 /* ------------------------------------------------------------------------- */
-void primitives_init_andor_sse3(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_andor_sse3(primitives_t* prims)
 {
 #if defined(SSE_AVX_INTRINSICS_ENABLED)
 	generic = primitives_get_generic();

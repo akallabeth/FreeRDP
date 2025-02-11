@@ -2336,7 +2336,7 @@ static pstatus_t general_RGBToAVC444YUVv2(const BYTE* WINPR_RESTRICT pSrc, UINT3
 	return !PRIMITIVES_SUCCESS;
 }
 
-void primitives_init_YUV(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_YUV(primitives_t* prims)
 {
 	prims->YUV420ToRGB_8u_P3AC4R = general_YUV420ToRGB_8u_P3AC4R;
 	prims->YUV444ToRGB_8u_P3AC4R = general_YUV444ToRGB_8u_P3AC4R;
@@ -2348,7 +2348,7 @@ void primitives_init_YUV(primitives_t* WINPR_RESTRICT prims)
 	prims->RGBToAVC444YUVv2 = general_RGBToAVC444YUVv2;
 }
 
-void primitives_init_YUV_opt(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_YUV_opt(primitives_t* prims)
 {
 	primitives_init_YUV_sse41(prims);
 	primitives_init_YUV_neon(prims);

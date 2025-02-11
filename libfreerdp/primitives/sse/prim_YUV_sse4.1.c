@@ -1751,7 +1751,7 @@ static pstatus_t sse41_YUV420CombineToYUV444(avc444_frame_type type,
 }
 #endif
 
-void primitives_init_YUV_sse41(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_YUV_sse41(primitives_t* prims)
 {
 #if defined(SSE_AVX_INTRINSICS_ENABLED)
 	generic = primitives_get_generic();

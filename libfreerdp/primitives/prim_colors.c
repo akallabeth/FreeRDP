@@ -559,7 +559,7 @@ general_RGBToRGB_16s8u_P3AC4R(const INT16* WINPR_RESTRICT pSrc[3], /* 16-bit R,G
 	}
 }
 /* ------------------------------------------------------------------------- */
-void primitives_init_colors(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_colors(primitives_t* prims)
 {
 	prims->yCbCrToRGB_16s8u_P3AC4R = general_yCbCrToRGB_16s8u_P3AC4R;
 	prims->yCbCrToRGB_16s16s_P3P3 = general_yCbCrToRGB_16s16s_P3P3;
@@ -568,7 +568,7 @@ void primitives_init_colors(primitives_t* WINPR_RESTRICT prims)
 }
 
 /* ------------------------------------------------------------------------- */
-void primitives_init_colors_opt(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_colors_opt(primitives_t* prims)
 {
 	primitives_init_colors_sse2(prims);
 	primitives_init_colors_neon(prims);

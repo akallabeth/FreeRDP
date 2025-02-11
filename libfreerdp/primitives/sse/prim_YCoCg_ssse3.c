@@ -449,7 +449,7 @@ static pstatus_t ssse3_YCoCgRToRGB_8u_AC4R(const BYTE* WINPR_RESTRICT pSrc, INT3
 #endif
 
 /* ------------------------------------------------------------------------- */
-void primitives_init_YCoCg_ssse3(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_YCoCg_ssse3(primitives_t* prims)
 {
 #if defined(SSE_AVX_INTRINSICS_ENABLED)
 	generic = primitives_get_generic();

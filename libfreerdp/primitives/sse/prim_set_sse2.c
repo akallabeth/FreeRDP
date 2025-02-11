@@ -213,7 +213,7 @@ static pstatus_t sse2_set_32s(INT32 val, INT32* WINPR_RESTRICT pDst, UINT32 len)
 #endif
 
 /* ------------------------------------------------------------------------- */
-void primitives_init_set_sse2(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_set_sse2(primitives_t* prims)
 {
 #if defined(SSE_AVX_INTRINSICS_ENABLED)
 	generic = primitives_get_generic();

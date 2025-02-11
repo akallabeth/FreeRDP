@@ -168,7 +168,7 @@ static pstatus_t ssse3_sign_16s(const INT16* WINPR_RESTRICT pSrc, INT16* WINPR_R
 #endif /* SSE_AVX_INTRINSICS_ENABLED */
 
 /* ------------------------------------------------------------------------- */
-void primitives_init_sign_ssse3(primitives_t* WINPR_RESTRICT prims)
+void primitives_init_sign_ssse3(primitives_t* prims)
 {
 #if defined(SSE_AVX_INTRINSICS_ENABLED)
 	generic = primitives_get_generic();
