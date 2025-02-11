@@ -83,21 +83,21 @@
 		{                                                                             \
 			while (count--)                                                           \
 			{                                                                         \
-				__m128i xmm0 = _mm_lddqu_si128((const __m128i*)sptr);                 \
+				__m128i xmm0 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm1 = _mm_lddqu_si128((const __m128i*)sptr);                 \
+				__m128i xmm1 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm2 = _mm_lddqu_si128((const __m128i*)sptr);                 \
+				__m128i xmm2 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm3 = _mm_lddqu_si128((const __m128i*)sptr);                 \
+				__m128i xmm3 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm4 = _mm_lddqu_si128((const __m128i*)sptr);                 \
+				__m128i xmm4 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm5 = _mm_lddqu_si128((const __m128i*)sptr);                 \
+				__m128i xmm5 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm6 = _mm_lddqu_si128((const __m128i*)sptr);                 \
+				__m128i xmm6 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm7 = _mm_lddqu_si128((const __m128i*)sptr);                 \
+				__m128i xmm7 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
 				xmm0 = _op_(xmm0, (_op_type_)val);                                    \
 				xmm1 = _op_(xmm1, (_op_type_)val);                                    \
@@ -107,21 +107,21 @@
 				xmm5 = _op_(xmm5, (_op_type_)val);                                    \
 				xmm6 = _op_(xmm6, (_op_type_)val);                                    \
 				xmm7 = _op_(xmm7, (_op_type_)val);                                    \
-				_mm_store_si128((__m128i*)dptr, xmm0);                                \
+				STORE_SI128(dptr, xmm0);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm1);                                \
+				STORE_SI128(dptr, xmm1);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm2);                                \
+				STORE_SI128(dptr, xmm2);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm3);                                \
+				STORE_SI128(dptr, xmm3);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm4);                                \
+				STORE_SI128(dptr, xmm4);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm5);                                \
+				STORE_SI128(dptr, xmm5);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm6);                                \
+				STORE_SI128(dptr, xmm6);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm7);                                \
+				STORE_SI128(dptr, xmm7);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
 			}                                                                         \
 		}                                                                             \
@@ -129,21 +129,21 @@
 		{                                                                             \
 			while (count--)                                                           \
 			{                                                                         \
-				__m128i xmm0 = _mm_load_si128((const __m128i*)sptr);                  \
+				__m128i xmm0 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm1 = _mm_load_si128((const __m128i*)sptr);                  \
+				__m128i xmm1 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm2 = _mm_load_si128((const __m128i*)sptr);                  \
+				__m128i xmm2 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm3 = _mm_load_si128((const __m128i*)sptr);                  \
+				__m128i xmm3 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm4 = _mm_load_si128((const __m128i*)sptr);                  \
+				__m128i xmm4 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm5 = _mm_load_si128((const __m128i*)sptr);                  \
+				__m128i xmm5 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm6 = _mm_load_si128((const __m128i*)sptr);                  \
+				__m128i xmm6 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
-				__m128i xmm7 = _mm_load_si128((const __m128i*)sptr);                  \
+				__m128i xmm7 = LOAD_SI128(sptr);                                      \
 				sptr += (16 / sizeof(_type_));                                        \
 				xmm0 = _op_(xmm0, (_op_type_)val);                                    \
 				xmm1 = _op_(xmm1, (_op_type_)val);                                    \
@@ -153,21 +153,21 @@
 				xmm5 = _op_(xmm5, (_op_type_)val);                                    \
 				xmm6 = _op_(xmm6, (_op_type_)val);                                    \
 				xmm7 = _op_(xmm7, (_op_type_)val);                                    \
-				_mm_store_si128((__m128i*)dptr, xmm0);                                \
+				STORE_SI128(dptr, xmm0);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm1);                                \
+				STORE_SI128(dptr, xmm1);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm2);                                \
+				STORE_SI128(dptr, xmm2);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm3);                                \
+				STORE_SI128(dptr, xmm3);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm4);                                \
+				STORE_SI128(dptr, xmm4);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm5);                                \
+				STORE_SI128(dptr, xmm5);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm6);                                \
+				STORE_SI128(dptr, xmm6);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
-				_mm_store_si128((__m128i*)dptr, xmm7);                                \
+				STORE_SI128(dptr, xmm7);                                              \
 				dptr += (16 / sizeof(_type_));                                        \
 			}                                                                         \
 		}                                                                             \
@@ -179,7 +179,7 @@
 			__m128i xmm0 = LOAD_SI128(sptr);                                          \
 			sptr += (16 / sizeof(_type_));                                            \
 			xmm0 = _op_(xmm0, (_op_type_)val);                                        \
-			_mm_store_si128((__m128i*)dptr, xmm0);                                    \
+			STORE_SI128(dptr, xmm0);                                                  \
 			dptr += (16 / sizeof(_type_));                                            \
 		}                                                                             \
 		/* Finish off the remainder. */                                               \
@@ -237,25 +237,25 @@
 		{                                                                               \
 			while (count--)                                                             \
 			{                                                                           \
-				__m128i xmm1 = _mm_lddqu_si128((const __m128i*)sptr);                   \
+				__m128i xmm1 = LOAD_SI128(sptr);                                        \
 				sptr += (16 / sizeof(_type_));                                          \
-				__m128i xmm2 = _mm_lddqu_si128((const __m128i*)sptr);                   \
+				__m128i xmm2 = LOAD_SI128(sptr);                                        \
 				sptr += (16 / sizeof(_type_));                                          \
-				__m128i xmm3 = _mm_lddqu_si128((const __m128i*)sptr);                   \
+				__m128i xmm3 = LOAD_SI128(sptr);                                        \
 				sptr += (16 / sizeof(_type_));                                          \
-				__m128i xmm4 = _mm_lddqu_si128((const __m128i*)sptr);                   \
+				__m128i xmm4 = LOAD_SI128(sptr);                                        \
 				sptr += (16 / sizeof(_type_));                                          \
 				xmm1 = _op_(xmm1, xmm0);                                                \
 				xmm2 = _op_(xmm2, xmm0);                                                \
 				xmm3 = _op_(xmm3, xmm0);                                                \
 				xmm4 = _op_(xmm4, xmm0);                                                \
-				_mm_store_si128((__m128i*)dptr, xmm1);                                  \
+				STORE_SI128(dptr, xmm1);                                                \
 				dptr += (16 / sizeof(_type_));                                          \
-				_mm_store_si128((__m128i*)dptr, xmm2);                                  \
+				STORE_SI128(dptr, xmm2);                                                \
 				dptr += (16 / sizeof(_type_));                                          \
-				_mm_store_si128((__m128i*)dptr, xmm3);                                  \
+				STORE_SI128(dptr, xmm3);                                                \
 				dptr += (16 / sizeof(_type_));                                          \
-				_mm_store_si128((__m128i*)dptr, xmm4);                                  \
+				STORE_SI128(dptr, xmm4);                                                \
 				dptr += (16 / sizeof(_type_));                                          \
 			}                                                                           \
 		}                                                                               \
@@ -263,25 +263,25 @@
 		{                                                                               \
 			while (count--)                                                             \
 			{                                                                           \
-				__m128i xmm1 = _mm_load_si128((const __m128i*)sptr);                    \
+				__m128i xmm1 = LOAD_SI128(sptr);                                        \
 				sptr += (16 / sizeof(_type_));                                          \
-				__m128i xmm2 = _mm_load_si128((const __m128i*)sptr);                    \
+				__m128i xmm2 = LOAD_SI128(sptr);                                        \
 				sptr += (16 / sizeof(_type_));                                          \
-				__m128i xmm3 = _mm_load_si128((const __m128i*)sptr);                    \
+				__m128i xmm3 = LOAD_SI128(sptr);                                        \
 				sptr += (16 / sizeof(_type_));                                          \
-				__m128i xmm4 = _mm_load_si128((const __m128i*)sptr);                    \
+				__m128i xmm4 = LOAD_SI128(sptr);                                        \
 				sptr += (16 / sizeof(_type_));                                          \
 				xmm1 = _op_(xmm1, xmm0);                                                \
 				xmm2 = _op_(xmm2, xmm0);                                                \
 				xmm3 = _op_(xmm3, xmm0);                                                \
 				xmm4 = _op_(xmm4, xmm0);                                                \
-				_mm_store_si128((__m128i*)dptr, xmm1);                                  \
+				STORE_SI128(dptr, xmm1);                                                \
 				dptr += (16 / sizeof(_type_));                                          \
-				_mm_store_si128((__m128i*)dptr, xmm2);                                  \
+				STORE_SI128(dptr, xmm2);                                                \
 				dptr += (16 / sizeof(_type_));                                          \
-				_mm_store_si128((__m128i*)dptr, xmm3);                                  \
+				STORE_SI128(dptr, xmm3);                                                \
 				dptr += (16 / sizeof(_type_));                                          \
-				_mm_store_si128((__m128i*)dptr, xmm4);                                  \
+				STORE_SI128(dptr, xmm4);                                                \
 				dptr += (16 / sizeof(_type_));                                          \
 			}                                                                           \
 		}                                                                               \
@@ -293,7 +293,7 @@
 			__m128i xmm1 = LOAD_SI128(sptr);                                            \
 			sptr += (16 / sizeof(_type_));                                              \
 			xmm1 = _op_(xmm1, xmm0);                                                    \
-			_mm_store_si128((__m128i*)dptr, xmm1);                                      \
+			STORE_SI128(dptr, xmm1);                                                    \
 			dptr += (16 / sizeof(_type_));                                              \
 		}                                                                               \
 		/* Finish off the remainder. */                                                 \
@@ -352,33 +352,33 @@
 			/* Unaligned loads */                                                               \
 			while (count--)                                                                     \
 			{                                                                                   \
-				__m128i xmm0 = _mm_lddqu_si128((const __m128i*)sptr1);                          \
+				__m128i xmm0 = LOAD_SI128(sptr1);                                               \
 				sptr1 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm1 = _mm_lddqu_si128((const __m128i*)sptr1);                          \
+				__m128i xmm1 = LOAD_SI128(sptr1);                                               \
 				sptr1 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm2 = _mm_lddqu_si128((const __m128i*)sptr1);                          \
+				__m128i xmm2 = LOAD_SI128(sptr1);                                               \
 				sptr1 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm3 = _mm_lddqu_si128((const __m128i*)sptr1);                          \
+				__m128i xmm3 = LOAD_SI128(sptr1);                                               \
 				sptr1 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm4 = _mm_lddqu_si128((const __m128i*)sptr2);                          \
+				__m128i xmm4 = LOAD_SI128(sptr2);                                               \
 				sptr2 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm5 = _mm_lddqu_si128((const __m128i*)sptr2);                          \
+				__m128i xmm5 = LOAD_SI128(sptr2);                                               \
 				sptr2 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm6 = _mm_lddqu_si128((const __m128i*)sptr2);                          \
+				__m128i xmm6 = LOAD_SI128(sptr2);                                               \
 				sptr2 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm7 = _mm_lddqu_si128((const __m128i*)sptr2);                          \
+				__m128i xmm7 = LOAD_SI128(sptr2);                                               \
 				sptr2 += (16 / sizeof(_type_));                                                 \
 				xmm0 = _op_(xmm0, xmm4);                                                        \
 				xmm1 = _op_(xmm1, xmm5);                                                        \
 				xmm2 = _op_(xmm2, xmm6);                                                        \
 				xmm3 = _op_(xmm3, xmm7);                                                        \
-				_mm_store_si128((__m128i*)dptr, xmm0);                                          \
+				STORE_SI128(dptr, xmm0);                                                        \
 				dptr += (16 / sizeof(_type_));                                                  \
-				_mm_store_si128((__m128i*)dptr, xmm1);                                          \
+				STORE_SI128(dptr, xmm1);                                                        \
 				dptr += (16 / sizeof(_type_));                                                  \
-				_mm_store_si128((__m128i*)dptr, xmm2);                                          \
+				STORE_SI128(dptr, xmm2);                                                        \
 				dptr += (16 / sizeof(_type_));                                                  \
-				_mm_store_si128((__m128i*)dptr, xmm3);                                          \
+				STORE_SI128(dptr, xmm3);                                                        \
 				dptr += (16 / sizeof(_type_));                                                  \
 			}                                                                                   \
 		}                                                                                       \
@@ -387,33 +387,33 @@
 			/* Aligned loads */                                                                 \
 			while (count--)                                                                     \
 			{                                                                                   \
-				__m128i xmm0 = _mm_load_si128((const __m128i*)sptr1);                           \
+				__m128i xmm0 = LOAD_SI128(sptr1);                                               \
 				sptr1 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm1 = _mm_load_si128((const __m128i*)sptr1);                           \
+				__m128i xmm1 = LOAD_SI128(sptr1);                                               \
 				sptr1 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm2 = _mm_load_si128((const __m128i*)sptr1);                           \
+				__m128i xmm2 = LOAD_SI128(sptr1);                                               \
 				sptr1 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm3 = _mm_load_si128((const __m128i*)sptr1);                           \
+				__m128i xmm3 = LOAD_SI128(sptr1);                                               \
 				sptr1 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm4 = _mm_load_si128((const __m128i*)sptr2);                           \
+				__m128i xmm4 = LOAD_SI128(sptr2);                                               \
 				sptr2 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm5 = _mm_load_si128((const __m128i*)sptr2);                           \
+				__m128i xmm5 = LOAD_SI128(sptr2);                                               \
 				sptr2 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm6 = _mm_load_si128((const __m128i*)sptr2);                           \
+				__m128i xmm6 = LOAD_SI128(sptr2);                                               \
 				sptr2 += (16 / sizeof(_type_));                                                 \
-				__m128i xmm7 = _mm_load_si128((const __m128i*)sptr2);                           \
+				__m128i xmm7 = LOAD_SI128(sptr2);                                               \
 				sptr2 += (16 / sizeof(_type_));                                                 \
 				xmm0 = _op_(xmm0, xmm4);                                                        \
 				xmm1 = _op_(xmm1, xmm5);                                                        \
 				xmm2 = _op_(xmm2, xmm6);                                                        \
 				xmm3 = _op_(xmm3, xmm7);                                                        \
-				_mm_store_si128((__m128i*)dptr, xmm0);                                          \
+				STORE_SI128(dptr, xmm0);                                                        \
 				dptr += (16 / sizeof(_type_));                                                  \
-				_mm_store_si128((__m128i*)dptr, xmm1);                                          \
+				STORE_SI128(dptr, xmm1);                                                        \
 				dptr += (16 / sizeof(_type_));                                                  \
-				_mm_store_si128((__m128i*)dptr, xmm2);                                          \
+				STORE_SI128(dptr, xmm2);                                                        \
 				dptr += (16 / sizeof(_type_));                                                  \
-				_mm_store_si128((__m128i*)dptr, xmm3);                                          \
+				STORE_SI128(dptr, xmm3);                                                        \
 				dptr += (16 / sizeof(_type_));                                                  \
 			}                                                                                   \
 		}                                                                                       \
@@ -427,7 +427,7 @@
 			__m128i xmm1 = LOAD_SI128(sptr2);                                                   \
 			sptr2 += (16 / sizeof(_type_));                                                     \
 			xmm0 = _op_(xmm0, xmm1);                                                            \
-			_mm_store_si128((__m128i*)dptr, xmm0);                                              \
+			STORE_SI128(dptr, xmm0);                                                            \
 			dptr += (16 / sizeof(_type_));                                                      \
 		}                                                                                       \
 		/* Finish off the remainder. */                                                         \
