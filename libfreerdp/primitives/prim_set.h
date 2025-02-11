@@ -22,9 +22,22 @@
 #define FREERDP_LIB_PRIM_SET_H
 
 #include <winpr/wtypes.h>
+#include <winpr/sysinfo.h>
+
 #include <freerdp/config.h>
 #include <freerdp/primitives.h>
 
-void primitives_init_set_sse2(primitives_t* WINPR_RESTRICT prims);
+#include "prim_internal.h"
+
+static inline void primitives_init_set_sse2(primitives_t* WINPR_RESTRICT prims)
+{
+	primitives_init_set(prims);
+	if (!IsProcessorFeaturePresent(PF_SSE2_INSTRUCTIONS_AVAILABLE) ||
+	    !IsProcessorFeaturePresent(PF_SSE3_INSTRUCTIONS_AVAILABLE))
+		return;
+
+	extern void primitives_init_set_sse2_int(primitives_t * WINPR_RESTRICT prims);
+	primitives_init_set_sse2_int(prims);
+}
 
 #endif

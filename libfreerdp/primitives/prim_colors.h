@@ -22,10 +22,33 @@
 #define FREERDP_LIB_PRIM_COLORS_H
 
 #include <winpr/wtypes.h>
+#include <winpr/sysinfo.h>
+
 #include <freerdp/config.h>
 #include <freerdp/primitives.h>
 
-void primitives_init_colors_sse2(primitives_t* prims);
-void primitives_init_colors_neon(primitives_t* prims);
+#include "prim_internal.h"
+
+static inline void primitives_init_colors_sse2(primitives_t* prims)
+{
+	primitives_init_colors(prims);
+
+	if (!IsProcessorFeaturePresent(PF_SSE2_INSTRUCTIONS_AVAILABLE) ||
+	    !IsProcessorFeaturePresent(PF_SSE3_INSTRUCTIONS_AVAILABLE))
+		return;
+
+	extern void primitives_init_colors_sse2_int(primitives_t * prims);
+	primitives_init_colors_sse2_int(prims);
+}
+
+static inline void primitives_init_colors_neon(primitives_t* prims)
+{
+	primitives_init_colors(prims);
+	if (!IsProcessorFeaturePresent(PF_ARM_NEON_INSTRUCTIONS_AVAILABLE))
+		return;
+
+	extern void primitives_init_colors_neon_int(primitives_t * prims);
+	primitives_init_colors_neon_int(prims);
+}
 
 #endif
