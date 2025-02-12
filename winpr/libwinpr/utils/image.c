@@ -611,8 +611,9 @@ void winpr_image_free(wImage* image, BOOL bFreeBuffer)
 	free(image);
 }
 
-static void* winpr_convert_to_jpeg(const void* data, size_t size, UINT32 width, UINT32 height,
-                                   UINT32 stride, UINT32 bpp, UINT32* pSize)
+static void* winpr_convert_to_jpeg(const void* data, size_t size, WINPR_ATTR_UNUSED UINT32 width,
+                                   WINPR_ATTR_UNUSED UINT32 height, WINPR_ATTR_UNUSED UINT32 stride,
+                                   WINPR_ATTR_UNUSED UINT32 bpp, UINT32* pSize)
 {
 	WINPR_ASSERT(data || (size == 0));
 	WINPR_ASSERT(pSize);
@@ -737,8 +738,9 @@ fail:
 #endif
 }
 
-static void* winpr_convert_to_webp(const void* data, size_t size, UINT32 width, UINT32 height,
-                                   UINT32 stride, UINT32 bpp, UINT32* pSize)
+static void* winpr_convert_to_webp(const void* data, size_t size, WINPR_ATTR_UNUSED UINT32 width,
+                                   WINPR_ATTR_UNUSED UINT32 height, WINPR_ATTR_UNUSED UINT32 stride,
+                                   WINPR_ATTR_UNUSED UINT32 bpp, UINT32* pSize)
 {
 	WINPR_ASSERT(data || (size == 0));
 	WINPR_ASSERT(pSize);
@@ -1027,8 +1029,9 @@ fail:
 }
 #endif
 
-static void* winpr_convert_to_png(const void* data, size_t size, UINT32 width, UINT32 height,
-                                  UINT32 stride, UINT32 bpp, UINT32* pSize)
+static void* winpr_convert_to_png(const void* data, size_t size, WINPR_ATTR_UNUSED UINT32 width,
+                                  WINPR_ATTR_UNUSED UINT32 height, WINPR_ATTR_UNUSED UINT32 stride,
+                                  WINPR_ATTR_UNUSED UINT32 bpp, UINT32* pSize)
 {
 	WINPR_ASSERT(data || (size == 0));
 	WINPR_ASSERT(pSize);
@@ -1069,8 +1072,11 @@ static void* winpr_convert_to_png(const void* data, size_t size, UINT32 width, U
 #endif
 }
 
-SSIZE_T winpr_convert_from_png(const BYTE* comp_data, size_t comp_data_bytes, UINT32* width,
-                               UINT32* height, UINT32* bpp, BYTE** ppdecomp_data)
+SSIZE_T winpr_convert_from_png(WINPR_ATTR_UNUSED const BYTE* comp_data,
+                               WINPR_ATTR_UNUSED size_t comp_data_bytes,
+                               WINPR_ATTR_UNUSED UINT32* width, WINPR_ATTR_UNUSED UINT32* height,
+                               WINPR_ATTR_UNUSED UINT32* bpp,
+                               WINPR_ATTR_UNUSED BYTE** ppdecomp_data)
 {
 #if defined(WINPR_UTILS_IMAGE_PNG)
 	size_t len = 0;
@@ -1108,7 +1114,7 @@ BOOL winpr_image_format_is_supported(UINT32 format)
 	}
 }
 
-static BYTE* convert(const wImage* image, size_t* pstride, UINT32 flags)
+static BYTE* convert(const wImage* image, size_t* pstride, WINPR_ATTR_UNUSED UINT32 flags)
 {
 	WINPR_ASSERT(image);
 	WINPR_ASSERT(pstride);

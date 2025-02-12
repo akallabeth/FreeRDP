@@ -102,7 +102,8 @@ BOOL InitializeCriticalSectionAndSpinCount(LPCRITICAL_SECTION lpCriticalSection,
 	return InitializeCriticalSectionEx(lpCriticalSection, dwSpinCount, 0);
 }
 
-DWORD SetCriticalSectionSpinCount(LPCRITICAL_SECTION lpCriticalSection, DWORD dwSpinCount)
+DWORD SetCriticalSectionSpinCount(LPCRITICAL_SECTION lpCriticalSection,
+                                  WINPR_ATTR_UNUSED DWORD dwSpinCount)
 {
 	WINPR_ASSERT(lpCriticalSection);
 #if !defined(WINPR_CRITICAL_SECTION_DISABLE_SPINCOUNT)

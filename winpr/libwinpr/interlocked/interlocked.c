@@ -98,7 +98,8 @@ WINPR_PSLIST_ENTRY InterlockedPushEntrySList(WINPR_PSLIST_HEADER ListHead,
 }
 
 WINPR_PSLIST_ENTRY InterlockedPushListSListEx(WINPR_PSLIST_HEADER ListHead, WINPR_PSLIST_ENTRY List,
-                                              WINPR_PSLIST_ENTRY ListEnd, ULONG Count)
+                                              WINPR_PSLIST_ENTRY ListEnd,
+                                              WINPR_ATTR_UNUSED ULONG Count)
 {
 	WINPR_ASSERT(ListHead);
 	WINPR_ASSERT(List);

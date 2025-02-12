@@ -1640,7 +1640,7 @@ static BOOL immediate_char(WINPR_COMM* pComm, const UCHAR* pChar)
 	return result;
 }
 
-static BOOL reset_device(WINPR_COMM* pComm)
+static BOOL reset_device(WINPR_ATTR_UNUSED WINPR_COMM* pComm)
 {
 	/* http://msdn.microsoft.com/en-us/library/dn265347%28v=vs.85%29.aspx */
 	return TRUE;
