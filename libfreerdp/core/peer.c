@@ -330,7 +330,8 @@ static BOOL freerdp_peer_check_fds(freerdp_peer* peer)
 	return TRUE;
 }
 
-static state_run_t peer_recv_data_pdu(freerdp_peer* client, wStream* s, UINT16 totalLength)
+static state_run_t peer_recv_data_pdu(freerdp_peer* client, wStream* s,
+                                      WINPR_ATTR_UNUSED UINT16 totalLength)
 {
 	BYTE type = 0;
 	UINT16 length = 0;
@@ -1296,7 +1297,8 @@ static BOOL freerdp_peer_has_more_to_read(freerdp_peer* peer)
 	return transport_have_more_bytes_to_read(peer->context->rdp->transport);
 }
 
-static LicenseCallbackResult freerdp_peer_nolicense(freerdp_peer* peer, wStream* s)
+static LicenseCallbackResult freerdp_peer_nolicense(freerdp_peer* peer,
+                                                    WINPR_ATTR_UNUSED wStream* s)
 {
 	rdpRdp* rdp = NULL;
 

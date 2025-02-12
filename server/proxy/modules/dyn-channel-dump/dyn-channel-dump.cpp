@@ -101,7 +101,7 @@ class ChannelData
 		_base /= str;
 	}
 
-	bool add(const std::string& name, bool back)
+	bool add(const std::string& name, WINPR_ATTR_UNUSED bool back)
 	{
 		std::lock_guard<std::mutex> guard(_mux);
 		if (_map.find(name) == _map.end())

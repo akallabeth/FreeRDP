@@ -843,8 +843,9 @@ static DWORD WINAPI remdesk_virtual_channel_client_thread(LPVOID arg)
  *
  * @return 0 on success, otherwise a Win32 error code
  */
-static UINT remdesk_virtual_channel_event_connected(remdeskPlugin* remdesk, LPVOID pData,
-                                                    UINT32 dataLength)
+static UINT remdesk_virtual_channel_event_connected(remdeskPlugin* remdesk,
+                                                    WINPR_ATTR_UNUSED LPVOID pData,
+                                                    WINPR_ATTR_UNUSED UINT32 dataLength)
 {
 	UINT error = 0;
 

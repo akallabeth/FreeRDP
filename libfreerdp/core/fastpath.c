@@ -704,7 +704,8 @@ static BOOL fastpath_recv_input_event_scancode(rdpFastPath* fastpath, wStream* s
 	return IFCALLRESULT(TRUE, input->KeyboardEvent, input, flags, code);
 }
 
-static BOOL fastpath_recv_input_event_mouse(rdpFastPath* fastpath, wStream* s, BYTE eventFlags)
+static BOOL fastpath_recv_input_event_mouse(rdpFastPath* fastpath, wStream* s,
+                                            WINPR_ATTR_UNUSED BYTE eventFlags)
 {
 	rdpInput* input = NULL;
 	UINT16 pointerFlags = 0;
@@ -726,7 +727,8 @@ static BOOL fastpath_recv_input_event_mouse(rdpFastPath* fastpath, wStream* s, B
 	return IFCALLRESULT(TRUE, input->MouseEvent, input, pointerFlags, xPos, yPos);
 }
 
-static BOOL fastpath_recv_input_event_relmouse(rdpFastPath* fastpath, wStream* s, BYTE eventFlags)
+static BOOL fastpath_recv_input_event_relmouse(rdpFastPath* fastpath, wStream* s,
+                                               WINPR_ATTR_UNUSED BYTE eventFlags)
 {
 	rdpInput* input = NULL;
 	UINT16 pointerFlags = 0;
@@ -759,7 +761,8 @@ static BOOL fastpath_recv_input_event_relmouse(rdpFastPath* fastpath, wStream* s
 	return IFCALLRESULT(TRUE, input->RelMouseEvent, input, pointerFlags, xDelta, yDelta);
 }
 
-static BOOL fastpath_recv_input_event_qoe(rdpFastPath* fastpath, wStream* s, BYTE eventFlags)
+static BOOL fastpath_recv_input_event_qoe(rdpFastPath* fastpath, wStream* s,
+                                          WINPR_ATTR_UNUSED BYTE eventFlags)
 {
 	WINPR_ASSERT(fastpath);
 	WINPR_ASSERT(fastpath->rdp);
@@ -787,7 +790,8 @@ static BOOL fastpath_recv_input_event_qoe(rdpFastPath* fastpath, wStream* s, BYT
 	return IFCALLRESULT(TRUE, input->QoEEvent, input, timestampMS);
 }
 
-static BOOL fastpath_recv_input_event_mousex(rdpFastPath* fastpath, wStream* s, BYTE eventFlags)
+static BOOL fastpath_recv_input_event_mousex(rdpFastPath* fastpath, wStream* s,
+                                             WINPR_ATTR_UNUSED BYTE eventFlags)
 {
 	rdpInput* input = NULL;
 	UINT16 pointerFlags = 0;
@@ -1155,7 +1159,7 @@ wStream* fastpath_update_pdu_init(rdpFastPath* fastpath)
 	return transport_send_stream_init(fastpath->rdp->transport, FASTPATH_MAX_PACKET_SIZE);
 }
 
-wStream* fastpath_update_pdu_init_new(rdpFastPath* fastpath)
+wStream* fastpath_update_pdu_init_new(WINPR_ATTR_UNUSED rdpFastPath* fastpath)
 {
 	wStream* s = NULL;
 	s = Stream_New(NULL, FASTPATH_MAX_PACKET_SIZE);

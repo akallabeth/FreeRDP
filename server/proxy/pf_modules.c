@@ -363,8 +363,8 @@ static BOOL pf_modules_set_plugin_data(proxyPluginsManager* mgr, const char* plu
  * if there's no data related to `plugin_name` in `context` (current session), a NULL will be
  * returned.
  */
-static void* pf_modules_get_plugin_data(proxyPluginsManager* mgr, const char* plugin_name,
-                                        proxyData* pdata)
+static void* pf_modules_get_plugin_data(WINPR_ATTR_UNUSED proxyPluginsManager* mgr,
+                                        const char* plugin_name, proxyData* pdata)
 {
 	union
 	{

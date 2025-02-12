@@ -973,7 +973,8 @@ fail:
 	return rc;
 }
 
-static BOOL rdp_recv_server_shutdown_denied_pdu(rdpRdp* rdp, wStream* s)
+static BOOL rdp_recv_server_shutdown_denied_pdu(WINPR_ATTR_UNUSED rdpRdp* rdp,
+                                                WINPR_ATTR_UNUSED wStream* s)
 {
 	return TRUE;
 }
@@ -2797,7 +2798,7 @@ static BOOL parse_on_off_option(const char* value)
 
 #define STR(x) #x
 
-static BOOL option_is_runtime_checks(wLog* log, const char* tok)
+static BOOL option_is_runtime_checks(WINPR_ATTR_UNUSED wLog* log, const char* tok)
 {
 	const char* experimental[] = { STR(WITH_VERBOSE_WINPR_ASSERT) };
 	for (size_t x = 0; x < ARRAYSIZE(experimental); x++)
@@ -2811,7 +2812,7 @@ static BOOL option_is_runtime_checks(wLog* log, const char* tok)
 	return FALSE;
 }
 
-static BOOL option_is_experimental(wLog* log, const char* tok)
+static BOOL option_is_experimental(WINPR_ATTR_UNUSED wLog* log, const char* tok)
 {
 	const char* experimental[] = { STR(WITH_DSP_EXPERIMENTAL), STR(WITH_VAAPI) };
 	for (size_t x = 0; x < ARRAYSIZE(experimental); x++)

@@ -969,31 +969,36 @@ out_fail:
 	return ret;
 }
 
-static BOOL gdi_polygon_sc(rdpContext* context, const POLYGON_SC_ORDER* polygon_sc)
+static BOOL gdi_polygon_sc(WINPR_ATTR_UNUSED rdpContext* context,
+                           WINPR_ATTR_UNUSED const POLYGON_SC_ORDER* polygon_sc)
 {
 	WLog_WARN(TAG, "not implemented");
 	return FALSE;
 }
 
-static BOOL gdi_polygon_cb(rdpContext* context, POLYGON_CB_ORDER* polygon_cb)
+static BOOL gdi_polygon_cb(WINPR_ATTR_UNUSED rdpContext* context,
+                           WINPR_ATTR_UNUSED POLYGON_CB_ORDER* polygon_cb)
 {
 	WLog_WARN(TAG, "not implemented");
 	return FALSE;
 }
 
-static BOOL gdi_ellipse_sc(rdpContext* context, const ELLIPSE_SC_ORDER* ellipse_sc)
+static BOOL gdi_ellipse_sc(WINPR_ATTR_UNUSED rdpContext* context,
+                           WINPR_ATTR_UNUSED const ELLIPSE_SC_ORDER* ellipse_sc)
 {
 	WLog_WARN(TAG, "not implemented");
 	return FALSE;
 }
 
-static BOOL gdi_ellipse_cb(rdpContext* context, const ELLIPSE_CB_ORDER* ellipse_cb)
+static BOOL gdi_ellipse_cb(WINPR_ATTR_UNUSED rdpContext* context,
+                           WINPR_ATTR_UNUSED const ELLIPSE_CB_ORDER* ellipse_cb)
 {
 	WLog_WARN(TAG, "not implemented");
 	return FALSE;
 }
 
-static BOOL gdi_frame_marker(rdpContext* context, const FRAME_MARKER_ORDER* frameMarker)
+static BOOL gdi_frame_marker(WINPR_ATTR_UNUSED rdpContext* context,
+                             WINPR_ATTR_UNUSED const FRAME_MARKER_ORDER* frameMarker)
 {
 	return TRUE;
 }

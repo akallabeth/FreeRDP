@@ -1089,7 +1089,7 @@ static INLINE BOOL update_read_delta_rects(wStream* s, DELTA_RECT* rectangles, c
 }
 
 static INLINE BOOL update_read_delta_points(wStream* s, DELTA_POINT** points, UINT32 number,
-                                            INT16 x, INT16 y)
+                                            WINPR_ATTR_UNUSED INT16 x, WINPR_ATTR_UNUSED INT16 y)
 {
 	BYTE flags = 0;
 	BYTE* zeroBits = NULL;
@@ -2677,7 +2677,7 @@ fail:
 }
 
 size_t update_approximate_cache_bitmap_v3_order(CACHE_BITMAP_V3_ORDER* cache_bitmap_v3,
-                                                UINT16* flags)
+                                                WINPR_ATTR_UNUSED UINT16* flags)
 {
 	BITMAP_DATA_EX* bitmapData = &cache_bitmap_v3->bitmapData;
 	return 64 + bitmapData->length;
@@ -2717,7 +2717,7 @@ BOOL update_write_cache_bitmap_v3_order(wStream* s, CACHE_BITMAP_V3_ORDER* cache
 
 WINPR_ATTR_MALLOC(free_cache_color_table_order, 2)
 static CACHE_COLOR_TABLE_ORDER* update_read_cache_color_table_order(rdpUpdate* update, wStream* s,
-                                                                    UINT16 flags)
+                                                                    WINPR_ATTR_UNUSED UINT16 flags)
 {
 	UINT32* colorTable = NULL;
 	CACHE_COLOR_TABLE_ORDER* cache_color_table = calloc(1, sizeof(CACHE_COLOR_TABLE_ORDER));
@@ -3034,11 +3034,13 @@ static BOOL update_decompress_brush(wStream* s, BYTE* output, size_t outSize, BY
 
 	return TRUE;
 }
-static BOOL update_compress_brush(wStream* s, const BYTE* input, BYTE bpp)
+static BOOL update_compress_brush(WINPR_ATTR_UNUSED wStream* s, WINPR_ATTR_UNUSED const BYTE* input,
+                                  WINPR_ATTR_UNUSED BYTE bpp)
 {
 	return FALSE;
 }
-static CACHE_BRUSH_ORDER* update_read_cache_brush_order(rdpUpdate* update, wStream* s, UINT16 flags)
+static CACHE_BRUSH_ORDER* update_read_cache_brush_order(rdpUpdate* update, wStream* s,
+                                                        WINPR_ATTR_UNUSED UINT16 flags)
 {
 	BOOL rc = 0;
 	BYTE iBitmapFormat = 0;
@@ -3315,7 +3317,8 @@ static BOOL update_read_switch_surface_order(wStream* s, SWITCH_SURFACE_ORDER* s
 	Stream_Read_UINT16(s, switch_surface->bitmapId); /* bitmapId (2 bytes) */
 	return TRUE;
 }
-size_t update_approximate_switch_surface_order(const SWITCH_SURFACE_ORDER* switch_surface)
+size_t update_approximate_switch_surface_order(
+    WINPR_ATTR_UNUSED const SWITCH_SURFACE_ORDER* switch_surface)
 {
 	return 2;
 }
@@ -3515,7 +3518,8 @@ static BOOL update_read_field_flags(wStream* s, UINT32* fieldFlags, BYTE flags, 
 
 	return TRUE;
 }
-BOOL update_write_field_flags(wStream* s, UINT32 fieldFlags, BYTE flags, BYTE fieldBytes)
+BOOL update_write_field_flags(wStream* s, UINT32 fieldFlags, WINPR_ATTR_UNUSED BYTE flags,
+                              BYTE fieldBytes)
 {
 	BYTE byte = 0;
 
@@ -4054,7 +4058,7 @@ static BOOL update_recv_primary_order(rdpUpdate* update, wStream* s, BYTE flags)
 	return rc;
 }
 
-static BOOL update_recv_secondary_order(rdpUpdate* update, wStream* s, BYTE flags)
+static BOOL update_recv_secondary_order(rdpUpdate* update, wStream* s, WINPR_ATTR_UNUSED BYTE flags)
 {
 	BOOL rc = FALSE;
 	size_t start = 0;

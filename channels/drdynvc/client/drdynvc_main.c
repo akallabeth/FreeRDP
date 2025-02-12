@@ -828,7 +828,7 @@ static UINT dvcman_receive_channel_data_first(DVCMAN_CHANNEL* channel, UINT32 le
  * @return 0 on success, otherwise a Win32 error code
  */
 static UINT dvcman_receive_channel_data(DVCMAN_CHANNEL* channel, wStream* data,
-                                        UINT32 ThreadingFlags)
+                                        WINPR_ATTR_UNUSED UINT32 ThreadingFlags)
 {
 	UINT status = CHANNEL_RC_OK;
 	size_t dataSize = Stream_GetRemainingLength(data);
