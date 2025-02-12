@@ -26,6 +26,7 @@
 #include <winpr/wtypes.h>
 #include <winpr/crt.h>
 #include <winpr/file.h>
+#include <winpr/cast.h>
 
 #include <winpr/image.h>
 
@@ -707,8 +708,8 @@ SSIZE_T winpr_convert_from_jpeg(const BYTE* comp_data, size_t comp_data_bytes, U
 
 	cinfo.out_color_space = cinfo.num_components > 3 ? JCS_EXT_RGBA : JCS_EXT_BGR;
 
-	*width = cinfo.image_width;
-	*height = cinfo.image_height;
+	*width = WINPR_ASSERTING_INT_CAST(uint32_t, cinfo.image_width);
+	*height = WINPR_ASSERTING_INT_CAST(uint32_t, cinfo.image_height);
 	*bpp = cinfo.num_components * 8;
 
 	if (!jpeg_start_decompress(&cinfo))
@@ -806,8 +807,8 @@ SSIZE_T winpr_convert_from_webp(const BYTE* comp_data, size_t comp_data_bytes, U
 		return -1;
 	}
 
-	*width = w;
-	*height = h;
+	*width = WINPR_ASSERTING_INT_CAST(uint32_t, w);
+	*height = WINPR_ASSERTING_INT_CAST(uint32_t, h);
 	*bpp = 32;
 	*ppdecomp_data = dst;
 	return 4ll * w * h;
