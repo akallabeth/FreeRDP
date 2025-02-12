@@ -1059,7 +1059,8 @@ HANDLE FindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData)
 	LPSTR utfFileName = NULL;
 	HANDLE h = NULL;
 	if (!lpFileName)
-		return FALSE;
+		return INVALID_HANDLE_VALUE;
+
 	LPWIN32_FIND_DATAA fd = (LPWIN32_FIND_DATAA)calloc(1, sizeof(WIN32_FIND_DATAA));
 
 	if (!fd)

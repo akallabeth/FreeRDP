@@ -246,7 +246,7 @@ BYTE* winpr_bitmap_construct_header(size_t width, size_t height, size_t bpp)
 			offset += sizeof(DWORD) * 3; // 3 DWORD color masks
 			break;
 		default:
-			return FALSE;
+			return NULL;
 	}
 
 	if (!writeBitmapFileHeader(s, &bf))
@@ -612,9 +612,10 @@ void winpr_image_free(wImage* image, BOOL bFreeBuffer)
 	free(image);
 }
 
-static void* winpr_convert_to_jpeg(const void* data, size_t size, WINPR_ATTR_UNUSED UINT32 width,
-                                   WINPR_ATTR_UNUSED UINT32 height, WINPR_ATTR_UNUSED UINT32 stride,
-                                   WINPR_ATTR_UNUSED UINT32 bpp, UINT32* pSize)
+static void* winpr_convert_to_jpeg(WINPR_ATTR_UNUSED const void* data, size_t size,
+                                   WINPR_ATTR_UNUSED UINT32 width, WINPR_ATTR_UNUSED UINT32 height,
+                                   WINPR_ATTR_UNUSED UINT32 stride, WINPR_ATTR_UNUSED UINT32 bpp,
+                                   WINPR_ATTR_UNUSED UINT32* pSize)
 {
 	WINPR_ASSERT(data || (size == 0));
 	WINPR_ASSERT(pSize);
@@ -710,12 +711,13 @@ SSIZE_T winpr_convert_from_jpeg(const BYTE* comp_data, size_t comp_data_bytes, U
 
 	*width = WINPR_ASSERTING_INT_CAST(uint32_t, cinfo.image_width);
 	*height = WINPR_ASSERTING_INT_CAST(uint32_t, cinfo.image_height);
-	*bpp = cinfo.num_components * 8;
+	*bpp = WINPR_ASSERTING_INT_CAST(uint32_t, cinfo.num_components * 8);
 
 	if (!jpeg_start_decompress(&cinfo))
 		goto fail;
 
-	size_t stride = 1ULL * cinfo.image_width * cinfo.num_components;
+	size_t stride =
+	    1ULL * cinfo.image_width * WINPR_ASSERTING_INT_CAST(uint32_t, cinfo.num_components);
 
 	decomp_data = calloc(stride, cinfo.image_height);
 	if (decomp_data)
