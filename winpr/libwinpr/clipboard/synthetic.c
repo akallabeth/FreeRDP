@@ -37,6 +37,7 @@ static const char* mime_bitmap[] = { "image/bmp", "image/x-bmp", "image/x-MS-bmp
 static const char mime_webp[] = "image/webp";
 #endif
 #if defined(WINPR_UTILS_IMAGE_PNG)
+static const char name_png[] = "PNG";
 static const char mime_png[] = "image/png";
 #endif
 #if defined(WINPR_UTILS_IMAGE_JPEG)
@@ -832,17 +833,24 @@ BOOL ClipboardInitSynthesizers(wClipboard* clipboard)
 	 */
 #if defined(WINPR_UTILS_IMAGE_PNG)
 	{
-		const UINT32 altFormatId = ClipboardRegisterFormat(clipboard, mime_png);
-		ClipboardRegisterSynthesizer(clipboard, CF_DIB, altFormatId,
-		                             clipboard_synthesize_image_bmp_to_png);
-		ClipboardRegisterSynthesizer(clipboard, altFormatId, CF_DIB,
-		                             clipboard_synthesize_image_png_to_bmp);
+		const UINT32 altFormatIds[] = { ClipboardRegisterFormat(clipboard, mime_png),
+			                            ClipboardRegisterFormat(clipboard, name_png) };
+
+		for (size_t x = 0; x < ARRAYSIZE(altFormatIds); x++)
+		{
+			const UINT32 altFormatId = altFormatIds[x];
+
+			ClipboardRegisterSynthesizer(clipboard, CF_DIB, altFormatId,
+			                             clipboard_synthesize_image_bmp_to_png);
+			ClipboardRegisterSynthesizer(clipboard, altFormatId, CF_DIB,
+			                             clipboard_synthesize_image_png_to_bmp);
 #if defined(WINPR_UTILS_IMAGE_DIBv5)
 		ClipboardRegisterSynthesizer(clipboard, CF_DIBV5, altFormatId,
 		                             clipboard_synthesize_image_bmp_to_png);
 		ClipboardRegisterSynthesizer(clipboard, altFormatId, CF_DIBV5,
 		                             clipboard_synthesize_image_png_to_bmp);
 #endif
+		}
 	}
 #endif
 
