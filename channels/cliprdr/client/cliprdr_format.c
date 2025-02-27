@@ -130,9 +130,19 @@ UINT cliprdr_process_format_list(cliprdrPlugin* cliprdr, wStream* s, UINT32 data
 	if (filteredFormatList.numFormats == 0)
 		goto error_out;
 
-	WLog_Print(cliprdr->log, WLOG_DEBUG, "ServerFormatList: numFormats: %" PRIu32 "",
-	           filteredFormatList.numFormats);
+	const DWORD level = WLOG_TRACE;
+	if (WLog_IsLevelActive(cliprdr->log, level))
+	{
+		WLog_Print(cliprdr->log, level, "[ServerFormatList] numFormats: %" PRIu32 "",
+		           filteredFormatList.numFormats);
 
+		for (size_t x = 0; x < filteredFormatList.numFormats; x++)
+		{
+			const CLIPRDR_FORMAT* format = &filteredFormatList.formats[x];
+			WLog_Print(cliprdr->log, level, "[ServerFormatList] [%" PRIuz "] 0x%08" PRIx32 " [%s]",
+			           x, format->formatId, format->formatName);
+		}
+	}
 	if (context->ServerFormatList)
 	{
 		if ((error = context->ServerFormatList(context, &filteredFormatList)))
