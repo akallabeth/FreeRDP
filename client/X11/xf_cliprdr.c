@@ -149,10 +149,12 @@ static const char mime_html[] = "text/html";
 static const char* mime_bitmap[] = { "image/bmp", "image/x-bmp", "image/x-MS-bmp",
 	                                 "image/x-win-bitmap" };
 static const char mime_webp[] = "image/webp";
+
+static const char name_png[] = "PNG";
 static const char mime_png[] = "image/png";
 static const char mime_jpeg[] = "image/jpeg";
 static const char mime_tiff[] = "image/tiff";
-static const char* mime_images[] = { mime_webp, mime_png, mime_jpeg, mime_tiff };
+static const char* mime_images[] = { mime_webp, name_png, mime_png, mime_jpeg, mime_tiff };
 
 static const char mime_gnome_copied_files[] = "x-special/gnome-copied-files";
 static const char mime_mate_copied_files[] = "x-special/mate-copied-files";
@@ -2462,6 +2464,18 @@ xfClipboard* xf_clipboard_new(xfContext* xfc, BOOL relieveFilenameRestriction)
 	clientFormat = &clipboard->clientFormats[n++];
 	clientFormat->atom = Logging_XInternAtom(xfc->log, xfc->display, mime_tiff, False);
 	clientFormat->formatToRequest = clientFormat->localFormat = CF_TIFF;
+
+	clientFormat = &clipboard->clientFormats[n++];
+	clientFormat->atom = Logging_XInternAtom(xfc->log, xfc->display, mime_png, False);
+	clientFormat->formatToRequest = clientFormat->localFormat =
+	    ClipboardGetFormatId(xfc->clipboard->system, name_png);
+	clientFormat->formatName = _strdup(name_png);
+
+	clientFormat = &clipboard->clientFormats[n++];
+	clientFormat->atom = Logging_XInternAtom(xfc->log, xfc->display, name_png, False);
+	clientFormat->formatToRequest = clientFormat->localFormat =
+	    ClipboardGetFormatId(xfc->clipboard->system, name_png);
+	clientFormat->formatName = _strdup(name_png);
 
 	for (size_t x = 0; x < ARRAYSIZE(mime_bitmap); x++)
 	{
