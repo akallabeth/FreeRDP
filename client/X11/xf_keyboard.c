@@ -441,7 +441,11 @@ static int xkb_keysym_cmp(const void* pva, const void* pvb)
 		return 1;
 	if (!b)
 		return -1;
-	return a->ks > b->ks;
+    if (a->ks > b->ks)
+        return -1;
+    if (a->ks < b->ks)
+        return 1;
+    return 0;
 }
 
 static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym kc)
