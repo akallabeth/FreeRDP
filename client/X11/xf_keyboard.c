@@ -854,7 +854,14 @@ void xf_keyboard_send_key(xfContext* xfc, BOOL down, BOOL repeat, const XKeyEven
 			if (xwc < 1)
 			{
 				if (rdp_scancode == RDP_SCANCODE_UNKNOWN)
-					WLog_ERR(TAG, "Unknown key with X keycode 0x%02" PRIx8 "", event->keycode);
+				{
+					KeySym ks = XkbKeycodeToKeysym(xfc->display, event->keycode, 0, 0);
+					const char* ksstr = XKeysymToString(ks);
+					WLog_ERR(TAG,
+					         "Unknown key with X keycode 0x%02 {KeySym %s [0x%08" PRIx32 "]}" PRIx8
+					         "",
+					         event->keycode, ksstr, ks);
+				}
 				else
 					(void)freerdp_input_send_keyboard_event_ex(input, down, repeat, rdp_scancode);
 			}
@@ -871,7 +878,12 @@ void xf_keyboard_send_key(xfContext* xfc, BOOL down, BOOL repeat, const XKeyEven
 			}
 		}
 		else if (rdp_scancode == RDP_SCANCODE_UNKNOWN)
-			WLog_ERR(TAG, "Unknown key with X keycode 0x%02" PRIx8 "", event->keycode);
+		{
+			KeySym ks = XkbKeycodeToKeysym(xfc->display, event->keycode, 0, 0);
+			const char* ksstr = XKeysymToString(ks);
+			WLog_ERR(TAG, "Unknown key with X keycode 0x%02 {KeySym %s [0x%08" PRIx32 "]}" PRIx8 "",
+			         event->keycode, ksstr, ks);
+		}
 		else
 			(void)freerdp_input_send_keyboard_event_ex(input, down, repeat, rdp_scancode);
 
