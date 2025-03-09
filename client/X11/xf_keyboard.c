@@ -655,7 +655,7 @@ static int load_map_from_xkbfile(xfContext* xfc)
 			strncpy(xkb_keyname, key->name, XkbKeyNameLength);
 
 			WLog_Print(xfc->log, WLOG_INFO, "KeyCode %" PRIuz " -> %s", i, xkb_keyname);
-			if (strnlen(xkb_keyname, ARRAYSIZE(xkb_keyname)) < 1)
+			if (strnlen(xkb_keyname, ARRAYSIZE(xkb_keyname)) < 1 || true)
 			{
 				const KeyCode kc = WINPR_ASSERTING_INT_CAST(KeyCode, i);
 				KeySym ks = XkbKeycodeToKeysym(xfc->display, kc, 0, 0);
@@ -857,11 +857,9 @@ void xf_keyboard_send_key(xfContext* xfc, BOOL down, BOOL repeat, const XKeyEven
 				{
 					KeySym ks = XkbKeycodeToKeysym(xfc->display, event->keycode, 0, 0);
 					const char* ksstr = XKeysymToString(ks);
-					if (!ksstr)
-						ksstr = "null";
 					WLog_ERR(TAG,
-					         "Unknown key with X keycode 0x%02 {KeySym %s [0x%08" PRIx32 "]}" PRIx8
-					         "",
+					         "Unknown key with X keycode 0x%02lu {KeySym %s [0x%08" PRIx32
+					         "]}" PRIx8 "",
 					         event->keycode, ksstr, ks);
 				}
 				else
@@ -883,9 +881,8 @@ void xf_keyboard_send_key(xfContext* xfc, BOOL down, BOOL repeat, const XKeyEven
 		{
 			KeySym ks = XkbKeycodeToKeysym(xfc->display, event->keycode, 0, 0);
 			const char* ksstr = XKeysymToString(ks);
-			if (!ksstr)
-				ksstr = "null";
-			WLog_ERR(TAG, "Unknown key with X keycode 0x%02 {KeySym %s [0x%08" PRIx32 "]}" PRIx8 "",
+			WLog_ERR(TAG,
+			         "Unknown key with X keycode 0x%02lu {KeySym %s [0x%08" PRIx32 "]}" PRIx8 "",
 			         event->keycode, ksstr, ks);
 		}
 		else
