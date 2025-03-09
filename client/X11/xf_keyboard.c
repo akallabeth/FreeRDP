@@ -604,7 +604,7 @@ static int xkb_keysym_cmp(const void* pva, const void* pvb)
 	return 0;
 }
 
-static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym kc)
+static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym ks)
 {
 #if defined(__APPLE__)
 	if (offset < 8)
@@ -612,8 +612,11 @@ static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym kc)
 
 	const DWORD vkcode =
 	    GetVirtualKeyCodeFromKeycode((UINT32)offset - 8u, WINPR_KEYCODE_TYPE_APPLE);
-	xfc->X11_KEYCODE_TO_VIRTUAL_SCANCODE[offset] =
-	    GetVirtualScanCodeFromVirtualKeyCode(vkcode, WINPR_KBD_TYPE_IBM_ENHANCED);
+	const DWORD sc = GetVirtualScanCodeFromVirtualKeyCode(vkcode, WINPR_KBD_TYPE_IBM_ENHANCED);
+	xfc->X11_KEYCODE_TO_VIRTUAL_SCANCODE[offset] = sc;
+
+	WLog_INFO(TAG, "KeySym %s [0x%08" PRIx32 "] --> 0x08%" PRIx32 " [0x%08" PRIx32 "]",
+	          XKeysymToString(kc), kc, vkconde, sc);
 #else
 	static BOOL initialized = FALSE;
 	static struct x11_keysym_scancode_t copy[ARRAYSIZE(XKB_KEYSYM_SCANCODE_TABLE)] = { 0 };
@@ -624,7 +627,7 @@ static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym kc)
 		initialized = TRUE;
 	}
 
-	struct x11_keysym_scancode_t key = { .ks = kc,
+	struct x11_keysym_scancode_t key = { .ks = ks,
 		                                 .sc = WINPR_ASSERTING_INT_CAST(uint32_t, offset) };
 
 	struct x11_keysym_scancode_t* found =
