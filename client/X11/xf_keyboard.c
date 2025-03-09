@@ -616,7 +616,7 @@ static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym ks)
 	xfc->X11_KEYCODE_TO_VIRTUAL_SCANCODE[offset] = sc;
 
 	WLog_INFO(TAG, "KeySym %s [0x%08" PRIx32 "] --> 0x08%" PRIx32 " [0x%08" PRIx32 "]",
-	          XKeysymToString(ks), ks, vkconde, sc);
+	          XKeysymToString(ks), ks, vkcode, sc);
 #else
 	static BOOL initialized = FALSE;
 	static struct x11_keysym_scancode_t copy[ARRAYSIZE(XKB_KEYSYM_SCANCODE_TABLE)] = { 0 };
