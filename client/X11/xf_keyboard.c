@@ -460,6 +460,9 @@ static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym kc)
 
 	struct x11_keysym_scancode_t* found =
 	    bsearch(&key, copy, ARRAYSIZE(copy), sizeof(struct x11_keysym_scancode_t), xkb_keysym_cmp);
+
+	WLog_INFO(TAG, "KeySym %s [0x%08" PRIx32 "] --> %d", XKeysymToString(kc), kc,
+	          found ? found->sc : -1);
 	if (!found)
 		return FALSE;
 
