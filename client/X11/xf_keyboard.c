@@ -73,6 +73,12 @@ struct x11_key_scancode_t
 	DWORD sc;
 };
 
+struct x11_keysym_scancode_t
+{
+	KeySym ks;
+	DWORD sc;
+};
+
 static const struct x11_key_scancode_t XKB_KEY_NAME_SCANCODE_TABLE[] = {
 	{ "", RDP_SCANCODE_UNKNOWN },                 /* 008:  [(null)] */
 	{ "ESC", RDP_SCANCODE_ESCAPE },               /* 009: ESC [Escape] */
@@ -324,6 +330,9 @@ static const struct x11_key_scancode_t XKB_KEY_NAME_SCANCODE_TABLE[] = {
 	{ "I255", RDP_SCANCODE_UNKNOWN }              /* 255: I255 [XF86RFKill] */
 };
 
+static struct x11_keysym_scancode_t XKB_KEYSYM_SCANCODE_TABLE[] = { { XK_Escape,
+	                                                                  RDP_SCANCODE_ESCAPE } };
+
 static UINT32 xf_keyboard_get_toggle_keys_state(xfContext* xfc);
 static BOOL xf_keyboard_handle_special_keys(xfContext* xfc, KeySym keysym);
 static void xf_keyboard_handle_special_keys_release(xfContext* xfc, KeySym keysym);
@@ -421,6 +430,43 @@ static int xkb_cmp(const void* pva, const void* pvb)
 	return strcmp(a->name, b->name);
 }
 
+static int xkb_keysym_cmp(const void* pva, const void* pvb)
+{
+	const struct x11_keysym_scancode_t* a = pva;
+	const struct x11_keysym_scancode_t* b = pvb;
+
+	if (!a && !b)
+		return 0;
+	if (!a)
+		return 1;
+	if (!b)
+		return -1;
+	return a->ks > b->ks;
+}
+
+static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym kc)
+{
+	static BOOL initialized = FALSE;
+	static struct x11_keysym_scancode_t copy[ARRAYSIZE(XKB_KEYSYM_SCANCODE_TABLE)] = { 0 };
+	if (!initialized)
+	{
+		memcpy(copy, XKB_KEYSYM_SCANCODE_TABLE, sizeof(copy));
+		qsort(copy, ARRAYSIZE(copy), sizeof(struct x11_keysym_scancode_t), xkb_keysym_cmp);
+		initialized = TRUE;
+	}
+
+	struct x11_keysym_scancode_t key = { .ks = kc,
+		                                 .sc = WINPR_ASSERTING_INT_CAST(uint32_t, offset) };
+
+	struct x11_keysym_scancode_t* found =
+	    bsearch(&key, copy, ARRAYSIZE(copy), sizeof(struct x11_keysym_scancode_t), xkb_keysym_cmp);
+	if (!found)
+		return FALSE;
+
+	xfc->X11_KEYCODE_TO_VIRTUAL_SCANCODE[offset] = found->sc;
+	return TRUE;
+}
+
 static BOOL try_add(xfContext* xfc, size_t offset, const char* xkb_keyname)
 {
 	WINPR_ASSERT(xfc);
@@ -485,16 +531,19 @@ static int load_map_from_xkbfile(xfContext* xfc)
 		for (size_t i = xkb->min_key_code; i < xkb->max_key_code; i++)
 		{
 			BOOL found = FALSE;
-            XkbKeyNamePtr key = &xkb->names->keys[i];
-            KeySym kc = XkbKeycodeToKeysym(xfc->display, i, 0, 0);
-            const char* kcstr = XKeysymToString(kc);
-            strncpy(xkb_keyname, key->name, XkbKeyNameLength);
+			XkbKeyNamePtr key = &xkb->names->keys[i];
 
-            WLog_Print(xfc->log, WLOG_INFO, "KeySym=%s [%u], KeyCode %" PRIuz " -> %s", kcstr, kc, i, xkb_keyname);
+			strncpy(xkb_keyname, key->name, XkbKeyNameLength);
+
+			WLog_Print(xfc->log, WLOG_INFO, "KeyCode %" PRIuz " -> %s", i, xkb_keyname);
 			if (strnlen(xkb_keyname, ARRAYSIZE(xkb_keyname)) < 1)
-				continue;
-
-			found = try_add(xfc, i, xkb_keyname);
+			{
+				const KeyCode kc = WINPR_ASSERTING_INT_CAST(KeyCode, i);
+				KeySym ks = XkbKeycodeToKeysym(xfc->display, kc, 0, 0);
+				found = try_add_from_keysym(xfc, i, ks);
+			}
+			else
+				found = try_add(xfc, i, xkb_keyname);
 
 			if (!found)
 			{
