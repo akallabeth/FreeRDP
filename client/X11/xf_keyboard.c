@@ -330,8 +330,15 @@ static const struct x11_key_scancode_t XKB_KEY_NAME_SCANCODE_TABLE[] = {
 	{ "I255", RDP_SCANCODE_UNKNOWN }              /* 255: I255 [XF86RFKill] */
 };
 
-static struct x11_keysym_scancode_t XKB_KEYSYM_SCANCODE_TABLE[] = { { XK_Escape,
-	                                                                  RDP_SCANCODE_ESCAPE } };
+static struct x11_keysym_scancode_t XKB_KEYSYM_SCANCODE_TABLE[] = {
+	{ XK_Escape, RDP_SCANCODE_ESCAPE } { XK_BackSpace, RDP_SCANCODE_BACKSPACE },
+	{ XK_Tab, RDP_SCANCODE_TAB },
+	{ XK_Return, RDP_SCANCODE_RETURN },
+	{ XK_Pause, RDP_SCANCODE_PAUSE },
+	{ XK_Scroll_Lock, RDP_SCANCODE_SCROLLLOCK },
+	{ XK_Sys_Req, RDP_SCANCODE_SYSREQ },
+	{ XK_Delete, RDP_SCANCODE_DELETE },
+};
 
 static UINT32 xf_keyboard_get_toggle_keys_state(xfContext* xfc);
 static BOOL xf_keyboard_handle_special_keys(xfContext* xfc, KeySym keysym);
