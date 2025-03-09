@@ -27,6 +27,7 @@
 
 #include <winpr/crt.h>
 #include <winpr/path.h>
+#include <winpr/input.h>
 #include <winpr/assert.h>
 #include <winpr/cast.h>
 #include <winpr/collections.h>
