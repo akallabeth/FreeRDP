@@ -857,6 +857,8 @@ void xf_keyboard_send_key(xfContext* xfc, BOOL down, BOOL repeat, const XKeyEven
 				{
 					KeySym ks = XkbKeycodeToKeysym(xfc->display, event->keycode, 0, 0);
 					const char* ksstr = XKeysymToString(ks);
+					if (!ksstr)
+						ksstr = "null";
 					WLog_ERR(TAG,
 					         "Unknown key with X keycode 0x%02 {KeySym %s [0x%08" PRIx32 "]}" PRIx8
 					         "",
@@ -881,6 +883,8 @@ void xf_keyboard_send_key(xfContext* xfc, BOOL down, BOOL repeat, const XKeyEven
 		{
 			KeySym ks = XkbKeycodeToKeysym(xfc->display, event->keycode, 0, 0);
 			const char* ksstr = XKeysymToString(ks);
+			if (!ksstr)
+				ksstr = "null";
 			WLog_ERR(TAG, "Unknown key with X keycode 0x%02 {KeySym %s [0x%08" PRIx32 "]}" PRIx8 "",
 			         event->keycode, ksstr, ks);
 		}
