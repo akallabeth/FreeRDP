@@ -603,8 +603,37 @@ static int xkb_keysym_cmp(const void* pva, const void* pvb)
 	return 0;
 }
 
+#if defined(__APPLE__)
+static int freerdp_keyboard_init_apple(WINPR_ATTR_UNUSED const DWORD* keyboardLayoutId,
+                                       DWORD* x11_keycode_to_rdp_scancode, size_t count)
+{
+	WINPR_ASSERT(x11_keycode_to_rdp_scancode);
+	WINPR_ASSERT(keyboardLayoutId);
+	WINPR_ASSERT(count <= UINT32_MAX);
+	for (size_t keycode = 8; keycode < count; keycode++)
+	{
+		const DWORD vkcode =
+		    GetVirtualKeyCodeFromKeycode((UINT32)keycode - 8u, WINPR_KEYCODE_TYPE_APPLE);
+		x11_keycode_to_rdp_scancode[keycode] =
+		    GetVirtualScanCodeFromVirtualKeyCode(vkcode, WINPR_KBD_TYPE_IBM_ENHANCED);
+	}
+
+	maptype = WINPR_KEYCODE_TYPE_APPLE;
+	return 0;
+}
+#endif
+
 static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym kc)
 {
+#if defined(__APPLE__)
+	if (offset < 8)
+		return FALSE;
+
+	const DWORD vkcode =
+	    GetVirtualKeyCodeFromKeycode((UINT32)offset - 8u, WINPR_KEYCODE_TYPE_APPLE);
+	xfc->X11_KEYCODE_TO_VIRTUAL_SCANCODE[offset] =
+	    GetVirtualScanCodeFromVirtualKeyCode(vkcode, WINPR_KBD_TYPE_IBM_ENHANCED);
+#else
 	static BOOL initialized = FALSE;
 	static struct x11_keysym_scancode_t copy[ARRAYSIZE(XKB_KEYSYM_SCANCODE_TABLE)] = { 0 };
 	if (!initialized)
@@ -627,6 +656,7 @@ static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym kc)
 
 	xfc->X11_KEYCODE_TO_VIRTUAL_SCANCODE[offset] = found->sc;
 	return TRUE;
+#endif
 }
 
 static BOOL try_add(xfContext* xfc, size_t offset, const char* xkb_keyname)
