@@ -616,7 +616,7 @@ static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym ks)
 	xfc->X11_KEYCODE_TO_VIRTUAL_SCANCODE[offset] = sc;
 
 	WLog_INFO(TAG, "KeySym %s [0x%08" PRIx32 "] --> 0x08%" PRIx32 " [0x%08" PRIx32 "]",
-	          XKeysymToString(kc), kc, vkconde, sc);
+	          XKeysymToString(ks), ks, vkconde, sc);
 #else
 	static BOOL initialized = FALSE;
 	static struct x11_keysym_scancode_t copy[ARRAYSIZE(XKB_KEYSYM_SCANCODE_TABLE)] = { 0 };
@@ -633,7 +633,7 @@ static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym ks)
 	struct x11_keysym_scancode_t* found =
 	    bsearch(&key, copy, ARRAYSIZE(copy), sizeof(struct x11_keysym_scancode_t), xkb_keysym_cmp);
 
-	WLog_INFO(TAG, "KeySym %s [0x%08" PRIx32 "] --> %d", XKeysymToString(kc), kc,
+	WLog_INFO(TAG, "KeySym %s [0x%08" PRIx32 "] --> %d", XKeysymToString(ks), ks,
 	          found ? found->sc : -1);
 	if (!found)
 		return FALSE;
