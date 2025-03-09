@@ -428,6 +428,21 @@ static struct x11_keysym_scancode_t XKB_KEYSYM_SCANCODE_TABLE[] = {
 	{ XK_R13, RDP_SCANCODE_F13 },
 	{ XK_R14, RDP_SCANCODE_F14 },
 	{ XK_R15, RDP_SCANCODE_F16 },
+
+	{ XK_Shift_L, RDP_SCANCODE_LSHIFT },
+	{ XK_Shift_R, RDP_SCANCODE_RSHIFT },
+	{ XK_Control_L, RDP_SCANCODE_LCONTROL },
+	{ XK_Control_R, RDP_SCANCODE_RCONTROL },
+	{ XK_Caps_Lock, RDP_SCANCODE_CAPSLOCK },
+	{ XK_Shift_Lock, RDP_SCANCODE_CAPSLOCK },
+	{ XK_Meta_L, RDP_SCANCODE_LWIN },
+	{ XK_Meta_R, RDP_SCANCODE_RWIN },
+	{ XK_Alt_L, RDP_SCANCODE_LMENU },
+	{ XK_Alt_R, RDP_SCANCODE_RMENU },
+	{ XK_Super_L, RDP_SCANCODE_LWIN },
+	{ XK_Super_R, RDP_SCANCODE_RWIN },
+	{ XK_Hyper_L, RDP_SCANCODE_LWIN },
+	{ XK_Hyper_R, RDP_SCANCODE_RWIN }
 };
 
 static UINT32 xf_keyboard_get_toggle_keys_state(xfContext* xfc);
