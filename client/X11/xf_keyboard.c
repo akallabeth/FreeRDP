@@ -485,9 +485,12 @@ static int load_map_from_xkbfile(xfContext* xfc)
 		for (size_t i = xkb->min_key_code; i < xkb->max_key_code; i++)
 		{
 			BOOL found = FALSE;
-			strncpy(xkb_keyname, xkb->names->keys[i].name, XkbKeyNameLength);
+            XkbKeyNamePtr key = &xkb->names->keys[i];
+            KeySym kc = XkbKeycodeToKeysym(xfc->display, i, 0, 0);
+            const char* kcstr = XKeysymToString(kc);
+            strncpy(xkb_keyname, key->name, XkbKeyNameLength);
 
-			WLog_Print(xfc->log, WLOG_TRACE, "KeyCode %" PRIuz " -> %s", i, xkb_keyname);
+            WLog_Print(xfc->log, WLOG_INFO, "KeySym=%s [%u], KeyCode %" PRIuz " -> %s", kcstr, kc, i, xkb_keyname);
 			if (strnlen(xkb_keyname, ARRAYSIZE(xkb_keyname)) < 1)
 				continue;
 
