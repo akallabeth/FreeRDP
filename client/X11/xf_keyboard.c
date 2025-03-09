@@ -604,26 +604,6 @@ static int xkb_keysym_cmp(const void* pva, const void* pvb)
 	return 0;
 }
 
-#if defined(__APPLE__)
-static int freerdp_keyboard_init_apple(WINPR_ATTR_UNUSED const DWORD* keyboardLayoutId,
-                                       DWORD* x11_keycode_to_rdp_scancode, size_t count)
-{
-	WINPR_ASSERT(x11_keycode_to_rdp_scancode);
-	WINPR_ASSERT(keyboardLayoutId);
-	WINPR_ASSERT(count <= UINT32_MAX);
-	for (size_t keycode = 8; keycode < count; keycode++)
-	{
-		const DWORD vkcode =
-		    GetVirtualKeyCodeFromKeycode((UINT32)keycode - 8u, WINPR_KEYCODE_TYPE_APPLE);
-		x11_keycode_to_rdp_scancode[keycode] =
-		    GetVirtualScanCodeFromVirtualKeyCode(vkcode, WINPR_KBD_TYPE_IBM_ENHANCED);
-	}
-
-	maptype = WINPR_KEYCODE_TYPE_APPLE;
-	return 0;
-}
-#endif
-
 static BOOL try_add_from_keysym(xfContext* xfc, size_t offset, KeySym kc)
 {
 #if defined(__APPLE__)
