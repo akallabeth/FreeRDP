@@ -337,7 +337,13 @@ static struct x11_keysym_scancode_t XKB_KEYSYM_SCANCODE_TABLE[] = {
 	{ XK_Pause, RDP_SCANCODE_PAUSE },
 	{ XK_Scroll_Lock, RDP_SCANCODE_SCROLLLOCK },
 	{ XK_Sys_Req, RDP_SCANCODE_SYSREQ },
-	{ XK_Delete, RDP_SCANCODE_DELETE },
+    { XK_Delete, RDP_SCANCODE_DELETE },
+
+    {XK_Print                         , RDP_SCANCODE_PRINTSCREEN},
+    {XK_Insert                        , RDP_SCANCODE_INSERT},
+    {XK_Menu                          , RDP_SCANCODE_RMENU},
+    {XK_Help                          , RDP_SCANCODE_HELP},
+    {XK_Num_Lock                      , RDP_SCANCODE_NUMLOCK},
 };
 
 static UINT32 xf_keyboard_get_toggle_keys_state(xfContext* xfc);
