@@ -685,8 +685,6 @@ static DWORD WINAPI drive_hotplug_thread_func(LPVOID arg)
 	WINPR_ASSERT(rdpdr);
 	WINPR_ASSERT(rdpdr->stopEvent);
 
-	ctx.info = arg;
-
 	CFStringRef path = CFSTR("/Volumes/");
 	CFArrayRef pathsToWatch = CFArrayCreate(kCFAllocatorMalloc, (const void**)&path, 1, NULL);
 	FSEventStreamContext ctx = {
