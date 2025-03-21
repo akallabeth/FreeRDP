@@ -681,12 +681,8 @@ static void first_hotplug(rdpdrPlugin* rdpdr)
 
 static DWORD WINAPI drive_hotplug_thread_func(LPVOID arg)
 {
-	rdpdrPlugin* rdpdr;
-	FSEventStreamRef fsev;
-	rdpdr = (rdpdrPlugin*)arg;
-	CFStringRef path = CFSTR("/Volumes/");
-	CFArrayRef pathsToWatch = CFArrayCreate(kCFAllocatorMalloc, (const void**)&path, 1, NULL);
-	FSEventStreamContext ctx = { 0 };
+	rdpdrPlugin* rdpdr = (rdpdrPlugin*)arg;
+	WINPR_ASSERT(rdpdr);
 
 	ctx.info = arg;
 
@@ -695,16 +691,26 @@ static DWORD WINAPI drive_hotplug_thread_func(LPVOID arg)
 	if (!rdpdr->stopEvent)
 		goto out;
 
-	fsev =
+	CFStringRef path = CFSTR("/Volumes/");
+	CFArrayRef pathsToWatch = CFArrayCreate(kCFAllocatorMalloc, (const void**)&path, 1, NULL);
+	FSEventStreamContext ctx = {
+		.copyDescription = NULL, .info = arg, .release = NULL, .retain = NULL, .version = 0
+	};
+	FSEventStreamRef fsev =
 	    FSEventStreamCreate(kCFAllocatorMalloc, drive_hotplug_fsevent_callback, &ctx, pathsToWatch,
 	                        kFSEventStreamEventIdSinceNow, 1, kFSEventStreamCreateFlagNone);
 
 	rdpdr->runLoop = CFRunLoopGetCurrent();
-	FSEventStreamScheduleWithRunLoop(fsev, rdpdr->runLoop, kCFRunLoopDefaultMode);
+
+	dispatch_queue_t queue = dispatch_queue_create(TAG, NULL);
+	FSEventStreamSetDispatchQueue(fsev, queue);
 	FSEventStreamStart(fsev);
+	WLog_Print(rdpdr->log, WLOG_DEBUG, "Started hotplug watcher");
 	CFRunLoopRun();
+	WLog_Print(rdpdr->log, WLOG_DEBUG, "Stopped hotplug watcher");
 	FSEventStreamStop(fsev);
 	FSEventStreamRelease(fsev);
+	dispatch_release(queue);
 out:
 	if (rdpdr->stopEvent)
 	{
