@@ -137,9 +137,9 @@ if [ ! -d $SRC ]; then
   git clone --depth 1 -b v1.3.1 https://github.com/madler/zlib.git
   git clone --depth 1 -b uriparser-0.9.8 https://github.com/uriparser/uriparser.git
   git clone --depth 1 -b v1.7.18 https://github.com/DaveGamble/cJSON.git
-  git clone --depth 1 -b release-2.30.4 https://github.com/libsdl-org/SDL.git
-  git clone --depth 1 --shallow-submodules --recurse-submodules -b release-2.22.0 https://github.com/libsdl-org/SDL_ttf.git
-  git clone --depth 1 --shallow-submodules --recurse-submodules -b release-2.8.2 https://github.com/libsdl-org/SDL_image.git
+  git clone --depth 1 -b release-3.2.8 https://github.com/libsdl-org/SDL.git
+  git clone --depth 1 --shallow-submodules --recurse-submodules -b release-3.2.4 https://github.com/libsdl-org/SDL_ttf.git
+  git clone --depth 1 --shallow-submodules --recurse-submodules -b release-3.2.0 https://github.com/libsdl-org/SDL_image.git
   git clone --depth 1 --shallow-submodules --recurse-submodules -b v1.0.27-1 https://github.com/libusb/libusb-cmake.git
   git clone --depth 1 -b n7.0.1 https://github.com/FFmpeg/FFmpeg.git
   git clone --depth 1 -b v2.4.1 https://github.com/cisco/openh264.git
@@ -254,6 +254,7 @@ cd $BUILD
 cmake -GNinja -Bfreerdp -S"$SCRIPT_PATH/.." \
   $CMAKE_ARGS \
   -DWITH_PLATFORM_SERVER=OFF \
+  -DWITH_CLIENT_SDL2=OFF \
   -DWITH_SIMD=ON \
   -DWITH_FFMPEG=OFF \
   -DWITH_VERBOSE_WINPR_ASSERT=OFF \
