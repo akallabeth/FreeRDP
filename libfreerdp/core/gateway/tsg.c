@@ -1606,6 +1606,9 @@ static BOOL tsg_ndr_read_caps_response(wLog* log, rdpContext* context, wStream* 
 {
 	UINT32 PacketQuarResponsePtr = 0;
 
+	WLog_INFO(TAG, "xxxxxxxxxxxxxxx begin xxxxxxxxxxxxxxxx");
+	winpr_HexDump(TAG, WLOG_INFO, Stream_Buffer(s), Stream_Length(s));
+	WLog_INFO(TAG, "xxxxxxxxxxxxxxx  end  xxxxxxxxxxxxxxxx");
 	WINPR_ASSERT(context);
 	WINPR_ASSERT(index);
 	WINPR_ASSERT(caps);
