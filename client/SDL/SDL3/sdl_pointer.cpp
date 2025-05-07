@@ -165,6 +165,7 @@ BOOL sdl_Pointer_Set_Process(SdlContext* sdl)
 	                      SDL_ScaleMode::SDL_SCALEMODE_LINEAR);
 	SDL_AddSurfaceAlternateImage(normal, ptr->image);
 
+	WLog_INFO("aaa", "xxxx: %dx%d", x, y);
 	ptr->cursor = SDL_CreateColorCursor(normal, x, y);
 	if (!ptr->cursor)
 		return FALSE;
@@ -181,7 +182,17 @@ static BOOL sdl_Pointer_SetNull(rdpContext* context)
 {
 	WINPR_UNUSED(context);
 
-	return sdl_push_user_event(SDL_EVENT_USER_POINTER_NULL);
+	return SDL_RunOnMainThread(
+	    [](void* data)
+	    {
+		    SDL_HideCursor();
+		    auto sdl = static_cast<SdlContext*>(data);
+		    if (!sdl)
+			    return;
+		    sdl->setCursor(nullptr);
+		    sdl->setHasCursor(false);
+	    },
+	    context, false);
 }
 
 static BOOL sdl_Pointer_SetPosition(rdpContext* context, UINT32 x, UINT32 y)

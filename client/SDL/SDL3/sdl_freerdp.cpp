@@ -947,11 +947,6 @@ static int sdl_run(SdlContext* sdl)
 						window.second.minimize();
 					}
 					break;
-				case SDL_EVENT_USER_POINTER_NULL:
-					SDL_HideCursor();
-					sdl->setCursor(nullptr);
-					sdl->setHasCursor(false);
-					break;
 				case SDL_EVENT_USER_POINTER_DEFAULT:
 				{
 					SDL_Cursor* def = SDL_GetDefaultCursor();
