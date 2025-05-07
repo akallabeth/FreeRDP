@@ -93,7 +93,17 @@ static BOOL sdl_Pointer_SetDefault(rdpContext* context)
 {
 	WINPR_UNUSED(context);
 
-	return sdl_push_user_event(SDL_EVENT_USER_POINTER_DEFAULT);
+	return SDL_RunOnMainThread([](void* data) {
+		auto def = SDL_GetDefaultCursor();
+		SDL_SetCursor(def);
+		SDL_ShowCursor();
+
+		auto sdl = static_cast<SdlContext*>(data);
+		if (!sdl)
+			return;
+		sdl->setCursor(nullptr);
+		sdl->setHasCursor(true);
+							   }, context, false);
 }
 
 static BOOL sdl_Pointer_Set(rdpContext* context, rdpPointer* pointer)
