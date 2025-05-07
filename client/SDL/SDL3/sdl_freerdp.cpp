@@ -376,6 +376,7 @@ static BOOL sdl_draw_to_window(SdlContext* sdl, SdlWindow& window,
 		if (!sdl_draw_to_window_scaled_rect(sdl, window, sdl->primary.get(), rects))
 			return FALSE;
 	}
+
 	window.updateSurface();
 	return TRUE;
 }
@@ -831,6 +832,9 @@ static int sdl_run(SdlContext* sdl)
 				case SDL_EVENT_MOUSE_MOTION:
 				{
 					SDL_MouseMotionEvent& ev = windowEvent.motion;
+					auto& win = sdl->windows.at(ev.windowID);
+					win.cross(ev.x, ev.y);
+
 					point2pix(ev.windowID, ev.x, ev.y);
 					point2pix(ev.windowID, ev.xrel, ev.yrel);
 					sdl_handle_mouse_motion(sdl, &ev);

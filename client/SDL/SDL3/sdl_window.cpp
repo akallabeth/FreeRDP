@@ -20,6 +20,8 @@
 #include "sdl_window.hpp"
 #include "sdl_utils.hpp"
 
+#include <algorithm>
+
 SdlWindow::SdlWindow(const std::string& title, Sint32 startupX, Sint32 startupY, Sint32 width,
                      Sint32 height, [[maybe_unused]] Uint32 flags)
 {
@@ -199,6 +201,33 @@ void SdlWindow::minimize()
 	(void)SDL_SyncWindow(_window);
 }
 
+bool SdlWindow::cross(Sint32 x, Sint32 y, Sint32 len, SDL_Color color)
+{
+	_cross_x = x;
+	_cross_y = y;
+	_cross_len = len;
+	_cross_color = color;
+	updateSurface();
+	return true;
+}
+
+bool SdlWindow::cross()
+{
+	auto surface = SDL_GetWindowSurface(_window);
+	if (!surface)
+		return false;
+
+	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "cursor cross(%dx%d)", _cross_x, _cross_y);
+	SDL_Rect xrect = { std::max<Sint32>(0, _cross_x - _cross_len), _cross_y, 2 * _cross_len, 1 };
+	SDL_Rect yrect = { _cross_x, std::max<Sint32>(0, _cross_y - _cross_len), 1, 2 * _cross_len };
+
+	auto scolor =
+	    SDL_MapSurfaceRGBA(surface, _cross_color.r, _cross_color.g, _cross_color.b, _cross_color.a);
+	SDL_FillSurfaceRect(surface, &xrect, scolor);
+	SDL_FillSurfaceRect(surface, &yrect, scolor);
+	return true;
+}
+
 bool SdlWindow::fill(Uint8 r, Uint8 g, Uint8 b, Uint8 a)
 {
 	auto surface = SDL_GetWindowSurface(_window);
@@ -230,5 +259,6 @@ bool SdlWindow::blit(SDL_Surface* surface, const SDL_Rect& srcRect, SDL_Rect& ds
 
 void SdlWindow::updateSurface()
 {
+	cross();
 	SDL_UpdateWindowSurface(_window);
 }

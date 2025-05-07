@@ -96,6 +96,7 @@ static BOOL sdl_Pointer_SetDefault(rdpContext* context)
 	return SDL_RunOnMainThread([](void* data) {
 		auto def = SDL_GetDefaultCursor();
 		SDL_SetCursor(def);
+		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "show cursror: default");
 		SDL_ShowCursor();
 
 		auto sdl = static_cast<SdlContext*>(data);
@@ -197,6 +198,7 @@ BOOL sdl_Pointer_Set_Process(SdlContext* sdl)
 
 	SDL_DestroySurface(normal);
 
+	SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "show cursror: RDP");
 	SDL_SetCursor(ptr->cursor);
 	SDL_ShowCursor();
 	sdl->setHasCursor(true);
@@ -210,6 +212,7 @@ static BOOL sdl_Pointer_SetNull(rdpContext* context)
 	return SDL_RunOnMainThread(
 	    [](void* data)
 	    {
+		    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "hiding cursror");
 		    SDL_HideCursor();
 		    auto sdl = static_cast<SdlContext*>(data);
 		    if (!sdl)

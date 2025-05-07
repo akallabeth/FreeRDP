@@ -57,15 +57,22 @@ class SdlWindow
 	void fullscreen(bool enter);
 	void minimize();
 
+	bool cross(Sint32 x, Sint32 y, Sint32 len = 3, SDL_Color color = { 0, 0xff, 0, 0xff });
+
 	bool fill(Uint8 r = 0x00, Uint8 g = 0x00, Uint8 b = 0x00, Uint8 a = 0xff);
 	bool blit(SDL_Surface* surface, const SDL_Rect& src, SDL_Rect& dst);
 	void updateSurface();
 
   private:
 	static UINT32 orientaion_to_rdp(SDL_DisplayOrientation orientation);
+	bool cross();
 
   private:
 	SDL_Window* _window = nullptr;
 	Sint32 _offset_x = 0;
 	Sint32 _offset_y = 0;
+	Sint32 _cross_x = 0;
+	Sint32 _cross_y = 0;
+	Sint32 _cross_len = 0;
+	SDL_Color _cross_color = { 0, 0, 0, 0 };
 };
