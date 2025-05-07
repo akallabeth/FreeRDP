@@ -947,30 +947,6 @@ static int sdl_run(SdlContext* sdl)
 						window.second.minimize();
 					}
 					break;
-				case SDL_EVENT_USER_POINTER_POSITION:
-				{
-					const auto x =
-					    static_cast<INT32>(reinterpret_cast<uintptr_t>(windowEvent.user.data1));
-					const auto y =
-					    static_cast<INT32>(reinterpret_cast<uintptr_t>(windowEvent.user.data2));
-
-					SDL_Window* window = SDL_GetMouseFocus();
-					if (window)
-					{
-						const Uint32 id = SDL_GetWindowID(window);
-
-						INT32 sx = x;
-						INT32 sy = y;
-						if (sdl_scale_coordinates(sdl, id, &sx, &sy, FALSE, FALSE))
-							SDL_WarpMouseInWindow(window, static_cast<float>(sx),
-							                      static_cast<float>(sy));
-					}
-				}
-				break;
-				case SDL_EVENT_USER_POINTER_SET:
-					sdl->setCursor(static_cast<rdpPointer*>(windowEvent.user.data1));
-					sdl_Pointer_Set_Process(sdl);
-					break;
 				case SDL_EVENT_CLIPBOARD_UPDATE:
 					sdl->clip.handle_update(windowEvent.clipboard);
 					break;

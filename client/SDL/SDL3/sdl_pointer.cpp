@@ -108,8 +108,23 @@ static BOOL sdl_Pointer_SetDefault(rdpContext* context)
 
 static BOOL sdl_Pointer_Set(rdpContext* context, rdpPointer* pointer)
 {
-	WINPR_UNUSED(context);
-	return sdl_push_user_event(SDL_EVENT_USER_POINTER_SET, pointer);
+	struct pointer_set_arg_t
+	{
+		SdlContext* sdl;
+		rdpPointer* pointer;
+	};
+
+	struct pointer_set_arg_t arg = { get_context(context), pointer };
+	return SDL_RunOnMainThread(
+	    [](void* data)
+	    {
+		    auto arg = static_cast<struct pointer_set_arg_t*>(data);
+		    if (!arg)
+			    return;
+		    arg->sdl->setCursor(arg->pointer);
+		    sdl_Pointer_Set_Process(arg->sdl);
+	    },
+	    &arg, true);
 }
 
 BOOL sdl_Pointer_Set_Process(SdlContext* sdl)
@@ -207,10 +222,33 @@ static BOOL sdl_Pointer_SetNull(rdpContext* context)
 
 static BOOL sdl_Pointer_SetPosition(rdpContext* context, UINT32 x, UINT32 y)
 {
-	WINPR_UNUSED(context);
-	WINPR_ASSERT(context);
+	struct pointer_set_pos_arg_t
+	{
+		SdlContext* sdl;
+		uint32_t x;
+		uint32_t y;
+	};
 
-	return sdl_push_user_event(SDL_EVENT_USER_POINTER_POSITION, x, y);
+	struct pointer_set_pos_arg_t arg = { get_context(context), x, y };
+	return SDL_RunOnMainThread(
+	    [](void* data)
+	    {
+		    auto arg = static_cast<pointer_set_pos_arg_t*>(data);
+		    if (!arg)
+			    return;
+
+		    SDL_Window* window = SDL_GetMouseFocus();
+		    if (window)
+		    {
+			    const Uint32 id = SDL_GetWindowID(window);
+
+			    INT32 sx = WINPR_ASSERTING_INT_CAST(INT32, arg->x);
+			    INT32 sy = WINPR_ASSERTING_INT_CAST(INT32, arg->y);
+			    if (sdl_scale_coordinates(arg->sdl, id, &sx, &sy, FALSE, FALSE))
+				    SDL_WarpMouseInWindow(window, static_cast<float>(sx), static_cast<float>(sy));
+		    }
+	    },
+	    &arg, true);
 }
 
 BOOL sdl_register_pointer(rdpGraphics* graphics)

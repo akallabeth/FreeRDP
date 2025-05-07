@@ -163,8 +163,6 @@ const char* sdl_event_type_str(Uint32 type)
 		EV_CASE_STR(SDL_EVENT_USER_WINDOW_RESIZEABLE);
 		EV_CASE_STR(SDL_EVENT_USER_WINDOW_FULLSCREEN);
 		EV_CASE_STR(SDL_EVENT_USER_WINDOW_MINIMIZE);
-		EV_CASE_STR(SDL_EVENT_USER_POINTER_POSITION);
-		EV_CASE_STR(SDL_EVENT_USER_POINTER_SET);
 		EV_CASE_STR(SDL_EVENT_USER_QUIT);
 
 		EV_CASE_STR(SDL_EVENT_LAST);
@@ -252,14 +250,6 @@ bool sdl_push_user_event(Uint32 type, ...)
 			break;
 		case SDL_EVENT_USER_UPDATE:
 			event->data1 = va_arg(ap, void*);
-			break;
-		case SDL_EVENT_USER_POINTER_POSITION:
-			event->data1 = reinterpret_cast<void*>(static_cast<uintptr_t>(va_arg(ap, UINT32)));
-			event->data2 = reinterpret_cast<void*>(static_cast<uintptr_t>(va_arg(ap, UINT32)));
-			break;
-		case SDL_EVENT_USER_POINTER_SET:
-			event->data1 = va_arg(ap, void*);
-			event->data2 = va_arg(ap, void*);
 			break;
 		case SDL_EVENT_USER_CREATE_WINDOWS:
 			event->data1 = va_arg(ap, void*);
