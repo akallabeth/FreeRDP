@@ -827,17 +827,24 @@ extern "C"
 		return PubSub_OnEvent(pubSub, #name, context, &e->e);                                   \
 	}
 
-#define DEFINE_EVENT_SUBSCRIBE(name)                                                              \
-	static INLINE int PubSub_Subscribe##name(wPubSub* pubSub, p##name##EventHandler EventHandler) \
-	{                                                                                             \
-		return PubSub_Subscribe(pubSub, #name, EventHandler);                                     \
+#define DEFINE_EVENT_SUBSCRIBE(name)                               \
+	static INLINE int PubSub_Subscribe##name(wPubSub* pubSub, ...) \
+	{                                                              \
+		va_list ap;                                                \
+		va_start(ap, pubSub);                                      \
+		const int rc = PubSub_SubscribeVA(pubSub, #name, ap);      \
+		va_end(ap);                                                \
+		return rc;                                                 \
 	}
 
-#define DEFINE_EVENT_UNSUBSCRIBE(name)                                             \
-	static INLINE int PubSub_Unsubscribe##name(wPubSub* pubSub,                    \
-	                                           p##name##EventHandler EventHandler) \
-	{                                                                              \
-		return PubSub_Unsubscribe(pubSub, #name, EventHandler);                    \
+#define DEFINE_EVENT_UNSUBSCRIBE(name)                               \
+	static INLINE int PubSub_Unsubscribe##name(wPubSub* pubSub, ...) \
+	{                                                                \
+		va_list ap;                                                  \
+		va_start(ap, pubSub);                                        \
+		const int rc = PubSub_UnsubscribeVA(pubSub, #name, ap);      \
+		va_end(ap);                                                  \
+		return rc;                                                   \
 	}
 
 #define DEFINE_EVENT_BEGIN(name) \
@@ -872,6 +879,9 @@ extern "C"
 
 	WINPR_API int PubSub_Subscribe(wPubSub* pubSub, const char* EventName, ...);
 	WINPR_API int PubSub_Unsubscribe(wPubSub* pubSub, const char* EventName, ...);
+
+	WINPR_API int PubSub_SubscribeVA(wPubSub* pubSub, const char* EventName, va_list ap);
+	WINPR_API int PubSub_UnsubscribeVA(wPubSub* pubSub, const char* EventName, va_list ap);
 
 	WINPR_API int PubSub_OnEvent(wPubSub* pubSub, const char* EventName, void* context,
 	                             const wEventArgs* e);

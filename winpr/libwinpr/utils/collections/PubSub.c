@@ -117,18 +117,24 @@ fail:
 
 int PubSub_Subscribe(wPubSub* pubSub, const char* EventName, ...)
 {
-	wEventType* event = NULL;
+	va_list ap = { 0 };
+	va_start(ap, EventName);
+	const int rc = PubSub_SubscribeVA(pubSub, EventName, ap);
+	va_end(ap);
+	return rc;
+}
+
+int PubSub_SubscribeVA(wPubSub* pubSub, const char* EventName, va_list ap)
+{
 	int status = -1;
 	WINPR_ASSERT(pubSub);
 
-	va_list ap = { 0 };
-	va_start(ap, EventName);
 	pEventHandler EventHandler = va_arg(ap, pEventHandler);
 
 	if (pubSub->synchronized)
 		PubSub_Lock(pubSub);
 
-	event = PubSub_FindEventType(pubSub, EventName);
+	wEventType* event = PubSub_FindEventType(pubSub, EventName);
 
 	if (event)
 	{
@@ -143,25 +149,30 @@ int PubSub_Subscribe(wPubSub* pubSub, const char* EventName, ...)
 	if (pubSub->synchronized)
 		PubSub_Unlock(pubSub);
 
-	va_end(ap);
 	return status;
 }
 
 int PubSub_Unsubscribe(wPubSub* pubSub, const char* EventName, ...)
 {
-	wEventType* event = NULL;
+	va_list ap = { 0 };
+	va_start(ap, EventName);
+	const int rc = PubSub_UnsubscribeVA(pubSub, EventName, ap);
+	va_end(ap);
+	return rc;
+}
+
+int PubSub_UnsubscribeVA(wPubSub* pubSub, const char* EventName, va_list ap)
+{
 	int status = -1;
 	WINPR_ASSERT(pubSub);
 	WINPR_ASSERT(EventName);
 
-	va_list ap = { 0 };
-	va_start(ap, EventName);
 	pEventHandler EventHandler = va_arg(ap, pEventHandler);
 
 	if (pubSub->synchronized)
 		PubSub_Lock(pubSub);
 
-	event = PubSub_FindEventType(pubSub, EventName);
+	wEventType* event = PubSub_FindEventType(pubSub, EventName);
 
 	if (event)
 	{
@@ -184,7 +195,6 @@ int PubSub_Unsubscribe(wPubSub* pubSub, const char* EventName, ...)
 	if (pubSub->synchronized)
 		PubSub_Unlock(pubSub);
 
-	va_end(ap);
 	return status;
 }
 

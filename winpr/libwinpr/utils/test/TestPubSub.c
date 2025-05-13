@@ -1,4 +1,6 @@
 
+#include <stdarg.h>
+
 #include <winpr/crt.h>
 #include <winpr/thread.h>
 #include <winpr/collections.h>
