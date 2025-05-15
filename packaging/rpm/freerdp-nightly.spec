@@ -32,6 +32,8 @@ Source0:        %{name}-%{version}.tar.bz2
 Source1:        source_version
 Source2:        webview.tar.bz2
 BuildRequires: clang
+BuildRequires: libasan
+BuildRequires: libasan-static
 BuildRequires: cmake >= 3.13.0
 BuildRequires: libxkbfile-devel
 BuildRequires: libX11-devel
@@ -96,7 +98,6 @@ BuildRequires: libusbx-devel
 BuildRequires: systemd-devel
 BuildRequires: dbus-glib-devel
 BuildRequires: libjpeg-turbo-devel
-BuildRequires: libasan
 BuildRequires: compiler-rt
 BuildRequires: (webkit2gtk4.1-devel or webkit2gtk4.0-devel)
 BuildRequires: libjpeg-turbo-devel
