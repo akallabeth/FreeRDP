@@ -413,6 +413,13 @@ static BOOL xf_paint(xfContext* xfc, const GDI_RGN* region)
 	WINPR_ASSERT(xfc);
 	WINPR_ASSERT(region);
 
+	if ((region->w == 0) || (region->h == 0))
+	{
+		WLog_Print(xfc->log, WLOG_WARN, "invalid width and/or height specified: w=%d h=%d",
+		           region->w, region->h);
+		return TRUE;
+	}
+
 	if (xfc->remote_app)
 	{
 		const RECTANGLE_16 rect = { .left = WINPR_ASSERTING_INT_CAST(UINT16, region->x),
