@@ -653,11 +653,24 @@ static BOOL sdl_create_windows(SdlContext* sdl)
 
 		auto w = WINPR_ASSERTING_INT_CAST(Uint32, monitor->width);
 		auto h = WINPR_ASSERTING_INT_CAST(Uint32, monitor->height);
+		auto rdpw = w;
+		auto rdph = h;
 		if (!(freerdp_settings_get_bool(settings, FreeRDP_UseMultimon) ||
 		      freerdp_settings_get_bool(settings, FreeRDP_Fullscreen)))
 		{
 			w = freerdp_settings_get_uint32(settings, FreeRDP_DesktopWidth);
 			h = freerdp_settings_get_uint32(settings, FreeRDP_DesktopHeight);
+		}
+
+		if (freerdp_settings_get_bool(settings, FreeRDP_SmartSizing))
+		{
+			if (freerdp_settings_get_uint32(settings, FreeRDP_SmartSizingWidth) > 0)
+				w = WINPR_ASSERTING_INT_CAST(
+				    int, freerdp_settings_get_uint32(settings, FreeRDP_SmartSizingWidth));
+
+			if (freerdp_settings_get_uint32(settings, FreeRDP_SmartSizingHeight) > 0)
+				h = WINPR_ASSERTING_INT_CAST(
+				    int, freerdp_settings_get_uint32(settings, FreeRDP_SmartSizingHeight));
 		}
 
 		Uint32 flags = SDL_WINDOW_HIGH_PIXEL_DENSITY;
@@ -683,6 +696,8 @@ static BOOL sdl_create_windows(SdlContext* sdl)
 			              static_cast<int>(startupY),
 			              static_cast<int>(w),
 			              static_cast<int>(h),
+			              rdpw,
+			              rdph,
 			              flags };
 		ScopeGuard guard1([&]() { sdl->windows_created.set(); });
 		if (!window.window())

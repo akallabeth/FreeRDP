@@ -21,7 +21,9 @@
 #include "sdl_utils.hpp"
 
 SdlWindow::SdlWindow(const std::string& title, Sint32 startupX, Sint32 startupY, Sint32 width,
-                     Sint32 height, [[maybe_unused]] Uint32 flags)
+                     Sint32 height, Uint32 rdpWidth, Uint32 rdpHeight,
+                     [[maybe_unused]] Uint32 flags)
+    : _rdp_width(rdpWidth), _rdp_height(rdpHeight)
 {
 	auto props = SDL_CreateProperties();
 	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, title.c_str());
@@ -51,7 +53,8 @@ SdlWindow::SdlWindow(const std::string& title, Sint32 startupX, Sint32 startupY,
 }
 
 SdlWindow::SdlWindow(SdlWindow&& other) noexcept
-    : _window(other._window), _offset_x(other._offset_x), _offset_y(other._offset_y)
+    : _window(other._window), _offset_x(other._offset_x), _offset_y(other._offset_y),
+      _rdp_width(other._rdp_width), _rdp_height(other._rdp_height)
 {
 	other._window = nullptr;
 }
@@ -86,12 +89,12 @@ SDL_Rect SdlWindow::rect() const
 	return rect;
 }
 
-SDL_Point SdlWindow::rdpPoint(const SDL_Point& point, bool relativeToMonitor) const
+SDL_Point SdlWindow::rdpPoint(const SDL_Point& point, bool absolute) const
 {
 	auto r = rect();
 	auto m = monitor();
-	SDL_Point rdp{ point.x * r.w / m.width, point.y * r.h / m.height };
-	if (!relativeToMonitor)
+	SDL_Point rdp{ point.x * m.width / r.w, point.y * m.height / r.h };
+	if (absolute)
 	{
 		rdp.x -= offsetX();
 		rdp.y -= offsetY();
@@ -135,16 +138,23 @@ rdpMonitor SdlWindow::monitor() const
 
 	int pixelWidth = 0;
 	int pixelHeight = 0;
-	auto prc = SDL_GetWindowSizeInPixels(_window, &pixelWidth, &pixelHeight);
-
-	if (prc)
+	if ((_rdp_width > 0) && (_rdp_height > 0))
 	{
-		mon.width = pixelWidth;
-		mon.height = pixelHeight;
-
-		mon.attributes.physicalWidth = WINPR_ASSERTING_INT_CAST(uint32_t, pixelWidth);
-		mon.attributes.physicalHeight = WINPR_ASSERTING_INT_CAST(uint32_t, pixelHeight);
+		pixelWidth = _rdp_width;
+		pixelHeight = _rdp_height;
 	}
+	else
+	{
+		auto prc = SDL_GetWindowSizeInPixels(_window, &pixelWidth, &pixelHeight);
+		if (!prc)
+			return mon;
+	}
+
+	mon.width = pixelWidth;
+	mon.height = pixelHeight;
+
+	mon.attributes.physicalWidth = WINPR_ASSERTING_INT_CAST(uint32_t, pixelWidth);
+	mon.attributes.physicalHeight = WINPR_ASSERTING_INT_CAST(uint32_t, pixelHeight);
 
 	SDL_Rect rect = {};
 	auto did = SDL_GetDisplayForWindow(_window);
