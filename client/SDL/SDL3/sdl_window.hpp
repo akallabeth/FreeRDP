@@ -39,6 +39,18 @@ class SdlWindow
 	[[nodiscard]] Uint32 id() const;
 	[[nodiscard]] SDL_DisplayID displayIndex() const;
 	[[nodiscard]] SDL_Rect rect() const;
+
+	/** @brief Convert a point with window relative coordinates to RDP coordinates.
+	 *
+	 *  @param point A point with SDL window relative coordinates
+	 *  @param absolute \b true The returned coordinates are converted to RDP space.
+	 *   If \b true then the offset of the monitor from the top/left corner of the virtual screen
+	 * space is added.
+	 *
+	 *  @return A point in RDP space coordinates
+	 */
+	[[nodiscard]] SDL_Point rdpPoint(const SDL_Point& point, bool absolute) const;
+
 	[[nodiscard]] SDL_Window* window() const;
 
 	[[nodiscard]] Sint32 offsetX() const;

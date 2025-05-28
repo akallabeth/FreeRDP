@@ -86,6 +86,19 @@ SDL_Rect SdlWindow::rect() const
 	return rect;
 }
 
+SDL_Point SdlWindow::rdpPoint(const SDL_Point& point, bool relativeToMonitor) const
+{
+	auto r = rect();
+	auto m = monitor();
+	SDL_Point rdp{ point.x * r.w / m.width, point.y * r.h / m.height };
+	if (!relativeToMonitor)
+	{
+		rdp.x -= offsetX();
+		rdp.y -= offsetY();
+	}
+	return rdp;
+}
+
 SDL_Window* SdlWindow::window() const
 {
 	return _window;
