@@ -28,7 +28,7 @@ class SdlWindow
 {
   public:
 	SdlWindow(const std::string& title, Sint32 startupX, Sint32 startupY, Sint32 width,
-	          Sint32 height, Uint32 rdpWidth, Uint32 rdpHeight, Uint32 flags);
+	          Sint32 height, Sint32 rdpWidth, Sint32 rdpHeight, Uint32 flags);
 	SdlWindow(SdlWindow&& other) noexcept;
 	SdlWindow(const SdlWindow& other) = delete;
 	~SdlWindow();
@@ -82,6 +82,6 @@ class SdlWindow
 	SDL_Window* _window = nullptr;
 	Sint32 _offset_x = 0;
 	Sint32 _offset_y = 0;
-	Uint32 _rdp_width = 0;
-	Uint32 _rdp_height = 0;
+	Sint32 _rdp_width = 0;
+	Sint32 _rdp_height = 0;
 };

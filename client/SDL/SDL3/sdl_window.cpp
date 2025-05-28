@@ -21,7 +21,7 @@
 #include "sdl_utils.hpp"
 
 SdlWindow::SdlWindow(const std::string& title, Sint32 startupX, Sint32 startupY, Sint32 width,
-                     Sint32 height, Uint32 rdpWidth, Uint32 rdpHeight,
+                     Sint32 height, Sint32 rdpWidth, Sint32 rdpHeight,
                      [[maybe_unused]] Uint32 flags)
     : _rdp_width(rdpWidth), _rdp_height(rdpHeight)
 {
