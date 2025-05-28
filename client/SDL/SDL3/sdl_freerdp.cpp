@@ -664,12 +664,14 @@ static BOOL sdl_create_windows(SdlContext* sdl)
 
 		if (freerdp_settings_get_bool(settings, FreeRDP_SmartSizing))
 		{
+			rdpw = static_cast<int>(w);
+			rdph = static_cast<int>(h);
 			if (freerdp_settings_get_uint32(settings, FreeRDP_SmartSizingWidth) > 0)
-				rdpw = WINPR_ASSERTING_INT_CAST(
+				w = WINPR_ASSERTING_INT_CAST(
 				    int, freerdp_settings_get_uint32(settings, FreeRDP_SmartSizingWidth));
 
 			if (freerdp_settings_get_uint32(settings, FreeRDP_SmartSizingHeight) > 0)
-				rdph = WINPR_ASSERTING_INT_CAST(
+				h = WINPR_ASSERTING_INT_CAST(
 				    int, freerdp_settings_get_uint32(settings, FreeRDP_SmartSizingHeight));
 		}
 
