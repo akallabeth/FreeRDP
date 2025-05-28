@@ -92,6 +92,9 @@ SDL_Rect SdlWindow::rect() const
 SDL_Point SdlWindow::rdpPoint(const SDL_Point& point, bool absolute) const
 {
 	auto r = rect();
+	if ((r.w <= 0) || (r.h <= 0))
+		return point;
+
 	auto m = monitor();
 	SDL_Point rdp{ point.x * m.width / r.w, point.y * m.height / r.h };
 	if (absolute)
