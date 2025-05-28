@@ -24,6 +24,25 @@
 #include <SDL3/SDL.h>
 #include "sdl_types.hpp"
 
+/** @brief scale coordinates to/from RDP
+ *
+ *  @param sdl A pointer to the client context
+ *  @param windowId the window the event originated from
+ *  @param point Coordinates in window relative coordinates
+ *
+ *  return A point in RDP virtual screen absolute coordinates
+ */
+SDL_Point sdl_scale_event(SdlContext* sdl, Uint32 windowId, const SDL_Point& point);
+
+/** @brief scale window coordinates to session resolution type coordinates
+ *  @param sdl A pointer to the client context
+ *  @param windowId the window the event originated from
+ *  @param point the point (relative or absolute to window) to scale
+ *
+ *  @return A point scaled to session resolution
+ */
+SDL_Point sdl_scale_to_session_resolution(SdlContext* sdl, Uint32 windowId, SDL_Point& point);
+
 BOOL sdl_scale_coordinates(SdlContext* sdl, Uint32 windowId, INT32* px, INT32* py,
                            BOOL fromLocalToRDP, BOOL applyOffset);
 

@@ -326,15 +326,17 @@ BOOL sdlInput::keyboard_focus_in()
 	{
 		SDL_GetMouseState(&fx, &fy);
 	}
-	auto x = static_cast<int32_t>(fx);
-	auto y = static_cast<int32_t>(fy);
+
+	SDL_Point point{ static_cast<int32_t>(fx), static_cast<int32_t>(fy) };
+
 	auto w = SDL_GetMouseFocus();
 	if (w)
 	{
 		auto id = SDL_GetWindowID(w);
-		sdl_scale_coordinates(_sdl, id, &x, &y, TRUE, TRUE);
+		point = sdl_scale_event(_sdl, id, point);
 	}
-	return freerdp_client_send_button_event(_sdl->common(), FALSE, PTR_FLAGS_MOVE, x, y);
+	return freerdp_client_send_button_event(_sdl->common(), FALSE, PTR_FLAGS_MOVE, point.x,
+	                                        point.y);
 }
 
 /* This function is called to update the keyboard indicator LED */

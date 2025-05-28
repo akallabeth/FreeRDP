@@ -30,6 +30,32 @@
 
 #include <SDL3/SDL.h>
 
+static const SdlWindow* sdl_get_window_for_id(SdlContext* sdl, Uint32 windowId)
+{
+	auto it = sdl->windows.find(windowId);
+	if (it == sdl->windows.end())
+		return nullptr;
+
+	return &it->second;
+}
+
+SDL_Point sdl_scale_event(SdlContext* sdl, Uint32 windowId, const SDL_Point& point)
+{
+	auto window = sdl_get_window_for_id(sdl, windowId);
+	if (!window)
+		return point;
+
+	return point;
+}
+
+SDL_Point sdl_scale_to_session_resolution(SdlContext* sdl, Uint32 windowId, SDL_Point& point)
+{
+	auto window = sdl_get_window_for_id(sdl, windowId);
+	if (!window)
+		return point;
+	return point;
+}
+
 BOOL sdl_scale_coordinates(SdlContext* sdl, Uint32 windowId, INT32* px, INT32* py,
                            BOOL fromLocalToRDP, BOOL applyOffset)
 {
@@ -111,6 +137,16 @@ static BOOL sdl_get_touch_scaled(SdlContext* sdl, const SDL_TouchFingerEvent* ev
 	SDL_Surface* surface = SDL_GetWindowSurface(window);
 	if (!surface)
 		return FALSE;
+
+	if (local)
+	{
+		SDL_Point point = { static_cast<INT32>(ev->x * static_cast<float>(surface->w)),
+			                static_cast<INT32>(ev->y * static_cast<float>(surface->h)) };
+		point = sdl_scale_event(sdl, ev->windowID, point);
+		*px = point.x;
+		*py = point.y;
+		return TRUE;
+	}
 
 	// TODO: Add the offset of the surface in the global coordinates
 	*px = static_cast<INT32>(ev->x * static_cast<float>(surface->w));
@@ -202,10 +238,15 @@ BOOL sdl_handle_mouse_motion(SdlContext* sdl, const SDL_MouseMotionEvent* ev)
 	sdl->input.mouse_focus(ev->windowID);
 	const BOOL relative =
 	    freerdp_client_use_relative_mouse_events(sdl->common()) && !sdl->hasCursor();
-	auto x = static_cast<INT32>(relative ? ev->xrel : ev->x);
-	auto y = static_cast<INT32>(relative ? ev->yrel : ev->y);
-	sdl_scale_coordinates(sdl, ev->windowID, &x, &y, TRUE, TRUE);
-	return freerdp_client_send_button_event(sdl->common(), relative, PTR_FLAGS_MOVE, x, y);
+	// TODO: Map local global coordinates to remote virtual space
+	SDL_Point point = { static_cast<INT32>(relative ? 0 : ev->x),
+		                static_cast<INT32>(relative ? 0 : ev->y) };
+	if (relative)
+		point = sdl_scale_to_session_resolution(sdl, ev->windowID, point);
+	else
+		point = sdl_scale_event(sdl, ev->windowID, point);
+	return freerdp_client_send_button_event(sdl->common(), relative, PTR_FLAGS_MOVE, point.x,
+	                                        point.y);
 }
 
 BOOL sdl_handle_mouse_wheel(SdlContext* sdl, const SDL_MouseWheelEvent* ev)
@@ -269,13 +310,19 @@ BOOL sdl_handle_mouse_button(SdlContext* sdl, const SDL_MouseButtonEvent* ev)
 
 	const BOOL relative =
 	    freerdp_client_use_relative_mouse_events(sdl->common()) && !sdl->hasCursor();
-	auto x = static_cast<INT32>(relative ? 0 : ev->x);
-	auto y = static_cast<INT32>(relative ? 0 : ev->y);
-	sdl_scale_coordinates(sdl, ev->windowID, &x, &y, TRUE, TRUE);
+
+	SDL_Point point = { static_cast<INT32>(relative ? 0 : ev->x),
+		                static_cast<INT32>(relative ? 0 : ev->y) };
+	if (relative)
+		point = sdl_scale_to_session_resolution(sdl, ev->windowID, point);
+	else
+		point = sdl_scale_event(sdl, ev->windowID, point);
+
 	if ((flags & (~PTR_FLAGS_DOWN)) != 0)
-		return freerdp_client_send_button_event(sdl->common(), relative, flags, x, y);
+		return freerdp_client_send_button_event(sdl->common(), relative, flags, point.x, point.y);
 	else if ((xflags & (~PTR_XFLAGS_DOWN)) != 0)
-		return freerdp_client_send_extended_button_event(sdl->common(), relative, xflags, x, y);
+		return freerdp_client_send_extended_button_event(sdl->common(), relative, xflags, point.x,
+		                                                 point.y);
 	else
 		return FALSE;
 }
