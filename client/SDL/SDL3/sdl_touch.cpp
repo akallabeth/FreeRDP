@@ -230,7 +230,6 @@ BOOL sdl_handle_mouse_motion(SdlContext* sdl, const SDL_MouseMotionEvent* ev)
 	sdl->input.mouse_focus(ev->windowID);
 	const BOOL relative =
 	    freerdp_client_use_relative_mouse_events(sdl->common()) && !sdl->hasCursor();
-	// TODO: Map local global coordinates to remote virtual space
 	SDL_Point point = { static_cast<INT32>(relative ? 0 : ev->x),
 		                static_cast<INT32>(relative ? 0 : ev->y) };
 	point = sdl_scale_event(sdl, ev->windowID, point, !relative);
