@@ -141,7 +141,14 @@ static krb5_error_code kerberos_log_msg(krb5_context ctx, krb5_error_code code, 
 			break;
 		default:
 		{
-			const DWORD level = WLOG_ERROR;
+			DWORD level = WLOG_WARN;
+
+			/* Silence log errors during initial connection attempt.
+			 * this will most of the time fail because there is no kerberos available.
+			 * don't spam the log with that.
+			 */
+			if (strcmp("kerberos_AcquireCredentialsHandleA", fkt) == 0)
+				level = WLOG_DEBUG;
 
 			wLog* log = WLog_Get(TAG);
 			if (WLog_IsLevelActive(log, level))
