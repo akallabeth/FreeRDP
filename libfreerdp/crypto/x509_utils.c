@@ -836,9 +836,9 @@ static int verify_cb(int ok, X509_STORE_CTX* csc)
 		const char* what = X509_verify_cert_error_string(err);
 		char* name = x509_utils_get_subject(where);
 
-		WLog_WARN(TAG, "Certificate verification failure '%s (%d)' at stack position %d", what, err,
-		          derr);
-		WLog_WARN(TAG, "%s", name);
+		WLog_DBG(TAG, "Certificate verification failure '%s (%d)' at stack position %d", what, err,
+		         derr);
+		WLog_DBG(TAG, "%s", name);
 
 		free(name);
 	}
