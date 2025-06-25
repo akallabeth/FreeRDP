@@ -1402,9 +1402,9 @@ BOOL gdi_init_ex(freerdp* instance, UINT32 format, UINT32 stride, BYTE* buffer,
 	    int32_t, freerdp_settings_get_uint32(context->settings, FreeRDP_DesktopHeight));
 	gdi->dstFormat = format;
 	/* default internal buffer format */
-	WLog_Print(gdi->log, WLOG_INFO, "Local framebuffer format  %s",
+	WLog_Print(gdi->log, WLOG_DEBUG, "Local framebuffer format  %s",
 	           FreeRDPGetColorFormatName(gdi->dstFormat));
-	WLog_Print(gdi->log, WLOG_INFO, "Remote framebuffer format %s",
+	WLog_Print(gdi->log, WLOG_DEBUG, "Remote framebuffer format %s",
 	           FreeRDPGetColorFormatName(SrcFormat));
 
 	if (!(gdi->hdc = gdi_GetDC()))
