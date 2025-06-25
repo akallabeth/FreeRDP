@@ -297,6 +297,10 @@ bool SDLConnectionDialog::createWindow()
 {
 	destroyWindow();
 
+	auto hide = freerdp_settings_get_bool(_context->settings, FreeRDP_UseCommonStdioCallbacks);
+	if (hide)
+		return true;
+
 	const size_t widget_height = 50;
 	const size_t widget_width = 600;
 	const size_t total_height = 300;
