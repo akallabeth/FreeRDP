@@ -1077,8 +1077,6 @@ static BOOL arm_handle_bad_request(rdpArm* arm, const HttpResponse* response, BO
 
 	BOOL rc = FALSE;
 
-	http_response_log_error_status(WLog_Get(TAG), WLOG_ERROR, response);
-
 	const size_t len = http_response_get_body_length(response);
 	const char* msg = (const char*)http_response_get_body(response);
 	if (msg && (strnlen(msg, len + 1) > len))
@@ -1185,15 +1183,17 @@ static BOOL arm_handle_request(rdpArm* arm, BOOL* retry, DWORD timeout)
 		if (!arm_handle_request_ok(arm, response))
 			goto arm_error;
 	}
-	else if (StatusCode == HTTP_STATUS_BAD_REQUEST)
-	{
-		if (!arm_handle_bad_request(arm, response, retry))
-			goto arm_error;
-	}
 	else
 	{
-		http_response_log_error_status(WLog_Get(TAG), WLOG_ERROR, response);
-		goto arm_error;
+		http_response_log_error_status(arm->log, WLOG_ERROR, response);
+
+		if (StatusCode == HTTP_STATUS_BAD_REQUEST)
+		{
+			if (!arm_handle_bad_request(arm, response, retry))
+				goto arm_error;
+		}
+		else
+			goto arm_error;
 	}
 
 	rc = TRUE;
