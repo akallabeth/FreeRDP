@@ -803,7 +803,16 @@ int xf_input_event(xfContext* xfc, WINPR_ATTR_UNUSED const XEvent* xevent, XIDev
 			if (xfc->xi_rawevent)
 			{
 				const XIRawEvent* ev = (const XIRawEvent*)event;
-				xf_generic_RawButtonEvent(xfc, ev->detail, xfc->remote_app,
+				double x = NAN;
+				double y = NAN;
+				double wheel = NAN;
+				if (XIMaskIsSet(ev->valuators.mask, 0))
+					x = ev->raw_values[0];
+				if (XIMaskIsSet(ev->valuators.mask, 1))
+					y = ev->raw_values[1];
+				if (XIMaskIsSet(ev->valuators.mask, 5))
+					wheel = ev->raw_values[5];
+				xf_generic_RawButtonEvent(xfc, x, y, wheel, ev->detail, xfc->remote_app,
 				                          evtype == XI_RawButtonPress);
 			}
 			break;
@@ -813,14 +822,17 @@ int xf_input_event(xfContext* xfc, WINPR_ATTR_UNUSED const XEvent* xevent, XIDev
 			if (xfc->xi_rawevent)
 			{
 				const XIRawEvent* ev = (const XIRawEvent*)event;
-				double x = 0.0;
-				double y = 0.0;
+				double x = NAN;
+				double y = NAN;
+				double wheel = NAN;
 				if (XIMaskIsSet(ev->valuators.mask, 0))
 					x = ev->raw_values[0];
 				if (XIMaskIsSet(ev->valuators.mask, 1))
 					y = ev->raw_values[1];
+				if (XIMaskIsSet(ev->valuators.mask, 5))
+					wheel = ev->raw_values[5];
 
-				xf_generic_RawMotionNotify(xfc, (int)x, (int)y, event->event, xfc->remote_app);
+				xf_generic_RawMotionNotify(xfc, x, y, wheel, event->event, xfc->remote_app);
 			}
 			break;
 		case XI_DeviceChanged:

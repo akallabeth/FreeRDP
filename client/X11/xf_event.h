@@ -42,10 +42,11 @@ void xf_adjust_coordinates_to_screen(xfContext* xfc, UINT32* x, UINT32* y);
 BOOL xf_generic_MotionNotify_(xfContext* xfc, int x, int y, Window window, BOOL app,
                               const char* file, const char* fkt, size_t line);
 
-#define xf_generic_RawMotionNotify(xfc, x, y, window, app) \
-	xf_generic_RawMotionNotify_((xfc), (x), (y), (window), (app), __FILE__, __func__, __LINE__)
-BOOL xf_generic_RawMotionNotify_(xfContext* xfc, int x, int y, Window window, BOOL app,
-                                 const char* file, const char* fkt, size_t line);
+#define xf_generic_RawMotionNotify(xfc, x, y, wheel, window, app)                              \
+	xf_generic_RawMotionNotify_((xfc), (x), (y), (wheel), (window), (app), __FILE__, __func__, \
+	                            __LINE__)
+BOOL xf_generic_RawMotionNotify_(xfContext* xfc, double x, double y, double wheel, Window window,
+                                 BOOL app, const char* file, const char* fkt, size_t line);
 
 #define xf_generic_ButtonEvent(xfc, x, y, button, window, app, down)                      \
 	xf_generic_ButtonEvent_((xfc), (x), (y), (button), (window), (app), (down), __FILE__, \
@@ -53,9 +54,11 @@ BOOL xf_generic_RawMotionNotify_(xfContext* xfc, int x, int y, Window window, BO
 BOOL xf_generic_ButtonEvent_(xfContext* xfc, int x, int y, int button, Window window, BOOL app,
                              BOOL down, const char* file, const char* fkt, size_t line);
 
-#define xf_generic_RawButtonEvent(xfc, button, app, down) \
-	xf_generic_RawButtonEvent_((xfc), (button), (app), (down), __FILE__, __func__, __LINE__)
-BOOL xf_generic_RawButtonEvent_(xfContext* xfc, int button, BOOL app, BOOL down, const char* file,
-                                const char* fkt, size_t line);
+#define xf_generic_RawButtonEvent(xfc, x, y, wheel, button, app, down)                      \
+	xf_generic_RawButtonEvent_((xfc), (x), (y), (wheel), (button), (app), (down), __FILE__, \
+	                           __func__, __LINE__)
+BOOL xf_generic_RawButtonEvent_(xfContext* xfc, double x, double y, double wheel, int button,
+                                BOOL app, BOOL down, const char* file, const char* fkt,
+                                size_t line);
 
 #endif /* FREERDP_CLIENT_X11_EVENT_H */

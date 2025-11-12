@@ -461,15 +461,16 @@ BOOL xf_generic_MotionNotify_(xfContext* xfc, int x, int y, Window window, BOOL 
 	return TRUE;
 }
 
-BOOL xf_generic_RawMotionNotify_(xfContext* xfc, int x, int y, WINPR_ATTR_UNUSED Window window,
-                                 BOOL app, const char* file, const char* fkt, size_t line)
+BOOL xf_generic_RawMotionNotify_(xfContext* xfc, double x, double y, double wheel,
+                                 WINPR_ATTR_UNUSED Window window, BOOL app, const char* file,
+                                 const char* fkt, size_t line)
 {
 	WINPR_ASSERT(xfc);
 
 	if (WLog_IsLevelActive(xfc->log, mouseLogLevel))
 		WLog_PrintTextMessage(xfc->log, mouseLogLevel, line, file, fkt,
-		                      "%s: x=%d, y=%d, window=0x%08lx, app=%d", __func__, x, y, window,
-		                      app);
+		                      "%s: x=%lf, y=%lf, wheel=%lf, window=0x%08lx, app=%d", __func__, x, y,
+		                      wheel, window, app);
 
 	if (app)
 	{
@@ -478,7 +479,9 @@ BOOL xf_generic_RawMotionNotify_(xfContext* xfc, int x, int y, WINPR_ATTR_UNUSED
 		return FALSE;
 	}
 
-	return freerdp_client_send_button_event(&xfc->common, TRUE, PTR_FLAGS_MOVE, x, y);
+	if (isnan(x) || isnan(y))
+		return FALSE;
+	return freerdp_client_send_button_event(&xfc->common, TRUE, PTR_FLAGS_MOVE, (int)x, (int)y);
 }
 
 static BOOL xf_event_MotionNotify(xfContext* xfc, const XMotionEvent* event, BOOL app)
@@ -557,6 +560,7 @@ BOOL xf_generic_ButtonEvent_(xfContext* xfc, int x, int y, int button, Window wi
 
 			xf_event_adjust_coordinates(xfc, &x, &y);
 
+			(void)freerdp_client_send_button_event(&xfc->common, FALSE, PTR_FLAGS_MOVE, x, y);
 			if (extended)
 				freerdp_client_send_extended_button_event(&xfc->common, FALSE, flags, x, y);
 			else
@@ -1357,8 +1361,8 @@ BOOL xf_event_process(freerdp* instance, const XEvent* event)
 	return status;
 }
 
-BOOL xf_generic_RawButtonEvent_(xfContext* xfc, int button, BOOL app, BOOL down, const char* file,
-                                const char* fkt, size_t line)
+BOOL xf_generic_RawButtonEvent_(xfContext* xfc, double x, double y, double wheel, int button,
+                                BOOL app, BOOL down, const char* file, const char* fkt, size_t line)
 {
 	UINT16 flags = 0;
 
@@ -1384,11 +1388,26 @@ BOOL xf_generic_RawButtonEvent_(xfContext* xfc, int button, BOOL app, BOOL down,
 	{
 		if (flags & (PTR_FLAGS_WHEEL | PTR_FLAGS_HWHEEL))
 		{
+			if (isnan(wheel))
+				return FALSE;
+
+			if (wheel < 0.0)
+			{
+				flags |= PTR_FLAGS_WHEEL_NEGATIVE;
+				wheel = fabs(wheel);
+			}
+
+			const UINT16 cval = (wheel > 0xFF) ? 0xFF : (UINT16)(wheel);
+			flags |= cval;
+
 			if (down)
-				freerdp_client_send_wheel_event(&xfc->common, flags);
+				return freerdp_client_send_wheel_event(&xfc->common, flags);
 		}
 		else
 		{
+			if (isnan(x) || isnan(y))
+				return FALSE;
+
 			BOOL extended = FALSE;
 
 			if (flags & (PTR_XFLAGS_BUTTON1 | PTR_XFLAGS_BUTTON2))
@@ -1405,9 +1424,10 @@ BOOL xf_generic_RawButtonEvent_(xfContext* xfc, int button, BOOL app, BOOL down,
 			}
 
 			if (extended)
-				freerdp_client_send_extended_button_event(&xfc->common, TRUE, flags, 0, 0);
-			else
-				freerdp_client_send_button_event(&xfc->common, TRUE, flags, 0, 0);
+				return freerdp_client_send_extended_button_event(&xfc->common, TRUE, flags, (int)x,
+				                                                 (int)y);
+
+			return freerdp_client_send_button_event(&xfc->common, TRUE, flags, (int)x, (int)y);
 		}
 	}
 
