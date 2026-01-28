@@ -948,7 +948,10 @@ static SSIZE_T transport_read_layer_bytes(rdpTransport* transport, wStream* s, s
 
 	status = IFCALLRESULT(-1, transport->io.ReadBytes, transport, Stream_Pointer(s), toRead);
 
-	if (status <= 0)
+	if (status == 0)
+		return 0;
+
+	if (status < 0)
 	{
 		WLog_ERR(TAG, "io.ReadBytes=%" PRIdz, status);
 		return status;
@@ -1128,7 +1131,9 @@ SSIZE_T transport_parse_pdu(rdpTransport* transport, wStream* s, BOOL* incomplet
 	else
 		pduLength = parse_default_mode_pdu(transport, s);
 
-	if (pduLength <= 0)
+	if (pduLength == 0)
+		return 0;
+	if (pduLength < 0)
 	{
 		WLog_ERR(TAG, "pduLength=%" PRIdz, pduLength);
 		return pduLength;
