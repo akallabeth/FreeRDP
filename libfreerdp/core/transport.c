@@ -207,7 +207,10 @@ wStream* transport_send_stream_init(WINPR_ATTR_UNUSED rdpTransport* transport, s
 BOOL transport_attach(rdpTransport* transport, int sockfd)
 {
 	if (!transport)
+	{
+		WLog_ERR(TAG, "transport=NULL");
 		return FALSE;
+	}
 	return IFCALLRESULT(FALSE, transport->io.TransportAttach, transport, sockfd);
 }
 
@@ -275,7 +278,10 @@ fail:
 BOOL transport_connect_rdp(rdpTransport* transport)
 {
 	if (!transport)
+	{
+		WLog_ERR(TAG, "transport=NULL");
 		return FALSE;
+	}
 
 	switch (utils_authenticate(transport_get_context(transport)->instance, AUTH_RDP, FALSE))
 	{
@@ -400,7 +406,10 @@ BOOL transport_connect_nla(rdpTransport* transport, BOOL earlyUserAuth)
 	rdpSettings* settings = NULL;
 	rdpRdp* rdp = NULL;
 	if (!transport)
+	{
+		WLog_ERR(TAG, "transport=NULL");
 		return FALSE;
+	}
 
 	context = transport_get_context(transport);
 	WINPR_ASSERT(context);
@@ -487,7 +496,10 @@ BOOL transport_connect_aad(rdpTransport* transport)
 	rdpSettings* settings = NULL;
 	rdpRdp* rdp = NULL;
 	if (!transport)
+	{
+		WLog_ERR(TAG, "transport=NULL");
 		return FALSE;
+	}
 
 	context = transport_get_context(transport);
 	WINPR_ASSERT(context);
@@ -685,7 +697,11 @@ BOOL transport_accept_rdp(rdpTransport* transport)
 BOOL transport_accept_tls(rdpTransport* transport)
 {
 	if (!transport)
+	{
+		WLog_ERR(TAG, "transport=NULL");
 		return FALSE;
+	}
+
 	return IFCALLRESULT(FALSE, transport->io.TLSAccept, transport);
 }
 
@@ -922,7 +938,10 @@ static SSIZE_T transport_read_layer_bytes(rdpTransport* transport, wStream* s, s
 {
 	SSIZE_T status = 0;
 	if (!transport)
+	{
+		WLog_ERR(TAG, "transport=NULL");
 		return -1;
+	}
 
 	if (toRead > SSIZE_MAX)
 		return 0;
@@ -951,7 +970,11 @@ static SSIZE_T transport_read_layer_bytes(rdpTransport* transport, wStream* s, s
 int transport_read_pdu(rdpTransport* transport, wStream* s)
 {
 	if (!transport)
+	{
+		WLog_ERR(TAG, "transport=NULL");
 		return -1;
+	}
+
 	return IFCALLRESULT(-1, transport->io.ReadPdu, transport, s);
 }
 
@@ -1080,7 +1103,10 @@ SSIZE_T transport_parse_pdu(rdpTransport* transport, wStream* s, BOOL* incomplet
 	SSIZE_T pduLength = 0;
 
 	if (!transport)
+	{
+		WLog_ERR(TAG, "transport=NULL");
 		return -1;
+	}
 
 	if (!s)
 		return -1;
@@ -1197,7 +1223,10 @@ static int transport_default_read_pdu(rdpTransport* transport, wStream* s)
 int transport_write(rdpTransport* transport, wStream* s)
 {
 	if (!transport)
+	{
+		WLog_ERR(TAG, "transport=NULL");
 		return -1;
+	}
 
 	return IFCALLRESULT(-1, transport->io.WritePdu, transport, s);
 }
@@ -1650,7 +1679,11 @@ void transport_set_aad_mode(rdpTransport* transport, BOOL AadMode)
 BOOL transport_disconnect(rdpTransport* transport)
 {
 	if (!transport)
+	{
+		WLog_ERR(TAG, "transport=NULL");
 		return FALSE;
+	}
+
 	return IFCALLRESULT(FALSE, transport->io.TransportDisconnect, transport);
 }
 
@@ -1659,7 +1692,10 @@ static BOOL transport_default_disconnect(rdpTransport* transport)
 	BOOL status = TRUE;
 
 	if (!transport)
+	{
+		WLog_ERR(TAG, "transport=NULL");
 		return FALSE;
+	}
 
 	EnterCriticalSection(&(transport->ReadLock));
 	EnterCriticalSection(&(transport->WriteLock));
@@ -1826,7 +1862,10 @@ BOOL transport_set_io_callbacks(rdpTransport* transport, const rdpTransportIo* i
 const rdpTransportIo* transport_get_io_callbacks(const rdpTransport* transport)
 {
 	if (!transport)
+	{
+		WLog_ERR(TAG, "transport=NULL");
 		return NULL;
+	}
 	return &transport->io;
 }
 
