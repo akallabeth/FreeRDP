@@ -108,7 +108,10 @@ static void sdl_term_handler([[maybe_unused]] int signum, [[maybe_unused]] const
 				continue;
 
 			if (!sdl->handleEvent(windowEvent))
+			{
+				SDL_Log("%s:%d", __func__, __LINE__);
 				return -1;
+			}
 
 			switch (windowEvent.type)
 			{
@@ -121,7 +124,10 @@ static void sdl_term_handler([[maybe_unused]] int signum, [[maybe_unused]] const
 					auto title = static_cast<const char*>(windowEvent.user.data1);
 					auto msg = static_cast<const char*>(windowEvent.user.data2);
 					if (!sdl_cert_dialog_show(title, msg))
+					{
+						SDL_Log("%s:%d", __func__, __LINE__);
 						return -1;
+					}
 				}
 				break;
 				case SDL_EVENT_USER_SHOW_DIALOG:
@@ -130,7 +136,10 @@ static void sdl_term_handler([[maybe_unused]] int signum, [[maybe_unused]] const
 					auto title = static_cast<const char*>(windowEvent.user.data1);
 					auto msg = static_cast<const char*>(windowEvent.user.data2);
 					if (!sdl_message_dialog_show(title, msg, windowEvent.user.code))
+					{
+						SDL_Log("%s:%d", __func__, __LINE__);
 						return -1;
+					}
 				}
 				break;
 				case SDL_EVENT_USER_SCARD_DIALOG:
@@ -139,7 +148,10 @@ static void sdl_term_handler([[maybe_unused]] int signum, [[maybe_unused]] const
 					auto title = static_cast<const char*>(windowEvent.user.data1);
 					auto msg = static_cast<const char**>(windowEvent.user.data2);
 					if (!sdl_scard_dialog_show(title, windowEvent.user.code, msg))
+					{
+						SDL_Log("%s:%d", __func__, __LINE__);
 						return -1;
+					}
 				}
 				break;
 				case SDL_EVENT_USER_AUTH_DIALOG:
@@ -147,7 +159,10 @@ static void sdl_term_handler([[maybe_unused]] int signum, [[maybe_unused]] const
 					SDLConnectionDialogHider hider(sdl);
 					if (!sdl_auth_dialog_show(
 					        reinterpret_cast<const SDL_UserAuthArg*>(windowEvent.padding)))
+					{
+						SDL_Log("%s:%d", __func__, __LINE__);
 						return -1;
+					}
 				}
 				break;
 				case SDL_EVENT_USER_UPDATE:
@@ -157,7 +172,10 @@ static void sdl_term_handler([[maybe_unused]] int signum, [[maybe_unused]] const
 					{
 						rectangles = sdl->pop();
 						if (!sdl->drawToWindows(rectangles))
+						{
+							SDL_Log("%s:%d", __func__, __LINE__);
 							return -1;
+						}
 					} while (!rectangles.empty());
 				}
 				break;
@@ -165,7 +183,10 @@ static void sdl_term_handler([[maybe_unused]] int signum, [[maybe_unused]] const
 				{
 					auto ctx = static_cast<SdlContext*>(windowEvent.user.data1);
 					if (!ctx->createWindows())
+					{
+						SDL_Log("%s:%d", __func__, __LINE__);
 						return -1;
+					}
 				}
 				break;
 				case SDL_EVENT_USER_WINDOW_RESIZEABLE:
@@ -210,13 +231,19 @@ static void sdl_term_handler([[maybe_unused]] int signum, [[maybe_unused]] const
 					    static_cast<INT32>(reinterpret_cast<uintptr_t>(windowEvent.user.data2));
 					if (!sdl->moveMouseTo(
 					        { static_cast<float>(x) * 1.0f, static_cast<float>(y) * 1.0f }))
+					{
+						SDL_Log("%s:%d", __func__, __LINE__);
 						return -1;
+					}
 				}
 				break;
 				case SDL_EVENT_USER_POINTER_SET:
 					sdl->setCursor(static_cast<rdpPointer*>(windowEvent.user.data1));
 					if (!sdl_Pointer_Set_Process(sdl))
+					{
+						SDL_Log("%s:%d", __func__, __LINE__);
 						return -1;
+					}
 					break;
 				case SDL_EVENT_USER_QUIT:
 				default:
@@ -607,6 +634,7 @@ int main(int argc, char* argv[])
 		return -1;
 
 	rc = sdl_run(sdl);
+	SDL_Log("sdl_run returned %d", rc);
 
 	if (freerdp_client_stop(context) != 0)
 		return -1;
