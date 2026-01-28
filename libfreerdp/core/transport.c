@@ -949,7 +949,10 @@ static SSIZE_T transport_read_layer_bytes(rdpTransport* transport, wStream* s, s
 	status = IFCALLRESULT(-1, transport->io.ReadBytes, transport, Stream_Pointer(s), toRead);
 
 	if (status <= 0)
+	{
+		WLog_ERR(TAG, "io.ReadBytes=%" PRIdz, status);
 		return status;
+	}
 
 	Stream_Seek(s, (size_t)status);
 	return status == (SSIZE_T)toRead ? 1 : 0;
@@ -1109,7 +1112,10 @@ SSIZE_T transport_parse_pdu(rdpTransport* transport, wStream* s, BOOL* incomplet
 	}
 
 	if (!s)
+	{
+		WLog_ERR(TAG, "s=NULL");
 		return -1;
+	}
 
 	if (incomplete)
 		*incomplete = TRUE;
@@ -1123,11 +1129,17 @@ SSIZE_T transport_parse_pdu(rdpTransport* transport, wStream* s, BOOL* incomplet
 		pduLength = parse_default_mode_pdu(transport, s);
 
 	if (pduLength <= 0)
+	{
+		WLog_ERR(TAG, "pduLength=%" PRIdz, pduLength);
 		return pduLength;
+	}
 
 	const size_t len = Stream_Length(s);
 	if (len > WINPR_ASSERTING_INT_CAST(size_t, pduLength))
+	{
+		WLog_ERR(TAG, "len=%" PRIuz " > pduLength=%" PRIdz, len, pduLength);
 		return -1;
+	}
 
 	if (incomplete)
 		*incomplete = len < WINPR_ASSERTING_INT_CAST(size_t, pduLength);
@@ -1154,19 +1166,37 @@ static int transport_default_read_pdu(rdpTransport* transport, wStream* s)
 		{
 			const SSIZE_T rc = transport_read_layer(transport, &c, 1);
 			if (rc != 1)
-				return (rc == 0) ? 0 : -1;
-			if (!Stream_EnsureRemainingCapacity(s, 1))
+			{
+				if (rc == 0)
+					return 0;
+
+				WLog_Print(transport->log, WLOG_WARN, "[abort] transport_read_layer: %" PRIdz, rc);
 				return -1;
+			}
+			if (!Stream_EnsureRemainingCapacity(s, 1))
+			{
+				WLog_Print(transport->log, WLOG_WARN, "[abort] Stream_EnsureRemainingCapacity: 1");
+				return -1;
+			}
 			Stream_Write_UINT8(s, c);
 		} while (c != '\0');
 	}
 	else if (transport->earlyUserAuth)
 	{
 		if (!Stream_EnsureCapacity(s, 4))
+		{
+			WLog_Print(transport->log, WLOG_WARN, "[abort] Stream_EnsureCapacity: 4");
 			return -1;
+		}
 		const SSIZE_T rc = transport_read_layer_bytes(transport, s, 4);
 		if (rc != 1)
-			return (rc == 0) ? 0 : -1;
+		{
+			if (rc == 0)
+				return 0;
+
+			WLog_Print(transport->log, WLOG_WARN, "[abort] transport_read_layer: %" PRIdz, rc);
+			return -1;
+		}
 	}
 	else
 	{
@@ -1175,7 +1205,10 @@ static int transport_default_read_pdu(rdpTransport* transport, wStream* s)
 		while ((status == 0) && incomplete)
 		{
 			if (!Stream_EnsureRemainingCapacity(s, 1))
+			{
+				WLog_Print(transport->log, WLOG_WARN, "[abort] Stream_EnsureRemainingCapacity: 1");
 				return -1;
+			}
 			SSIZE_T rc = transport_read_layer_bytes(transport, s, 1);
 			if (rc > INT32_MAX)
 				return INT32_MAX;
@@ -1185,24 +1218,39 @@ static int transport_default_read_pdu(rdpTransport* transport, wStream* s)
 		}
 
 		if (status < 0)
+		{
+			WLog_Print(transport->log, WLOG_WARN, "[abort] transport_parse_pdu: %" PRIdz, status);
 			return -1;
+		}
 
 		pduLength = (size_t)status;
 
 		/* Read in rest of the PDU */
 		if (!Stream_EnsureCapacity(s, pduLength))
+		{
+			WLog_Print(transport->log, WLOG_WARN, "[abort] Stream_EnsureCapacity: %" PRIuz,
+			           pduLength);
 			return -1;
+		}
 
 		position = Stream_GetPosition(s);
 		if (position > pduLength)
+		{
+			WLog_Print(transport->log, WLOG_WARN,
+			           "[abort] position > pduLength: %" PRIuz " > %" PRIuz, position, pduLength);
 			return -1;
+		}
 		else if (position < pduLength)
 		{
 			status = transport_read_layer_bytes(transport, s, pduLength - position);
 			if (status != 1)
 			{
 				if ((status < INT32_MIN) || (status > INT32_MAX))
+				{
+					WLog_Print(transport->log, WLOG_WARN, "[abort] Stream out of bounds: %" PRIdz,
+					           status);
 					return -1;
+				}
 				return (int)status;
 			}
 		}
@@ -1216,7 +1264,10 @@ static int transport_default_read_pdu(rdpTransport* transport, wStream* s)
 	Stream_SetPosition(s, 0);
 	const size_t len = Stream_Length(s);
 	if (len > INT32_MAX)
+	{
+		WLog_Print(transport->log, WLOG_WARN, "[abort] Stream too long: %" PRIuz, len);
 		return -1;
+	}
 	return (int)len;
 }
 
