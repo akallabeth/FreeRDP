@@ -494,9 +494,8 @@ static UINT32 video_get_h264_bitrate(UINT32 height)
 	return 0;
 }
 
-BOOL freerdp_video_context_configure_h264(FREERDP_VIDEO_CONTEXT* context, UINT32 width,
-                                          UINT32 height, UINT32 framerate, UINT32 bitrate,
-                                          UINT32 usageType)
+BOOL freerdp_video_context_reconfigure(FREERDP_VIDEO_CONTEXT* context, UINT32 width, UINT32 height,
+                                       UINT32 framerate, UINT32 bitrate, UINT32 usageType)
 {
 	WINPR_ASSERT(context);
 
@@ -538,10 +537,13 @@ BOOL freerdp_video_context_configure_h264(FREERDP_VIDEO_CONTEXT* context, UINT32
 	if (!h264_context_set_option(context->h264, H264_CONTEXT_OPTION_HW_ACCEL, TRUE))
 		goto fail;
 
-	if (!h264_context_reset(context->h264, width, height))
+	if (!context->h264Configured || (context->width != width) || (context->height != height))
 	{
-		WLog_ERR(TAG, "h264_context_reset failed");
-		goto fail;
+		if (!h264_context_reset(context->h264, width, height))
+		{
+			WLog_ERR(TAG, "h264_context_reset failed");
+			goto fail;
+		}
 	}
 
 	context->h264Framerate = framerate;
@@ -1171,9 +1173,8 @@ static BOOL freerdp_video_convert(FREERDP_VIDEO_CONTEXT* context, const FREERDP_
 	return FALSE;
 }
 
-BOOL freerdp_video_context_configure_h264(FREERDP_VIDEO_CONTEXT* context, UINT32 width,
-                                          UINT32 height, UINT32 framerate, UINT32 bitrate,
-                                          UINT32 usageType)
+BOOL freerdp_video_context_reconfigure(FREERDP_VIDEO_CONTEXT* context, UINT32 width, UINT32 height,
+                                       UINT32 framerate, UINT32 bitrate, UINT32 usageType)
 {
 	WINPR_UNUSED(context);
 	WINPR_UNUSED(width);

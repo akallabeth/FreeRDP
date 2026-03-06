@@ -324,9 +324,9 @@ static BOOL ecam_encoder_context_init_h264(CameraDeviceStream* stream)
 	UINT32 framerate = stream->currMediaType.FrameRateNumerator /
 	                   stream->currMediaType.FrameRateDenominator;
 
-	if (!freerdp_video_context_configure_h264(stream->video, stream->currMediaType.Width,
-	                                         stream->currMediaType.Height, framerate, 0,
-	                                         H264_CAMERA_VIDEO_REAL_TIME))
+	if (!freerdp_video_context_reconfigure(stream->video, stream->currMediaType.Width,
+	                                       stream->currMediaType.Height, framerate, 0,
+	                                       H264_CAMERA_VIDEO_REAL_TIME))
 	{
 		WLog_ERR(TAG, "Failed to configure H.264 encoder");
 		return FALSE;

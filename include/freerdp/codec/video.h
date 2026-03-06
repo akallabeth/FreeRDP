@@ -113,8 +113,8 @@ extern "C"
 	/**
 	 * @brief Configure H.264 encoder settings
 	 *
-	 * Must be called before first H.264 encoding operation. Can be called again
-	 * to reconfigure (will reset encoder).
+	 * Must be called before the first encoding operation. Should be called again
+	 * to reconfigure encoding settings (will reset encoder only if settings differ).
 	 *
 	 * @param context Video context
 	 * @param width Frame width in pixels
@@ -126,14 +126,13 @@ extern "C"
 	 *
 	 * @example
 	 * FREERDP_VIDEO_CONTEXT* ctx = freerdp_video_context_new(1920, 1080);
-	 * freerdp_video_context_configure_h264(ctx, 1920, 1080, 30, 0,
+	 * freerdp_video_context_reconfigure(ctx, 1920, 1080, 30, 0,
 	 *                                      H264_CAMERA_VIDEO_REAL_TIME);
 	 */
 	WINPR_ATTR_NODISCARD
-	FREERDP_API BOOL freerdp_video_context_configure_h264(FREERDP_VIDEO_CONTEXT* context,
-	                                                      UINT32 width, UINT32 height,
-	                                                      UINT32 framerate, UINT32 bitrate,
-	                                                      UINT32 usageType);
+	FREERDP_API BOOL freerdp_video_context_reconfigure(FREERDP_VIDEO_CONTEXT* context, UINT32 width,
+	                                                   UINT32 height, UINT32 framerate,
+	                                                   UINT32 bitrate, UINT32 usageType);
 
 	/**
 	 * @brief Convert video sample from one format to another
@@ -145,7 +144,7 @@ extern "C"
 	 * - H.264 encoding (including intermediate YUV conversion)
 	 *
 	 * For H.264 output, encoder must be configured first using
-	 * freerdp_video_context_configure_h264().
+	 * freerdp_video_context_reconfigure().
 	 *
 	 * @param context Video context (manages swscale and H.264 encoders)
 	 * @param srcFormat Source video format
@@ -160,7 +159,7 @@ extern "C"
 	 * @example
 	 * // Setup (once per stream)
 	 * FREERDP_VIDEO_CONTEXT* ctx = freerdp_video_context_new(1920, 1080);
-	 * freerdp_video_context_configure_h264(ctx, 1920, 1080, 30, 0,
+	 * freerdp_video_context_reconfigure(ctx, 1920, 1080, 30, 0,
 	 *                                      H264_CAMERA_VIDEO_REAL_TIME);
 	 *
 	 * // Convert MJPEG sample to H.264 (per frame)
