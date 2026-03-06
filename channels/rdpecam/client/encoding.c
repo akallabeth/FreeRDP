@@ -65,7 +65,7 @@ UINT32 h264_get_max_bitrate(UINT32 height)
  *
  * @return FREERDP_VIDEO_FORMAT value
  */
-static FREERDP_VIDEO_FORMAT ecamToVideoFormat(CAM_MEDIA_FORMAT ecamFormat)
+FREERDP_VIDEO_FORMAT ecamToVideoFormat(CAM_MEDIA_FORMAT ecamFormat)
 {
 	switch (ecamFormat)
 	{
