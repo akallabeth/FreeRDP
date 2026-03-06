@@ -109,8 +109,6 @@ typedef struct
 	wStream* sampleRespBuffer;
 
 	FREERDP_VIDEO_CONTEXT* video;
-	wStream* h264Output;
-
 } CameraDeviceStream;
 
 WINPR_ATTR_NODISCARD
@@ -274,7 +272,7 @@ FREERDP_LOCAL BOOL ecam_encoder_context_free(CameraDeviceStream* stream);
 
 WINPR_ATTR_NODISCARD FREERDP_LOCAL BOOL ecam_encoder_compress(CameraDeviceStream* stream,
                                                               const BYTE* srcData, size_t srcSize,
-                                                              BYTE** ppDstData, size_t* pDstSize);
+                                                              wStream* output);
 
 WINPR_ATTR_NODISCARD FREERDP_LOCAL UINT32 h264_get_max_bitrate(UINT32 height);
 

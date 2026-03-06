@@ -139,8 +139,8 @@ static void ecam_dev_print_media_type(CAM_MEDIA_TYPE_DESCRIPTION* mediaType)
  *
  * @return 0 on success, otherwise a Win32 error code
  */
-static UINT ecam_dev_send_sample_response(CameraDevice* dev, size_t streamIndex, const BYTE* sample,
-                                          size_t size)
+WINPR_ATTR_NODISCARD
+static wStream* ecam_dev_prepare_sample_response(CameraDevice* dev, size_t streamIndex)
 {
 	WINPR_ASSERT(dev);
 
@@ -148,17 +148,15 @@ static UINT ecam_dev_send_sample_response(CameraDevice* dev, size_t streamIndex,
 	CAM_MSG_ID msg = CAM_MSG_ID_SampleResponse;
 
 	Stream_ResetPosition(stream->sampleRespBuffer);
+	if (!Stream_EnsureRemainingCapacity(stream->sampleRespBuffer, 3))
+		return nullptr;
 
 	Stream_Write_UINT8(stream->sampleRespBuffer,
 	                   WINPR_ASSERTING_INT_CAST(uint8_t, dev->ecam->version));
 	Stream_Write_UINT8(stream->sampleRespBuffer, WINPR_ASSERTING_INT_CAST(uint8_t, msg));
 	Stream_Write_UINT8(stream->sampleRespBuffer, WINPR_ASSERTING_INT_CAST(uint8_t, streamIndex));
 
-	Stream_Write(stream->sampleRespBuffer, sample, size);
-
-	/* channel write is protected by critical section in dvcman_write_channel */
-	return ecam_channel_write(dev->ecam, stream->hSampleReqChannel, msg, stream->sampleRespBuffer,
-	                          FALSE /* don't free stream */);
+	return stream->sampleRespBuffer;
 }
 
 static BOOL mediaSupportDrops(CAM_MEDIA_FORMAT format)
@@ -189,29 +187,31 @@ static UINT ecam_dev_send_pending(CameraDevice* dev, size_t streamIndex, CameraD
 		return CHANNEL_RC_OK;
 	}
 
-	BYTE* encodedSample = Stream_Buffer(stream->pendingSample);
-	size_t encodedSize = Stream_Length(stream->pendingSample);
-	if (streamInputFormat(stream) != streamOutputFormat(stream))
+	wStream* output = ecam_dev_prepare_sample_response(dev, streamIndex);
+	if (!output)
+		return CHANNEL_RC_OK;
+
+	const BYTE* encodedSample = Stream_Buffer(stream->pendingSample);
+	const size_t encodedSize = Stream_Length(stream->pendingSample);
+	if (!ecam_encoder_compress(stream, encodedSample, encodedSize, output))
 	{
-		if (!ecam_encoder_compress(stream, encodedSample, encodedSize, &encodedSample,
-		                           &encodedSize))
-		{
-			WLog_DBG(TAG, "Frame dropped: error in ecam_encoder_compress");
-			stream->haveSample = FALSE;
-			return CHANNEL_RC_OK;
-		}
+		WLog_DBG(TAG, "Frame dropped: error in ecam_encoder_compress");
+		stream->haveSample = FALSE;
+		return CHANNEL_RC_OK;
+	    }
 
 		if (!stream->streaming)
 		{
 			WLog_DBG(TAG, "Frame delayed/dropped: stream stopped");
 			return CHANNEL_RC_OK;
-		}
-	}
+	    }
 
 	stream->samplesRequested--;
 	stream->haveSample = FALSE;
 
-	return ecam_dev_send_sample_response(dev, streamIndex, encodedSample, encodedSize);
+	/* channel write is protected by critical section in dvcman_write_channel */
+	return ecam_channel_write(dev->ecam, stream->hSampleReqChannel, CAM_MSG_ID_SampleResponse,
+	                          output, FALSE /* don't free stream */);
 }
 
 static UINT ecam_dev_sample_captured_callback(CameraDevice* dev, size_t streamIndex,
@@ -378,8 +378,7 @@ static UINT ecam_dev_process_start_streams_request(CameraDevice* dev,
 	stream->currMediaType = mediaType;
 
 	/* initialize encoder, if input and output formats differ */
-	if (streamInputFormat(stream) != streamOutputFormat(stream) &&
-	    !ecam_encoder_context_init(stream))
+	if (!ecam_encoder_context_init(stream))
 	{
 		WLog_ERR(TAG, "stream_ecam_encoder_init failed");
 		ecam_channel_send_error_response(dev->ecam, hchannel, CAM_ERROR_CODE_UnexpectedError);
