@@ -123,7 +123,7 @@ static BOOL swscale_load_library(const char* name)
 	{
 		WLog_WARN(TAG, "Failed to load required functions from %s", name);
 		FreeLibrary(g_swscale.lib);
-		g_swscale.lib = NULL;
+		g_swscale.lib = nullptr;
 		return FALSE;
 	}
 
@@ -166,7 +166,7 @@ struct SwsContext* freerdp_sws_getContext(int srcW, int srcH, int srcFormat, int
 	if (!freerdp_swscale_available())
 	{
 		WLog_WARN(TAG, "sws_getContext called but swscale not available");
-		return NULL;
+		return nullptr;
 	}
 
 	WINPR_ASSERT(g_swscale.getContext);
@@ -186,7 +186,7 @@ int freerdp_sws_scale(struct SwsContext* ctx, const uint8_t* const srcSlice[],
 
 	if (!ctx)
 	{
-		WLog_WARN(TAG, "sws_scale called with NULL context");
+		WLog_WARN(TAG, "sws_scale called with nullptr context");
 		return -1;
 	}
 
@@ -256,7 +256,7 @@ static BOOL avutil_load_library(const char* name)
 	{
 		WLog_WARN(TAG, "Failed to load required functions from %s", name);
 		FreeLibrary(g_avutil.lib);
-		g_avutil.lib = NULL;
+		g_avutil.lib = nullptr;
 		return FALSE;
 	}
 

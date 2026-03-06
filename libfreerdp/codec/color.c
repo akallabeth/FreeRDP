@@ -1275,14 +1275,15 @@ BOOL freerdp_image_scale(BYTE* WINPR_RESTRICT pDstData, DWORD DstFormat, UINT32 
 		}
 
 		resize = freerdp_sws_getContext((int)nSrcWidth, (int)nSrcHeight, srcFormat, (int)nDstWidth,
-		                                (int)nDstHeight, dstFormat, SWS_BILINEAR, NULL, NULL, NULL);
+		                                (int)nDstHeight, dstFormat, SWS_BILINEAR, nullptr, nullptr,
+		                                nullptr);
 
 		if (!resize)
 			goto fail;
 
 		/* sws_scale expects arrays of pointers, not pointer-to-pointer */
-		const BYTE* srcSlice[4] = { src, NULL, NULL, NULL };
-		BYTE* dstSlice[4] = { dst, NULL, NULL, NULL };
+		const BYTE* srcSlice[4] = { src, nullptr, nullptr, nullptr };
+		BYTE* dstSlice[4] = { dst, nullptr, nullptr, nullptr };
 		const int srcSteps[4] = { srcStep[0], 0, 0, 0 };
 		const int dstSteps[4] = { dstStep[0], 0, 0, 0 };
 

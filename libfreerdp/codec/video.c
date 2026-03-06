@@ -235,7 +235,7 @@ static size_t demux_uvcH264(const BYTE* srcData, size_t srcSize, BYTE* h264_data
 		WLog_ERR(TAG, "Expected srcSize >= 30, got %" PRIuz, srcSize);
 		return 0;
 	}
-	const uint8_t* spl = NULL;
+	const uint8_t* spl = nullptr;
 	uint8_t* ph264 = h264_data;
 
 	for (const uint8_t* sp = srcData; sp < srcData + srcSize - 30; sp++)
@@ -247,7 +247,7 @@ static size_t demux_uvcH264(const BYTE* srcData, size_t srcSize, BYTE* h264_data
 		}
 	}
 
-	if (spl == NULL)
+	if (spl == nullptr)
 	{
 		WLog_ERR(TAG, "Expected 1st APP4 marker but none found");
 		return 0;
@@ -332,17 +332,17 @@ static size_t demux_uvcH264(const BYTE* srcData, size_t srcSize, BYTE* h264_data
 
 FREERDP_VIDEO_CONTEXT* freerdp_video_context_new(UINT32 width, UINT32 height)
 {
-	FREERDP_VIDEO_CONTEXT* context = NULL;
+	FREERDP_VIDEO_CONTEXT* context = nullptr;
 
 	if (!freerdp_video_available())
 	{
 		WLog_ERR(TAG, "Video codecs not available - FFmpeg not loaded");
-		return NULL;
+		return nullptr;
 	}
 
 	context = (FREERDP_VIDEO_CONTEXT*)calloc(1, sizeof(FREERDP_VIDEO_CONTEXT));
 	if (!context)
-		return NULL;
+		return nullptr;
 
 	context->width = width;
 	context->height = height;
@@ -368,7 +368,7 @@ FREERDP_VIDEO_CONTEXT* freerdp_video_context_new(UINT32 width, UINT32 height)
 	/* Abort on minor errors to skip corrupted frames */
 	context->mjpegDecoder->err_recognition |= AV_EF_EXPLODE;
 
-	if (avcodec_open2(context->mjpegDecoder, codec, NULL) < 0)
+	if (avcodec_open2(context->mjpegDecoder, codec, nullptr) < 0)
 	{
 		WLog_ERR(TAG, "avcodec_open2 failed");
 		goto fail;
@@ -394,7 +394,7 @@ FREERDP_VIDEO_CONTEXT* freerdp_video_context_new(UINT32 width, UINT32 height)
 #if defined(WITH_MJPEG_DECODER)
 fail:
 	freerdp_video_context_free(context);
-	return NULL;
+	return nullptr;
 #endif
 }
 
@@ -406,7 +406,7 @@ void freerdp_video_context_free(FREERDP_VIDEO_CONTEXT* context)
 	if (context->sws)
 	{
 		freerdp_sws_freeContext(context->sws);
-		context->sws = NULL;
+		context->sws = nullptr;
 	}
 
 #if defined(WITH_MJPEG_DECODER)
@@ -415,7 +415,7 @@ void freerdp_video_context_free(FREERDP_VIDEO_CONTEXT* context)
 
 	if (context->mjpegPacket)
 	{
-		context->mjpegPacket->data = NULL;
+		context->mjpegPacket->data = nullptr;
 		context->mjpegPacket->size = 0;
 		av_packet_free(&context->mjpegPacket);
 	}
@@ -427,13 +427,13 @@ void freerdp_video_context_free(FREERDP_VIDEO_CONTEXT* context)
 	if (context->h264)
 	{
 		h264_context_free(context->h264);
-		context->h264 = NULL;
+		context->h264 = nullptr;
 	}
 
 	if (context->tempBuffer)
 	{
 		free(context->tempBuffer);
-		context->tempBuffer = NULL;
+		context->tempBuffer = nullptr;
 	}
 
 	free(context);
@@ -448,7 +448,7 @@ static BOOL freerdp_video_context_reset(FREERDP_VIDEO_CONTEXT* context, UINT32 w
 	if (context->sws && (context->width != width || context->height != height))
 	{
 		freerdp_sws_freeContext(context->sws);
-		context->sws = NULL;
+		context->sws = nullptr;
 	}
 
 	context->width = width;
@@ -559,7 +559,7 @@ fail:
 	if (context->h264)
 	{
 		h264_context_free(context->h264);
-		context->h264 = NULL;
+		context->h264 = nullptr;
 	}
 	return FALSE;
 }
@@ -708,7 +708,7 @@ BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context, FREERDP_VIDEO_
 			}
 		}
 
-		BYTE* h264Data = NULL;
+		BYTE* h264Data = nullptr;
 		UINT32 h264Size = 0;
 
 		if (h264_compress(context->h264, &h264Data, &h264Size) < 0)
@@ -818,7 +818,7 @@ static BOOL freerdp_video_convert_to_yuv(FREERDP_VIDEO_CONTEXT* context, const B
 	}
 
 	/* Create or reuse swscale context */
-	struct SwsContext* sws = NULL;
+	struct SwsContext* sws = nullptr;
 	BOOL needFree = FALSE;
 
 	if (context && context->sws)
@@ -827,8 +827,8 @@ static BOOL freerdp_video_convert_to_yuv(FREERDP_VIDEO_CONTEXT* context, const B
 	}
 	else
 	{
-		sws = freerdp_sws_getContext((int)width, (int)height, srcPixFmt, (int)width,
-		                             (int)height, dstPixFmt, 0, NULL, NULL, NULL);
+		sws = freerdp_sws_getContext((int)width, (int)height, srcPixFmt, (int)width, (int)height,
+		                             dstPixFmt, 0, nullptr, nullptr, nullptr);
 		if (!sws)
 		{
 			WLog_ERR(TAG, "sws_getContext failed");
@@ -845,7 +845,7 @@ static BOOL freerdp_video_convert_to_yuv(FREERDP_VIDEO_CONTEXT* context, const B
 	const BYTE* cSrcData[4] = { srcData[0], srcData[1], srcData[2], srcData[3] };
 
 	/* sws_scale expects 4-element arrays, but caller may provide 3-element arrays for YUV */
-	uint8_t* localDstData[4] = { dstData[0], dstData[1], dstData[2], NULL };
+	uint8_t* localDstData[4] = { dstData[0], dstData[1], dstData[2], nullptr };
 	int localDstLineSize[4] = { dstLineSize[0], dstLineSize[1], dstLineSize[2], 0 };
 
 	int result = 0;
@@ -1091,7 +1091,7 @@ FREERDP_VIDEO_CONTEXT* freerdp_video_context_new(UINT32 width, UINT32 height)
 {
 	WINPR_UNUSED(width);
 	WINPR_UNUSED(height);
-	return NULL;
+	return nullptr;
 }
 
 void freerdp_video_context_free(FREERDP_VIDEO_CONTEXT* context)
