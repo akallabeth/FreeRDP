@@ -581,6 +581,14 @@ BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context,
 	WINPR_ASSERT(srcSampleData);
 	WINPR_ASSERT(output);
 
+	if (srcFormat == dstFormat)
+	{
+		if (!Stream_EnsureRemainingCapacity(output, srcSampleLength))
+			return FALSE;
+		Stream_Write(output, srcSampleData, srcSampleLength);
+		return TRUE;
+	}
+
 	if (!freerdp_video_available())
 	{
 		WLog_ERR(TAG, "Video codecs not available");
@@ -947,6 +955,9 @@ static void freerdp_video_frame_init_packed(FREERDP_VIDEO_FRAME* frame, FREERDP_
 BOOL freerdp_video_conversion_supported(FREERDP_VIDEO_FORMAT srcFormat,
                                         FREERDP_VIDEO_FORMAT dstFormat)
 {
+	if (srcFormat == dstFormat)
+		return TRUE;
+
 	if (!freerdp_video_available())
 		return FALSE;
 
