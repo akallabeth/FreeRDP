@@ -150,8 +150,6 @@ extern "C"
 	 * @param srcFormat Source video format
 	 * @param srcSampleData Pointer to source sample data (serialized buffer)
 	 * @param srcSampleLength Length of source sample in bytes
-	 * @param width Frame width in pixels
-	 * @param height Frame height in pixels
 	 * @param dstFormat Destination video format
 	 * @param output Output stream to write result to (will be resized automatically)
 	 * @return TRUE on success, FALSE on failure
@@ -178,10 +176,8 @@ extern "C"
 	WINPR_ATTR_NODISCARD
 	FREERDP_API BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context,
 	                                              FREERDP_VIDEO_FORMAT srcFormat,
-	                                              const void* srcSampleData,
-	                                              size_t srcSampleLength, UINT32 width,
-	                                              UINT32 height, FREERDP_VIDEO_FORMAT dstFormat,
-	                                              wStream* output);
+	                                              const void* srcSampleData, size_t srcSampleLength,
+	                                              FREERDP_VIDEO_FORMAT dstFormat, wStream* output);
 
 #ifdef __cplusplus
 }

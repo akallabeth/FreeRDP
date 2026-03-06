@@ -275,7 +275,6 @@ static BOOL ecam_encoder_compress_h264(CameraDeviceStream* stream, const BYTE* s
 	Stream_SetPosition(stream->h264Output, 0);
 
 	if (!freerdp_video_sample_convert(stream->video, videoFormat, srcData, srcSize,
-	                                  stream->currMediaType.Width, stream->currMediaType.Height,
 	                                  FREERDP_VIDEO_FORMAT_H264, stream->h264Output))
 	{
 		return FALSE;

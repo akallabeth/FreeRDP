@@ -574,9 +574,8 @@ static BOOL freerdp_video_convert_to_yuv(FREERDP_VIDEO_CONTEXT* context, const B
                                          FREERDP_VIDEO_FORMAT dstFormat, UINT32 width,
                                          UINT32 height);
 
-BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context,
-                                  FREERDP_VIDEO_FORMAT srcFormat, const void* srcSampleData,
-                                  size_t srcSampleLength, UINT32 width, UINT32 height,
+BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context, FREERDP_VIDEO_FORMAT srcFormat,
+                                  const void* srcSampleData, size_t srcSampleLength,
                                   FREERDP_VIDEO_FORMAT dstFormat, wStream* output)
 {
 	WINPR_ASSERT(context);
@@ -594,12 +593,6 @@ BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context,
 	if (!freerdp_video_available())
 	{
 		WLog_ERR(TAG, "Video codecs not available");
-		return FALSE;
-	}
-
-	if (width == 0 || height == 0)
-	{
-		WLog_ERR(TAG, "Invalid dimensions: %ux%u", width, height);
 		return FALSE;
 	}
 
@@ -674,7 +667,8 @@ BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context,
 		BYTE* yuvData[3] = { 0 };
 		UINT32 yuvStrides[3] = { 0 };
 
-		if (h264_get_yuv_buffer(context->h264, 0, width, height, yuvData, yuvStrides) < 0)
+		if (h264_get_yuv_buffer(context->h264, 0, context->width, context->height, yuvData,
+		                        yuvStrides) < 0)
 		{
 			WLog_ERR(TAG, "h264_get_yuv_buffer failed");
 			return FALSE;
@@ -686,7 +680,8 @@ BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context,
 		{
 			if (!freerdp_video_convert_to_yuv(context, (const BYTE**)intermediate_data,
 			                                  intermediate_linesize, intermediate_format, yuvData,
-			                                  yuvLineSizes, yuvFormat, width, height))
+			                                  yuvLineSizes, yuvFormat, context->width,
+			                                  context->height))
 			{
 				WLog_ERR(TAG, "YUV conversion failed");
 				return FALSE;
@@ -697,16 +692,16 @@ BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context,
 			BYTE* srcPlanes[4] = { 0 };
 			int srcStrides[4] = { 0 };
 
-			if (!freerdp_video_fill_plane_info(srcPlanes, srcStrides, srcFormat, width, height,
-			                                   (const BYTE*)srcSampleData))
+			if (!freerdp_video_fill_plane_info(srcPlanes, srcStrides, srcFormat, context->width,
+			                                   context->height, (const BYTE*)srcSampleData))
 			{
 				WLog_ERR(TAG, "Failed to fill plane info");
 				return FALSE;
 			}
 
 			if (!freerdp_video_convert_to_yuv(context, (const BYTE**)srcPlanes, srcStrides,
-			                                  srcFormat, yuvData, yuvLineSizes, yuvFormat, width,
-			                                  height))
+			                                  srcFormat, yuvData, yuvLineSizes, yuvFormat,
+			                                  context->width, context->height))
 			{
 				WLog_ERR(TAG, "YUV conversion failed");
 				return FALSE;
@@ -1185,10 +1180,9 @@ BOOL freerdp_video_context_reconfigure(FREERDP_VIDEO_CONTEXT* context, UINT32 wi
 	return FALSE;
 }
 
-BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context,
-                                   FREERDP_VIDEO_FORMAT srcFormat, const void* srcSampleData,
-                                   size_t srcSampleLength, UINT32 width, UINT32 height,
-                                   FREERDP_VIDEO_FORMAT dstFormat, wStream* output)
+BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context, FREERDP_VIDEO_FORMAT srcFormat,
+                                  const void* srcSampleData, size_t srcSampleLength,
+                                  FREERDP_VIDEO_FORMAT dstFormat, wStream* output)
 {
 	WINPR_UNUSED(context);
 	WINPR_UNUSED(srcFormat);
