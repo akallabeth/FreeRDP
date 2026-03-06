@@ -71,8 +71,8 @@ typedef struct
 	BOOL available;
 } AVUTIL_LIBRARY;
 
-static SWSCALE_LIBRARY g_swscale = { 0 };
-static AVUTIL_LIBRARY g_avutil = { 0 };
+static SWSCALE_LIBRARY g_swscale = WINPR_C_ARRAY_INIT;
+static AVUTIL_LIBRARY g_avutil = WINPR_C_ARRAY_INIT;
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)

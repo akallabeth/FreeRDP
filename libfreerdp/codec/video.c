@@ -624,8 +624,8 @@ BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context, FREERDP_VIDEO_
 		return TRUE;
 	}
 
-	BYTE* intermediate_data[4] = { 0 };
-	int intermediate_linesize[4] = { 0 };
+	BYTE* intermediate_data[4] = WINPR_C_ARRAY_INIT;
+	int intermediate_linesize[4] = WINPR_C_ARRAY_INIT;
 	FREERDP_VIDEO_FORMAT intermediate_format = FREERDP_VIDEO_FORMAT_NONE;
 
 	if (srcCompressed)
@@ -664,8 +664,8 @@ BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context, FREERDP_VIDEO_
 		const FREERDP_VIDEO_FORMAT yuvFormat =
 		    hwAccel ? FREERDP_VIDEO_FORMAT_NV12 : FREERDP_VIDEO_FORMAT_YUV420P;
 
-		BYTE* yuvData[3] = { 0 };
-		UINT32 yuvStrides[3] = { 0 };
+		BYTE* yuvData[3] = WINPR_C_ARRAY_INIT;
+		UINT32 yuvStrides[3] = WINPR_C_ARRAY_INIT;
 
 		if (h264_get_yuv_buffer(context->h264, 0, context->width, context->height, yuvData,
 		                        yuvStrides) < 0)
@@ -689,8 +689,8 @@ BOOL freerdp_video_sample_convert(FREERDP_VIDEO_CONTEXT* context, FREERDP_VIDEO_
 		}
 		else
 		{
-			BYTE* srcPlanes[4] = { 0 };
-			int srcStrides[4] = { 0 };
+			BYTE* srcPlanes[4] = WINPR_C_ARRAY_INIT;
+			int srcStrides[4] = WINPR_C_ARRAY_INIT;
 
 			if (!freerdp_video_fill_plane_info(srcPlanes, srcStrides, srcFormat, context->width,
 			                                   context->height, (const BYTE*)srcSampleData))
@@ -937,8 +937,8 @@ static void freerdp_video_frame_init_packed(FREERDP_VIDEO_FRAME* frame, FREERDP_
 	WINPR_ASSERT(frame);
 	WINPR_ASSERT(!is_compressed_format(format));
 
-	BYTE* data[4] = { 0 };
-	int linesize[4] = { 0 };
+	BYTE* data[4] = WINPR_C_ARRAY_INIT;
+	int linesize[4] = WINPR_C_ARRAY_INIT;
 
 	if (!freerdp_video_fill_plane_info(data, linesize, format, width, height, buffer))
 	{
@@ -996,8 +996,8 @@ static BOOL freerdp_video_convert(FREERDP_VIDEO_CONTEXT* context, const FREERDP_
 		return FALSE;
 	}
 
-	BYTE* intermediate_data[4] = { 0 };
-	int intermediate_linesize[4] = { 0 };
+	BYTE* intermediate_data[4] = WINPR_C_ARRAY_INIT;
+	int intermediate_linesize[4] = WINPR_C_ARRAY_INIT;
 	FREERDP_VIDEO_FORMAT intermediate_format = FREERDP_VIDEO_FORMAT_NONE;
 
 	if (is_compressed_format(src->format))
