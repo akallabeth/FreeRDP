@@ -62,12 +62,6 @@
  */
 #define ECAM_SAMPLE_RESPONSE_BUFFER_SIZE (1024ULL * 4050ULL)
 
-/* Special format addition for CAM_MEDIA_FORMAT enum formats
- * used to support H264 stream muxed in MJPG container stream.
- * The value picked not to overlap with enum values
- */
-#define CAM_MEDIA_FORMAT_MJPG_H264 0x0401
-
 typedef struct s_ICamHal ICamHal;
 
 typedef struct

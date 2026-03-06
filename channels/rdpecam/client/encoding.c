@@ -82,7 +82,6 @@ static FREERDP_VIDEO_FORMAT ecamToVideoFormat(CAM_MEDIA_FORMAT ecamFormat)
 		case CAM_MEDIA_FORMAT_H264:
 			return FREERDP_VIDEO_FORMAT_H264;
 		case CAM_MEDIA_FORMAT_MJPG:
-		case CAM_MEDIA_FORMAT_MJPG_H264:
 			return FREERDP_VIDEO_FORMAT_MJPEG;
 		default:
 			WLog_ERR(TAG, "Unsupported ecamFormat %u", ecamFormat);
