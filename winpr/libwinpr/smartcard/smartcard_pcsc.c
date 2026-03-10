@@ -495,7 +495,7 @@ static BOOL PCSC_LockCardContext(SCARDCONTEXT hContext)
 		return FALSE;
 	}
 
-	EnterCriticalSection(&(pContext->lock));
+	//EnterCriticalSection(&(pContext->lock));
 	return TRUE;
 }
 
@@ -511,7 +511,7 @@ static BOOL PCSC_UnlockCardContext(SCARDCONTEXT hContext)
 		return FALSE;
 	}
 
-	LeaveCriticalSection(&(pContext->lock));
+	//LeaveCriticalSection(&(pContext->lock));
 	return TRUE;
 }
 
