@@ -479,42 +479,41 @@ BOOL rdp_set_target_certificate(rdpSettings* settings, const rdpCertificate* tce
 
 int rdp_redirection_apply_settings(rdpRdp* rdp)
 {
-	rdpSettings* settings = nullptr;
-	rdpRedirection* redirection = nullptr;
-
 	if (!rdp_reset_runtime_settings(rdp))
 		return -1;
 
-	settings = rdp->settings;
+	rdpSettings* settings = rdp->settings;
 	WINPR_ASSERT(settings);
 
-	redirection = rdp->redirection;
+	const rdpRedirection* redirection = rdp->redirection;
 	WINPR_ASSERT(redirection);
 
-	settings->RedirectionFlags = redirection->flags;
-	settings->RedirectedSessionId = redirection->sessionID;
+	if (!freerdp_settings_set_uint32(settings, FreeRDP_RedirectionFlags, redirection->flags))
+		return -1;
+	if (!freerdp_settings_set_uint32(settings, FreeRDP_RedirectedSessionId, redirection->sessionID))
+		return -1;
 
-	if (settings->RedirectionFlags & LB_TARGET_NET_ADDRESS)
+	if (redirection->flags & LB_TARGET_NET_ADDRESS)
 	{
 		if (!freerdp_settings_set_string(settings, FreeRDP_TargetNetAddress,
 		                                 redirection->TargetNetAddress))
 			return -1;
 	}
 
-	if (settings->RedirectionFlags & LB_USERNAME)
+	if (redirection->flags & LB_USERNAME)
 	{
 		if (!freerdp_settings_set_string(settings, FreeRDP_RedirectionUsername,
 		                                 redirection->Username))
 			return -1;
 	}
 
-	if (settings->RedirectionFlags & LB_DOMAIN)
+	if (redirection->flags & LB_DOMAIN)
 	{
 		if (!freerdp_settings_set_string(settings, FreeRDP_RedirectionDomain, redirection->Domain))
 			return -1;
 	}
 
-	if (settings->RedirectionFlags & LB_PASSWORD)
+	if (redirection->flags & LB_PASSWORD)
 	{
 		/* Password may be a cookie without a null terminator */
 		if (!freerdp_settings_set_pointer_len(settings, FreeRDP_RedirectionPassword,
@@ -522,43 +521,43 @@ int rdp_redirection_apply_settings(rdpRdp* rdp)
 			return -1;
 	}
 
-	if (settings->RedirectionFlags & LB_DONTSTOREUSERNAME)
+	if (redirection->flags & LB_DONTSTOREUSERNAME)
 	{
 		// TODO
 	}
 
-	if (settings->RedirectionFlags & LB_SMARTCARD_LOGON)
+	if (redirection->flags & LB_SMARTCARD_LOGON)
 	{
 		// TODO
 	}
 
-	if (settings->RedirectionFlags & LB_NOREDIRECT)
+	if (redirection->flags & LB_NOREDIRECT)
 	{
 		// TODO
 	}
 
-	if (settings->RedirectionFlags & LB_TARGET_FQDN)
+	if (redirection->flags & LB_TARGET_FQDN)
 	{
 		if (!freerdp_settings_set_string(settings, FreeRDP_RedirectionTargetFQDN,
 		                                 redirection->TargetFQDN))
 			return -1;
 	}
 
-	if (settings->RedirectionFlags & LB_TARGET_NETBIOS_NAME)
+	if (redirection->flags & LB_TARGET_NETBIOS_NAME)
 	{
 		if (!freerdp_settings_set_string(settings, FreeRDP_RedirectionTargetNetBiosName,
 		                                 redirection->TargetNetBiosName))
 			return -1;
 	}
 
-	if (settings->RedirectionFlags & LB_TARGET_NET_ADDRESSES)
+	if (redirection->flags & LB_TARGET_NET_ADDRESSES)
 	{
 		if (!freerdp_target_net_addresses_copy(settings, redirection->TargetNetAddresses,
 		                                       redirection->TargetNetAddressesCount))
 			return -1;
 	}
 
-	if (settings->RedirectionFlags & LB_CLIENT_TSV_URL)
+	if (redirection->flags & LB_CLIENT_TSV_URL)
 	{
 		/* TsvUrl may not contain a null terminator */
 		if (!freerdp_settings_set_pointer_len(settings, FreeRDP_RedirectionTsvUrl,
@@ -596,12 +595,12 @@ int rdp_redirection_apply_settings(rdpRdp* rdp)
 		}
 	}
 
-	if (settings->RedirectionFlags & LB_SERVER_TSV_CAPABLE)
+	if (redirection->flags & LB_SERVER_TSV_CAPABLE)
 	{
 		// TODO
 	}
 
-	if (settings->RedirectionFlags & LB_LOAD_BALANCE_INFO)
+	if (redirection->flags & LB_LOAD_BALANCE_INFO)
 	{
 		/* LoadBalanceInfo may not contain a null terminator */
 		if (!freerdp_settings_set_pointer_len(settings, FreeRDP_LoadBalanceInfo,
@@ -619,12 +618,12 @@ int rdp_redirection_apply_settings(rdpRdp* rdp)
 			return -1;
 	}
 
-	if (settings->RedirectionFlags & LB_PASSWORD_IS_PK_ENCRYPTED)
+	if (redirection->flags & LB_PASSWORD_IS_PK_ENCRYPTED)
 	{
 		// TODO
 	}
 
-	if (settings->RedirectionFlags & LB_REDIRECTION_GUID)
+	if (redirection->flags & LB_REDIRECTION_GUID)
 	{
 		if (!freerdp_settings_set_pointer_len(settings, FreeRDP_RedirectionGuid,
 		                                      redirection->RedirectionGuid,
@@ -632,7 +631,7 @@ int rdp_redirection_apply_settings(rdpRdp* rdp)
 			return -1;
 	}
 
-	if (settings->RedirectionFlags & LB_TARGET_CERTIFICATE)
+	if (redirection->flags & LB_TARGET_CERTIFICATE)
 	{
 		if (!rdp_set_target_certificate(settings, redirection->TargetCertificate))
 			return -1;
