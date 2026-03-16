@@ -567,7 +567,8 @@ static int rpc_channel_rpch_init(RpcClient* client, RpcChannel* channel, const c
 	    !http_context_set_cache_control(http, "no-cache") ||
 	    !http_context_set_connection(http, "Keep-Alive") ||
 	    !http_context_set_user_agent(http, "MSRPC") ||
-	    !http_context_set_host(http, settings->GatewayHostname))
+	    !http_context_set_host(http,
+	                           freerdp_settings_get_string(settings, FreeRDP_GatewayHostname)))
 		return -1;
 
 	return 1;
@@ -759,9 +760,10 @@ static BOOL rpc_channel_tls_connect(RpcChannel* channel, UINT32 timeout)
 
 	if (channel->client->isProxy)
 	{
-		WINPR_ASSERT(settings->GatewayPort <= UINT16_MAX);
+		WINPR_ASSERT(freerdp_settings_get_uint32(settings, FreeRDP_GatewayPort) <= UINT16_MAX);
 		if (!proxy_connect(context, bufferedBio, proxyUsername, proxyPassword,
-		                   settings->GatewayHostname, (UINT16)settings->GatewayPort))
+		                   freerdp_settings_get_string(settings, FreeRDP_GatewayHostname),
+		                   (UINT16)freerdp_settings_get_uint32(settings, FreeRDP_GatewayPort)))
 		{
 			BIO_free_all(bufferedBio);
 			return FALSE;
@@ -774,8 +776,9 @@ static BOOL rpc_channel_tls_connect(RpcChannel* channel, UINT32 timeout)
 	if (!tls)
 		return FALSE;
 
-	tls->hostname = settings->GatewayHostname;
-	tls->port = WINPR_ASSERTING_INT_CAST(int32_t, MIN(UINT16_MAX, settings->GatewayPort));
+	tls->hostname = freerdp_settings_get_string(settings, FreeRDP_GatewayHostname);
+	tls->port = WINPR_ASSERTING_INT_CAST(
+	    int32_t, MIN(UINT16_MAX, freerdp_settings_get_uint32(settings, FreeRDP_GatewayPort)));
 	tls->isGatewayTransport = TRUE;
 	int tlsStatus = freerdp_tls_connect(tls, bufferedBio);
 
