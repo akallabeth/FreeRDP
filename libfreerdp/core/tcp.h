@@ -125,14 +125,13 @@ FREERDP_LOCAL rdpTransportLayer*
 freerdp_tcp_connect_layer(rdpContext* context, const char* hostname, int port, DWORD timeout);
 
 WINPR_ATTR_MALLOC(free, 1)
-WINPR_ATTR_NODISCARD
 FREERDP_LOCAL char* freerdp_tcp_get_peer_address(SOCKET sockfd);
 
-WINPR_ATTR_NODISCARD
+WINPR_ATTR_MALLOC(freeaddrinfo, 1)
 FREERDP_LOCAL struct addrinfo* freerdp_tcp_resolve_host(const char* hostname, int port,
                                                         int ai_flags);
 
-WINPR_ATTR_NODISCARD
+WINPR_ATTR_MALLOC(free, 1)
 FREERDP_LOCAL char* freerdp_tcp_address_to_string(const struct sockaddr_storage* addr, BOOL* pIPv6);
 
 FREERDP_LOCAL BOOL freerdp_tcp_set_nodelay(wLog* log, DWORD level, int sockfd);
