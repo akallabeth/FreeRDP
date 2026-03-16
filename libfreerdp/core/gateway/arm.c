@@ -142,7 +142,9 @@ static BOOL arm_tls_connect(rdpArm* arm, rdpTls* tls, UINT32 timeout)
 	}
 
 	tls->hostname = freerdp_settings_get_string(settings, FreeRDP_GatewayHostname);
-	tls->port = MIN(UINT16_MAX, WINPR_ASSERTING_INT_CAST(int32_t, settings->GatewayPort));
+	tls->port =
+	    MIN(UINT16_MAX, WINPR_ASSERTING_INT_CAST(
+	                        int32_t, freerdp_settings_get_uint32(settings, FreeRDP_GatewayPort)));
 	tls->isGatewayTransport = TRUE;
 	status = freerdp_tls_connect(tls, bufferedBio);
 	if (status < 1)
@@ -557,12 +559,19 @@ static BOOL arm_encodeRedirectPasswd(wLog* log, rdpSettings* settings, const rdp
 		}
 	}
 
-	settings->RdstlsSecurity = TRUE;
-	settings->AadSecurity = FALSE;
-	settings->NlaSecurity = FALSE;
-	settings->RdpSecurity = FALSE;
-	settings->TlsSecurity = FALSE;
-	settings->RedirectionFlags = LB_PASSWORD_IS_PK_ENCRYPTED;
+	if (!freerdp_settings_set_bool(settings, FreeRDP_RdstlsSecurity, TRUE))
+		goto out;
+	if (!freerdp_settings_set_bool(settings, FreeRDP_AadSecurity, FALSE))
+		goto out;
+	if (!freerdp_settings_set_bool(settings, FreeRDP_NlaSecurity, FALSE))
+		goto out;
+	if (!freerdp_settings_set_bool(settings, FreeRDP_RdpSecurity, FALSE))
+		goto out;
+	if (!freerdp_settings_set_bool(settings, FreeRDP_TlsSecurity, FALSE))
+		goto out;
+	if (!freerdp_settings_set_uint32(settings, FreeRDP_RedirectionFlags,
+	                                 LB_PASSWORD_IS_PK_ENCRYPTED))
+		goto out;
 	ret = TRUE;
 out:
 	free(finalOutput);
