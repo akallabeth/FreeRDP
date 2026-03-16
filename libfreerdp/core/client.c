@@ -988,7 +988,7 @@ void freerdp_channels_close(rdpChannels* channels, freerdp* instance)
 
 	WINPR_ASSERT(instance->context);
 	WINPR_ASSERT(instance->context->settings);
-	instance->context->settings->ChannelCount = 0;
+	(void)freerdp_settings_set_uint32(instance->context->settings, FreeRDP_ChannelCount, 0);
 	g_Instance = nullptr;
 }
 
@@ -1074,15 +1074,17 @@ static UINT VCAPITYPE FreeRDP_VirtualChannelInitEx(
 
 		const UINT32 max = freerdp_settings_get_uint32(settings, FreeRDP_ChannelDefArraySize);
 		WINPR_ASSERT(max >= CHANNEL_MAX_COUNT);
-		if (settings->ChannelCount < max)
+		const UINT32 ChannelCount = freerdp_settings_get_uint32(settings, FreeRDP_ChannelCount);
+		if (ChannelCount < max)
 		{
 			CHANNEL_DEF* channel = freerdp_settings_get_pointer_array_writable(
-			    settings, FreeRDP_ChannelDefArray, settings->ChannelCount);
+			    settings, FreeRDP_ChannelDefArray, ChannelCount);
 			if (!channel)
 				continue;
 			strncpy(channel->name, pChannelDef->name, CHANNEL_NAME_LEN);
 			channel->options = pChannelDef->options;
-			settings->ChannelCount++;
+			if (!freerdp_settings_set_uint32(settings, FreeRDP_ChannelCount, ChannelCount + 1))
+				return ERROR_INTERNAL_ERROR;
 		}
 
 		channels->openDataCount++;
