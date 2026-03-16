@@ -124,7 +124,7 @@ rdpRdstls* rdstls_new(rdpContext* context, rdpTransport* transport)
 	rdstls->log = WLog_Get(FREERDP_TAG("core.rdstls"));
 	rdstls->context = context;
 	rdstls->transport = transport;
-	rdstls->server = settings->ServerMode;
+	rdstls->server = freerdp_settings_get_bool(settings, FreeRDP_ServerMode);
 
 	rdstls->state = RDSTLS_STATE_INITIAL;
 
@@ -230,9 +230,11 @@ static BOOL rdstls_write_capabilities(WINPR_ATTR_UNUSED rdpRdstls* rdstls, wStre
 	return TRUE;
 }
 
-static SSIZE_T rdstls_write_string(wStream* s, const char* str)
+static SSIZE_T rdstls_write_string(wStream* s, const rdpSettings* settings,
+                                   FreeRDP_Settings_Keys_String key)
 {
 	const size_t pos = Stream_GetPosition(s);
+	const char* str = freerdp_settings_get_string(settings, key);
 
 	if (!Stream_EnsureRemainingCapacity(s, 2))
 		return -1;
@@ -261,8 +263,13 @@ static SSIZE_T rdstls_write_string(wStream* s, const char* str)
 	return (SSIZE_T)(Stream_GetPosition(s) - pos);
 }
 
-static BOOL rdstls_write_data(wStream* s, UINT32 length, const BYTE* data)
+static BOOL rdstls_write_data(wStream* s, const rdpSettings* settings,
+                              FreeRDP_Settings_Keys_UInt32 lenKey,
+                              FreeRDP_Settings_Keys_Pointer dataKey)
 {
+	const void* data = freerdp_settings_get_pointer(settings, dataKey);
+	const uint32_t length = freerdp_settings_get_uint32(settings, lenKey);
+
 	WINPR_ASSERT(data || (length == 0));
 
 	if (!Stream_EnsureRemainingCapacity(s, 2) || (length > UINT16_MAX))
@@ -314,16 +321,17 @@ static BOOL rdstls_write_authentication_request_with_password(rdpRdstls* rdstls,
 	Stream_Write_UINT16(s, RDSTLS_TYPE_AUTHREQ);
 	Stream_Write_UINT16(s, RDSTLS_DATA_PASSWORD_CREDS);
 
-	if (!rdstls_write_data(s, settings->RedirectionGuidLength, settings->RedirectionGuid))
+	if (!rdstls_write_data(s, settings, FreeRDP_RedirectionGuidLength, FreeRDP_RedirectionGuid))
 		return FALSE;
 
-	if (rdstls_write_string(s, settings->Username) < 0)
+	if (rdstls_write_string(s, settings, FreeRDP_Username) < 0)
 		return FALSE;
 
-	if (rdstls_write_string(s, settings->Domain) < 0)
+	if (rdstls_write_string(s, settings, FreeRDP_Domain) < 0)
 		return FALSE;
 
-	if (!rdstls_write_data(s, settings->RedirectionPasswordLength, settings->RedirectionPassword))
+	if (!rdstls_write_data(s, settings, FreeRDP_RedirectionPasswordLength,
+	                       FreeRDP_RedirectionPassword))
 		return FALSE;
 
 	return TRUE;
@@ -337,7 +345,7 @@ static BOOL rdstls_write_authentication_request_with_cookie(WINPR_ATTR_UNUSED rd
 
 	WLog_Print(rdstls->log, WLOG_DEBUG, "Writing RDSTLS cookie authentication message");
 
-	rdpSettings* settings = rdstls->context->settings;
+	const rdpSettings* settings = rdstls->context->settings;
 	WINPR_ASSERT(settings);
 
 	if (!Stream_EnsureRemainingCapacity(s, 8))
@@ -345,9 +353,10 @@ static BOOL rdstls_write_authentication_request_with_cookie(WINPR_ATTR_UNUSED rd
 
 	Stream_Write_UINT16(s, RDSTLS_TYPE_AUTHREQ);
 	Stream_Write_UINT16(s, RDSTLS_DATA_AUTORECONNECT_COOKIE);
-	Stream_Write_UINT32(s, settings->RedirectedSessionId);
+	Stream_Write_UINT32(s, freerdp_settings_get_uint32(settings, FreeRDP_RedirectedSessionId));
 
-	return (rdstls_write_cookie(s, settings->ServerAutoReconnectCookie));
+	return (rdstls_write_cookie(
+	    s, freerdp_settings_get_pointer(settings, FreeRDP_ServerAutoReconnectCookie)));
 }
 
 static BOOL rdstls_write_authentication_response(rdpRdstls* rdstls, wStream* s)
@@ -643,13 +652,12 @@ static BOOL rdstls_process_authentication_response(rdpRdstls* rdstls, wStream* s
 static BOOL rdstls_send(WINPR_ATTR_UNUSED rdpTransport* transport, wStream* s, void* extra)
 {
 	rdpRdstls* rdstls = (rdpRdstls*)extra;
-	rdpSettings* settings = nullptr;
 
 	WINPR_ASSERT(transport);
 	WINPR_ASSERT(s);
 	WINPR_ASSERT(rdstls);
 
-	settings = rdstls->context->settings;
+	const rdpSettings* settings = rdstls->context->settings;
 	WINPR_ASSERT(settings);
 
 	if (!Stream_EnsureRemainingCapacity(s, 2))
@@ -665,12 +673,14 @@ static BOOL rdstls_send(WINPR_ATTR_UNUSED rdpTransport* transport, wStream* s, v
 				return FALSE;
 			break;
 		case RDSTLS_STATE_AUTH_REQ:
-			if (settings->RedirectionFlags & LB_PASSWORD_IS_PK_ENCRYPTED)
+			if (freerdp_settings_get_uint32(settings, FreeRDP_RedirectionFlags) &
+			    LB_PASSWORD_IS_PK_ENCRYPTED)
 			{
 				if (!rdstls_write_authentication_request_with_password(rdstls, s))
 					return FALSE;
 			}
-			else if (settings->ServerAutoReconnectCookie != nullptr)
+			else if (freerdp_settings_get_pointer(settings, FreeRDP_ServerAutoReconnectCookie) !=
+			         nullptr)
 			{
 				if (!rdstls_write_authentication_request_with_cookie(rdstls, s))
 					return FALSE;
