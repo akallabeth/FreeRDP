@@ -48,19 +48,94 @@ BOOL utils_str_copy(const char* value, char** dst)
 	return (*dst) != nullptr;
 }
 
+static BOOL utils_settings_str_copy(rdpSettings* settings, FreeRDP_Settings_Keys_String src,
+                                    FreeRDP_Settings_Keys_String dst)
+{
+	const char* str = freerdp_settings_get_string(settings, src);
+	return freerdp_settings_set_string(settings, dst, str);
+}
+
+static BOOL utils_settings_str_empty(const rdpSettings* settings, FreeRDP_Settings_Keys_String key)
+{
+	const char* str = freerdp_settings_get_string(settings, key);
+	return utils_str_is_empty(str);
+}
+
 static BOOL utils_copy_smartcard_settings(const rdpSettings* settings, rdpSettings* origSettings)
 {
-	/* update original settings with provided smart card settings */
-	origSettings->SmartcardLogon = settings->SmartcardLogon;
-	origSettings->PasswordIsSmartcardPin = settings->PasswordIsSmartcardPin;
-	if (!utils_str_copy(settings->ReaderName, &origSettings->ReaderName))
-		return FALSE;
-	if (!utils_str_copy(settings->CspName, &origSettings->CspName))
-		return FALSE;
-	if (!utils_str_copy(settings->ContainerName, &origSettings->ContainerName))
-		return FALSE;
+	const SSIZE_T keys[] = { FreeRDP_SmartcardLogon, FreeRDP_PasswordIsSmartcardPin,
+		                     FreeRDP_ReaderName, FreeRDP_CspName, FreeRDP_ContainerName };
+
+	for (size_t x = 0; x < ARRAYSIZE(keys); x++)
+	{
+		const SSIZE_T key = keys[x];
+		if (!freerdp_settings_copy_item(origSettings, settings, key))
+			return FALSE;
+	}
 
 	return TRUE;
+}
+
+static auth_status utils_try_gw_auth(freerdp* instance, rdp_auth_reason reason)
+{
+	WINPR_ASSERT(instance);
+	WINPR_ASSERT(instance->context);
+
+	rdpSettings* settings = instance->context->settings;
+	WINPR_ASSERT(settings);
+
+	if (!instance->GatewayAuthenticate && !instance->AuthenticateEx)
+		return AUTH_NO_CREDENTIALS;
+
+	auth_status ret = AUTH_CANCELLED;
+	const char* CUsername = freerdp_settings_get_string(settings, FreeRDP_GatewayUsername);
+	const char* CDomain = freerdp_settings_get_string(settings, FreeRDP_GatewayDomain);
+	const char* CPassword = freerdp_settings_get_string(settings, FreeRDP_GatewayPassword);
+
+	char* GatewayUsername = nullptr;
+	char* GatewayDomain = nullptr;
+	char* GatewayPassword = nullptr;
+	if (CUsername)
+		GatewayUsername = _strdup(CUsername);
+	if (CDomain)
+		GatewayDomain = _strdup(CDomain);
+	if (CPassword)
+		GatewayPassword = _strdup(CPassword);
+
+	if (!instance->GatewayAuthenticate)
+	{
+		const BOOL proceed = instance->AuthenticateEx(instance, &GatewayUsername, &GatewayPassword,
+		                                              &GatewayDomain, reason);
+		if (!proceed)
+			goto fail;
+	}
+	else
+	{
+		const BOOL proceed = instance->GatewayAuthenticate(instance, &GatewayUsername,
+		                                                   &GatewayPassword, &GatewayDomain);
+		if (!proceed)
+			goto fail;
+	}
+
+	if (utils_str_is_empty(GatewayUsername) || utils_str_is_empty(GatewayPassword))
+	{
+		ret = AUTH_NO_CREDENTIALS;
+		goto fail;
+	}
+
+	if (!freerdp_settings_set_string(settings, FreeRDP_GatewayUsername, GatewayUsername))
+		goto fail;
+	if (!freerdp_settings_set_string(settings, FreeRDP_GatewayDomain, GatewayDomain))
+		goto fail;
+	if (!freerdp_settings_set_string(settings, FreeRDP_GatewayPassword, GatewayPassword))
+		goto fail;
+	ret = AUTH_SUCCESS;
+
+fail:
+	free(GatewayUsername);
+	free(GatewayDomain);
+	free(GatewayPassword);
+	return ret;
 }
 
 auth_status utils_authenticate_gateway(freerdp* instance, rdp_auth_reason reason)
@@ -94,39 +169,25 @@ auth_status utils_authenticate_gateway(freerdp* instance, rdp_auth_reason reason
 		return AUTH_SKIP;
 	}
 
-	if (!instance->GatewayAuthenticate && !instance->AuthenticateEx)
-		return AUTH_NO_CREDENTIALS;
-
-	if (!instance->GatewayAuthenticate)
+	auth_status rc = utils_try_gw_auth(instance, reason);
+	switch (rc)
 	{
-		proceed =
-		    instance->AuthenticateEx(instance, &settings->GatewayUsername,
-		                             &settings->GatewayPassword, &settings->GatewayDomain, reason);
-		if (!proceed)
-			return AUTH_CANCELLED;
+		case AUTH_SKIP:
+		case AUTH_SUCCESS:
+			break;
+		default:
+			return rc;
 	}
-	else
-	{
-		proceed =
-		    instance->GatewayAuthenticate(instance, &settings->GatewayUsername,
-		                                  &settings->GatewayPassword, &settings->GatewayDomain);
-		if (!proceed)
-			return AUTH_CANCELLED;
-	}
-
-	if (utils_str_is_empty(settings->GatewayUsername) ||
-	    utils_str_is_empty(settings->GatewayPassword))
-		return AUTH_NO_CREDENTIALS;
 
 	if (!utils_sync_credentials(settings, FALSE))
 		return AUTH_FAILED;
 
 	/* update original settings with provided user credentials */
-	if (!utils_str_copy(settings->GatewayUsername, &origSettings->GatewayUsername))
+	if (!utils_settings_str_copy(settings, FreeRDP_GatewayUsername, FreeRDP_GatewayUsername))
 		return AUTH_FAILED;
-	if (!utils_str_copy(settings->GatewayDomain, &origSettings->GatewayDomain))
+	if (!utils_settings_str_copy(settings, FreeRDP_GatewayDomain, FreeRDP_GatewayDomain))
 		return AUTH_FAILED;
-	if (!utils_str_copy(settings->GatewayPassword, &origSettings->GatewayPassword))
+	if (!utils_settings_str_copy(settings, FreeRDP_GatewayPassword, FreeRDP_GatewayPassword))
 		return AUTH_FAILED;
 	if (!utils_sync_credentials(origSettings, FALSE))
 		return AUTH_FAILED;
@@ -135,6 +196,71 @@ auth_status utils_authenticate_gateway(freerdp* instance, rdp_auth_reason reason
 		return AUTH_FAILED;
 
 	return AUTH_SUCCESS;
+}
+
+static auth_status utils_try_auth(freerdp* instance, rdp_auth_reason reason)
+{
+	WINPR_ASSERT(instance);
+	WINPR_ASSERT(instance->context);
+
+	rdpSettings* settings = instance->context->settings;
+	WINPR_ASSERT(settings);
+
+	/* If no callback is specified still continue connection */
+	if (!instance->Authenticate && !instance->AuthenticateEx)
+		return AUTH_NO_CREDENTIALS;
+
+	auth_status ret = AUTH_CANCELLED;
+	const char* CUsername = freerdp_settings_get_string(settings, FreeRDP_Username);
+	const char* CDomain = freerdp_settings_get_string(settings, FreeRDP_Domain);
+	const char* CPassword = freerdp_settings_get_string(settings, FreeRDP_Password);
+
+	char* Username = nullptr;
+	char* Domain = nullptr;
+	char* Password = nullptr;
+	if (CUsername)
+		Username = _strdup(CUsername);
+	if (CDomain)
+		Domain = _strdup(CDomain);
+	if (CPassword)
+		Password = _strdup(CPassword);
+
+	if (!instance->Authenticate)
+	{
+		const BOOL proceed =
+		    instance->AuthenticateEx(instance, &Username, &Password, &Domain, reason);
+		if (!proceed)
+			goto fail;
+	}
+	else
+	{
+		const BOOL proceed = instance->Authenticate(instance, &Username, &Password, &Domain);
+		if (!proceed)
+		{
+			ret = AUTH_NO_CREDENTIALS;
+			goto fail;
+		}
+	}
+
+	if (utils_str_is_empty(Username) || utils_str_is_empty(Password))
+	{
+		ret = AUTH_NO_CREDENTIALS;
+		goto fail;
+	}
+
+	if (!freerdp_settings_set_string(settings, FreeRDP_Username, Username))
+		goto fail;
+	if (!freerdp_settings_set_string(settings, FreeRDP_Domain, Domain))
+		goto fail;
+	if (!freerdp_settings_set_string(settings, FreeRDP_Password, Password))
+		goto fail;
+	ret = AUTH_SUCCESS;
+
+fail:
+	free(Username);
+	free(Domain);
+	free(Password);
+	return ret;
 }
 
 auth_status utils_authenticate(freerdp* instance, rdp_auth_reason reason, BOOL override)
@@ -156,12 +282,13 @@ auth_status utils_authenticate(freerdp* instance, rdp_auth_reason reason, BOOL o
 	if (freerdp_shall_disconnect_context(instance->context))
 		return AUTH_FAILED;
 
-	if (settings->ConnectChildSession)
+	if (freerdp_settings_get_bool(settings, FreeRDP_ConnectChildSession))
 		return AUTH_NO_CREDENTIALS;
 
 	/* Ask for auth data if no or an empty username was specified or no password was given */
-	if (utils_str_is_empty(freerdp_settings_get_string(settings, FreeRDP_Username)) ||
-	    (settings->Password == nullptr && settings->RedirectionPassword == nullptr))
+	if (utils_settings_str_empty(settings, FreeRDP_Username) ||
+	    ((freerdp_settings_get_string(settings, FreeRDP_Password) == nullptr) &&
+	     (freerdp_settings_get_pointer(settings, FreeRDP_RedirectionPassword) == nullptr)))
 		prompt = TRUE;
 
 	if (!prompt)
@@ -171,9 +298,9 @@ auth_status utils_authenticate(freerdp* instance, rdp_auth_reason reason, BOOL o
 	{
 		case AUTH_RDP:
 		case AUTH_TLS:
-			if (settings->SmartcardLogon)
+			if (freerdp_settings_get_bool(settings, FreeRDP_SmartcardLogon))
 			{
-				if (!utils_str_is_empty(settings->Password))
+				if (!utils_settings_str_empty(settings, FreeRDP_Password))
 				{
 					WLog_INFO(TAG, "Authentication via smartcard");
 					return AUTH_SUCCESS;
@@ -182,7 +309,7 @@ auth_status utils_authenticate(freerdp* instance, rdp_auth_reason reason, BOOL o
 			}
 			break;
 		case AUTH_NLA:
-			if (settings->SmartcardLogon)
+			if (freerdp_settings_get_bool(settings, FreeRDP_SmartcardLogon))
 				reason = AUTH_SMARTCARD_PIN;
 			break;
 		case AUTH_RDSTLS:
@@ -190,37 +317,25 @@ auth_status utils_authenticate(freerdp* instance, rdp_auth_reason reason, BOOL o
 			break;
 	}
 
-	/* If no callback is specified still continue connection */
-	if (!instance->Authenticate && !instance->AuthenticateEx)
-		return AUTH_NO_CREDENTIALS;
-
-	if (!instance->Authenticate)
+	auth_status rc = utils_try_auth(instance, reason);
+	switch (rc)
 	{
-		proceed = instance->AuthenticateEx(instance, &settings->Username, &settings->Password,
-		                                   &settings->Domain, reason);
-		if (!proceed)
-			return AUTH_CANCELLED;
+		case AUTH_SKIP:
+		case AUTH_SUCCESS:
+			break;
+		default:
+			return rc;
 	}
-	else
-	{
-		proceed = instance->Authenticate(instance, &settings->Username, &settings->Password,
-		                                 &settings->Domain);
-		if (!proceed)
-			return AUTH_NO_CREDENTIALS;
-	}
-
-	if (utils_str_is_empty(settings->Username) || utils_str_is_empty(settings->Password))
-		return AUTH_NO_CREDENTIALS;
 
 	if (!utils_sync_credentials(settings, TRUE))
 		return AUTH_FAILED;
 
 	/* update original settings with provided user credentials */
-	if (!utils_str_copy(settings->Username, &origSettings->Username))
+	if (!utils_settings_str_copy(settings, FreeRDP_Username, FreeRDP_Username))
 		return AUTH_FAILED;
-	if (!utils_str_copy(settings->Domain, &origSettings->Domain))
+	if (!utils_settings_str_copy(settings, FreeRDP_Domain, FreeRDP_Domain))
 		return AUTH_FAILED;
-	if (!utils_str_copy(settings->Password, &origSettings->Password))
+	if (!utils_settings_str_copy(settings, FreeRDP_Password, FreeRDP_Password))
 		return AUTH_FAILED;
 	if (!utils_sync_credentials(origSettings, TRUE))
 		return AUTH_FAILED;
@@ -234,25 +349,25 @@ auth_status utils_authenticate(freerdp* instance, rdp_auth_reason reason, BOOL o
 BOOL utils_sync_credentials(rdpSettings* settings, BOOL toGateway)
 {
 	WINPR_ASSERT(settings);
-	if (!settings->GatewayUseSameCredentials)
+	if (!freerdp_settings_get_bool(settings, FreeRDP_GatewayUseSameCredentials))
 		return TRUE;
 
 	if (toGateway)
 	{
-		if (!utils_str_copy(settings->Username, &settings->GatewayUsername))
+		if (!utils_settings_str_copy(settings, FreeRDP_Username, FreeRDP_GatewayUsername))
 			return FALSE;
-		if (!utils_str_copy(settings->Domain, &settings->GatewayDomain))
+		if (!utils_settings_str_copy(settings, FreeRDP_Domain, FreeRDP_GatewayDomain))
 			return FALSE;
-		if (!utils_str_copy(settings->Password, &settings->GatewayPassword))
+		if (!utils_settings_str_copy(settings, FreeRDP_Password, FreeRDP_GatewayPassword))
 			return FALSE;
 	}
 	else
 	{
-		if (!utils_str_copy(settings->GatewayUsername, &settings->Username))
+		if (!utils_settings_str_copy(settings, FreeRDP_GatewayUsername, FreeRDP_Username))
 			return FALSE;
-		if (!utils_str_copy(settings->GatewayDomain, &settings->Domain))
+		if (!utils_settings_str_copy(settings, FreeRDP_GatewayDomain, FreeRDP_Domain))
 			return FALSE;
-		if (!utils_str_copy(settings->GatewayPassword, &settings->Password))
+		if (!utils_settings_str_copy(settings, FreeRDP_GatewayPassword, FreeRDP_Password))
 			return FALSE;
 	}
 	return TRUE;
