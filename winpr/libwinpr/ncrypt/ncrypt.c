@@ -120,7 +120,7 @@ SECURITY_STATUS NCryptEnumStorageProviders(DWORD* wProviderCount,
 
 #ifdef WITH_PKCS11
 	*wProviderCount += 1;
-	stringAllocSize += (_wcslen(MS_SCARD_PROV) + 1) * sizeof(WCHAR);
+	stringAllocSize += (_wcslen(MS_SMART_CARD_KEY_STORAGE_PROVIDER) + 1) * sizeof(WCHAR);
 	stringAllocSize += sizeof(emptyComment);
 #endif
 
@@ -135,8 +135,8 @@ SECURITY_STATUS NCryptEnumStorageProviders(DWORD* wProviderCount,
 	strPtr = (LPWSTR)(ret + *wProviderCount);
 
 	ret->pszName = strPtr;
-	copyAmount = (_wcslen(MS_SCARD_PROV) + 1) * sizeof(WCHAR);
-	memcpy(strPtr, MS_SCARD_PROV, copyAmount);
+	copyAmount = (_wcslen(MS_SMART_CARD_KEY_STORAGE_PROVIDER) + 1) * sizeof(WCHAR);
+	memcpy(strPtr, MS_SMART_CARD_KEY_STORAGE_PROVIDER, copyAmount);
 	strPtr += copyAmount / 2;
 
 	ret->pszComment = strPtr;
@@ -161,7 +161,7 @@ SECURITY_STATUS winpr_NCryptOpenStorageProviderEx(NCRYPT_PROV_HANDLE* phProvider
 {
 #if defined(WITH_PKCS11)
 	if (pszProviderName && ((_wcscmp(pszProviderName, MS_SMART_CARD_KEY_STORAGE_PROVIDER) == 0) ||
-	                        (_wcscmp(pszProviderName, MS_SCARD_PROV) == 0)))
+	                        (_wcscmp(pszProviderName, MS_SMART_CARD_KEY_STORAGE_PROVIDER) == 0)))
 		return NCryptOpenP11StorageProviderEx(phProvider, pszProviderName, dwFlags, modulePaths);
 
 	char buffer[128] = WINPR_C_ARRAY_INIT;
