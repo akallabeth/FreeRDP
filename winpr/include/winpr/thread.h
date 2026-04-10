@@ -203,15 +203,6 @@ extern "C"
 
 	/* Process Argument Vector Parsing */
 
-	WINPR_ATTR_NODISCARD
-	WINPR_API LPWSTR* CommandLineToArgvW(LPCWSTR lpCmdLine, int* pNumArgs);
-
-#ifdef UNICODE
-#define CommandLineToArgv CommandLineToArgvW
-#else
-#define CommandLineToArgv CommandLineToArgvA
-#endif
-
 	/* Thread */
 #define THREAD_MODE_BACKGROUND_BEGIN 0x00010000 /** @since version 3.6.0 */
 #define THREAD_MODE_BACKGROUND_END 0x00020000   /** @since version 3.6.0 */
@@ -319,11 +310,6 @@ WINPR_PRAGMA_DIAG_IGNORED_RESERVED_IDENTIFIER
 WINPR_PRAGMA_DIAG_POP
 
 #endif
-
-	/* CommandLineToArgvA is not present in the original Windows API, WinPR always exports it */
-
-	WINPR_ATTR_NODISCARD
-	WINPR_API LPSTR* CommandLineToArgvA(LPCSTR lpCmdLine, int* pNumArgs);
 
 	WINPR_API VOID DumpThreadHandles(void);
 

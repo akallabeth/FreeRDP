@@ -80,6 +80,38 @@ typedef struct
 	int fd;
 } WINPR_PROCESS;
 
+/* CommandLineToArgvA is not present in the original Windows API, WinPR always exports it */
+/** @brief Same as \ref CommandLineToArgvA but with WCHAR
+ *
+ *  @param lpCmdLine The command line. Must also contain the binary name/path
+ *  @param pNumArgs A pointer to an integer that will be set to the number of arguments in the
+ * returned string array. Must not be nullptr
+ *
+ *  @return An allocated WCHAR string array with \ref pNumArgs number of arguments or \b nullptr
+ * in case of an error.
+ *  @since version 3.0.0
+ */
+WINPR_ATTR_MALLOC(free, 1)
+WINPR_LOCAL LPSTR* CommandLineToArgvA(LPCSTR lpCmdLine, int* pNumArgs);
+
+/** @brief Same as \ref CommandLineToArgvA but concatenates \ref lpApplicationName and \ref
+ * lpCmdLine
+ *
+ *  @param lpApplicationName An application name/path or nullptr (in case \ref lpCmdLine is
+ * nullptr the whole command line)
+ *  @param lpCmdLine The command line for \ref lpApplicationName. (in case \ref
+ * lpApplicationName is nullptr must also contain the binary name/path, otherwise must be
+ * without it)
+ *  @param pNumArgs A pointer to an integer that will be set to the number of arguments in the
+ * returned string array. Must not be nullptr
+ *
+ *  @return An allocated string array with \ref pNumArgs number of arguments or \b nullptr in
+ * case of an error.
+ *  @since version 3.25.0
+ */
+WINPR_ATTR_MALLOC(free, 1)
+WINPR_LOCAL LPSTR* CommandLineToArgvExA(LPCSTR lpApplicationName, LPCSTR lpCmdLine, int* pNumArgs);
+
 #endif
 
 #endif /* WINPR_THREAD_PRIVATE_H */

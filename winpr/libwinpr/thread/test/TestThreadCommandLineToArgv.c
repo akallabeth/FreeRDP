@@ -3,6 +3,8 @@
 #include <winpr/crt.h>
 #include <winpr/thread.h>
 
+#include "../thread.h"
+
 static const char* test_args_line_1 = "app.exe abc d e";
 
 static const char* test_args_list_1[] = { "app.exe", "abc", "d", "e" };
@@ -35,41 +37,46 @@ static const char* test_args_line_8 = "app.exe arg1 \"arg2\"";
 
 static const char* test_args_list_8[] = { "app.exe", "arg1", "arg2" };
 
-static BOOL test_command_line_parsing_case(const char* line, const char** list, size_t expect)
+static BOOL check_test_result(const char* what, const void* pArgs, const char* line, int numArgs,
+                              size_t expect)
 {
-	BOOL rc = FALSE;
-	int numArgs = 0;
-
-	printf("Parsing: %s\n", line);
-
-	LPSTR* pArgs = CommandLineToArgvA(line, &numArgs);
 	if (numArgs < 0)
 	{
-		(void)fprintf(stderr, "expected %" PRIuz " arguments, got %d return\n", expect, numArgs);
-		goto fail;
+		(void)fprintf(stderr, "[%s] expected %" PRIuz " arguments, got %d return\n", what, expect,
+		              numArgs);
+		return FALSE;
 	}
 	if (numArgs != expect)
 	{
-		(void)fprintf(stderr, "expected %" PRIuz " arguments, got %d from '%s'\n", expect, numArgs,
-		              line);
-		goto fail;
+		(void)fprintf(stderr, "[%s] expected %" PRIuz " arguments, got %d from '%s'\n", what,
+		              expect, numArgs, line);
+		return FALSE;
 	}
 
 	if ((numArgs > 0) && !pArgs)
 	{
-		(void)fprintf(stderr, "expected %d arguments, got nullptr return\n", numArgs);
-		goto fail;
+		(void)fprintf(stderr, "[%s] expected %d arguments, got nullptr return\n", what, numArgs);
+		return FALSE;
 	}
 
-	printf("pNumArgs: %d\n", numArgs);
+	printf("[%s] pNumArgs: %d\n", what, numArgs);
+	return TRUE;
+}
+
+static BOOL check_test_result_and_free_a(const char* what, LPSTR* pArgs, const char* line,
+                                         const char** list, int numArgs, size_t expect)
+{
+	BOOL rc = check_test_result(what, pArgs, line, numArgs, expect);
+	if (!rc)
+		goto fail;
 
 	for (int i = 0; i < numArgs; i++)
 	{
-		printf("argv[%d] = %s\n", i, pArgs[i]);
+		printf("[%s] argv[%d] = %s\n", what, i, pArgs[i]);
 		if (strcmp(pArgs[i], list[i]) != 0)
 		{
-			(void)fprintf(stderr, "failed at argument %d: got '%s' but expected '%s'\n", i,
-			              pArgs[i], list[i]);
+			(void)fprintf(stderr, "[%s] failed at argument %d: got '%s' but expected '%s'\n", what,
+			              i, pArgs[i], list[i]);
 			goto fail;
 		}
 	}
@@ -79,6 +86,52 @@ fail:
 	free((void*)pArgs);
 
 	return rc;
+}
+
+static BOOL test_command_line_parsing_case(const char* line, const char** list, size_t expect)
+{
+	BOOL rc = FALSE;
+	int numArgs = 0;
+
+	printf("Parsing: %s\n", line);
+
+	if (strchr(line, ' '))
+	{
+		char* str = _strdup(line);
+		if (!line)
+			return FALSE;
+		BOOL rc = FALSE;
+		char* cmd = strchr(str, ' ');
+		if (cmd)
+		{
+			*cmd++ = '\0';
+			LPSTR* pArgs = CommandLineToArgvExA(str, cmd, &numArgs);
+			rc = check_test_result_and_free_a("CommandLineToArgvExA(program, line)", pArgs, line,
+			                                  list, numArgs, expect);
+		}
+		free(str);
+		if (!rc)
+			return rc;
+	}
+
+	{
+		LPSTR* pArgs = CommandLineToArgvA(line, &numArgs);
+		if (!check_test_result_and_free_a("CommandLineToArgvA", pArgs, line, list, numArgs, expect))
+			return FALSE;
+	}
+	{
+		LPSTR* pArgs = CommandLineToArgvExA(nullptr, line, &numArgs);
+		if (!check_test_result_and_free_a("CommandLineToArgvExA(nullptr, line)", pArgs, line, list,
+		                                  numArgs, expect))
+			return FALSE;
+	}
+	{
+		LPSTR* pArgs = CommandLineToArgvExA(line, nullptr, &numArgs);
+		if (!check_test_result_and_free_a("CommandLineToArgvExA(line, nullptr)", pArgs, line, list,
+		                                  numArgs, expect))
+			return FALSE;
+	}
+	return TRUE;
 }
 
 int TestThreadCommandLineToArgv(int argc, char* argv[])

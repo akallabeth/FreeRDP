@@ -28,6 +28,8 @@
 #include <unistd.h>
 #endif
 
+#include "thread.h"
+
 #include "../log.h"
 #define TAG WINPR_TAG("thread")
 
@@ -85,6 +87,46 @@
  * causing a literal double quotation mark (") to be placed in argv.
  *
  */
+
+#if !defined(_WIN32)
+static void zfree(char* str)
+{
+	if (!str)
+		return;
+	char* cur = str;
+	while (*cur != '\0')
+		*cur++ = '\0';
+	free(str);
+}
+
+static void zwfree(WCHAR* str)
+{
+	if (!str)
+		return;
+	WCHAR* cur = str;
+	while (*cur != '\0')
+		*cur++ = '\0';
+	free(str);
+}
+
+LPSTR* CommandLineToArgvExA(LPCSTR lpApplicationName, LPCSTR lpCmdLine, int* pNumArgs)
+{
+	if (lpApplicationName && lpCmdLine)
+	{
+		size_t len = 0;
+		char* str = nullptr;
+		LPSTR* res = nullptr;
+		(void)winpr_asprintf(&str, &len, "%s %s", lpApplicationName, lpCmdLine);
+		if (str)
+			res = CommandLineToArgvA(str, pNumArgs);
+		free(str);
+		return res;
+	}
+
+	if (lpApplicationName)
+		return CommandLineToArgvA(lpApplicationName, pNumArgs);
+	return CommandLineToArgvA(lpCmdLine, pNumArgs);
+}
 
 LPSTR* CommandLineToArgvA(LPCSTR lpCmdLine, int* pNumArgs)
 {
@@ -273,13 +315,4 @@ LPSTR* CommandLineToArgvA(LPCSTR lpCmdLine, int* pNumArgs)
 	*pNumArgs = numArgs;
 	return pArgs;
 }
-
-#ifndef _WIN32
-
-LPWSTR* CommandLineToArgvW(WINPR_ATTR_UNUSED LPCWSTR lpCmdLine, WINPR_ATTR_UNUSED int* pNumArgs)
-{
-	WLog_ERR("TODO", "TODO: Implement");
-	return nullptr;
-}
-
 #endif

@@ -5,7 +5,11 @@ disable_warnings_for_directory(${CMAKE_CURRENT_BINARY_DIR})
 
 set(${MODULE_PREFIX}_DRIVER ${MODULE_NAME}.c)
 
-set(${MODULE_PREFIX}_TESTS TestThreadCommandLineToArgv.c TestThreadCreateProcess.c TestThreadExitThread.c)
+set(${MODULE_PREFIX}_TESTS TestThreadCreateProcess.c TestThreadExitThread.c)
+
+if(NOT WIN32 AND BUILD_TESTING_INTERNAL)
+  list(APPEND ${MODULE_PREFIX}_TESTS TestThreadCommandLineToArgv.c)
+endif()
 
 create_test_sourcelist(${MODULE_PREFIX}_SRCS ${${MODULE_PREFIX}_DRIVER} ${${MODULE_PREFIX}_TESTS})
 
