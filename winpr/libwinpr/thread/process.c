@@ -390,8 +390,80 @@ BOOL CreateProcessW(WINPR_ATTR_UNUSED LPCWSTR lpApplicationName,
                     WINPR_ATTR_UNUSED LPSTARTUPINFOW lpStartupInfo,
                     WINPR_ATTR_UNUSED LPPROCESS_INFORMATION lpProcessInformation)
 {
-	WLog_ERR("TODO", "TODO: implement");
-	return FALSE;
+	WINPR_ASSERT(lpStartupInfo);
+	WINPR_ASSERT(lpProcessInformation);
+
+	LPSTR lpApplicationNameA = nullptr;
+	LPSTR lpCommandLineA = nullptr;
+	LPSTR lpCurrentDirectoryA = nullptr;
+	STARTUPINFOA StartupInfoA = { .cb = sizeof(STARTUPINFOA),
+		                          .lpReserved = nullptr,
+		                          .lpDesktop = nullptr,
+		                          .lpTitle = nullptr,
+		                          .dwX = lpStartupInfo->dwX,
+		                          .dwY = lpStartupInfo->dwY,
+		                          .dwXSize = lpStartupInfo->dwXSize,
+		                          .dwYSize = lpStartupInfo->dwYSize,
+		                          .dwXCountChars = lpStartupInfo->dwXCountChars,
+		                          .dwYCountChars = lpStartupInfo->dwYCountChars,
+		                          .dwFillAttribute = lpStartupInfo->dwFillAttribute,
+		                          .dwFlags = lpStartupInfo->dwFlags,
+		                          .wShowWindow = lpStartupInfo->wShowWindow,
+		                          .cbReserved2 = lpStartupInfo->cbReserved2,
+		                          .lpReserved2 = lpStartupInfo->lpReserved2,
+		                          .hStdInput = lpStartupInfo->hStdInput,
+		                          .hStdOutput = lpStartupInfo->hStdOutput,
+		                          .hStdError = lpStartupInfo->hStdError };
+
+	BOOL rc = FALSE;
+	if (lpApplicationName)
+	{
+		lpApplicationNameA = ConvertWCharToUtf8Alloc(lpApplicationName, nullptr);
+		if (!lpApplicationNameA)
+			goto fail;
+	}
+	if (lpCommandLine)
+	{
+		lpCommandLineA = ConvertWCharToUtf8Alloc(lpCommandLine, nullptr);
+		if (!lpCommandLineA)
+			goto fail;
+	}
+	if (lpCurrentDirectory)
+	{
+		lpCurrentDirectoryA = ConvertWCharToUtf8Alloc(lpCurrentDirectory, nullptr);
+		if (!lpCurrentDirectoryA)
+			goto fail;
+	}
+	if (lpStartupInfo->lpReserved)
+	{
+		StartupInfoA.lpReserved = ConvertWCharToUtf8Alloc(lpStartupInfo->lpReserved, nullptr);
+		if (!StartupInfoA.lpReserved)
+			goto fail;
+	}
+	if (lpStartupInfo->lpDesktop)
+	{
+		StartupInfoA.lpDesktop = ConvertWCharToUtf8Alloc(lpStartupInfo->lpDesktop, nullptr);
+		if (!StartupInfoA.lpDesktop)
+			goto fail;
+	}
+	if (lpStartupInfo->lpTitle)
+	{
+		StartupInfoA.lpTitle = ConvertWCharToUtf8Alloc(lpStartupInfo->lpTitle, nullptr);
+		if (!StartupInfoA.lpTitle)
+			goto fail;
+	}
+
+	rc = CreateProcessA(lpApplicationNameA, lpCommandLineA, lpProcessAttributes, lpThreadAttributes,
+	                    bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectoryA,
+	                    &StartupInfoA, lpProcessInformation);
+fail:
+	free(lpApplicationNameA);
+	free(lpCommandLineA);
+	free(lpCurrentDirectoryA);
+	free(StartupInfoA.lpDesktop);
+	free(StartupInfoA.lpReserved);
+	free(StartupInfoA.lpTitle);
+	return rc;
 }
 
 BOOL CreateProcessAsUserA(HANDLE hToken, LPCSTR lpApplicationName, LPSTR lpCommandLine,
