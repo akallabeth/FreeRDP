@@ -12,20 +12,92 @@
 
 typedef struct
 {
+	const char* app;
 	const char* command;
 	int expected;
 	const char* output;
 } test_case_t;
 
-static int testB(const char* lpApplicationName, const char* command, int expected,
-                 const char* expectedOutput)
+static BOOL WrapCreateProcessW(LPCWSTR lpApplicationName, LPWSTR lpCommandLine,
+                               LPSECURITY_ATTRIBUTES lpProcessAttributes,
+                               LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles,
+                               DWORD dwCreationFlags, LPVOID lpEnvironment,
+                               LPCWSTR lpCurrentDirectory, LPSTARTUPINFOW lpStartupInfo,
+                               LPPROCESS_INFORMATION lpProcessInformation)
 {
-	int rc = -1;
+	WCHAR* cmd = nullptr;
+	if (lpCommandLine)
+		cmd = _wcsdup(lpCommandLine);
+	const BOOL rc = CreateProcessW(lpApplicationName, cmd, lpProcessAttributes, lpThreadAttributes,
+	                               bInheritHandles, dwCreationFlags, lpEnvironment,
+	                               lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+	free(cmd);
+	return rc;
+}
+static BOOL testNoPipes(const WCHAR* lpApplicationName, const WCHAR* lpCommandLine, int expected,
+                        const WCHAR* expectedOutput)
+{
+	// LPTSTR lpCommandLine;
+	LPSECURITY_ATTRIBUTES lpProcessAttributes = nullptr;
+	LPSECURITY_ATTRIBUTES lpThreadAttributes = nullptr;
+	BOOL bInheritHandles = FALSE;
+	DWORD dwCreationFlags = 0;
+	LPCWSTR lpCurrentDirectory = nullptr;
+	STARTUPINFOW StartupInfo = WINPR_C_ARRAY_INIT;
+	PROCESS_INFORMATION ProcessInformation = WINPR_C_ARRAY_INIT;
+	BOOL res = FALSE;
 
+	LPWCH lpszEnvironmentBlock = GetEnvironmentStringsW();
+
+#ifdef _UNICODE
+	dwCreationFlags |= CREATE_UNICODE_ENVIRONMENT;
+#endif
+	LPVOID lpEnvironment = lpszEnvironmentBlock;
+	StartupInfo.cb = sizeof(STARTUPINFOW);
+
+	BOOL status = WrapCreateProcessW(
+	    lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles,
+	    dwCreationFlags, lpEnvironment, lpCurrentDirectory, &StartupInfo, &ProcessInformation);
+
+	if (!status)
+	{
+		printf("CreateProcess failed. error=%" PRIu32 "\n", GetLastError());
+		goto fail;
+	}
+
+	if (WaitForSingleObject(ProcessInformation.hProcess, 5000) != WAIT_OBJECT_0)
+	{
+		printf("Failed to wait for first process. error=%" PRIu32 "\n", GetLastError());
+		goto fail;
+	}
+
+	DWORD exitCode = 0;
+	status = GetExitCodeProcess(ProcessInformation.hProcess, &exitCode);
+
+	printf("GetExitCodeProcess status: %" PRId32 "\n", status);
+	printf("Process exited with code: 0x%08" PRIX32 "\n", exitCode);
+
+	if (exitCode != expected)
+		goto fail;
+
+	res = TRUE;
+fail:
+	(void)CloseHandle(ProcessInformation.hProcess);
+	(void)CloseHandle(ProcessInformation.hThread);
+	FreeEnvironmentStringsW(lpszEnvironmentBlock);
+	return res;
+}
+
+static BOOL testStdOutPipes(const WCHAR* lpApplicationName, const WCHAR* lpCommandLine,
+                            int expected, const WCHAR* expectedOutput)
+{
+	BOOL res = FALSE;
+	// LPTSTR lpCommandLine;
 	LPSECURITY_ATTRIBUTES lpProcessAttributes = nullptr;
 	LPSECURITY_ATTRIBUTES lpThreadAttributes = nullptr;
 	BOOL bInheritHandles = TRUE;
 	DWORD dwCreationFlags = 0;
+	LPVOID lpEnvironment = nullptr;
 	LPCWSTR lpCurrentDirectory = nullptr;
 	STARTUPINFOW StartupInfo = WINPR_C_ARRAY_INIT;
 	PROCESS_INFORMATION ProcessInformation = WINPR_C_ARRAY_INIT;
@@ -37,40 +109,28 @@ static int testB(const char* lpApplicationName, const char* command, int expecte
 #endif
 
 	/* Test stdin,stdout,stderr redirection */
+
 	SECURITY_ATTRIBUTES saAttr = { .nLength = sizeof(SECURITY_ATTRIBUTES),
 		                           .bInheritHandle = TRUE,
 		                           .lpSecurityDescriptor = nullptr };
 
-	LPWSTR lpApplicationNameW = nullptr;
-	LPWSTR commandW = nullptr;
-	if (lpApplicationName)
-		lpApplicationNameW = ConvertUtf8ToWCharAlloc(lpApplicationName, nullptr);
-	if (command)
-		commandW = ConvertUtf8ToWCharAlloc(command, nullptr);
-
-	LPTCH lpszEnvironmentBlock = GetEnvironmentStrings();
-	LPVOID lpEnvironment = lpszEnvironmentBlock;
-	if (!lpEnvironment)
-	{
-		printf("Failed to allocate environment buffer. error=%" PRIu32 "\n", GetLastError());
-		goto fail;
-	}
-	rc--;
-
 	if (!CreatePipe(&pipe_read, &pipe_write, &saAttr, 0))
 	{
 		printf("Pipe creation failed. error=%" PRIu32 "\n", GetLastError());
-		goto fail;
+		return FALSE;
 	}
-	rc--;
 
 	StartupInfo.cb = sizeof(STARTUPINFOW);
 	StartupInfo.hStdOutput = pipe_write;
 	StartupInfo.hStdError = pipe_write;
 	StartupInfo.dwFlags = STARTF_USESTDHANDLES;
 
-	const BOOL status = CreateProcessW(
-	    lpApplicationNameW, commandW, lpProcessAttributes, lpThreadAttributes, bInheritHandles,
+	LPWCH lpszEnvironmentBlock = GetEnvironmentStringsW();
+	if (!lpszEnvironmentBlock)
+		goto fail;
+
+	BOOL status = WrapCreateProcessW(
+	    lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles,
 	    dwCreationFlags, lpEnvironment, lpCurrentDirectory, &StartupInfo, &ProcessInformation);
 
 	if (!status)
@@ -78,181 +138,113 @@ static int testB(const char* lpApplicationName, const char* command, int expecte
 		printf("CreateProcess failed. error=%" PRIu32 "\n", GetLastError());
 		goto fail;
 	}
-	rc--;
-
-	const DWORD wstatus = WaitForSingleObject(ProcessInformation.hProcess, 5000);
-	if (wstatus != WAIT_OBJECT_0)
-	{
-		printf("Failed to wait [0x%08" PRIx32 "] for second process. error=%" PRIu32 "\n", wstatus,
-		       GetLastError());
-		goto fail;
-	}
-	rc--;
 
 	DWORD read_bytes = 0;
-	char buf[1024] = WINPR_C_ARRAY_INIT;
-	if (!ReadFile(pipe_read, buf, sizeof(buf) - 1, &read_bytes, nullptr))
-		goto fail;
-	rc--;
-
-	if (expectedOutput)
+	DWORD wstatus = WAIT_OBJECT_0;
+	do
 	{
-		const size_t len = strlen(expectedOutput);
-		if (read_bytes != len)
+		char buf[1024] = WINPR_C_ARRAY_INIT;
+		read_bytes = 0;
+		if (!ReadFile(pipe_read, buf, sizeof(buf) - 1, &read_bytes, nullptr))
 		{
-			(void)fprintf(stderr,
-			              "expected output length does not match data read: %" PRIuz " vs %" PRIu32
-			              "\n",
-			              len, read_bytes);
+			printf("ReadFile: No or unexpected data read from pipe\n");
 			goto fail;
 		}
-		rc--;
-		if (strncmp(buf, expectedOutput, read_bytes) != 0)
-		{
-			(void)fprintf(stderr, "expected output does not match data read:\n%s\n%s\n",
-			              expectedOutput, buf);
-			goto fail;
-		}
-		rc--;
-	}
-	DWORD exitCode = 0;
-	if (!GetExitCodeProcess(ProcessInformation.hProcess, &exitCode))
-		goto fail;
-	rc--;
-
-	printf("GetExitCodeProcess status: %" PRId32 "\n", status);
-	printf("Process exited with code: 0x%08" PRIX32 "\n", exitCode);
-
-	if (exitCode != expected)
-		goto fail;
-	rc = 0;
-
-fail:
-	FreeEnvironmentStrings(lpszEnvironmentBlock);
-	if (pipe_read)
-		(void)CloseHandle(pipe_read);
-	if (pipe_write)
-		(void)CloseHandle(pipe_write);
-	if (ProcessInformation.hProcess)
-		(void)CloseHandle(ProcessInformation.hProcess);
-	if (ProcessInformation.hThread)
-		(void)CloseHandle(ProcessInformation.hThread);
-	free(commandW);
-	free(lpApplicationNameW);
-	return rc;
-}
-
-static int testA(const char* lpApplicationName, const char* command, int expected)
-{
-	int rc = -1;
-
-	LPSECURITY_ATTRIBUTES lpProcessAttributes = nullptr;
-	LPSECURITY_ATTRIBUTES lpThreadAttributes = nullptr;
-	BOOL bInheritHandles = 0;
-	DWORD dwCreationFlags = 0;
-	LPCWSTR lpCurrentDirectory = nullptr;
-	STARTUPINFOW StartupInfo = WINPR_C_ARRAY_INIT;
-	PROCESS_INFORMATION ProcessInformation = WINPR_C_ARRAY_INIT;
-
-	LPTCH lpszEnvironmentBlock = GetEnvironmentStrings();
-
-#ifdef _UNICODE
-	dwCreationFlags |= CREATE_UNICODE_ENVIRONMENT;
-#endif
-	LPVOID lpEnvironment = lpszEnvironmentBlock;
-	StartupInfo.cb = sizeof(STARTUPINFOW);
-
-	LPWSTR lpApplicationNameW = nullptr;
-	LPWSTR commandW = nullptr;
-	if (lpApplicationName)
-		lpApplicationNameW = ConvertUtf8ToWCharAlloc(lpApplicationName, nullptr);
-	if (command)
-		commandW = ConvertUtf8ToWCharAlloc(command, nullptr);
-
-	const BOOL status = CreateProcessW(
-	    lpApplicationNameW, commandW, lpProcessAttributes, lpThreadAttributes, bInheritHandles,
-	    dwCreationFlags, lpEnvironment, lpCurrentDirectory, &StartupInfo, &ProcessInformation);
-
-	if (!status)
-	{
-		printf("CreateProcess failed. error=%" PRIu32 "\n", GetLastError());
-		goto fail;
-	}
-	rc--;
+		printf("xxxxxxxxxxxxx: got %u\n", read_bytes);
+		wstatus = WaitForSingleObject(ProcessInformation.hProcess, 0);
+	} while ((read_bytes > 0) && (wstatus == WAIT_TIMEOUT));
 
 	if (WaitForSingleObject(ProcessInformation.hProcess, 5000) != WAIT_OBJECT_0)
 	{
-		printf("Failed to wait for first process. error=%" PRIu32 "\n", GetLastError());
+		printf("Failed to wait for second process. error=%" PRIu32 "\n", GetLastError());
 		goto fail;
 	}
-	rc--;
 
 	DWORD exitCode = 0;
-	if (!GetExitCodeProcess(ProcessInformation.hProcess, &exitCode))
+	status = GetExitCodeProcess(ProcessInformation.hProcess, &exitCode);
+	if (!status)
 		goto fail;
-	rc--;
-	printf("GetExitCodeProcess status: %" PRId32 "\n", status);
-	printf("Process exited with code: 0x%08" PRIX32 "\n", exitCode);
 
 	if (exitCode != expected)
 		goto fail;
 
-	rc = 0;
+	printf("GetExitCodeProcess status: %" PRId32 "\n", status);
+	printf("Process exited with code: 0x%08" PRIX32 "\n", exitCode);
 
+	res = TRUE;
 fail:
-	if (ProcessInformation.hProcess)
-		(void)CloseHandle(ProcessInformation.hProcess);
-	if (ProcessInformation.hThread)
-		(void)CloseHandle(ProcessInformation.hThread);
-	FreeEnvironmentStrings(lpszEnvironmentBlock);
-	free(commandW);
-	free(lpApplicationNameW);
-	return rc;
+	(void)CloseHandle(ProcessInformation.hProcess);
+	(void)CloseHandle(ProcessInformation.hThread);
+	FreeEnvironmentStringsW(lpszEnvironmentBlock);
+	return res;
+}
+
+static int testcommand_buffer(const WCHAR* lpApplicationName, const WCHAR* command, int expected,
+                              const WCHAR* expectedOutput)
+{
+	if (!testNoPipes(lpApplicationName, command, expected, expectedOutput))
+		return -1;
+	if (!testStdOutPipes(lpApplicationName, command, expected, expectedOutput))
+		return -2;
+	return 0;
 }
 
 static int testcommand(const char* lpApplicationName, const char* command, int expected,
                        const char* expectedOutput)
 {
 	printf("testing: %s [expect %d]\n\n", command, expected);
-	const int rc1 = testA(lpApplicationName, command, expected);
-	const int rc2 = testB(lpApplicationName, command, expected, expectedOutput);
-	if (rc1 != 0)
-		return rc1;
-	if (rc2 != 0)
-		return rc2 - 0x100;
-	return 0;
+
+	WCHAR* lpAppW = nullptr;
+	WCHAR* lpCmdW = nullptr;
+	WCHAR* lpExpW = nullptr;
+
+	if (lpApplicationName)
+		lpAppW = ConvertUtf8ToWCharAlloc(lpApplicationName, nullptr);
+	if (command)
+		lpCmdW = ConvertUtf8ToWCharAlloc(command, nullptr);
+	if (expectedOutput)
+		lpExpW = ConvertUtf8ToWCharAlloc(expectedOutput, nullptr);
+
+	const int rc = testcommand_buffer(lpAppW, lpCmdW, expected, lpExpW);
+	free(lpAppW);
+	free(lpCmdW);
+	free(lpExpW);
+	return rc;
 }
 
 int TestThreadCreateProcess(WINPR_ATTR_UNUSED int argc, WINPR_ATTR_UNUSED char* argv[])
 {
 	const test_case_t commands[] = {
 #if defined(_WIN32)
-		{ "cmd /C set", 0, nullptr }
+		{ nullptr, "cmd /C set", 0, nullptr }
 #else
-		{ "find -fadsjsd", 1, nullptr }, { "find .", 0, nullptr }, { "echo foobar", 0, "foobar\n" }
+		{ "find", "-fadsjsd", 1, nullptr },
+		{ "find", ".", 0, nullptr },
+		{ nullptr, "echo foobar", 0, "foobar\n" }
 #endif
 	};
 
 	if (argc > 1)
 	{
-		if ((argc % 2) == 0)
+		if ((argc % 3) != 1)
 		{
-			(void)fprintf(stderr,
-			              "usage: %s <comand> <return code> [<command2> <return code2> ...]\n",
-			              argv[0]);
+			(void)fprintf(
+			    stderr,
+			    "usage: %s <comand> <args> <return code> [<command2> <args> <return code2> ...]\n",
+			    argv[0]);
 			return -1;
 		}
 
-		for (int x = 1; x < argc; x += 2)
+		for (int x = 1; x < argc; x += 3)
 		{
-			long val = strtol(argv[x + 1], nullptr, 0);
+			long val = strtol(argv[x + 2], nullptr, 0);
 			if (errno)
 			{
 				char buffer[128] = WINPR_C_ARRAY_INIT;
-				(void)fprintf(stderr, "failed to convert argv[%d]=%s : %s\n", x + 1, argv[x + 1],
-				              winpr_strerror(errno, buffer, sizeof(buffer)));
+				(void)fprintf(stderr, "failed to convert argv[%d]=%s %s : %s\n", x + 1, argv[x + 1],
+				              argv[x + 2], winpr_strerror(errno, buffer, sizeof(buffer)));
 			}
-			const int res = testcommand(argv[0], argv[x], (int)val, nullptr);
+			const int res = testcommand(argv[x], argv[x + 1], (int)val, nullptr);
 			if (res != 0)
 				return res;
 		}
@@ -262,25 +254,9 @@ int TestThreadCreateProcess(WINPR_ATTR_UNUSED int argc, WINPR_ATTR_UNUSED char* 
 	for (size_t x = 0; x < ARRAYSIZE(commands); x++)
 	{
 		const test_case_t* cur = &commands[x];
-		const int res1 = testcommand(nullptr, cur->command, cur->expected, cur->output);
+		const int res1 = testcommand(cur->app, cur->command, cur->expected, cur->output);
 		if (res1 != 0)
 			return res1;
-
-		char* app = strdup(cur->command);
-		if (!app)
-			return -1;
-		char* command = strchr(app, ' ');
-		if (!command)
-		{
-			free(app);
-			return -1;
-		}
-		*command++ = '\0';
-
-		const int res2 = testcommand(app, command, cur->expected, cur->output);
-		free(app);
-		if (res2 != 0)
-			return res2;
 	}
 	return 0;
 }
