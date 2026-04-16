@@ -293,3 +293,12 @@ name = msusb_mspipes_replace
 [suppress_function]
 change_kind = function-subtype-change
 name = scard_log_status_error_wlog
+
+[suppress_function]
+change_kind = CommandLineToArgvA
+name = add_device
+
+[suppress_function]
+change_kind = CommandLineToArgvW
+name = add_device
+
