@@ -207,7 +207,6 @@ static BOOL prepare_certificates(const char* path)
 	DWORD status = 0;
 	STARTUPINFOA si = WINPR_C_ARRAY_INIT;
 	PROCESS_INFORMATION process = WINPR_C_ARRAY_INIT;
-	char commandLine[8192] = WINPR_C_ARRAY_INIT;
 
 	if (!path)
 		return FALSE;
@@ -216,8 +215,8 @@ static BOOL prepare_certificates(const char* path)
 	                  "winpr-makecert" CMAKE_EXECUTABLE_SUFFIX);
 	if (!exe)
 		return FALSE;
-	(void)_snprintf(commandLine, sizeof(commandLine), "%s -format crt -path . -n server", exe);
 
+	const char commandLine[] = "-format crt -path . -n server";
 	rc = CreateProcessA(exe, commandLine, nullptr, nullptr, TRUE, 0, nullptr, path, &si, &process);
 	free(exe);
 	if (!rc)
