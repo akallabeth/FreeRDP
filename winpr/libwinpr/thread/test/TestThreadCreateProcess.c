@@ -151,9 +151,12 @@ static BOOL testStdOutPipes(const WCHAR* lpApplicationName, const WCHAR* lpComma
 		const DWORD wstatus = WaitForMultipleObjects(ARRAYSIZE(hdl), hdl, FALSE, 0);
 		switch (wstatus)
 		{
-			case WAIT_TIMEOUT:
+			case WAIT_OBJECT_0:
+				running = false;
+				break;
+			default:
 			{
-				char buf[1024] = WINPR_C_ARRAY_INIT;
+				char buf[2] = WINPR_C_ARRAY_INIT;
 				DWORD read_bytes = 0;
 
 				if (WAIT_OBJECT_0 == WaitForSingleObject(pipe_read, 0))
@@ -171,12 +174,7 @@ static BOOL testStdOutPipes(const WCHAR* lpApplicationName, const WCHAR* lpComma
 						running = false;
 				}
 			}
-			break;
-			case WAIT_OBJECT_0:
-				running = false;
-				break;
-			default:
-				break;
+			    break;
 		}
 	}
 
