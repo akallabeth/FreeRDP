@@ -147,24 +147,29 @@ static BOOL testStdOutPipes(const WCHAR* lpApplicationName, const WCHAR* lpComma
 	bool running = true;
 	while (running)
 	{
-		const DWORD wstatus = WaitForSingleObject(ProcessInformation.hProcess, 0);
+		HANDLE hdl[] = { ProcessInformation.hProcess, pipe_read };
+		const DWORD wstatus = WaitForMultipleObjects(ARRAYSIZE(hdl), hdl, FALSE, 0);
 		switch (wstatus)
 		{
 			case WAIT_TIMEOUT:
 			{
 				char buf[1024] = WINPR_C_ARRAY_INIT;
 				DWORD read_bytes = 0;
-				if (!ReadFile(pipe_read, buf, sizeof(buf) - 1, &read_bytes, nullptr))
-				{
-					printf("ReadFile: No or unexpected data read from pipe\n");
-					goto fail;
-				}
 
-				if (!Stream_EnsureRemainingCapacity(s, read_bytes))
-					goto fail;
-				Stream_Write(s, buf, read_bytes);
-				if (read_bytes == 0)
-					running = false;
+				if (WAIT_OBJECT_0 == WaitForSingleObject(pipe_read, 0))
+				{
+					if (!ReadFile(pipe_read, buf, sizeof(buf) - 1, &read_bytes, nullptr))
+					{
+						printf("ReadFile: No or unexpected data read from pipe\n");
+						goto fail;
+					}
+
+					if (!Stream_EnsureRemainingCapacity(s, read_bytes))
+						goto fail;
+					Stream_Write(s, buf, read_bytes);
+					if (read_bytes == 0)
+						running = false;
+				}
 			}
 			break;
 			case WAIT_OBJECT_0:
