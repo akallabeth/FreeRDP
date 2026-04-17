@@ -156,11 +156,18 @@ static BOOL testStdOutPipes(const WCHAR* lpApplicationName, const WCHAR* lpComma
 				break;
 			default:
 			{
-				char buf[2] = WINPR_C_ARRAY_INIT;
-				DWORD read_bytes = 0;
-
-				if (WAIT_OBJECT_0 == WaitForSingleObject(pipe_read, 0))
+				DWORD total = 0;
+				if (!PeekNamedPipe(pipe_read, nullptr, 0, 0, &total, nullptr))
 				{
+					printf("PeekNamedPipe: No or unexpected data read from pipe\n");
+					total = 1;
+				}
+
+				if (total > 0)
+				{
+					char buf[1024] = WINPR_C_ARRAY_INIT;
+					DWORD read_bytes = 0;
+
 					if (!ReadFile(pipe_read, buf, sizeof(buf) - 1, &read_bytes, nullptr))
 					{
 						printf("ReadFile: No or unexpected data read from pipe\n");
@@ -257,7 +264,7 @@ int TestThreadCreateProcess(WINPR_ATTR_UNUSED int argc, WINPR_ATTR_UNUSED char* 
 {
 	const test_case_t commands[] = {
 #if defined(_WIN32)
-		{ nullptr, "cmd /C set", 0, nullptr }
+		{ nullptr, "cmd /C set", 0, nullptr }, { nullptr, "cmd /C echo foobar", 0, "foobar\r\n" }
 #else
 		{ "find", "-fadsjsd", 1, "find: unknown predicate `-fadsjsd'\n" },
 		{ "find", ".", 0, nullptr },
