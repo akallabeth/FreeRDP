@@ -312,7 +312,7 @@ LPCH GetEnvironmentStringsA(VOID)
 LPWCH GetEnvironmentStringsW(VOID)
 {
 	WLog_ERR(TAG, "TODO: not implemented");
-	return nullptr;
+	return _wcsdup(u"foobar");
 }
 
 BOOL SetEnvironmentStringsA(WINPR_ATTR_UNUSED LPCH NewEnvironment)

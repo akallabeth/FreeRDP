@@ -9,6 +9,7 @@
 #include <winpr/thread.h>
 #include <winpr/environment.h>
 #include <winpr/pipe.h>
+#include <winpr/stream.h>
 
 typedef struct
 {
@@ -35,7 +36,7 @@ static BOOL WrapCreateProcessW(LPCWSTR lpApplicationName, LPWSTR lpCommandLine,
 	return rc;
 }
 static BOOL testNoPipes(const WCHAR* lpApplicationName, const WCHAR* lpCommandLine, int expected,
-                        const WCHAR* expectedOutput)
+                        const char* expectedOutput)
 {
 	// LPTSTR lpCommandLine;
 	LPSECURITY_ATTRIBUTES lpProcessAttributes = nullptr;
@@ -89,7 +90,7 @@ fail:
 }
 
 static BOOL testStdOutPipes(const WCHAR* lpApplicationName, const WCHAR* lpCommandLine,
-                            int expected, const WCHAR* expectedOutput)
+                            int expected, const char* expectedOutput)
 {
 	BOOL res = FALSE;
 	// LPTSTR lpCommandLine;
@@ -120,6 +121,10 @@ static BOOL testStdOutPipes(const WCHAR* lpApplicationName, const WCHAR* lpComma
 		return FALSE;
 	}
 
+	wStream* s = Stream_New(nullptr, 1024);
+	if (!s)
+		goto fail;
+
 	StartupInfo.cb = sizeof(STARTUPINFOW);
 	StartupInfo.hStdOutput = pipe_write;
 	StartupInfo.hStdError = pipe_write;
@@ -141,18 +146,35 @@ static BOOL testStdOutPipes(const WCHAR* lpApplicationName, const WCHAR* lpComma
 
 	DWORD read_bytes = 0;
 	DWORD wstatus = WAIT_OBJECT_0;
-	do
+	bool running = true;
+	while (running)
 	{
-		char buf[1024] = WINPR_C_ARRAY_INIT;
-		read_bytes = 0;
-		if (!ReadFile(pipe_read, buf, sizeof(buf) - 1, &read_bytes, nullptr))
+		HANDLE hdl[] = { pipe_read, ProcessInformation.hProcess };
+		wstatus = WaitForMultipleObjects(ARRAYSIZE(hdl), hdl, FALSE, 0);
+		switch (wstatus)
 		{
-			printf("ReadFile: No or unexpected data read from pipe\n");
-			goto fail;
+			case WAIT_OBJECT_0:
+			{
+				char buf[1024] = WINPR_C_ARRAY_INIT;
+				read_bytes = 0;
+				if (!ReadFile(pipe_read, buf, sizeof(buf) - 1, &read_bytes, nullptr))
+				{
+					printf("ReadFile: No or unexpected data read from pipe\n");
+					goto fail;
+				}
+
+				if (!Stream_EnsureRemainingCapacity(s, read_bytes))
+					goto fail;
+				Stream_Write(s, buf, read_bytes);
+			}
+			break;
+			case WAIT_OBJECT_0 + 1:
+				running = false;
+				break;
+			default:
+				break;
 		}
-		printf("xxxxxxxxxxxxx: got %u\n", read_bytes);
-		wstatus = WaitForSingleObject(ProcessInformation.hProcess, 0);
-	} while ((read_bytes > 0) && (wstatus == WAIT_TIMEOUT));
+	}
 
 	if (WaitForSingleObject(ProcessInformation.hProcess, 5000) != WAIT_OBJECT_0)
 	{
@@ -168,6 +190,26 @@ static BOOL testStdOutPipes(const WCHAR* lpApplicationName, const WCHAR* lpComma
 	if (exitCode != expected)
 		goto fail;
 
+	Stream_SealLength(s);
+
+	if (expectedOutput)
+	{
+		const size_t elen = strlen(expectedOutput);
+		if (elen != Stream_Length(s))
+		{
+			printf("Data sizes read do not match expectations: got %" PRIuz ", expected %" PRIuz
+			       "\n",
+			       elen, Stream_Length(s));
+			goto fail;
+		}
+
+		if (strncmp(expectedOutput, Stream_BufferAs(s, char), elen))
+		{
+			printf("Data read does not match expectations\n");
+			goto fail;
+		}
+	}
+
 	printf("GetExitCodeProcess status: %" PRId32 "\n", status);
 	printf("Process exited with code: 0x%08" PRIX32 "\n", exitCode);
 
@@ -176,11 +218,12 @@ fail:
 	(void)CloseHandle(ProcessInformation.hProcess);
 	(void)CloseHandle(ProcessInformation.hThread);
 	FreeEnvironmentStringsW(lpszEnvironmentBlock);
+	Stream_Free(s, TRUE);
 	return res;
 }
 
 static int testcommand_buffer(const WCHAR* lpApplicationName, const WCHAR* command, int expected,
-                              const WCHAR* expectedOutput)
+                              const char* expectedOutput)
 {
 	if (!testNoPipes(lpApplicationName, command, expected, expectedOutput))
 		return -1;
@@ -196,19 +239,15 @@ static int testcommand(const char* lpApplicationName, const char* command, int e
 
 	WCHAR* lpAppW = nullptr;
 	WCHAR* lpCmdW = nullptr;
-	WCHAR* lpExpW = nullptr;
 
 	if (lpApplicationName)
 		lpAppW = ConvertUtf8ToWCharAlloc(lpApplicationName, nullptr);
 	if (command)
 		lpCmdW = ConvertUtf8ToWCharAlloc(command, nullptr);
-	if (expectedOutput)
-		lpExpW = ConvertUtf8ToWCharAlloc(expectedOutput, nullptr);
 
-	const int rc = testcommand_buffer(lpAppW, lpCmdW, expected, lpExpW);
+	const int rc = testcommand_buffer(lpAppW, lpCmdW, expected, expectedOutput);
 	free(lpAppW);
 	free(lpCmdW);
-	free(lpExpW);
 	return rc;
 }
 
@@ -218,7 +257,7 @@ int TestThreadCreateProcess(WINPR_ATTR_UNUSED int argc, WINPR_ATTR_UNUSED char* 
 #if defined(_WIN32)
 		{ nullptr, "cmd /C set", 0, nullptr }
 #else
-		{ "find", "-fadsjsd", 1, nullptr },
+		{ "find", "-fadsjsd", 1, "find: unknown predicate `-fadsjsd'\n" },
 		{ "find", ".", 0, nullptr },
 		{ nullptr, "echo foobar", 0, "foobar\n" }
 #endif
