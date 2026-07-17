@@ -30,8 +30,16 @@ set(_ossl_env "CROSS_TOP=${_ossl_cross_top}" "CROSS_SDK=${_ossl_cross_sdk}" "CC=
 
 if(BUILD_SHARED_LIBS)
   set(ARGS shared)
+  set(_ossl_install_name_commands
+      COMMAND install_name_tool -id @rpath/libcrypto.4.dylib
+      ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libcrypto.4.dylib COMMAND install_name_tool -id @rpath/libssl.4.dylib
+      ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libssl.4.dylib COMMAND install_name_tool -change
+      ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libcrypto.4.dylib @rpath/libcrypto.4.dylib
+      ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libssl.4.dylib
+  )
 else()
   set(ARGS no-shared)
+  set(_ossl_install_name_commands)
 endif()
 
 ExternalProject_Add(
@@ -46,5 +54,5 @@ ExternalProject_Add(
   CONFIGURE_COMMAND ${CMAKE_COMMAND} -E env ${_ossl_env} perl <SOURCE_DIR>/Configure ${_ossl_config_args} ${ARGS}
                     no-tests no-apps no-docs --prefix=${DEPS_INSTALL_DIR} --libdir=${CMAKE_INSTALL_LIBDIR}
   BUILD_COMMAND ${CMAKE_COMMAND} -E env ${_ossl_env} make -j build_sw
-  INSTALL_COMMAND ${CMAKE_COMMAND} -E env ${_ossl_env} make install_sw
+  INSTALL_COMMAND ${CMAKE_COMMAND} -E env ${_ossl_env} make install_sw ${_ossl_install_name_commands}
 )

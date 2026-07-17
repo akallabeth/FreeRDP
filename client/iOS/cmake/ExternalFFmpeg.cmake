@@ -42,7 +42,7 @@ ExternalProject_Add(
     --disable-autodetect --disable-everything --disable-avdevice --disable-avformat --disable-avfilter --enable-swscale
     --enable-swresample --enable-avcodec --enable-avutil --enable-decoder=h264 --enable-parser=h264
     --enable-decoder=hevc --enable-parser=hevc --enable-videotoolbox --enable-hwaccel=h264_videotoolbox
-    --enable-hwaccel=hevc_videotoolbox --libdir=${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}
+    --enable-hwaccel=hevc_videotoolbox --install-name-dir=@rpath --libdir=${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}
   BUILD_COMMAND make -j
   INSTALL_COMMAND make -j install
 )
