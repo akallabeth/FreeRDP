@@ -208,8 +208,6 @@ set(IOS_CLIENT_RESOURCES_XIBS
 )
 
 set(IOS_CLIENT_RESOURCES_PNGS
-    Resources/about_page/background_transparent.png
-    Resources/about_page/FreeRDP_Logo.png
     Resources/alert-black-button@2x.png
     Resources/alert-black-button.png
     Resources/alert-gray-button@2x.png
@@ -262,6 +260,13 @@ set(IOS_CLIENT_RESOURCES_PNGS
     Resources/touch_pointer_scroll.png
 )
 
+set(IOS_CLIENT_RESOURCES_ABOUT_PAGE
+    Resources/about_page/FreeRDP_Logo.png Resources/about_page/back.jpg Resources/about_page/background_transparent.png
+    Resources/about_page/about.html Resources/about_page/about_phone.html
+)
+
+set(IOS_CLIENT_RESOURCES_LOCALE Resources/en.lproj/Localizable.strings)
+
 # Specify source grouping
 source_group(Additions FILES ${IOS_CLIENT_ADDITIONS_SRCS} ${IOS_CLIENT_ADDITIONS_HDRS})
 source_group(Controllers FILES ${IOS_CLIENT_CONTROLLERS_SRCS} ${IOS_CLIENT_CONTROLLERS_HDRS})
@@ -269,7 +274,9 @@ source_group(FreeRDP FILES ${IOS_CLIENT_FREERDP_SRCS} ${IOS_CLIENT_FREERDP_HDRS}
 source_group(Misc FILES ${IOS_CLIENT_MISC_SRCS} ${IOS_CLIENT_MISC_HDRS})
 source_group(Models FILES ${IOS_CLIENT_MODELS_SRCS} ${IOS_CLIENT_MODELS_HDRS})
 source_group(Views FILES ${IOS_CLIENT_RESOURCES_XIBS} ${IOS_CLIENT_VIEWS_SRCS} ${IOS_CLIENT_VIEWS_HDRS})
-source_group(Resources FILES ${IOS_CLIENT_RESOURCES_PNGS} ${IOS_CLIENT_RESOURCES_DIR}/en.lproj)
+source_group(
+  Resources FILES ${IOS_CLIENT_RESOURCES_PNGS} ${IOS_CLIENT_RESOURCES_LOCALE} ${IOS_CLIENT_RESOURCES_ABOUT_PAGE}
+)
 
 # import libraries
 find_library(FOUNDATION_FRAMEWORK Foundation REQUIRED)
@@ -297,6 +304,12 @@ set(EXTRA_LIBS
 set(APP_ICON "${FREERDP_SOURCE_DIR}/resources/FreeRDP_OSX.icns")
 set(RESOURCES ${IOS_CLIENT_RESOURCES_XIBS} ${IOS_CLIENT_RESOURCES_PNGS} ${IOS_CLIENT_DIR}/Defaults.plist ${APP_ICON})
 set_source_files_properties(${RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+set_source_files_properties(
+  ${IOS_CLIENT_RESOURCES_ABOUT_PAGE} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources/about_page"
+)
+set_source_files_properties(${IOS_CLIENT_RESOURCES_LOCALE} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources/en.lproj")
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/iFreeRDP.plist.in ${CMAKE_CURRENT_BINARY_DIR}/iFreeRDP.plist @ONLY)
 
 add_executable(
   ${PROJECT_NAME} MACOSX_BUNDLE
@@ -313,19 +326,80 @@ add_executable(
   ${IOS_CLIENT_MODELS_HDRS}
   ${IOS_CLIENT_VIEWS_SRCS}
   ${IOS_CLIENT_VIEWS_HDRS}
+  ${RESOURCES}
+  ${IOS_CLIENT_RESOURCES_ABOUT_PAGE}
+  ${IOS_CLIENT_RESOURCES_LOCALE}
 )
 
 add_dependencies(${PROJECT_NAME} freerdp)
 
+add_custom_command(
+  TARGET ${PROJECT_NAME}
+  POST_BUILD
+  COMMAND
+    ${CMAKE_COMMAND} -DBUNDLE_PATH=$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>
+    -DBUNDLE_SEARCH_PATHS=${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR} -P
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/FixupBundle.cmake
+)
+
+set(_ios_embed_frameworks
+    ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libfreerdp3.3.dylib
+    ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libfreerdp-client3.3.dylib
+    ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libwinpr3.3.dylib
+)
+if(WITH_OPENSSL)
+  list(APPEND _ios_embed_frameworks ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libssl.4.dylib
+       ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libcrypto.4.dylib
+  )
+endif()
+if(WITH_FFMPEG)
+  list(APPEND _ios_embed_frameworks ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libavcodec.62.dylib
+       ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libavutil.60.dylib
+       ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libswresample.6.dylib
+       ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libswscale.9.dylib
+  )
+endif()
+if(WITH_OPENH264)
+  list(APPEND _ios_embed_frameworks ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libopenh264.8.dylib)
+endif()
+if(WITH_OPUS)
+  list(APPEND _ios_embed_frameworks ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libopus.0.dylib)
+endif()
+if(WITH_PNG)
+  list(APPEND _ios_embed_frameworks ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/png.framework)
+endif()
+if(WITH_JPEG)
+  list(APPEND _ios_embed_frameworks ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libjpeg.62.dylib)
+endif()
+if(WITH_WEBP)
+  list(APPEND _ios_embed_frameworks ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libwebp.7.dylib
+       ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libsharpyuv.0.dylib
+  )
+endif()
+if(WITH_CJSON)
+  list(APPEND _ios_embed_frameworks ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/libcjson.1.dylib)
+endif()
+if(WITH_URIPARSER)
+  list(APPEND _ios_embed_frameworks ${DEPS_INSTALL_DIR}/${CMAKE_INSTALL_LIBDIR}/liburiparser.1.dylib)
+endif()
+
 set_target_properties(
   ${PROJECT_NAME}
   PROPERTIES # FOLDER "Client/iOS"
-             RESOURCE "${RESOURCES}" MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME} MACOSX_BUNDLE_BUNDLE_VERSION
-                                                                               ${PROJECT_VERSION}
-             MACOSX_BUNDLE_COPYRIGHT "Copyright 2013-${VERSION_YEAR}. All Rights Reserved." MACOSX_BUNDLE_GUI_IDENTIFIER
-                                                                                            "com.freerdp.ifreerdp"
-             MACOSX_BUNDLE_ICON_FILE "FreeRDP_OSX.icns" MACOSX_BUNDLE_INFO_STRING "info string TODO"
-             MACOSX_BUNDLE_LONG_VERSION_STRING ${PROJECT_VERSION} MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
+             RESOURCE "${RESOURCES}"
+             MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
+             MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+             MACOSX_BUNDLE_COPYRIGHT "Copyright 2013-${VERSION_YEAR}. All Rights Reserved."
+             MACOSX_BUNDLE_GUI_IDENTIFIER "com.freerdp.ifreerdp"
+             MACOSX_BUNDLE_ICON_FILE "FreeRDP_OSX.icns"
+             MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_BINARY_DIR}/iFreeRDP.plist
+             MACOSX_BUNDLE_INFO_STRING "info string TODO"
+             MACOSX_BUNDLE_LONG_VERSION_STRING ${PROJECT_VERSION}
+             MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
+             BUILD_RPATH "@executable_path/Frameworks"
+             INSTALL_RPATH "@executable_path/Frameworks"
+             XCODE_EMBED_FRAMEWORKS "${_ios_embed_frameworks}"
+             XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY ON
 )
 target_compile_options(${PROJECT_NAME} PRIVATE -fno-objc-arc)
 
@@ -338,8 +412,10 @@ install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION . COMPONENT Runtime
         FRAMEWORK DESTINATION ${PROJECT_NAME}.app/${CMAKE_INSTALL_LIBDIR} COMPONENT Runtime
         RESOURCE DESTINATION ${PROJECT_NAME}.app/${CMAKE_INSTALL_DATADIR} COMPONENT Runtime
 )
+install(FILES ${IOS_CLIENT_RESOURCES_ABOUT_PAGE} DESTINATION ${PROJECT_NAME}.app/about_page COMPONENT Runtime)
+install(FILES ${IOS_CLIENT_RESOURCES_LOCALE} DESTINATION ${PROJECT_NAME}.app/en.lproj COMPONENT Runtime)
 
-set(APPS "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}.app")
+set(APPS "\${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}.app")
 # Use the specified certificate
 install(CODE "include(${CMAKE_SOURCE_DIR}/cmake/BundleUtilities.cmake)
 fixup_bundle(\"${APPS}\" \"\" \"${CMAKE_PREFIX_PATH}\")
