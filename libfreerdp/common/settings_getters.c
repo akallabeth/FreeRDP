@@ -3431,15 +3431,15 @@ BOOL freerdp_settings_set_string_log(const char* file, size_t line, const char* 
                                      WINPR_ATTR_UNUSED rdpSettings* settings,
                                      WINPR_ATTR_UNUSED FreeRDP_Settings_Keys_String id,
                                      const char* val, size_t len)
-
 {
 	const DWORD level = WLOG_DEBUG;
 
 	wLog* log = WLog_Get(TAG);
-if (WLog_IsLevelActive(log, level) {
-		WLog_PrintTextMessage(log, level, line, fname, fkt, "Setting %s to %s [%" PRiuz "]",
+	if (WLog_IsLevelActive(log, level))
+	{
+		WLog_PrintTextMessage(log, level, line, file, fkt, "Setting %s to %s [%" PRiuz "]",
 		                      freerdp_settings_get_type_name_for_key(id), val, len);
-}
+	}
 	union
 	{
 		void* v;
