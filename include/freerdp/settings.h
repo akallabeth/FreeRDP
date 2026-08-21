@@ -555,9 +555,13 @@ extern "C"
 	 *
 	 *  \return \b TRUE for success, \b FALSE for failure
 	 */
+#define freerdp_settings_set_string(settings, id, val) \
+	freerdp_settings_set_string_log((__FILE__), (__LINE__), (__func__), (settings), (id), (val))
 	WINPR_ATTR_NODISCARD
-	FREERDP_API BOOL freerdp_settings_set_string(rdpSettings* settings,
-	                                             FreeRDP_Settings_Keys_String id, const char* val);
+	FREERDP_API BOOL freerdp_settings_set_string_log(const char* file, size_t line, const char* fkt,
+	                                                 rdpSettings* settings,
+	                                                 FreeRDP_Settings_Keys_String id,
+	                                                 const char* val);
 
 	/** \brief appends a string to a settings value. The \b param is copied.
 	 *  If the initial value of the setting was not empty, @code <old value><separator><param>

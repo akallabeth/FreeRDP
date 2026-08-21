@@ -3427,11 +3427,19 @@ char* freerdp_settings_get_string_writable(rdpSettings* settings, FreeRDP_Settin
 	}
 }
 
-BOOL freerdp_settings_set_string_(WINPR_ATTR_UNUSED rdpSettings* settings,
-                                  WINPR_ATTR_UNUSED FreeRDP_Settings_Keys_String id,
-                                  const char* val, size_t len)
+BOOL freerdp_settings_set_string_log(const char* file, size_t line, const char* fkt,
+                                     WINPR_ATTR_UNUSED rdpSettings* settings,
+                                     WINPR_ATTR_UNUSED FreeRDP_Settings_Keys_String id,
+                                     const char* val, size_t len)
 
 {
+	const DWORD level = WLOG_DEBUG;
+
+	wLog* log = WLog_Get(TAG);
+if (WLog_IsLevelActive(log, level) {
+		WLog_PrintTextMessage(log, level, line, fname, fkt, "Setting %s to %s [%" PRiuz "]",
+		                      freerdp_settings_get_type_name_for_key(id), val, len);
+}
 	union
 	{
 		void* v;
@@ -3786,9 +3794,12 @@ BOOL freerdp_settings_set_string_len(rdpSettings* settings, FreeRDP_Settings_Key
 	return freerdp_settings_set_string_copy_(settings, id, val, len, TRUE);
 }
 
-BOOL freerdp_settings_set_string(rdpSettings* settings, FreeRDP_Settings_Keys_String id,
-                                 const char* val)
+BOOL freerdp_settings_set_string_(rdpSettings* settings, FreeRDP_Settings_Keys_String id,
+                                  const char* val)
 {
+	if (id == FreeRDP_Domain)
+	{
+	}
 	size_t len = 0;
 	if (val)
 		len = strlen(val);
