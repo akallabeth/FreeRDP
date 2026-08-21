@@ -3797,7 +3797,7 @@ BOOL freerdp_settings_set_string_log(const char* file, size_t line, const char* 
 	if (WLog_IsLevelActive(log, level))
 	{
 		WLog_PrintTextMessage(log, level, line, file, fkt, "Setting %s to %s",
-		                      freerdp_settings_get_type_name_for_key(id), val);
+		                      freerdp_settings_get_name_for_key(id), val);
 	}
 	size_t len = 0;
 	if (val)
