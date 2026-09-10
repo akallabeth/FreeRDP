@@ -245,15 +245,6 @@ fail:
 }
 #endif
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-BYTE* freerdp_glyph_convert(UINT32 width, UINT32 height, const BYTE* WINPR_RESTRICT data)
-{
-	const size_t scanline = (width + 7ull) / 8ull;
-	const size_t required = scanline * height;
-	return freerdp_glyph_convert_ex(width, height, data, required);
-}
-#endif
-
 BYTE* freerdp_glyph_convert_ex(UINT32 width, UINT32 height, const BYTE* WINPR_RESTRICT data,
                                size_t len)
 {

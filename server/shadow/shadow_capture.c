@@ -76,16 +76,6 @@ int shadow_capture_align_clip_rect(RECTANGLE_16* rect, const RECTANGLE_16* clip)
 	return 1;
 }
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-int shadow_capture_compare(const BYTE* WINPR_RESTRICT pData1, UINT32 nStep1, UINT32 nWidth,
-                           UINT32 nHeight, const BYTE* WINPR_RESTRICT pData2, UINT32 nStep2,
-                           RECTANGLE_16* WINPR_RESTRICT rect)
-{
-	return shadow_capture_compare_with_format(pData1, PIXEL_FORMAT_BGRX32, nStep1, nWidth, nHeight,
-	                                          pData2, PIXEL_FORMAT_BGRX32, nStep2, rect);
-}
-#endif
-
 WINPR_ATTR_NODISCARD
 static BOOL color_equal(UINT32 colorA, UINT32 formatA, UINT32 colorB, UINT32 formatB)
 {

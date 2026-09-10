@@ -1932,11 +1932,6 @@ int tls_verify_certificate(rdpTls* tls, const rdpCertificate* cert, const char* 
 					free(efp);
 				}
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-				WINPR_PRAGMA_DIAG_PUSH
-				WINPR_PRAGMA_DIAG_IGNORED_DEPRECATED_DECL
-#endif
-
 				/* Automatically accept certificate on first use */
 				if (settings->AutoAcceptCertificate)
 				{
@@ -1978,18 +1973,6 @@ int tls_verify_certificate(rdpTls* tls, const rdpCertificate* cert, const char* 
 					if (!use_pem)
 						free(fp);
 				}
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-				else if (instance->VerifyCertificate)
-				{
-					char* fp = freerdp_certificate_get_fingerprint(cert);
-
-					WLog_WARN(TAG, "The VerifyCertificate callback is deprecated, migrate your "
-					               "application to VerifyCertificateEx");
-					accept_certificate = instance->VerifyCertificate(instance, common_name, subject,
-					                                                 issuer, fp, !hostname_match);
-					free(fp);
-				}
-#endif
 			}
 			else if (match == -1)
 			{
@@ -2053,32 +2036,11 @@ int tls_verify_certificate(rdpTls* tls, const rdpCertificate* cert, const char* 
 					if (fpIsAllocated)
 						free(fp);
 				}
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-				else if (instance->VerifyChangedCertificate)
-				{
-					char* fp = freerdp_certificate_get_fingerprint(cert);
-					const char* old_subject = freerdp_certificate_data_get_subject(stored_data);
-					const char* old_issuer = freerdp_certificate_data_get_issuer(stored_data);
-					const char* old_fingerprint =
-					    freerdp_certificate_data_get_fingerprint(stored_data);
-
-					WLog_WARN(TAG, "The VerifyChangedCertificate callback is deprecated, migrate "
-					               "your application to VerifyChangedCertificateEx");
-					accept_certificate = instance->VerifyChangedCertificate(
-					    instance, common_name, subject, issuer, fp, old_subject, old_issuer,
-					    old_fingerprint);
-					free(fp);
-				}
-#endif
 
 				freerdp_certificate_data_free(stored_data);
 			}
 			else if (match == 0)
 				accept_certificate = 2; /* success! */
-
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-			WINPR_PRAGMA_DIAG_POP
-#endif
 
 			/* Save certificate or do a simple accept / reject */
 			switch (accept_certificate)

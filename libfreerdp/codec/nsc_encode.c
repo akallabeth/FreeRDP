@@ -488,22 +488,3 @@ BOOL nsc_compose_message(NSC_CONTEXT* WINPR_RESTRICT context, wStream* WINPR_RES
 	    WINPR_ASSERTING_INT_CAST(BYTE, context->ChromaSubsamplingLevel);
 	return nsc_write_message(context, s, &message);
 }
-
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-BOOL nsc_decompose_message(NSC_CONTEXT* WINPR_RESTRICT context, wStream* WINPR_RESTRICT s,
-                           BYTE* WINPR_RESTRICT bmpdata, UINT32 x, UINT32 y, UINT32 width,
-                           UINT32 height, UINT32 rowstride, UINT32 format, UINT32 flip)
-{
-	size_t size = Stream_GetRemainingLength(s);
-
-	if (size > UINT32_MAX)
-		return FALSE;
-
-	if (!nsc_process_message(context, (UINT16)FreeRDPGetBitsPerPixel(context->format), width,
-	                         height, Stream_Pointer(s), (UINT32)size, bmpdata, format, rowstride, x,
-	                         y, width, height, flip))
-		return FALSE;
-	Stream_Seek(s, size);
-	return TRUE;
-}
-#endif

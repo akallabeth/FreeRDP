@@ -20,12 +20,6 @@ set(MODULE_PREFIX "FREERDP_LOCALE")
 
 set(SRCS keyboard_layout.c keyboard.c locale.c liblocale.h)
 
-if(NOT WITHOUT_FREERDP_3x_DEPRECATED)
-  set(X11_SRCS keyboard_x11.c keyboard_x11.h xkb_layout_ids.c xkb_layout_ids.h)
-
-  set(XKBFILE_SRCS keyboard_xkbfile.c keyboard_xkbfile.h)
-endif()
-
 set(SUN_SRCS keyboard_sun.c keyboard_sun.h)
 
 set(APPLE_SRCS keyboard_apple.c keyboard_apple.h)
@@ -52,31 +46,6 @@ endif()
 if(APPLE)
   find_library(CORE_FOUNDATION CoreFoundation REQUIRED)
   freerdp_library_add(${CORE_FOUNDATION})
-endif()
-
-if(WITH_X11 AND NOT WITHOUT_FREERDP_3x_DEPRECATED)
-  find_package(X11 REQUIRED)
-  freerdp_pc_add_requires_private("x11")
-
-  freerdp_definition_add(WITH_X11)
-  freerdp_include_directory_add(${X11_INCLUDE_DIR})
-  list(APPEND SRCS ${X11_SRCS})
-  freerdp_library_add(${X11_LIBRARIES})
-
-  if(WITH_SUN)
-    freerdp_definition_add(WITH_SUN)
-    list(APPEND SRCS ${SUN_SRCS})
-  endif()
-
-  if(X11_Xkbfile_FOUND AND (NOT APPLE))
-    freerdp_pc_add_requires_private("xkbfile")
-    freerdp_definition_add(WITH_XKBFILE)
-    freerdp_include_directory_add(${X11_Xkbfile_INCLUDE_PATH})
-    list(APPEND SRCS ${XKBFILE_SRCS})
-    freerdp_library_add(${X11_Xkbfile_LIB})
-  else()
-    list(APPEND SRCS ${X11_KEYMAP_SRCS})
-  endif()
 endif()
 
 freerdp_module_add(${SRCS})

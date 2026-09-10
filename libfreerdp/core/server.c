@@ -591,40 +591,6 @@ static BOOL WTSReceiveChannelData(freerdp_peer* client, UINT16 channelId, const 
 	return TRUE;
 }
 
-#if defined(WITH_FREERDP_DEPRECATED)
-void WTSVirtualChannelManagerGetFileDescriptor(HANDLE hServer, void** fds, int* fds_count)
-{
-	void* fd = nullptr;
-	WTSVirtualChannelManager* vcm = (WTSVirtualChannelManager*)hServer;
-	WINPR_ASSERT(vcm);
-	WINPR_ASSERT(fds);
-	WINPR_ASSERT(fds_count);
-
-	fd = GetEventWaitObject(MessageQueue_Event(vcm->queue));
-
-	if (fd)
-	{
-		fds[*fds_count] = fd;
-		(*fds_count)++;
-	}
-
-#if 0
-
-	if (vcm->drdynvc_channel)
-	{
-		fd = GetEventWaitObject(vcm->drdynvc_channel->receiveEvent);
-
-		if (fd)
-		{
-			fds[*fds_count] = fd;
-			(*fds_count)++;
-		}
-	}
-
-#endif
-}
-#endif
-
 BOOL WTSVirtualChannelManagerOpen(HANDLE hServer)
 {
 	WTSVirtualChannelManager* vcm = (WTSVirtualChannelManager*)hServer;

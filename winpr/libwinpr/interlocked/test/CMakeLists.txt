@@ -7,10 +7,6 @@ set(${MODULE_PREFIX}_DRIVER ${MODULE_NAME}.c)
 
 set(${MODULE_PREFIX}_TESTS TestInterlockedAccess.c)
 
-if(NOT WITHOUT_WINPR_3x_DEPRECATED)
-  list(APPEND ${MODULE_PREFIX}_TESTS TestInterlockedSList.c TestInterlockedDList.c)
-endif()
-
 create_test_sourcelist(${MODULE_PREFIX}_SRCS ${${MODULE_PREFIX}_DRIVER} ${${MODULE_PREFIX}_TESTS})
 
 add_executable(${MODULE_NAME} ${${MODULE_PREFIX}_SRCS})

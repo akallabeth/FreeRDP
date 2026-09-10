@@ -778,27 +778,6 @@ static BOOL freerdp_channels_process_sync(rdpChannels* channels, freerdp* instan
 	return status;
 }
 
-/**
- * called only from main thread
- */
-#if defined(WITH_FREERDP_DEPRECATED)
-BOOL freerdp_channels_get_fds(rdpChannels* channels, WINPR_ATTR_UNUSED freerdp* instance,
-                              void** read_fds, int* read_count, WINPR_ATTR_UNUSED void** write_fds,
-                              WINPR_ATTR_UNUSED int* write_count)
-{
-	void* pfd = nullptr;
-	pfd = GetEventWaitObject(MessageQueue_Event(channels->queue));
-
-	if (pfd)
-	{
-		read_fds[*read_count] = pfd;
-		(*read_count)++;
-	}
-
-	return TRUE;
-}
-#endif
-
 void* freerdp_channels_get_static_channel_interface(rdpChannels* channels, const char* name)
 {
 	void* pInterface = nullptr;

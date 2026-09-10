@@ -95,24 +95,6 @@ extern "C"
 	typedef BOOL (*pConnectCallback)(freerdp* instance);
 	typedef void (*pPostDisconnect)(freerdp* instance);
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-	/** \brief Authentication callback function pointer definition
-	 *
-	 * \param instance A pointer to the instance to work on
-	 * \param username A pointer to the username string. On input the current username, on output
-	 * the username that should be used. Must not be nullptr. \param password A pointer to the
-	 * password string. On input the current password, on output the password that sohould be used.
-	 * Must not be nullptr. \param domain A pointer to the domain string. On input the current
-	 * domain, on output the domain that sohould be used. Must not be nullptr.
-	 *
-	 * \return \b FALSE no valid credentials supplied, continue without \b TRUE valid credentials
-	 * should be available.
-	 */
-
-	typedef BOOL (*pAuthenticate)(freerdp* instance, char** username, char** password,
-	                              char** domain);
-#endif
-
 	/** @brief Extended authentication callback function pointer definition
 	 *
 	 *  This function is called whenever not all required credentials have been supplied or the
@@ -210,28 +192,6 @@ extern "C"
 	/** @brief Callback used if user interaction is required to accept
 	 *         an unknown certificate.
 	 *
-	 *  @deprecated Use pVerifyCertificateEx
-	 *  @param common_name      The certificate registered hostname.
-	 *  @param subject          The common name of the certificate.
-	 *  @param issuer           The issuer of the certificate.
-	 *  @param fingerprint      The fingerprint of the certificate (old) or the certificate in PEM
-	 * format
-	 *  @param host_mismatch    A flag indicating the certificate
-	 *                          subject does not match the host connecting to.
-	 *
-	 *  @return 1 to accept and store a certificate, 2 to accept
-	 *          a certificate only for this session, 0 otherwise.
-	 */
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-	WINPR_DEPRECATED_VAR("Use pVerifyCertificateEx",
-	                     typedef DWORD (*pVerifyCertificate)(
-	                         freerdp* instance, const char* common_name, const char* subject,
-	                         const char* issuer, const char* fingerprint, BOOL host_mismatch));
-#endif
-
-	/** @brief Callback used if user interaction is required to accept
-	 *         an unknown certificate.
-	 *
 	 *  @param host             The hostname connecting to.
 	 *  @param port             The port connecting to.
 	 *  @param common_name      The certificate registered hostname.
@@ -247,30 +207,6 @@ extern "C"
 	typedef DWORD (*pVerifyCertificateEx)(freerdp* instance, const char* host, UINT16 port,
 	                                      const char* common_name, const char* subject,
 	                                      const char* issuer, const char* fingerprint, DWORD flags);
-
-	/** @brief Callback used if user interaction is required to accept
-	 *         a changed certificate.
-	 *
-	 *  @deprecated Use pVerifyChangedCertificateEx
-	 *  @param common_name      The certificate registered hostname.
-	 *  @param subject          The common name of the new certificate.
-	 *  @param issuer           The issuer of the new certificate.
-	 *  @param new_fingerprint  The fingerprint of the new certificate.
-	 *  @param old_subject      The common name of the old certificate.
-	 *  @param old_issuer       The issuer of the new certificate.
-	 *  @param old_fingerprint  The fingerprint of the old certificate.
-	 *
-	 *  @return 1 to accept and store a certificate, 2 to accept
-	 *          a certificate only for this session, 0 otherwise.
-	 */
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-	WINPR_DEPRECATED_VAR("Use pVerifyChangedCertificateEx",
-	                     typedef DWORD (*pVerifyChangedCertificate)(
-	                         freerdp* instance, const char* common_name, const char* subject,
-	                         const char* issuer, const char* new_fingerprint,
-	                         const char* old_subject, const char* old_issuer,
-	                         const char* old_fingerprint));
-#endif
 
 	/** @brief Callback used if user interaction is required to accept
 	 *         a changed certificate.
@@ -441,29 +377,7 @@ extern "C"
 
 		UINT64 paddingA[16 - 2]; /* 2 */
 
-#if defined(WITH_FREERDP_DEPRECATED)
-		WINPR_DEPRECATED_VAR("use rdpContext::input instead", ALIGN64 rdpInput* input;) /* (offset
-		                        16) Input handle for the connection. Will be initialized by a call
-		                        to freerdp_context_new() owned by rdpRdp */
-		WINPR_DEPRECATED_VAR("use rdpContext::update instead",
-		                     ALIGN64 rdpUpdate* update;) /* (offset 17)
-		                      Update display parameters. Used to register display events callbacks
-and settings.		 Will be initialized by a call to freerdp_context_new()		 owned by rdpRdp */
-		WINPR_DEPRECATED_VAR("use rdpContext::settings instead",
-		                     ALIGN64 rdpSettings* settings;) /**< (offset 18)
-		                            Pointer to a rdpSettings structure. Will be used to maintain the
-		                            required RDP	 settings.		              Will be
-		                            initialized by	 a call to freerdp_context_new()
-		                            owned by rdpRdp
-		                          */
-		WINPR_DEPRECATED_VAR("use rdpContext::autodetect instead",
-		                     ALIGN64 rdpAutoDetect* autodetect;) /* (offset 19)
-		                                Auto-Detect handle for the connection.
-		                                Will be initialized by a call to freerdp_context_new()
-owned by rdpRdp */
-#else
-	UINT64 paddingX[4];
-#endif
+		UINT64 paddingX[4];
 		ALIGN64 rdpHeartbeat* heartbeat; /* (offset 21) owned by rdpRdp*/
 
 		UINT64 paddingB[32 - 21]; /* 21 */
@@ -506,23 +420,7 @@ owned by rdpRdp */
 		              Can be set before calling freerdp_connect() to have it executed after the
 		              actual connection has succeeded. Must be set to nullptr if not needed. */
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-		WINPR_DEPRECATED_VAR("[since 3.25.0] Use AuthenticateEx instead",
-		                     WINPR_ATTR_NODISCARD ALIGN64 pAuthenticate
-		                         Authenticate); /**< (offset 50)
-  Callback for authentication.
-  It is used to get the username/password when it was not
-  provided at connection time. */
-
-		WINPR_DEPRECATED_VAR("Use VerifyCertificateEx or VerifyX509Certificate  instead",
-		                     WINPR_ATTR_NODISCARD ALIGN64 pVerifyCertificate
-		                         VerifyCertificate); /**< (offset 51) */
-		WINPR_DEPRECATED_VAR("Use VerifyChangedCertificateEx or VerifyX509Certificate  instead",
-		                     WINPR_ATTR_NODISCARD ALIGN64 pVerifyChangedCertificate
-		                         VerifyChangedCertificate); /**< (offset 52) */
-#else
-	    ALIGN64 UINT64 reserved50[3];
-#endif
+		ALIGN64 UINT64 reserved50[3];
 		WINPR_ATTR_NODISCARD ALIGN64 pVerifyX509Certificate
 		    VerifyX509Certificate; /**< (offset 53)  Callback for X509 certificate verification
 		                              (PEM format) */
@@ -539,16 +437,7 @@ owned by rdpRdp */
 		                       This will be called before disconnecting and cleaning up the
 		                       channels.
  */
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-		WINPR_DEPRECATED_VAR("[since 3.25.0] Use AuthenticateEx instead",
-		                     WINPR_ATTR_NODISCARD ALIGN64 pAuthenticate
-		                         GatewayAuthenticate); /**< (offset 56)
-  Callback for gateway authentication.
-  It is used to get the username/password when it was not
-  provided at connection time. */
-#else
-	    ALIGN64 UINT64 reserved56[1];
-#endif
+		ALIGN64 UINT64 reserved56[1];
 		WINPR_ATTR_NODISCARD ALIGN64 pPresentGatewayMessage PresentGatewayMessage; /**< (offset 57)
 		                                  Callback for gateway consent messages.
 		                                  It is used to present consent messages to the user. */
@@ -638,21 +527,10 @@ owned by rdpRdp */
 	WINPR_ATTR_NODISCARD
 	FREERDP_API BOOL freerdp_connect(freerdp* instance);
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-	WINPR_DEPRECATED_VAR("use freerdp_abort_connect_context instead",
-	                     FREERDP_API BOOL freerdp_abort_connect(freerdp* instance));
-#endif
-
 	FREERDP_API BOOL freerdp_abort_connect_context(rdpContext* context);
 
 	WINPR_ATTR_NODISCARD
 	FREERDP_API HANDLE freerdp_abort_event(rdpContext* context);
-
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-	WINPR_DEPRECATED_VAR("use freerdp_shall_disconnect_context instead",
-	                     WINPR_ATTR_NODISCARD FREERDP_API BOOL
-	                         freerdp_shall_disconnect(const freerdp* instance));
-#endif
 
 	WINPR_ATTR_NODISCARD
 	FREERDP_API BOOL freerdp_shall_disconnect_context(const rdpContext* context);
@@ -670,12 +548,6 @@ owned by rdpRdp */
 	WINPR_ATTR_NODISCARD
 	FREERDP_API const char* freerdp_disconnect_reason_string(int reason);
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-	WINPR_DEPRECATED_VAR("use freerdp_disconnect_before_reconnect_context instead",
-	                     WINPR_ATTR_NODISCARD FREERDP_API BOOL
-	                         freerdp_disconnect_before_reconnect(freerdp* instance));
-#endif
-
 	WINPR_ATTR_NODISCARD
 	FREERDP_API BOOL freerdp_disconnect_before_reconnect_context(rdpContext* context);
 
@@ -687,13 +559,6 @@ owned by rdpRdp */
 
 	WINPR_ATTR_NODISCARD
 	FREERDP_API UINT freerdp_channels_detach(freerdp* instance);
-
-#if defined(WITH_FREERDP_DEPRECATED)
-	WINPR_DEPRECATED_VAR("Use freerdp_get_event_handles",
-	                     WINPR_ATTR_NODISCARD FREERDP_API BOOL
-	                         freerdp_get_fds(freerdp* instance, void** rfds, int* rcount,
-	                                         void** wfds, int* wcount));
-#endif
 
 	WINPR_ATTR_NODISCARD
 	FREERDP_API BOOL freerdp_check_fds(freerdp* instance);

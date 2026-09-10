@@ -64,16 +64,6 @@ extern "C"
 	FREERDP_API void freerdp_planar_topdown_image(BITMAP_PLANAR_CONTEXT* WINPR_RESTRICT planar,
 	                                              BOOL topdown);
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-	WINPR_DEPRECATED_VAR("use freerdp_bitmap_decompress_planar instead",
-	                     WINPR_ATTR_NODISCARD FREERDP_API BOOL planar_decompress(
-	                         BITMAP_PLANAR_CONTEXT* WINPR_RESTRICT planar,
-	                         const BYTE* WINPR_RESTRICT pSrcData, UINT32 SrcSize, UINT32 nSrcWidth,
-	                         UINT32 nSrcHeight, BYTE* WINPR_RESTRICT pDstData, UINT32 DstFormat,
-	                         UINT32 nDstStep, UINT32 nXDst, UINT32 nYDst, UINT32 nDstWidth,
-	                         UINT32 nDstHeight, BOOL vFlip));
-#endif
-
 	WINPR_ATTR_NODISCARD
 	FREERDP_API BOOL freerdp_bitmap_decompress_planar(
 	    BITMAP_PLANAR_CONTEXT* WINPR_RESTRICT planar, const BYTE* WINPR_RESTRICT pSrcData,

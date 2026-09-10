@@ -46,12 +46,6 @@ extern "C"
 
 	typedef struct S_NSC_CONTEXT NSC_CONTEXT;
 
-#if defined(WITH_FREERDP_DEPRECATED)
-	WINPR_DEPRECATED_VAR("Use nsc_context_set_parameters(NSC_COLOR_FORMAT)",
-	                     WINPR_ATTR_NODISCARD FREERDP_API BOOL nsc_context_set_pixel_format(
-	                         NSC_CONTEXT* context, UINT32 pixel_format));
-#endif
-
 	/** @brief Set a \ref NSC_PARAMETER for a \ref NSC_CONTEXT
 	 *
 	 *  @param context The \ref NSC_CONTEXT context to work on. Must not be \b nullptr
@@ -109,16 +103,6 @@ extern "C"
 	                                     wStream* WINPR_RESTRICT s,
 	                                     const BYTE* WINPR_RESTRICT bmpdata, UINT32 width,
 	                                     UINT32 height, UINT32 scanline);
-
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-
-	WINPR_DEPRECATED_VAR(
-	    "[since 3.23.0] deprecated, insecure! missing length checks. use nsc_process_message",
-	    WINPR_ATTR_NODISCARD FREERDP_API BOOL
-	        nsc_decompose_message(NSC_CONTEXT* WINPR_RESTRICT context, wStream* WINPR_RESTRICT s,
-	                              BYTE* WINPR_RESTRICT bmpdata, UINT32 x, UINT32 y, UINT32 width,
-	                              UINT32 height, UINT32 rowstride, UINT32 format, UINT32 flip));
-#endif
 
 	/** @brief This function resets a \ref NSC_CONTEXT to a new resolution
 	 *

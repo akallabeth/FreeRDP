@@ -7,38 +7,6 @@ set(${MODULE_PREFIX}_DRIVER ${MODULE_NAME}.c)
 
 set(${MODULE_PREFIX}_TESTS TestPathShell.c TestPathMakePath.c)
 
-if(NOT WITHOUT_WINPR_3x_DEPRECATED)
-  list(
-    APPEND
-    ${MODULE_PREFIX}_TESTS
-    TestPathIsUNCEx.c
-    TestPathAllocCombine.c
-    TestPathCchAddBackslash.c
-    TestPathCchRemoveBackslash.c
-    TestPathCchAddBackslashEx.c
-    TestPathCchRemoveBackslashEx.c
-    TestPathCchAddExtension.c
-    TestPathCchAppend.c
-    TestPathCchAppendEx.c
-    TestPathCchCombine.c
-    TestPathCchCombineEx.c
-    TestPathCchFindExtension.c
-    TestPathCchRenameExtension.c
-    TestPathCchRemoveExtension.c
-    TestPathCchIsRoot.c
-    TestPathCchSkipRoot.c
-    TestPathCchStripToRoot.c
-    TestPathCchStripPrefix.c
-    TestPathCchRemoveFileSpec.c
-  )
-
-  if(NOT WIN32)
-    list(APPEND ${MODULE_PREFIX}_TESTS TestPathCchCanonicalize.c TestPathCchCanonicalizeEx.c
-         TestPathAllocCanonicalize.c
-    )
-  endif()
-endif()
-
 create_test_sourcelist(${MODULE_PREFIX}_SRCS ${${MODULE_PREFIX}_DRIVER} ${${MODULE_PREFIX}_TESTS})
 
 add_executable(${MODULE_NAME} ${${MODULE_PREFIX}_SRCS})

@@ -34,15 +34,7 @@
 
 struct p_client_context
 {
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-	union
-	{
-		WINPR_DEPRECATED_VAR("[since 3.27.0]", rdpContext context);
-		rdpClientContext cctx;
-	};
-#else
 	rdpClientContext cctx;
-#endif
 	proxyData* pdata;
 
 	/*

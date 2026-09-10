@@ -254,21 +254,6 @@ extern "C"
 
 #define _scprintf(...) snprintf(nullptr, 0, __VA_ARGS__)
 
-	/* Unicode Conversion */
-
-#if defined(WITH_WINPR_DEPRECATED)
-	WINPR_DEPRECATED_VAR("Use ConvertUtf8ToWChar instead",
-	                     WINPR_ATTR_NODISCARD WINPR_API int MultiByteToWideChar(
-	                         UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
-	                         LPWSTR lpWideCharStr, int cchWideChar));
-
-	WINPR_DEPRECATED_VAR("Use ConvertWCharToUtf8 instead",
-	                     WINPR_ATTR_NODISCARD WINPR_API int WideCharToMultiByte(
-	                         UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr, int cchWideChar,
-	                         LPSTR lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar,
-	                         LPBOOL lpUsedDefaultChar));
-#endif
-
 #endif
 
 	/* Extended API */
@@ -481,19 +466,6 @@ extern "C"
 	 *  \return The WCHAR string (a pointer to buffer)
 	 */
 	WINPR_API const WCHAR* InitializeConstWCharFromUtf8(const char* str, WCHAR* buffer, size_t len);
-
-#if defined(WITH_WINPR_DEPRECATED)
-	WINPR_DEPRECATED_VAR("Use ConvertUtf8ToWChar functions instead",
-	                     WINPR_ATTR_NODISCARD WINPR_API int ConvertToUnicode(
-	                         UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
-	                         LPWSTR* lpWideCharStr, int cchWideChar));
-
-	WINPR_DEPRECATED_VAR("Use ConvertWCharToUtf8 functions instead",
-	                     WINPR_ATTR_NODISCARD WINPR_API int ConvertFromUnicode(
-	                         UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr, int cchWideChar,
-	                         LPSTR* lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar,
-	                         LPBOOL lpUsedDefaultChar));
-#endif
 
 	WINPR_ATTR_NODISCARD
 	WINPR_API const WCHAR* ByteSwapUnicode(WCHAR* wstr, size_t length);

@@ -318,14 +318,6 @@ extern "C"
 	FREERDP_API void shadow_subsystem_set_entry_builtin(const char* name);
 	FREERDP_API void shadow_subsystem_set_entry(pfnShadowSubsystemEntry pEntry);
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-	WINPR_DEPRECATED_VAR(
-	    "[since 3.4.0] Use shadow_subsystem_pointer_convert_alpha_pointer_data_to_format instead",
-	    WINPR_ATTR_NODISCARD FREERDP_API int shadow_subsystem_pointer_convert_alpha_pointer_data(
-	        const BYTE* WINPR_RESTRICT pixels, BOOL premultiplied, UINT32 width, UINT32 height,
-	        SHADOW_MSG_OUT_POINTER_ALPHA_UPDATE* WINPR_RESTRICT pointerColor));
-#endif
-
 	/** @brief Convert a pointer image from input format to RDP specific encoding
 	 *
 	 *  @param pixels A pointer to the pixel data
@@ -374,14 +366,6 @@ extern "C"
 
 	WINPR_ATTR_NODISCARD
 	FREERDP_API int shadow_capture_align_clip_rect(RECTANGLE_16* rect, const RECTANGLE_16* clip);
-
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-	WINPR_DEPRECATED_VAR("[since 3.4.0] Use shadow_capture_compare_with_format",
-	                     WINPR_ATTR_NODISCARD FREERDP_API int shadow_capture_compare(
-	                         const BYTE* WINPR_RESTRICT pData1, UINT32 nStep1, UINT32 nWidth,
-	                         UINT32 nHeight, const BYTE* WINPR_RESTRICT pData2, UINT32 nStep2,
-	                         RECTANGLE_16* WINPR_RESTRICT rect));
-#endif
 
 	/** @brief Compare two framebuffer images of possibly different formats with each other
 	 *

@@ -138,10 +138,6 @@ WINPR_ATTR_NODISCARD
 FREERDP_LOCAL BOOL transport_get_public_key(rdpTransport* transport, const BYTE** data,
                                             DWORD* length);
 
-#if defined(WITH_FREERDP_DEPRECATED)
-FREERDP_LOCAL void transport_get_fds(rdpTransport* transport, void** rfds, int* rcount);
-#endif
-
 WINPR_ATTR_NODISCARD
 FREERDP_LOCAL int transport_check_fds(rdpTransport* transport);
 

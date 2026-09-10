@@ -406,14 +406,6 @@ typedef struct
 	WINPR_ATTR_NODISCARD
 	WINPR_API BOOL WLog_Layout_SetPrefixFormat(wLog* log, wLogLayout* layout, const char* format);
 
-#if defined(WITH_WINPR_DEPRECATED)
-	/** Deprecated */
-	WINPR_DEPRECATED(WINPR_ATTR_NODISCARD WINPR_API BOOL WLog_Init(void));
-
-	/** Deprecated */
-	WINPR_DEPRECATED(WINPR_ATTR_NODISCARD WINPR_API BOOL WLog_Uninit(void));
-#endif
-
 	typedef BOOL (*wLogCallbackMessage_t)(const wLogMessage* msg);
 	typedef BOOL (*wLogCallbackData_t)(const wLogMessage* msg);
 	typedef BOOL (*wLogCallbackImage_t)(const wLogMessage* msg);

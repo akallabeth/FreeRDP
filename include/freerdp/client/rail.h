@@ -147,11 +147,7 @@ extern "C"
 		WINPR_ATTR_NODISCARD pcRailClientSnapArrange ClientSnapArrange;
 		WINPR_ATTR_NODISCARD pcRailServerGetAppidResponseExtended ServerGetAppidResponseExtended;
 		WINPR_ATTR_NODISCARD pcRailClientCompartmentInfo ClientCompartmentInfo;
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-		WINPR_DEPRECATED_VAR("[since 3.27.0] unused", WINPR_ATTR_NODISCARD pcRailOnOpen OnOpen);
-#else
-	    void* reserved;
-#endif
+		void* reserved;
 		WINPR_ATTR_NODISCARD pcRailClientTextScale ClientTextScale;
 		WINPR_ATTR_NODISCARD pcRailClientCaretBlinkRate ClientCaretBlinkRate;
 	};

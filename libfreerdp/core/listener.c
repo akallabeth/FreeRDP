@@ -358,24 +358,6 @@ static void freerdp_listener_close(freerdp_listener* instance)
 	listener->num_sockfds = 0;
 }
 
-#if defined(WITH_FREERDP_DEPRECATED)
-static BOOL freerdp_listener_get_fds(freerdp_listener* instance, void** rfds, int* rcount)
-{
-	rdpListener* listener = (rdpListener*)instance->listener;
-
-	if (listener->num_sockfds < 1)
-		return FALSE;
-
-	for (int index = 0; index < listener->num_sockfds; index++)
-	{
-		rfds[*rcount] = (void*)(long)(listener->sockfds[index]);
-		(*rcount)++;
-	}
-
-	return TRUE;
-}
-#endif
-
 static DWORD freerdp_listener_get_event_handles(freerdp_listener* instance, HANDLE* events,
                                                 DWORD nCount)
 {
@@ -530,9 +512,6 @@ freerdp_listener* freerdp_listener_new(void)
 	instance->Open = freerdp_listener_open;
 	instance->OpenLocal = freerdp_listener_open_local;
 	instance->OpenFromSocket = freerdp_listener_open_from_socket;
-#if defined(WITH_FREERDP_DEPRECATED)
-	instance->GetFileDescriptor = freerdp_listener_get_fds;
-#endif
 	instance->GetEventHandles = freerdp_listener_get_event_handles;
 	instance->CheckFileDescriptor = freerdp_listener_check_fds;
 	instance->Close = freerdp_listener_close;

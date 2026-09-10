@@ -328,16 +328,6 @@ static const test tests[] = {
 	  check_settings_smartcard_no_redirection,
 	  { "testfreerdp", "--invalid", nullptr },
 	  { WINPR_C_ARRAY_INIT } },
-#if defined(WITH_FREERDP_DEPRECATED_CMDLINE)
-	{ COMMAND_LINE_STATUS_PRINT,
-	  check_settings_smartcard_no_redirection,
-	  { "testfreerdp", "/kbd-list", 0 },
-	  { WINPR_C_ARRAY_INIT } },
-	{ COMMAND_LINE_STATUS_PRINT,
-	  check_settings_smartcard_no_redirection,
-	  { "testfreerdp", "/monitor-list", 0 },
-	  { WINPR_C_ARRAY_INIT } },
-#endif
 	{ COMMAND_LINE_STATUS_PRINT,
 	  check_settings_smartcard_no_redirection,
 	  { "testfreerdp", "/list:kbd", nullptr },

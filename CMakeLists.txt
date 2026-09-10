@@ -364,10 +364,6 @@ if(ANDROID)
   set(PCSC_FEATURE_TYPE "DISABLED")
 endif()
 
-if(NOT WITHOUT_FREERDP_3x_DEPRECATED)
-  find_feature(Wayland ${WAYLAND_FEATURE_TYPE} ${WAYLAND_FEATURE_PURPOSE} ${WAYLAND_FEATURE_DESCRIPTION})
-endif()
-
 option(WITH_LIBRESSL "[experimental] build with LibreSSL" OFF)
 if(WITH_LIBRESSL)
   warn_experimental("LibReSSL" "-DWITH_LIBRESSL=OFF")

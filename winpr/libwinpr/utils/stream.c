@@ -216,37 +216,6 @@ void Stream_SealLength(wStream* _s)
 	}
 }
 
-#if defined(WITH_WINPR_DEPRECATED)
-BOOL Stream_SetPointer(wStream* _s, BYTE* _p)
-{
-	WINPR_ASSERT(_s);
-	if (!_p || (_s->buffer > _p) || (_s->buffer + _s->capacity < _p))
-	{
-		_s->pointer = _s->buffer;
-		return FALSE;
-	}
-	_s->pointer = _p;
-	return TRUE;
-}
-
-BOOL Stream_SetBuffer(wStream* _s, BYTE* _b)
-{
-	WINPR_ASSERT(_s);
-	WINPR_ASSERT(_b);
-
-	_s->buffer = _b;
-	_s->pointer = _b;
-	return _s->buffer != nullptr;
-}
-
-void Stream_SetCapacity(wStream* _s, size_t _c)
-{
-	WINPR_ASSERT(_s);
-	_s->capacity = _c;
-}
-
-#endif
-
 size_t Stream_GetRemainingCapacity(const wStream* _s)
 {
 	size_t cur = 0;

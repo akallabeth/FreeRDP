@@ -1172,59 +1172,6 @@ void freerdp_update_gateway_usage_method(rdpSettings* settings, UINT32 GatewayEn
 		          GatewayUsageMethod);
 }
 
-#if defined(WITH_FREERDP_DEPRECATED)
-BOOL freerdp_get_param_bool(const rdpSettings* settings, int id)
-{
-	return freerdp_settings_get_bool(settings, (FreeRDP_Settings_Keys_Bool)id);
-}
-
-int freerdp_set_param_bool(rdpSettings* settings, int id, BOOL param)
-{
-	return freerdp_settings_set_bool(settings, (FreeRDP_Settings_Keys_Bool)id, param) ? 0 : -1;
-}
-
-int freerdp_get_param_int(const rdpSettings* settings, int id)
-{
-	return freerdp_settings_get_int32(settings, (FreeRDP_Settings_Keys_Int32)id);
-}
-
-int freerdp_set_param_int(rdpSettings* settings, int id, int param)
-{
-	return freerdp_settings_set_int32(settings, (FreeRDP_Settings_Keys_Int32)id, param) ? 0 : -1;
-}
-
-UINT32 freerdp_get_param_uint32(const rdpSettings* settings, int id)
-{
-	return freerdp_settings_get_uint32(settings, (FreeRDP_Settings_Keys_UInt32)id);
-}
-
-int freerdp_set_param_uint32(rdpSettings* settings, int id, UINT32 param)
-{
-	return freerdp_settings_set_uint32(settings, (FreeRDP_Settings_Keys_UInt32)id, param) ? 0 : -1;
-}
-
-UINT64 freerdp_get_param_uint64(const rdpSettings* settings, int id)
-{
-	return freerdp_settings_get_uint64(settings, (FreeRDP_Settings_Keys_UInt64)id);
-}
-
-int freerdp_set_param_uint64(rdpSettings* settings, int id, UINT64 param)
-{
-	return freerdp_settings_set_uint64(settings, (FreeRDP_Settings_Keys_UInt64)id, param) ? 0 : -1;
-}
-
-char* freerdp_get_param_string(const rdpSettings* settings, int id)
-{
-	const char* str = freerdp_settings_get_string(settings, (FreeRDP_Settings_Keys_String)id);
-	return WINPR_CAST_CONST_PTR_AWAY(str, char*);
-}
-
-int freerdp_set_param_string(rdpSettings* settings, int id, const char* param)
-{
-	return freerdp_settings_set_string(settings, (FreeRDP_Settings_Keys_String)id, param) ? 0 : -1;
-}
-#endif
-
 static BOOL value_to_uint(const char* value, ULONGLONG* result, ULONGLONG min, ULONGLONG max)
 {
 	char* endptr = nullptr;
@@ -2031,18 +1978,6 @@ const char* freerdp_settings_get_server_name(const rdpSettings* settings)
 
 	return hostname;
 }
-
-#if defined(WITH_FREERDP_DEPRECATED)
-ADDIN_ARGV* freerdp_static_channel_clone(ADDIN_ARGV* channel)
-{
-	return freerdp_addin_argv_clone(channel);
-}
-
-ADDIN_ARGV* freerdp_dynamic_channel_clone(ADDIN_ARGV* channel)
-{
-	return freerdp_addin_argv_clone(channel);
-}
-#endif
 
 BOOL freerdp_target_net_addresses_copy(rdpSettings* settings, char** addresses, UINT32 count)
 {

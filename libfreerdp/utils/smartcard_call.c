@@ -1987,16 +1987,6 @@ void context_free(void* arg)
 	free(element);
 }
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-scard_call_context* smartcard_call_context_new(const rdpSettings* settings)
-{
-	const freerdp* inst = freerdp_settings_get_pointer(settings, FreeRDP_instance);
-	if (!inst || !inst->context)
-		return nullptr;
-	return smartcard_call_context_new_with_context(inst->context);
-}
-#endif
-
 scard_call_context* smartcard_call_context_new_with_context(rdpContext* context)
 {
 	WINPR_ASSERT(context);

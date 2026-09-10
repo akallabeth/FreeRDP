@@ -25,14 +25,7 @@ static BOOL test_crypto_cipher_aes_128_cbc(BOOL ex)
 		                         sizeof(iv));
 	else
 	{
-#if !defined(WITHOUT_WINPR_3x_DEPRECATED)
-		ctx = winpr_Cipher_New(WINPR_CIPHER_AES_128_CBC, WINPR_ENCRYPT, key, iv);
-#else
-		printf("%s: Function winpr_Cipher_New deprectated, build with WITHOUT_WINPR_3x_DEPRECATED, "
-		       "skipping test\n",
-		       __func__);
 		return TRUE;
-#endif
 	}
 	if (!ctx)
 	{
@@ -78,15 +71,7 @@ static BOOL test_crypto_cipher_aes_128_cbc(BOOL ex)
 		                         sizeof(iv));
 	else
 	{
-#if !defined(WITHOUT_WINPR_3x_DEPRECATED)
-
-		ctx = winpr_Cipher_New(WINPR_CIPHER_AES_128_CBC, WINPR_DECRYPT, key, iv);
-#else
-		printf("%s: Function winpr_Cipher_New deprectated, build with WITHOUT_WINPR_3x_DEPRECATED, "
-		       "skipping test\n",
-		       __func__);
 		return TRUE;
-#endif
 	}
 
 	if (!ctx)

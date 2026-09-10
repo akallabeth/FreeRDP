@@ -315,16 +315,6 @@ freerdp_connect_finally:
 	return status;
 }
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-BOOL freerdp_abort_connect(freerdp* instance)
-{
-	if (!instance)
-		return FALSE;
-
-	return freerdp_abort_connect_context(instance->context);
-}
-#endif
-
 BOOL freerdp_abort_connect_context(rdpContext* context)
 {
 	if (!context)
@@ -333,23 +323,6 @@ BOOL freerdp_abort_connect_context(rdpContext* context)
 	freerdp_set_last_error_if_not(context, FREERDP_ERROR_CONNECT_CANCELLED);
 	return utils_abort_connect(context->rdp);
 }
-
-#if defined(WITH_FREERDP_DEPRECATED)
-BOOL freerdp_get_fds(freerdp* instance, void** rfds, int* rcount, WINPR_ATTR_UNUSED void** wfds,
-                     WINPR_ATTR_UNUSED int* wcount)
-{
-	rdpRdp* rdp = nullptr;
-
-	WINPR_ASSERT(instance);
-	WINPR_ASSERT(instance->context);
-
-	rdp = instance->context->rdp;
-	WINPR_ASSERT(rdp);
-
-	transport_get_fds(rdp->transport, rfds, rcount);
-	return TRUE;
-}
-#endif
 
 BOOL freerdp_check_fds(freerdp* instance)
 {
@@ -664,14 +637,6 @@ BOOL freerdp_disconnect(freerdp* instance)
 	return rc;
 }
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-BOOL freerdp_disconnect_before_reconnect(freerdp* instance)
-{
-	WINPR_ASSERT(instance);
-	return freerdp_disconnect_before_reconnect_context(instance->context);
-}
-#endif
-
 BOOL freerdp_disconnect_before_reconnect_context(rdpContext* context)
 {
 	rdpRdp* rdp = nullptr;
@@ -698,16 +663,6 @@ BOOL freerdp_reconnect(freerdp* instance)
 		return FALSE;
 	return rdp_client_reconnect(rdp);
 }
-
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-BOOL freerdp_shall_disconnect(const freerdp* instance)
-{
-	if (!instance)
-		return FALSE;
-
-	return freerdp_shall_disconnect_context(instance->context);
-}
-#endif
 
 BOOL freerdp_shall_disconnect_context(const rdpContext* context)
 {
@@ -908,13 +863,6 @@ BOOL freerdp_context_new_ex(freerdp* instance, rdpSettings* settings)
 
 	PubSub_AddEventTypes(rdp->pubSub, FreeRDP_Events, ARRAYSIZE(FreeRDP_Events));
 
-#if defined(WITH_FREERDP_DEPRECATED)
-	instance->input = rdp->input;
-	instance->update = rdp->update;
-	instance->settings = rdp->settings;
-	instance->autodetect = rdp->autodetect;
-#endif
-
 	instance->heartbeat = rdp->heartbeat;
 	context->graphics = graphics_new(context);
 
@@ -1031,12 +979,6 @@ void freerdp_context_free(freerdp* instance)
 
 	free(ctx);
 	instance->context = nullptr;
-#if defined(WITH_FREERDP_DEPRECATED)
-	instance->input = nullptr;      /* owned by rdpRdp */
-	instance->update = nullptr;     /* owned by rdpRdp */
-	instance->settings = nullptr;   /* owned by rdpRdp */
-	instance->autodetect = nullptr; /* owned by rdpRdp */
-#endif
 	instance->heartbeat = nullptr; /* owned by rdpRdp */
 }
 

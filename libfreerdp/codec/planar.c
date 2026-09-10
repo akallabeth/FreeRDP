@@ -707,19 +707,6 @@ static BOOL planar_subsample_expand(const BYTE* WINPR_RESTRICT plane, size_t pla
 	return TRUE;
 }
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-BOOL planar_decompress(BITMAP_PLANAR_CONTEXT* WINPR_RESTRICT planar,
-                       const BYTE* WINPR_RESTRICT pSrcData, UINT32 SrcSize, UINT32 nSrcWidth,
-                       UINT32 nSrcHeight, BYTE* WINPR_RESTRICT pDstData, UINT32 DstFormat,
-                       UINT32 nDstStep, UINT32 nXDst, UINT32 nYDst, UINT32 nDstWidth,
-                       UINT32 nDstHeight, BOOL vFlip)
-{
-	return freerdp_bitmap_decompress_planar(planar, pSrcData, SrcSize, nSrcWidth, nSrcHeight,
-	                                        pDstData, DstFormat, nDstStep, nXDst, nYDst, nDstWidth,
-	                                        nDstHeight, vFlip);
-}
-#endif
-
 BOOL freerdp_bitmap_decompress_planar(BITMAP_PLANAR_CONTEXT* WINPR_RESTRICT planar,
                                       const BYTE* WINPR_RESTRICT pSrcData, UINT32 SrcSize,
                                       UINT32 nSrcWidth, UINT32 nSrcHeight,

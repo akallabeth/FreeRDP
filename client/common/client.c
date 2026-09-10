@@ -713,24 +713,6 @@ BOOL client_cli_choose_smartcard(WINPR_ATTR_UNUSED freerdp* instance, SmartcardC
 	}
 }
 
-#if defined(WITH_FREERDP_DEPRECATED)
-BOOL client_cli_authenticate(freerdp* instance, char** username, char** password, char** domain)
-{
-	if (freerdp_settings_get_bool(instance->settings, FreeRDP_SmartcardLogon))
-	{
-		WLog_INFO(TAG, "Authentication via smartcard");
-		return TRUE;
-	}
-
-	return client_cli_authenticate_raw(instance, FALSE, username, password, domain);
-}
-
-BOOL client_cli_gw_authenticate(freerdp* instance, char** username, char** password, char** domain)
-{
-	return client_cli_authenticate_raw(instance, TRUE, username, password, domain);
-}
-#endif
-
 static DWORD client_cli_accept_certificate(freerdp* instance)
 {
 	int answer = 0;
@@ -788,38 +770,6 @@ static DWORD client_cli_accept_certificate(freerdp* instance)
 		}
 	}
 }
-
-/** Callback set in the rdp_freerdp structure, and used to make a certificate validation
- *  when the connection requires it.
- *  This function will actually be called by tls_verify_certificate().
- *  @see rdp_client_connect() and freerdp_tls_connect()
- *  @deprecated Use client_cli_verify_certificate_ex
- *  @param instance - pointer to the rdp_freerdp structure that contains the connection settings
- *  @param common_name
- *  @param subject
- *  @param issuer
- *  @param fingerprint
- *  @param host_mismatch Indicates the certificate host does not match.
- *  @return 1 if the certificate is trusted, 2 if temporary trusted, 0 otherwise.
- */
-#if defined(WITH_FREERDP_DEPRECATED)
-DWORD client_cli_verify_certificate(freerdp* instance, const char* common_name, const char* subject,
-                                    const char* issuer, const char* fingerprint, BOOL host_mismatch)
-{
-	WINPR_UNUSED(common_name);
-	WINPR_UNUSED(host_mismatch);
-
-	printf("WARNING: This callback is deprecated, migrate to client_cli_verify_certificate_ex\n");
-	printf("Certificate details:\n");
-	printf("\tSubject: %s\n", subject);
-	printf("\tIssuer: %s\n", issuer);
-	printf("\tThumbprint: %s\n", fingerprint);
-	printf("The above X.509 certificate could not be verified, possibly because you do not have\n"
-	       "the CA certificate in your certificate store, or the certificate has expired.\n"
-	       "Please look at the OpenSSL documentation on how to add a private CA to the store.\n");
-	return client_cli_accept_certificate(instance);
-}
-#endif
 
 static char* client_cli_pem_cert(const char* pem)
 {
@@ -897,51 +847,6 @@ DWORD client_cli_verify_certificate_ex(freerdp* instance, const char* host, UINT
 	       "Please look at the OpenSSL documentation on how to add a private CA to the store.\n");
 	return client_cli_accept_certificate(instance);
 }
-
-/** Callback set in the rdp_freerdp structure, and used to make a certificate validation
- *  when a stored certificate does not match the remote counterpart.
- *  This function will actually be called by tls_verify_certificate().
- *  @see rdp_client_connect() and freerdp_tls_connect()
- *  @deprecated Use client_cli_verify_changed_certificate_ex
- *  @param instance - pointer to the rdp_freerdp structure that contains the connection settings
- *  @param common_name
- *  @param subject
- *  @param issuer
- *  @param fingerprint
- *  @param old_subject
- *  @param old_issuer
- *  @param old_fingerprint
- *  @return 1 if the certificate is trusted, 2 if temporary trusted, 0 otherwise.
- */
-#if defined(WITH_FREERDP_DEPRECATED)
-DWORD client_cli_verify_changed_certificate(freerdp* instance, const char* common_name,
-                                            const char* subject, const char* issuer,
-                                            const char* fingerprint, const char* old_subject,
-                                            const char* old_issuer, const char* old_fingerprint)
-{
-	WINPR_UNUSED(common_name);
-
-	printf("WARNING: This callback is deprecated, migrate to "
-	       "client_cli_verify_changed_certificate_ex\n");
-	printf("!!! Certificate has changed !!!\n");
-	printf("\n");
-	printf("New Certificate details:\n");
-	printf("\tSubject: %s\n", subject);
-	printf("\tIssuer: %s\n", issuer);
-	printf("\tThumbprint: %s\n", fingerprint);
-	printf("\n");
-	printf("Old Certificate details:\n");
-	printf("\tSubject: %s\n", old_subject);
-	printf("\tIssuer: %s\n", old_issuer);
-	printf("\tThumbprint: %s\n", old_fingerprint);
-	printf("\n");
-	printf("The above X.509 certificate does not match the certificate used for previous "
-	       "connections.\n"
-	       "This may indicate that the certificate has been tampered with.\n"
-	       "Please contact the administrator of the RDP server and clarify.\n");
-	return client_cli_accept_certificate(instance);
-}
-#endif
 
 /** Callback set in the rdp_freerdp structure, and used to make a certificate validation
  *  when a stored certificate does not match the remote counterpart.

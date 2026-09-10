@@ -499,9 +499,6 @@ static SECURITY_STATUS SEC_ENTRY ntlm_AcquireCredentialsHandleW(
 	credentials->pGetKeyFn = pGetKeyFn;
 	credentials->pvGetKeyArgument = pvGetKeyArgument;
 
-#if !defined(WITHOUT_WINPR_3x_DEPRECATED)
-	SEC_WINPR_NTLM_SETTINGS* settingsV1 = nullptr;
-#endif
 	SEC_WINPR_NTLM_SETTINGS_V2* settingsV2 = nullptr;
 	if (pAuthData)
 	{
@@ -514,11 +511,6 @@ static SECURITY_STATUS SEC_ENTRY ntlm_AcquireCredentialsHandleW(
 			return SEC_E_INVALID_PARAMETER;
 		}
 
-#if !defined(WITHOUT_WINPR_3x_DEPRECATED)
-		if (identityFlags & SEC_WINNT_AUTH_IDENTITY_EXTENDED)
-			settingsV1 = (((SEC_WINNT_AUTH_IDENTITY_WINPR*)pAuthData)->ntlmSettings);
-#endif
-
 		if (identityFlags & SEC_WINNT_AUTH_IDENTITY_EXTENDED_v2)
 		{
 			const SEC_WINNT_AUTH_IDENTITY_WINPR_V2* auth =
@@ -529,23 +521,6 @@ static SECURITY_STATUS SEC_ENTRY ntlm_AcquireCredentialsHandleW(
 			settingsV2 = auth->ntlmSettingsV2;
 		}
 	}
-
-#if !defined(WITHOUT_WINPR_3x_DEPRECATED)
-	if (settingsV1)
-	{
-		if (settingsV1->samFile)
-		{
-			if (!sspi_CloneSecSettingsString(&credentials->ntlmSettingsV2->samFile,
-			                                 settingsV1->samFile))
-			{
-				sspi_CredentialsFree(credentials);
-				return SEC_E_INSUFFICIENT_MEMORY;
-			}
-		}
-		credentials->ntlmSettingsV2->hashCallback = settingsV1->hashCallback;
-		credentials->ntlmSettingsV2->hashCallbackArg = settingsV1->hashCallbackArg;
-	}
-#endif
 
 	if (settingsV2)
 	{

@@ -410,13 +410,6 @@ void nsc_context_free(NSC_CONTEXT* context)
 	winpr_aligned_free(context);
 }
 
-#if defined(WITH_FREERDP_DEPRECATED)
-BOOL nsc_context_set_pixel_format(NSC_CONTEXT* context, UINT32 pixel_format)
-{
-	return nsc_context_set_parameters(context, NSC_COLOR_FORMAT, pixel_format);
-}
-#endif
-
 BOOL nsc_context_set_parameters(NSC_CONTEXT* WINPR_RESTRICT context, NSC_PARAMETER what,
                                 UINT32 value)
 {

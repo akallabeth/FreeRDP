@@ -146,12 +146,8 @@
  *
  */
 
-#if !defined(WITH_WINPR_DEPRECATED)
-static
-#endif
-    int
-    MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
-                        LPWSTR lpWideCharStr, int cchWideChar)
+static int MultiByteToWideChar(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
+                               LPWSTR lpWideCharStr, int cchWideChar)
 {
 	return int_MultiByteToWideChar(CodePage, dwFlags, lpMultiByteStr, cbMultiByte, lpWideCharStr,
 	                               cchWideChar);
@@ -197,161 +193,14 @@ static
  *
  */
 
-#if !defined(WITH_WINPR_DEPRECATED)
-static
-#endif
-    int
-    WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr, int cchWideChar,
-                        LPSTR lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar,
-                        LPBOOL lpUsedDefaultChar)
+static int WideCharToMultiByte(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr, int cchWideChar,
+                               LPSTR lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar,
+                               LPBOOL lpUsedDefaultChar)
 {
 	return int_WideCharToMultiByte(CodePage, dwFlags, lpWideCharStr, cchWideChar, lpMultiByteStr,
 	                               cbMultiByte, lpDefaultChar, lpUsedDefaultChar);
 }
 
-#endif
-
-/**
- * ConvertToUnicode is a convenience wrapper for MultiByteToWideChar:
- *
- * If the lpWideCharStr parameter for the converted string points to nullptr
- * or if the cchWideChar parameter is set to 0 this function will automatically
- * allocate the required memory which is guaranteed to be null-terminated
- * after the conversion, even if the source c string isn't.
- *
- * If the cbMultiByte parameter is set to -1 the passed lpMultiByteStr must
- * be null-terminated and the required length for the converted string will be
- * calculated accordingly.
- */
-#if defined(WITH_WINPR_DEPRECATED)
-int ConvertToUnicode(UINT CodePage, DWORD dwFlags, LPCSTR lpMultiByteStr, int cbMultiByte,
-                     LPWSTR* lpWideCharStr, int cchWideChar)
-{
-	int status = 0;
-	BOOL allocate = FALSE;
-
-	if (!lpMultiByteStr)
-		return 0;
-
-	if (!lpWideCharStr)
-		return 0;
-
-	if (cbMultiByte == -1)
-	{
-		size_t len = strnlen(lpMultiByteStr, INT_MAX);
-		if (len >= INT_MAX)
-			return 0;
-		cbMultiByte = (int)(len + 1);
-	}
-
-	if (cchWideChar == 0)
-	{
-		cchWideChar =
-		    MultiByteToWideChar(CodePage, dwFlags, lpMultiByteStr, cbMultiByte, nullptr, 0);
-		allocate = TRUE;
-	}
-	else if (!(*lpWideCharStr))
-		allocate = TRUE;
-
-	if (cchWideChar < 1)
-		return 0;
-
-	if (allocate)
-	{
-		*lpWideCharStr = (LPWSTR)calloc((size_t)cchWideChar + 1ull, sizeof(WCHAR));
-
-		if (!(*lpWideCharStr))
-		{
-			// SetLastError(ERROR_INSUFFICIENT_BUFFER);
-			return 0;
-		}
-	}
-
-	status = MultiByteToWideChar(CodePage, dwFlags, lpMultiByteStr, cbMultiByte, *lpWideCharStr,
-	                             cchWideChar);
-
-	if (status != cchWideChar)
-	{
-		if (allocate)
-		{
-			free(*lpWideCharStr);
-			*lpWideCharStr = nullptr;
-			status = 0;
-		}
-	}
-
-	return status;
-}
-#endif
-
-/**
- * ConvertFromUnicode is a convenience wrapper for WideCharToMultiByte:
- *
- * If the lpMultiByteStr parameter for the converted string points to nullptr
- * or if the cbMultiByte parameter is set to 0 this function will automatically
- * allocate the required memory which is guaranteed to be null-terminated
- * after the conversion, even if the source unicode string isn't.
- *
- * If the cchWideChar parameter is set to -1 the passed lpWideCharStr must
- * be null-terminated and the required length for the converted string will be
- * calculated accordingly.
- */
-#if defined(WITH_WINPR_DEPRECATED)
-int ConvertFromUnicode(UINT CodePage, DWORD dwFlags, LPCWSTR lpWideCharStr, int cchWideChar,
-                       LPSTR* lpMultiByteStr, int cbMultiByte, LPCSTR lpDefaultChar,
-                       LPBOOL lpUsedDefaultChar)
-{
-	int status = 0;
-	BOOL allocate = FALSE;
-
-	if (!lpWideCharStr)
-		return 0;
-
-	if (!lpMultiByteStr)
-		return 0;
-
-	if (cchWideChar == -1)
-		cchWideChar = (int)(_wcslen(lpWideCharStr) + 1);
-
-	if (cbMultiByte == 0)
-	{
-		cbMultiByte = WideCharToMultiByte(CodePage, dwFlags, lpWideCharStr, cchWideChar, nullptr, 0,
-		                                  nullptr, nullptr);
-		allocate = TRUE;
-	}
-	else if (!(*lpMultiByteStr))
-		allocate = TRUE;
-
-	if (cbMultiByte < 1)
-		return 0;
-
-	if (allocate)
-	{
-		*lpMultiByteStr = (LPSTR)calloc(1, (size_t)cbMultiByte + 1ull);
-
-		if (!(*lpMultiByteStr))
-		{
-			// SetLastError(ERROR_INSUFFICIENT_BUFFER);
-			return 0;
-		}
-	}
-
-	status = WideCharToMultiByte(CodePage, dwFlags, lpWideCharStr, cchWideChar, *lpMultiByteStr,
-	                             cbMultiByte, lpDefaultChar, lpUsedDefaultChar);
-
-	if ((status != cbMultiByte) && allocate)
-	{
-		status = 0;
-	}
-
-	if ((status <= 0) && allocate)
-	{
-		free(*lpMultiByteStr);
-		*lpMultiByteStr = nullptr;
-	}
-
-	return status;
-}
 #endif
 
 /**

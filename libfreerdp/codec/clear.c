@@ -1269,18 +1269,6 @@ fail:
 	return rc;
 }
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-int clear_compress(WINPR_ATTR_UNUSED CLEAR_CONTEXT* WINPR_RESTRICT clear,
-                   WINPR_ATTR_UNUSED const BYTE* WINPR_RESTRICT pSrcData,
-                   WINPR_ATTR_UNUSED UINT32 SrcSize,
-                   WINPR_ATTR_UNUSED BYTE** WINPR_RESTRICT ppDstData,
-                   WINPR_ATTR_UNUSED UINT32* WINPR_RESTRICT pDstSize)
-{
-	WLog_Print(clear->log, WLOG_ERROR, "TODO: not implemented!");
-	return 1;
-}
-#endif
-
 BOOL clear_context_reset(CLEAR_CONTEXT* WINPR_RESTRICT clear)
 {
 	if (!clear)

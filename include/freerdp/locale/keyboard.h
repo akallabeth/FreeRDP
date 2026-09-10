@@ -265,25 +265,6 @@ FREERDP_API const char* freerdp_keyboard_get_layout_name_from_id(DWORD keyboardL
 WINPR_ATTR_NODISCARD
 FREERDP_API DWORD freerdp_keyboard_get_layout_id_from_name(const char* name);
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-WINPR_DEPRECATED_VAR("since 3.11.0, implement yourself in client",
-	                 WINPR_ATTR_NODISCARD FREERDP_API DWORD
-	                     freerdp_keyboard_init(DWORD keyboardLayoutId));
-
-WINPR_DEPRECATED_VAR("since 3.11.0, implement yourself in client",
-	                 WINPR_ATTR_NODISCARD FREERDP_API DWORD freerdp_keyboard_init_ex(
-	                     DWORD keyboardLayoutId, const char* keyboardRemappingList));
-
-WINPR_DEPRECATED_VAR("since 3.11.0, implement yourself in client",
-	                 WINPR_ATTR_NODISCARD FREERDP_API DWORD
-	                     freerdp_keyboard_get_rdp_scancode_from_x11_keycode(DWORD keycode));
-
-WINPR_DEPRECATED_VAR("since 3.11.0, implement yourself in client",
-	                 WINPR_ATTR_NODISCARD FREERDP_API DWORD
-	                     freerdp_keyboard_get_x11_keycode_from_rdp_scancode(DWORD scancode,
-	                                                                        BOOL extended));
-#endif
-
 /** @brief deallocate a \b FREERDP_REMAP_TABLE
  *
  *  @param table The table to deallocate, may be \b nullptr

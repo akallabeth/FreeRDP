@@ -124,7 +124,7 @@ def write_getter_case(f, val, cast, typestr):
     f.write('FreeRDP_' + val + ':\n')
     f.write('\t\t\treturn ' + cast + 'settings->' + val + ';\n\n')
 
-def write_getter_body(f, values, ret, keys, isPointer, compat_values, typestr, entry_type):
+def write_getter_body(f, values, ret, keys, isPointer, typestr, entry_type):
     f.write('{\n')
     f.write('\tWINPR_ASSERT(settings);\n\n')
     f.write('\tswitch (id)\n')
@@ -138,14 +138,6 @@ def write_getter_body(f, values, ret, keys, isPointer, compat_values, typestr, e
                 if key != 'void*':
                     cast = '(void*)'
             write_getter_case(f, val, cast, None)
-    if compat_values:
-        f.write('#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)\n')
-        for i in range(len(compat_values)):
-            val = compat_values[i]
-            cast = '(' + entry_type + ')'
-            f.write('\t\t// API Compatibility section, remove with FreeRDP 4.x\n')
-            write_getter_case(f, val, cast, typestr)
-        f.write('#endif\n')
     f.write('\t\tdefault:\n')
     f.write('\t\t\tWLog_ERR(TAG, "Invalid key index %d [%s|%s]", id, freerdp_settings_get_name_for_key(id),\n\t\t\t         freerdp_settings_get_type_name_for_key(id));\n')
     f.write('\t\t\tWINPR_ASSERT(FALSE);\n')
@@ -153,12 +145,11 @@ def write_getter_body(f, values, ret, keys, isPointer, compat_values, typestr, e
     f.write('\t}\n')
     f.write('}\n\n')
 
-def write_getter(f, entry_dict, entry_type, entry_name, postfix, compat_dict):
+def write_getter(f, entry_dict, entry_type, entry_name, postfix):
     isString = 'string' in entry_name
     isPointer = 'pointer' in entry_name
     copy = dict(entry_dict)
     values = get_values(entry_dict, entry_type)
-    compat_values = get_values(compat_dict, entry_type)
     keys = get_keys(copy, entry_type, values)
 
     typestr = 'FreeRDP_Settings_Keys_' + entry_name.capitalize()
@@ -185,11 +176,11 @@ def write_getter(f, entry_dict, entry_type, entry_name, postfix, compat_dict):
     else:
         ret = '0';
 
-    write_getter_body(f, values, ret, keys, isPointer, compat_values, typestr, entry_type)
+    write_getter_body(f, values, ret, keys, isPointer, typestr, entry_type)
 
     if isString:
         f.write('char* freerdp_settings_get_' + entry_name.lower() + '_writable(rdpSettings* settings, ' + typestr + ' id)\n')
-        write_getter_body(f, values, ret, keys, isPointer, compat_values, typestr, entry_type)
+        write_getter_body(f, values, ret, keys, isPointer, typestr, entry_type)
 
 def write_setter_case(f, val, postfix, isPointer, cast):
     f.write('\t\tcase FreeRDP_' + val + ':\n')
@@ -204,12 +195,11 @@ def write_setter_case(f, val, postfix, isPointer, cast):
     else:
         f.write(formatCallOrPrototype('return update_string' + postfix + '(&settings->' + val + ', cnv.cc, len, cleanup);\n', 3, MAX_PER_LINE) + '\n')
 
-def write_setter(f, entry_dict, entry_type, entry_name, postfix, compat_dict):
+def write_setter(f, entry_dict, entry_type, entry_name, postfix):
     isString = 'string' in entry_name
     isPointer = 'pointer' in entry_name
     copy = dict(entry_dict)
     values = get_values(entry_dict, entry_type)
-    compat_values = get_values(compat_dict, entry_type)
     keys = get_keys(copy, entry_type, values)
 
     typestr = 'FreeRDP_Settings_Keys_' + entry_name.capitalize()
@@ -261,13 +251,6 @@ def write_setter(f, entry_dict, entry_type, entry_name, postfix, compat_dict):
                 if k != 'void*' and len(k) > 0:
                     cast = '(' + k + ')'
             write_setter_case(f, val, postfix, isPointer, cast)
-    if compat_values:
-        f.write('#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)\n')
-        for val in compat_values:
-            cast = '(int32_t)'
-            f.write('\t\t// API Compatibility section, remove with FreeRDP 4.x\n')
-            write_setter_case(f, val, postfix, isPointer, cast)
-        f.write('#endif\n')
     f.write('\t\tdefault:\n')
     f.write('\t\t\tWLog_ERR(TAG, "Invalid key index %d [%s|%s]", id, freerdp_settings_get_name_for_key(id),\n\t\t\t         freerdp_settings_get_type_name_for_key(id));\n')
     f.write('\t\t\treturn FALSE;\n')
@@ -393,33 +376,26 @@ try:
         getter_list = dict(type_list)
         setter_list = dict(type_list)
         setter_list2 = dict(type_list)
-        # Compatibility with older 3.x releases where the value was wrongly an unsigned type
-        compat_getter_list = dict()
-        compat_getter_list['UINT32'] = list()
-        compat_getter_list['UINT32'].append('MonitorLocalShiftX')
-        compat_getter_list['UINT32'].append('MonitorLocalShiftY')
 
-        compat_setter_list = dict(compat_getter_list)
-
-        write_getter(f, getter_list, 'BOOL', 'bool', '', compat_getter_list)
-        write_setter(f, setter_list, 'BOOL', 'bool', '', compat_setter_list)
-        write_getter(f, getter_list, 'UINT16', 'uint16', '', compat_getter_list)
-        write_setter(f, setter_list, 'UINT16', 'uint16', '', compat_setter_list)
-        write_getter(f, getter_list, 'INT16', 'int16', '', compat_getter_list)
-        write_setter(f, setter_list, 'INT16', 'int16', '', compat_setter_list)
-        write_getter(f, getter_list, 'UINT32', 'uint32', '', compat_getter_list)
-        write_setter(f, setter_list, 'UINT32', 'uint32', '', compat_setter_list)
-        write_getter(f, getter_list, 'INT32', 'int32', '', compat_getter_list)
-        write_setter(f, setter_list, 'INT32', 'int32', '', compat_setter_list)
-        write_getter(f, getter_list, 'UINT64', 'uint64', '', compat_getter_list)
-        write_setter(f, setter_list, 'UINT64', 'uint64', '', compat_setter_list)
-        write_getter(f, getter_list, 'INT64', 'int64', '', compat_getter_list)
-        write_setter(f, setter_list, 'INT64', 'int64', '', compat_setter_list)
-        write_getter(f, getter_list, 'char*', 'string', '_', compat_getter_list)
-        write_setter(f, setter_list, 'char*', 'string', '_', compat_setter_list)
-        write_setter(f, setter_list2, 'char*', 'string', '_copy_', compat_setter_list)
-        write_getter(f, getter_list, '*', 'pointer', '', compat_getter_list)
-        write_setter(f, setter_list, '*', 'pointer', '', compat_setter_list)
+        write_getter(f, getter_list, 'BOOL', 'bool', '')
+        write_setter(f, setter_list, 'BOOL', 'bool', '')
+        write_getter(f, getter_list, 'UINT16', 'uint16', '')
+        write_setter(f, setter_list, 'UINT16', 'uint16', '')
+        write_getter(f, getter_list, 'INT16', 'int16', '')
+        write_setter(f, setter_list, 'INT16', 'int16', '')
+        write_getter(f, getter_list, 'UINT32', 'uint32', '')
+        write_setter(f, setter_list, 'UINT32', 'uint32', '')
+        write_getter(f, getter_list, 'INT32', 'int32', '')
+        write_setter(f, setter_list, 'INT32', 'int32', '')
+        write_getter(f, getter_list, 'UINT64', 'uint64', '')
+        write_setter(f, setter_list, 'UINT64', 'uint64', '')
+        write_getter(f, getter_list, 'INT64', 'int64', '')
+        write_setter(f, setter_list, 'INT64', 'int64', '')
+        write_getter(f, getter_list, 'char*', 'string', '_')
+        write_setter(f, setter_list, 'char*', 'string', '_')
+        write_setter(f, setter_list2, 'char*', 'string', '_copy_')
+        write_getter(f, getter_list, '*', 'pointer', '')
+        write_setter(f, setter_list, '*', 'pointer', '')
 
         f.write('\n')
 

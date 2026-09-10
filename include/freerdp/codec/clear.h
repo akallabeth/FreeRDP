@@ -34,19 +34,6 @@ extern "C"
 
 	typedef struct S_CLEAR_CONTEXT CLEAR_CONTEXT;
 
-	/** @brief compress an image to clear codec data
-	 *  @warning not implemented
-	 *  @bug The API does not allow to properly pass an image
-	 *  @deprecated should not be used
-	 */
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-	WINPR_DEPRECATED_VAR("Broken API definition, compression was never implemented",
-	                     WINPR_ATTR_NODISCARD FREERDP_API int clear_compress(
-	                         CLEAR_CONTEXT* WINPR_RESTRICT clear,
-	                         const BYTE* WINPR_RESTRICT pSrcData, UINT32 SrcSize,
-	                         BYTE** WINPR_RESTRICT ppDstData, UINT32* WINPR_RESTRICT pDstSize));
-#endif
-
 	/** @brief decompress clear codec data
 	 *
 	 *  @param clear The context to use for decompression, must not be \b nullptr, must have been

@@ -277,21 +277,6 @@ static BOOL freerdp_peer_initialize(freerdp_peer* client)
 	return (rdp_server_transition_to_state(rdp, CONNECTION_STATE_INITIAL));
 }
 
-#if defined(WITH_FREERDP_DEPRECATED)
-static BOOL freerdp_peer_get_fds(freerdp_peer* client, void** rfds, int* rcount)
-{
-	rdpTransport* transport = nullptr;
-	WINPR_ASSERT(client);
-	WINPR_ASSERT(client->context);
-	WINPR_ASSERT(client->context->rdp);
-
-	transport = client->context->rdp->transport;
-	WINPR_ASSERT(transport);
-	transport_get_fds(transport, rfds, rcount);
-	return TRUE;
-}
-#endif
-
 static HANDLE freerdp_peer_get_event_handle(freerdp_peer* client)
 {
 	HANDLE hEvent = nullptr;
@@ -1473,9 +1458,6 @@ freerdp_peer* freerdp_peer_new(int sockfd)
 	client->sockfd = sockfd;
 	client->ContextSize = sizeof(rdpContext);
 	client->Initialize = freerdp_peer_initialize;
-#if defined(WITH_FREERDP_DEPRECATED)
-	client->GetFileDescriptor = freerdp_peer_get_fds;
-#endif
 	client->GetEventHandle = freerdp_peer_get_event_handle;
 	client->GetEventHandles = freerdp_peer_get_event_handles;
 	client->CheckFileDescriptor = freerdp_peer_check_fds;
@@ -1570,11 +1552,6 @@ BOOL freerdp_peer_context_new_ex(freerdp_peer* client, const rdpSettings* settin
 
 	rdp_log_build_warnings(rdp);
 
-#if defined(WITH_FREERDP_DEPRECATED)
-	client->update = rdp->update;
-	client->settings = rdp->settings;
-	client->autodetect = rdp->autodetect;
-#endif
 	context->rdp = rdp;
 	context->input = rdp->input;
 	context->update = rdp->update;

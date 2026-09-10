@@ -214,43 +214,6 @@ typedef pstatus_t (*fn_orC_32u_t)(const UINT32* WINPR_RESTRICT pSrc, UINT32 val,
 	                              UINT32* WINPR_RESTRICT pDst, INT32 len);
 typedef pstatus_t (*primitives_uninit_t)(void);
 
-#if defined(WITH_FREERDP_3x_DEPRECATED)
-typedef fn_copy_t __copy_t;
-typedef fn_copy_8u_t __copy_8u_t;
-typedef fn_copy_8u_AC4r_t __copy_8u_AC4r_t;
-typedef fn_set_8u_t __set_8u_t;
-typedef fn_set_32s_t __set_32s_t;
-typedef fn_set_32u_t __set_32u_t;
-typedef fn_zero_t __zero_t;
-typedef fn_alphaComp_argb_t __alphaComp_argb_t;
-typedef fn_add_16s_t __add_16s_t;
-typedef fn_add_16s_inplace_t __add_16s_inplace_t;
-typedef fn_copy_no_overlap_t __copy_no_overlap_t;
-typedef fn_lShiftC_16s_inplace_t __lShiftC_16s_inplace_t;
-typedef fn_lShiftC_16s_t __lShiftC_16s_t;
-typedef fn_lShiftC_16u_t __lShiftC_16u_t;
-typedef fn_rShiftC_16s_t __rShiftC_16s_t;
-typedef fn_rShiftC_16u_t __rShiftC_16u_t;
-typedef fn_shiftC_16s_t __shiftC_16s_t;
-typedef fn_shiftC_16u_t __shiftC_16u_t;
-typedef fn_sign_16s_t __sign_16s_t;
-typedef fn_yCbCrToRGB_16s8u_P3AC4R_t __yCbCrToRGB_16s8u_P3AC4R_t;
-typedef fn_yCbCrToRGB_16s16s_P3P3_t __yCbCrToRGB_16s16s_P3P3_t;
-typedef fn_RGBToYCbCr_16s16s_P3P3_t __RGBToYCbCr_16s16s_P3P3_t;
-typedef fn_RGBToRGB_16s8u_P3AC4R_t __RGBToRGB_16s8u_P3AC4R_t;
-typedef fn_YCoCgToRGB_8u_AC4R_t __YCoCgToRGB_8u_AC4R_t;
-typedef fn_RGB565ToARGB_16u32u_C3C4_t __RGB565ToARGB_16u32u_C3C4_t;
-typedef fn_YUV420ToRGB_8u_P3AC4R_t __YUV420ToRGB_8u_P3AC4R_t;
-typedef fn_YUV444ToRGB_8u_P3AC4R_t __YUV444ToRGB_8u_P3AC4R_t;
-typedef fn_RGBToYUV420_8u_P3AC4R_t __RGBToYUV420_8u_P3AC4R_t;
-typedef fn_RGBToYUV444_8u_P3AC4R_t __RGBToYUV444_8u_P3AC4R_t;
-typedef fn_YUV420CombineToYUV444_t __YUV420CombineToYUV444_t;
-typedef fn_YUV444SplitToYUV420_t __YUV444SplitToYUV420_t;
-typedef fn_RGBToAVC444YUV_t __RGBToAVC444YUV_t;
-typedef fn_andC_32u_t __andC_32u_t;
-typedef fn_orC_32u_t __orC_32u_t;
-#endif
-
 typedef struct
 {
 	/* Memory-to-memory copy routines */

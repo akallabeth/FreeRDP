@@ -130,21 +130,18 @@ FREERDP_API DWORD FreeRDPAreColorFormatsEqualNoAlpha(DWORD first, DWORD second);
  *
  * @return A string representation of format
  */
-#if defined(WITH_FREERDP_DEPRECATED)
-#define GetColorFormatName(...) FreeRDPGetColorFormatName(__VA_ARGS__)
-#endif
-	WINPR_ATTR_NODISCARD
-	FREERDP_API const char* FreeRDPGetColorFormatName(UINT32 format);
+WINPR_ATTR_NODISCARD
+FREERDP_API const char* FreeRDPGetColorFormatName(UINT32 format);
 
-	/** @brief convert a string to a \ref PIXEL_FORMAT
-	 *
-	 *  @param name The string representing the format
-	 *
-	 *  @return the \ref PIXEL_FORMAT value or \b 0 for failure
-	 *  @since version 3.18.0
-	 */
-	WINPR_ATTR_NODISCARD
-	FREERDP_API uint32_t FreeRDPGetColorFromatFromName(const char* name);
+/** @brief convert a string to a \ref PIXEL_FORMAT
+ *
+ *  @param name The string representing the format
+ *
+ *  @return the \ref PIXEL_FORMAT value or \b 0 for failure
+ *  @since version 3.18.0
+ */
+WINPR_ATTR_NODISCARD
+FREERDP_API uint32_t FreeRDPGetColorFromatFromName(const char* name);
 
 /***
  *
@@ -159,62 +156,50 @@ FREERDP_API DWORD FreeRDPAreColorFormatsEqualNoAlpha(DWORD first, DWORD second);
  * @param _a      alpha color value
  * @param palette palette to use (only used for 8 bit color!)
  */
-#if defined(WITH_FREERDP_DEPRECATED)
-#define SplitColor(...) FreeRDPSplitColor(__VA_ARGS__)
-#endif
-	FREERDP_API void FreeRDPSplitColor(UINT32 color, UINT32 format, BYTE* _r, BYTE* _g, BYTE* _b,
-	                                   BYTE* _a, const gdiPalette* palette);
+FREERDP_API void FreeRDPSplitColor(UINT32 color, UINT32 format, BYTE* _r, BYTE* _g, BYTE* _b,
+	                               BYTE* _a, const gdiPalette* palette);
 
-	/***
-	 *
-	 * Converts red, green, blue and alpha values to internal representation.
-	 *
-	 * @param format one of PIXEL_FORMAT_* color format defines
-	 * @param r      red color value
-	 * @param g      green color value
-	 * @param b      blue color value
-	 * @param a      alpha color value
-	 *
-	 * @return       The pixel color in the desired format. Value is in internal
-	 *               representation.
-	 */
-#if defined(WITH_FREERDP_DEPRECATED)
-#define GetColor(...) FreeRDPGetColor(__VA_ARGS__)
-#endif
-	WINPR_ATTR_NODISCARD
-	FREERDP_API UINT32 FreeRDPGetColor(UINT32 format, BYTE r, BYTE g, BYTE b, BYTE a);
+/***
+ *
+ * Converts red, green, blue and alpha values to internal representation.
+ *
+ * @param format one of PIXEL_FORMAT_* color format defines
+ * @param r      red color value
+ * @param g      green color value
+ * @param b      blue color value
+ * @param a      alpha color value
+ *
+ * @return       The pixel color in the desired format. Value is in internal
+ *               representation.
+ */
+WINPR_ATTR_NODISCARD
+FREERDP_API UINT32 FreeRDPGetColor(UINT32 format, BYTE r, BYTE g, BYTE b, BYTE a);
 
-	/***
-	 *
-	 * Returns the number of bits the format format uses.
-	 *
-	 * @param format One of PIXEL_FORMAT_* defines
-	 *
-	 * @return The number of bits the format requires per pixel.
-	 */
-#if defined(WITH_FREERDP_DEPRECATED)
-#define GetBitsPerPixel(...) FreeRDPGetBitsPerPixel(__VA_ARGS__)
-#endif
-	WINPR_ATTR_NODISCARD
-	static inline UINT32 FreeRDPGetBitsPerPixel(UINT32 format)
-	{
-		return (((format) >> 24) & 0x3F);
-	}
+/***
+ *
+ * Returns the number of bits the format format uses.
+ *
+ * @param format One of PIXEL_FORMAT_* defines
+ *
+ * @return The number of bits the format requires per pixel.
+ */
+WINPR_ATTR_NODISCARD
+static inline UINT32 FreeRDPGetBitsPerPixel(UINT32 format)
+{
+	return (((format) >> 24) & 0x3F);
+}
 
-	/***
-	 * @param format one of PIXEL_FORMAT_* color format defines
-	 *
-	 * @return TRUE if the format has an alpha channel, FALSE otherwise.
-	 */
-#if defined(WITH_FREERDP_DEPRECATED)
-#define ColorHasAlpha(...) FreeRDPColorHasAlpha(__VA_ARGS__)
-#endif
-	WINPR_ATTR_NODISCARD
-	static inline BOOL FreeRDPColorHasAlpha(UINT32 format)
-	{
-		UINT32 alpha = (((format) >> 12) & 0x0F);
+/***
+ * @param format one of PIXEL_FORMAT_* color format defines
+ *
+ * @return TRUE if the format has an alpha channel, FALSE otherwise.
+ */
+WINPR_ATTR_NODISCARD
+static inline BOOL FreeRDPColorHasAlpha(UINT32 format)
+{
+	UINT32 alpha = (((format) >> 12) & 0x0F);
 
-		return (alpha != 0);
+	return (alpha != 0);
 	}
 
 	/***
@@ -226,9 +211,6 @@ FREERDP_API DWORD FreeRDPAreColorFormatsEqualNoAlpha(DWORD first, DWORD second);
 	 *
 	 * @return The pixel color in internal representation
 	 */
-#if defined(WITH_FREERDP_DEPRECATED)
-#define ReadColor(...) FreeRDPReadColor(__VA_ARGS__)
-#endif
 	WINPR_ATTR_NODISCARD
 	FREERDP_API UINT32 FreeRDPReadColor(const BYTE* WINPR_RESTRICT src, UINT32 format);
 
@@ -242,10 +224,6 @@ FREERDP_API DWORD FreeRDPAreColorFormatsEqualNoAlpha(DWORD first, DWORD second);
 	 *
 	 * @return TRUE if successful, FALSE otherwise
 	 */
-#if defined(WITH_FREERDP_DEPRECATED)
-#define WriteColor(...) FreeRDPWriteColor(__VA_ARGS__)
-#define WriteColorIgnoreAlpha(...) FreeRDPWriteColorIgnoreAlpha(__VA_ARGS__)
-#endif
 	FREERDP_API BOOL FreeRDPWriteColor(BYTE* WINPR_RESTRICT dst, UINT32 format, UINT32 color);
 
 	FREERDP_API BOOL FreeRDPWriteColorIgnoreAlpha(BYTE* WINPR_RESTRICT dst, UINT32 format,
@@ -263,9 +241,6 @@ FREERDP_API DWORD FreeRDPAreColorFormatsEqualNoAlpha(DWORD first, DWORD second);
 	 *
 	 * @return           The converted pixel color in dstFormat representation
 	 */
-#if defined(WITH_FREERDP_DEPRECATED)
-#define ConvertColor(...) FreeRDPConvertColor(__VA_ARGS__)
-#endif
 	WINPR_ATTR_NODISCARD
 	static inline UINT32 FreeRDPConvertColor(UINT32 color, UINT32 srcFormat, UINT32 dstFormat,
 	                                         const gdiPalette* palette)
@@ -286,31 +261,11 @@ FREERDP_API DWORD FreeRDPAreColorFormatsEqualNoAlpha(DWORD first, DWORD second);
 	 *
 	 * @return The number of bytes the format requires per pixel.
 	 */
-#if defined(WITH_FREERDP_DEPRECATED)
-#define GetBytesPerPixel(...) FreeRDPGetBytesPerPixel(__VA_ARGS__)
-#endif
 	WINPR_ATTR_NODISCARD
 	static inline UINT32 FreeRDPGetBytesPerPixel(UINT32 format)
 	{
 		return (FreeRDPGetBitsPerPixel(format) + 7) / 8;
 	}
-
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-	/***
-	 *
-	 * @param width    width to copy in pixels
-	 * @param height   height to copy in pixels
-	 * @param data      source buffer, must be (nWidth + 7) / 8 bytes long
-	 *
-	 * @return          A buffer allocated with winpr_aligned_malloc(width * height, 16)
-	 *                  if successful, nullptr otherwise.
-	 */
-
-	WINPR_DEPRECATED_VAR("[since 3.21.0] use freerdp_glyph_convert_ex instead",
-	                     WINPR_ATTR_MALLOC(winpr_aligned_free, 1)
-	                         WINPR_ATTR_NODISCARD FREERDP_API BYTE* freerdp_glyph_convert(
-	                             UINT32 width, UINT32 height, const BYTE* WINPR_RESTRICT data));
-#endif
 
 	/***
 	 *

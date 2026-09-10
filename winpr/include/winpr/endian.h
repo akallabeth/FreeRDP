@@ -376,51 +376,6 @@ extern "C"
 		winpr_Data_Write_UINT32_BE(b + 4, v & 0xFFFFFFFF);
 	}
 
-#if defined(WINPR_DEPRECATED)
-#define Data_Read_UINT8_NE(_d, _v) _v = winpr_Data_Get_UINT8(_d)
-
-#define Data_Read_UINT8(_d, _v) _v = winpr_Data_Get_UINT8(_d)
-
-#define Data_Read_UINT16_NE(_d, _v) _v = winpr_Data_Get_UINT16_NE(_d)
-
-#define Data_Read_UINT16(_d, _v) _v = winpr_Data_Get_UINT16(_d)
-
-#define Data_Read_UINT16_BE(_d, _v) _v = winpr_Data_Get_UINT16_BE(_d)
-
-#define Data_Read_UINT32_NE(_d, _v) _v = winpr_Data_Get_UINT32_NE(_d)
-
-#define Data_Read_UINT32(_d, _v) _v = winpr_Data_Get_UINT32(_d)
-
-#define Data_Read_UINT32_BE(_d, _v) _v = winpr_Data_Get_UINT32_BE(_d)
-
-#define Data_Read_UINT64_NE(_d, _v) _v = winpr_Data_Get_UINT64_NE(_d)
-
-#define Data_Read_UINT64(_d, _v) _v = winpr_Data_Get_UINT64(_d)
-
-#define Data_Read_UINT64_BE(_d, _v) _v = winpr_Data_Get_UINT64_BE(_d)
-
-#define Data_Write_UINT8_NE(_d, _v) winpr_Data_Write_UINT8_NE(_d, _v)
-
-#define Data_Write_UINT8(_d, _v) winpr_Data_Write_UINT8(_d, _v)
-
-#define Data_Write_UINT16_NE(_d, _v) winpr_Data_Write_UINT16_NE(_d, _v)
-#define Data_Write_UINT16(_d, _v) winpr_Data_Write_UINT16(_d, _v)
-
-#define Data_Write_UINT16_BE(_d, _v) winpr_Data_Write_UINT16_BE(_d, _v)
-
-#define Data_Write_UINT32_NE(_d, _v) winpr_Data_Write_UINT32_NE(_d, _v)
-
-#define Data_Write_UINT32(_d, _v) winpr_Data_Write_UINT32(_d, _v)
-
-#define Data_Write_UINT32_BE(_d, _v) winpr_Data_Write_UINT32_BE(_d, _v)
-
-#define Data_Write_UINT64_NE(_d, _v) winpr_Data_Write_UINT64_NE(_d, _v)
-
-#define Data_Write_UINT64(_d, _v) winpr_Data_Write_UINT64(_d, _v)
-
-#define Data_Write_UINT64_BE(_d, _v) winpr_Data_Write_UINT64_BE(_d, _v)
-#endif
-
 #ifdef __cplusplus
 }
 #endif

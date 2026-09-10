@@ -688,13 +688,6 @@ typedef struct
 #define SEC_WINNT_AUTH_IDENTITY_MARSHALLED 0x4
 #define SEC_WINNT_AUTH_IDENTITY_ONLY 0x8
 
-#if !defined(WITHOUT_WINPR_3x_DEPRECATED)
-/**< @deprecated use SEC_WINNT_AUTH_IDENTITY_EXTENDED_v2
- * @since [version 3.31.0]
- */
-#define SEC_WINNT_AUTH_IDENTITY_EXTENDED 0x100
-#endif
-
 #define SEC_WINNT_AUTH_IDENTITY_EXTENDED_v2 0x200 /**< @since 3.31.0 */
 
 #define SEC_WINPR_AUTH_IDENTITY_PASSWORD_HASH 0x00800000
@@ -910,40 +903,6 @@ typedef SECURITY_STATUS (*psSspiNtlmHashCallback)(void* client,
                                                   const SecBuffer* ntproofvalue,
                                                   const BYTE* randkey, const BYTE* mic,
                                                   const SecBuffer* micvalue, BYTE* ntlmhash);
-
-#if !defined(WITHOUT_WINPR_3x_DEPRECATED)
-
-WINPR_DEPRECATED_VAR(
-    "[since 3.31.0] use SEC_WINPR_NTLM_SETTINGS_V2", typedef struct {
-	    char* samFile; /**< File name (with path) of a SAM file */
-	    WINPR_ATTR_NODISCARD psSspiNtlmHashCallback
-	        hashCallback;      /**< Callback to be called to generate a NTLM hash. */
-	    void* hashCallbackArg; /**< A pointer passed to \ref hashCallback */
-    } SEC_WINPR_NTLM_SETTINGS);
-
-WINPR_DEPRECATED_VAR(
-    "[since 3.31.0] use SEC_WINPR_KERBEROS_SETTINGS_V2", typedef struct {
-	    char* kdcUrl;
-	    char* keytab;
-	    char* cache;
-	    char* armorCache;
-	    char* pkinitX509Anchors;
-	    char* pkinitX509Identity;
-	    BOOL withPac;
-	    INT32 startTime;
-	    INT32 renewLifeTime;
-	    INT32 lifeTime;
-	    BYTE certSha1[20];
-    } SEC_WINPR_KERBEROS_SETTINGS);
-
-WINPR_DEPRECATED_VAR(
-    "[since 3.31.0] use SEC_WINNT_AUTH_IDENTITY_WINPR_V2", typedef struct {
-	    SEC_WINNT_AUTH_IDENTITY_EXW identity;
-	    SEC_WINPR_NTLM_SETTINGS* ntlmSettings;
-	    SEC_WINPR_KERBEROS_SETTINGS* kerberosSettings;
-    } SEC_WINNT_AUTH_IDENTITY_WINPR);
-
-#endif
 
 typedef struct DECLSPEC_ALIGN(8) /**< @since version 3.31.0 */
 {

@@ -30,7 +30,6 @@ typedef struct rdp_nla rdpNla;
 #include <winpr/crypto.h>
 
 #include <freerdp/crypto/ber.h>
-#include <freerdp/crypto/der.h>
 #include <freerdp/crypto/crypto.h>
 
 #include "transport.h"

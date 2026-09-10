@@ -2450,10 +2450,6 @@ rdpRdp* rdp_new(rdpContext* context)
 	else if (context->peer)
 	{
 		rdp->settings->instance = context->peer;
-
-#if defined(WITH_FREERDP_DEPRECATED)
-		context->peer->settings = rdp->settings;
-#endif
 	}
 
 	if (!rdp_new_common(rdp))

@@ -1055,36 +1055,6 @@ wLog* WLog_Get(LPCSTR name)
 	return WLog_Get_int(root, name);
 }
 
-#if defined(WITH_WINPR_DEPRECATED)
-BOOL WLog_Init(void)
-{
-	return WLog_GetRoot() != nullptr;
-}
-
-BOOL WLog_Uninit(void)
-{
-	wLog* root = g_RootLog;
-
-	if (!root)
-		return FALSE;
-
-	WLog_Lock(root);
-
-	for (DWORD index = 0; index < root->ChildrenCount; index++)
-	{
-		wLog* child = root->Children[index];
-		WLog_Free(child);
-	}
-
-	WLog_Unlock(root);
-
-	WLog_Free(root);
-	g_RootLog = nullptr;
-
-	return TRUE;
-}
-#endif
-
 BOOL WLog_SetContext(wLog* log, const char* (*fkt)(void*), void* context)
 {
 	WINPR_ASSERT(log);

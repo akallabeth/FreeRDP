@@ -239,25 +239,6 @@ BOOL freerdp_client_codecs_reset(rdpCodecs* codecs, UINT32 flags, UINT32 width, 
 	return rc;
 }
 
-#if !defined(WITHOUT_FREERDP_3x_DEPRECATED)
-WINPR_PRAGMA_DIAG_PUSH
-WINPR_PRAGMA_DIAG_IGNORED_DEPRECATED_DECL
-rdpCodecs* codecs_new(rdpContext* context)
-{
-	if (!context || !context->settings)
-		return nullptr;
-
-	const UINT32 flags = freerdp_settings_get_uint32(context->settings, FreeRDP_ThreadingFlags);
-	return freerdp_client_codecs_new(flags);
-}
-
-void codecs_free(rdpCodecs* codecs)
-{
-	freerdp_client_codecs_free(codecs);
-}
-WINPR_PRAGMA_DIAG_POP
-#endif
-
 rdpCodecs* freerdp_client_codecs_new(UINT32 ThreadingFlags)
 {
 	rdpCodecs* codecs = (rdpCodecs*)calloc(1, sizeof(rdpCodecs));

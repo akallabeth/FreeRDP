@@ -42,11 +42,6 @@ extern "C"
 	typedef void (*psPeerContextFree)(freerdp_peer* peer, rdpContext* context);
 
 	typedef BOOL (*psPeerInitialize)(freerdp_peer* peer);
-#if defined(WITH_FREERDP_DEPRECATED)
-	WINPR_DEPRECATED_VAR("Use psPeerGetEventHandle instead",
-	                     typedef BOOL (*psPeerGetFileDescriptor)(freerdp_peer* peer, void** rfds,
-	                                                             int* rcount);)
-#endif
 	typedef HANDLE (*psPeerGetEventHandle)(freerdp_peer* peer);
 	typedef DWORD (*psPeerGetEventHandles)(freerdp_peer* peer, HANDLE* events, DWORD count);
 	typedef HANDLE (*psPeerGetReceiveEventHandle)(freerdp_peer* peer);
@@ -129,14 +124,7 @@ extern "C"
 		ALIGN64 int sockfd;
 		ALIGN64 char hostname[50];
 
-#if defined(WITH_FREERDP_DEPRECATED)
-		WINPR_DEPRECATED_VAR("Use rdpContext::update instead", ALIGN64 rdpUpdate* update;)
-		WINPR_DEPRECATED_VAR("Use rdpContext::settings instead", ALIGN64 rdpSettings* settings;)
-		WINPR_DEPRECATED_VAR("Use rdpContext::autodetect instead",
-		                     ALIGN64 rdpAutoDetect* autodetect;)
-#else
-	UINT64 reservedX[3];
-#endif
+		UINT64 reservedX[3];
 
 		ALIGN64 void* ContextExtra;
 		ALIGN64 size_t ContextSize;
@@ -144,13 +132,7 @@ extern "C"
 		ALIGN64 psPeerContextFree ContextFree;
 
 		WINPR_ATTR_NODISCARD ALIGN64 psPeerInitialize Initialize;
-#if defined(WITH_FREERDP_DEPRECATED)
-		WINPR_DEPRECATED_VAR("Use freerdp_peer::GetEventHandle instead",
-		                     WINPR_ATTR_NODISCARD ALIGN64 psPeerGetFileDescriptor
-		                         GetFileDescriptor;)
-#else
-	UINT64 reserved;
-#endif
+		UINT64 reserved;
 		WINPR_ATTR_NODISCARD ALIGN64 psPeerGetEventHandle GetEventHandle;
 		WINPR_ATTR_NODISCARD ALIGN64 psPeerGetReceiveEventHandle GetReceiveEventHandle;
 		WINPR_ATTR_NODISCARD ALIGN64 psPeerCheckFileDescriptor CheckFileDescriptor;
@@ -188,12 +170,7 @@ extern "C"
 		WINPR_ATTR_NODISCARD ALIGN64 psPeerGetEventHandles GetEventHandles;
 		WINPR_ATTR_NODISCARD ALIGN64 psPeerAdjustMonitorsLayout AdjustMonitorsLayout;
 		WINPR_ATTR_NODISCARD ALIGN64 psPeerClientCapabilities ClientCapabilities;
-#if defined(WITH_FREERDP_DEPRECATED)
-		WINPR_DEPRECATED_VAR("Use freerdp_peer::SspiNtlmHashCallback instead",
-		                     WINPR_ATTR_NODISCARD ALIGN64 psPeerComputeNtlmHash ComputeNtlmHash;)
-#else
-	UINT64 reserved2;
-#endif
+		UINT64 reserved2;
 		WINPR_ATTR_NODISCARD ALIGN64 psPeerLicenseCallback LicenseCallback;
 
 		WINPR_ATTR_NODISCARD ALIGN64 psPeerSendChannelPacket SendChannelPacket;
