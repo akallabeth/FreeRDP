@@ -44,10 +44,6 @@ if(FREERDP_VENDOR AND WITH_CLIENT)
     add_subdirectory(X11)
   endif()
 
-  if(WITH_WAYLAND AND WAYLAND_FOUND AND NOT WITHOUT_FREERDP_3x_DEPRECATED)
-    add_subdirectory(Wayland)
-  endif()
-
   if(APPLE)
     if(IOS)
       message(STATUS "iOS client module is built with the client/iOS super-build project")

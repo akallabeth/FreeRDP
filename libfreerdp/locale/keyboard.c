@@ -321,7 +321,7 @@ DWORD freerdp_keyboard_init(DWORD keyboardLayoutId)
 		                                     ARRAYSIZE(X11_KEYCODE_TO_VIRTUAL_SCANCODE));
 #endif
 
-#if defined(WITH_X11) || defined(WITH_WAYLAND)
+#if defined(WITH_X11)
 
 #ifdef WITH_XKBFILE
 	if (status < 0)

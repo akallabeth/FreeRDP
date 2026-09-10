@@ -79,10 +79,6 @@ if(WITH_X11 AND NOT WITHOUT_FREERDP_3x_DEPRECATED)
   endif()
 endif()
 
-if(WITH_WAYLAND AND NOT WITHOUT_FREERDP_3x_DEPRECATED)
-  freerdp_definition_add(WITH_WAYLAND)
-endif()
-
 freerdp_module_add(${SRCS})
 
 if(BUILD_TESTING_INTERNAL OR BUILD_TESTING)

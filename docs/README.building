@@ -110,7 +110,6 @@ We support
 * libsystemd (linux) for journald logging support (disable with -DWITH_SYSTEMD=OFF)
 * PAM headers/libraries (server side authentication)
 * FUSE for file clipboard support (linux/mac os, disable with -DWITH_FUSE=OFF) 
-* Wayland for wlfreerdp (disable with -DWITH_WAYLAND=OFF)
 * X11 development headers for X11 client (disable with -DWITH_X11=OFF)
 * ALSA development headers/libraries (disable with -DWITH_ALSA=OFF)
 * PULSE development headers/libraries (disable with -DWITH_PULSE=OFF)

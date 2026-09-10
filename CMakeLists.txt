@@ -519,11 +519,6 @@ include(CommonConfigOptions)
 
 if(FREERDP_UNIFIED_BUILD)
   add_subdirectory(winpr)
-  if(NOT WITHOUT_FREERDP_3x_DEPRECATED)
-    if(WITH_WAYLAND)
-      add_subdirectory(uwac)
-    endif()
-  endif()
 
   if(WITH_SERVER)
     option(WITH_RDTK "build rdtk toolkit" OFF)
