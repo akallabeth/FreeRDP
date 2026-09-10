@@ -34,10 +34,7 @@ jobs:
             libcjson \
             fdk-aac \
             libsoxr \
-            sdl2 \
             sdl3 \
-            sdl2_ttf \
-            sdl2_image \
             opus \
             png \
             webp \

@@ -65,9 +65,6 @@ BuildRequires: libfido2-devel
 BuildRequires: libswscale-devel
 BuildRequires: cJSON-devel
 BuildRequires: uuid-devel
-BuildRequires: libSDL2-devel
-BuildRequires: libSDL2_ttf-devel
-BuildRequires: libSDL2_image-devel
 BuildRequires: pkg-config
 BuildRequires: libopenssl-devel
 BuildRequires: alsa-devel
@@ -89,7 +86,7 @@ BuildRequires: libjpeg62-devel
 BuildRequires: cjson-devel
 BuildRequires: uuid-devel
 BuildRequires: opus-devel
-BuildRequires: ((SDL3-devel and SDL3_ttf-devel and SDL3_image-devel) or (SDL2-devel and SDL2_ttf-devel and SDL2_image-devel))
+BuildRequires: ((SDL3-devel and SDL3_ttf-devel and SDL3_image-devel)
 BuildRequires: pkgconfig
 BuildRequires: openssl-devel
 BuildRequires: alsa-lib-devel

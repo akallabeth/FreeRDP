@@ -105,7 +105,7 @@ We support
 
 10. Platform support (mainly linux, for others the platform SDK is usually enough)
 
-* SDL2 for the SDL client (all platforms, disable with -DWITH_CLIENT_SDL=OFF)
+* SDL3 for the SDL client (all platforms, disable with -DWITH_CLIENT_SDL=OFF)
 * CUPS (linux/apple) for printing support (disable with -DWITH_CUPS=OFF)
 * libsystemd (linux) for journald logging support (disable with -DWITH_SYSTEMD=OFF)
 * PAM headers/libraries (server side authentication)
