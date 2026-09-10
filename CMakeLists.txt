@@ -520,13 +520,6 @@ include(CommonConfigOptions)
 if(FREERDP_UNIFIED_BUILD)
   add_subdirectory(winpr)
 
-  if(WITH_SERVER)
-    option(WITH_RDTK "build rdtk toolkit" OFF)
-    if(WITH_RDTK)
-      add_subdirectory(rdtk)
-    endif()
-  endif()
-
   include_directories(${PROJECT_SOURCE_DIR}/winpr/include)
   include_directories(${PROJECT_BINARY_DIR}/winpr/include)
 else()

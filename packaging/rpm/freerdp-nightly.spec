@@ -16,7 +16,7 @@
 %global __provides_exclude_from ^%{INSTALL_PREFIX}.*$
 
 # do not require our own libs
-%global __requires_exclude ^(libfreerdp.*|libwinpr.*|librdtk.*).*$
+%global __requires_exclude ^(libfreerdp.*|libwinpr.*).*$
 
 # no debug package
 %global debug_package %{nil}
@@ -164,7 +164,6 @@ cp %{_sourcedir}/source_version freerdp-nightly-%{version}/.source_version
     -DSAMPLE_USE_VENDOR_PRODUCT_CONFIG_DIR=ON \
     -DSDL_USE_VENDOR_PRODUCT_CONFIG_DIR=ON \
     -DWINPR_USE_LEGACY_RESOURCE_DIR=OFF \
-    -DRDTK_FORCE_STATIC_BUILD=ON \
 %if 0%{?fedora} || 0%{?rhel} > 8
     -DWITH_FDK_AAC=ON \
 %endif

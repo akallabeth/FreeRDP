@@ -59,7 +59,7 @@ option(WITH_SERVER "Build server binaries" ON)
 
 option(WITH_CHANNELS "Build virtual channel plugins" ON)
 
-option(FREERDP_UNIFIED_BUILD "Build WinPR, RdTk and FreeRDP in one go" ON)
+option(FREERDP_UNIFIED_BUILD "Build WinPR, FreeRDP in one go" ON)
 
 cmake_dependent_option(WITH_CLIENT_CHANNELS "Build virtual channel plugins" ON "WITH_CLIENT_COMMON;WITH_CHANNELS" OFF)
 

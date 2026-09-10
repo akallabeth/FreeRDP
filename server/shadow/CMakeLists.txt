@@ -54,22 +54,7 @@ set(SRCS
     shadow.h
 )
 
-if(WITH_RDTK)
-  if(NOT FREERDP_UNIFIED_BUILD)
-    find_package(rdtk 0 REQUIRED)
-    include_directories(SYSTEM ${RDTK_INCLUDE_DIR})
-  else()
-    include_directories(${PROJECT_SOURCE_DIR}/rdtk/include)
-    include_directories(${PROJECT_BINARY_DIR}/rdtk/include)
-  endif()
-endif()
-
 addtargetwithresourcefile(${MODULE_NAME} "FALSE" "${FREERDP_VERSION}" SRCS)
-
-if(WITH_RDTK)
-  target_compile_definitions(${MODULE_NAME} PRIVATE WITH_RDTK)
-  list(APPEND LIBS rdtk)
-endif()
 
 list(APPEND LIBS freerdp-server)
 if(WITH_WINPR_TOOLS)
