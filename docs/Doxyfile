@@ -945,7 +945,6 @@ EXCLUDE                = ../build \
                          ../CMakeFiles \
                          ../cunit \
                          ../docs \
-                         ../uwac/protocols \
                          ../keymaps \
                          ../resources
 

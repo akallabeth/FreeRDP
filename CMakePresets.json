@@ -33,7 +33,6 @@
 				"WITH_INTERNAL_MD5": "ON",
 				"WITH_INTERNAL_RC4": "ON",
 				"WITH_VERBOSE_WINPR_ASSERT": "OFF",
-				"WITH_UWAC": "OFF",
 				"WITH_RDTK": "OFF"
 			}
 		},
