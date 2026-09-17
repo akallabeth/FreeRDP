@@ -20,9 +20,9 @@ jobs:
     steps:
     - uses: actions/checkout@v7
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
     - name: Configure CMake
       run: cmake -G"Visual Studio 18 2026" -Bbuild -Swinpr\libwinpr\timezone\utils
     - name: Restore dependencies
@@ -39,7 +39,7 @@ jobs:
         clang-format -i --style=file:.clang-format winpr/libwinpr/timezone/TimeZoneNameMap.json
     - name: Create Pull Request
       id: cpr
-      uses: peter-evans/create-pull-request@v6
+      uses: peter-evans/create-pull-request@v8
       with:
           commit-message: Update timezone definitions
           committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
