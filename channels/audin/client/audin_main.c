@@ -375,6 +375,17 @@ static UINT audin_receive_wave_data(const AUDIO_FORMAT* format, const BYTE* data
 
 	Stream_Write_UINT8(audin->data, MSG_SNDIN_DATA);
 
+	{
+		FILE* fp = winpr_fopen("/tmp/audin/raw.wav", "a");
+		if (fp)
+		{
+			fwrite(data, 1, size, fp);
+			fclose(fp);
+		}
+	}
+
+	const void* src = Stream_Pointer(audin->data);
+	const size_t start = Stream_GetPosition(audin->data);
 	const BOOL compatible = audio_format_compatible(format, audin->format);
 	if (compatible && audin->device->FormatSupported(audin->device, audin->format))
 	{
@@ -387,6 +398,24 @@ static UINT audin_receive_wave_data(const AUDIO_FORMAT* format, const BYTE* data
 	{
 		if (!freerdp_dsp_encode(audin->dsp_context, format, data, size, audin->data))
 			return ERROR_INTERNAL_ERROR;
+	}
+
+	{
+		const size_t end = Stream_GetPosition(audin->data);
+		const size_t ssize = end - start;
+		const char* name = audio_format_get_tag_string(audin->format->wFormatTag);
+
+		char* file = nullptr;
+		size_t flen = 0;
+		winpr_asprintf(&file, &flen, "/tmp/audin/%s.data", name);
+
+		FILE* fp = winpr_fopen(file, "a");
+		free(file);
+		if (fp)
+		{
+			fwrite(src, 1, ssize, fp);
+			fclose(fp);
+		}
 	}
 
 	/* Did not encode anything, skip this, the codec is not ready for output. */
