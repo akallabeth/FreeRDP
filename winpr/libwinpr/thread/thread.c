@@ -573,6 +573,8 @@ static BOOL winpr_StartThread(WINPR_THREAD* thread)
 
 	if (thread->dwStackSize > 0)
 		pthread_attr_setstacksize(&attr, thread->dwStackSize);
+	else
+		pthread_attr_setstacksize(&attr, WINPR_DEFAULT_THREAD_STACK_SIZE);
 
 	thread->started = TRUE;
 	reset_event(thread);

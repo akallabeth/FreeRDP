@@ -26,6 +26,14 @@ winpr_module_add(
   thread.h
 )
 
+set(WINPR_DEFAULT_THREAD_STACK_SIZE
+    "1048576"
+    CACHE
+      STRING
+      "default thread stack size (1MB) See https://learn.microsoft.com/en-us/windows/win32/procthread/thread-stack-size"
+)
+winpr_library_add_compile_options(-DWINPR_DEFAULT_THREAD_STACK_SIZE=${WINPR_DEFAULT_THREAD_STACK_SIZE})
+
 # tls.c only provides a pthread-based TlsAlloc/TlsGetValue/TlsSetValue/TlsFree
 # fallback for non-Windows targets. On Cygwin the real system TlsAlloc family
 # is available from libkernel32.a, so skip compiling it there instead of
